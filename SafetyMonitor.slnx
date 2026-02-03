@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="DataStorage/DataStorage.csproj" Id="699d7749-f93c-45a2-b6e5-f2e2f9a61301" />
+  <Project Path="SafetyMonitorData/SafetyMonitorData.csproj" />
+</Solution>
