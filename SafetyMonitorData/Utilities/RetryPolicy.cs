@@ -4,6 +4,9 @@ namespace SafetyMonitorData.Utilities;
 /// Provides retry policy for operations that may fail temporarily
 /// </summary>
 public static class RetryPolicy {
+
+    #region Public Methods
+
     /// <summary>
     /// Execute an async operation with retry logic
     /// </summary>
@@ -86,4 +89,6 @@ public static class RetryPolicy {
             onRetry,
             cancellationToken);
     }
+
+    #endregion Public Methods
 }

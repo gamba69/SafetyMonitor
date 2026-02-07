@@ -10,17 +10,16 @@ namespace SafetyMonitorData.Services;
 /// </summary>
 public class DataCollectionService(
     CommandLineOptions options) {
+
+    #region Private Fields
+
     private readonly CommandLineOptions _options = options;
     private IObservingConditions? _ocDevice;
     private ISafetyMonitor? _smDevice;
 
-    /// <summary>
-    /// Initialize the service with connected devices
-    /// </summary>
-    public void Initialize(IObservingConditions ocDevice, ISafetyMonitor smDevice) {
-        _ocDevice = ocDevice;
-        _smDevice = smDevice;
-    }
+    #endregion Private Fields
+
+    #region Public Methods
 
     /// <summary>
     /// Collect data from both devices
@@ -44,12 +43,26 @@ public class DataCollectionService(
     }
 
     /// <summary>
+    /// Initialize the service with connected devices
+    /// </summary>
+    public void Initialize(IObservingConditions ocDevice, ISafetyMonitor smDevice) {
+        _ocDevice = ocDevice;
+        _smDevice = smDevice;
+    }
+
+    #endregion Public Methods
+
+    #region Private Methods
+
+    /// <summary>
     /// Collect data from ObservingConditions device
     /// </summary>
     private async Task CollectObservingConditionsDataAsync(
         ObservingData data,
         CancellationToken cancellationToken) {
-        if (_ocDevice == null) return;
+        if (_ocDevice == null) {
+            return;
+        }
 
         try {
             // Ensure device is connected
@@ -91,7 +104,9 @@ public class DataCollectionService(
     private async Task CollectSafetyMonitorDataAsync(
         ObservingData data,
         CancellationToken cancellationToken) {
-        if (_smDevice == null) return;
+        if (_smDevice == null) {
+            return;
+        }
 
         try {
             // Ensure device is connected
@@ -155,4 +170,6 @@ public class DataCollectionService(
             }
         }
     }
+
+    #endregion Private Methods
 }

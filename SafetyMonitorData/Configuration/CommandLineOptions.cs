@@ -6,90 +6,7 @@ namespace SafetyMonitorData.Configuration;
 public class CommandLineOptions {
     // ========== ObservingConditions Device ==========
 
-    /// <summary>
-    /// ObservingConditions device name for discovery
-    /// </summary>
-    public string? OcName { get; set; }
-
-    /// <summary>
-    /// ObservingConditions device IP address
-    /// </summary>
-    public string? OcAddress { get; set; }
-
-    /// <summary>
-    /// ObservingConditions device port
-    /// </summary>
-    public int? OcPort { get; set; }
-
-    /// <summary>
-    /// ObservingConditions device number (default: 0)
-    /// </summary>
-    public int OcDeviceNumber { get; set; } = 0;
-
-    // ========== SafetyMonitor Device ==========
-
-    /// <summary>
-    /// SafetyMonitor device name for discovery
-    /// </summary>
-    public string? SmName { get; set; }
-
-    /// <summary>
-    /// SafetyMonitor device IP address
-    /// </summary>
-    public string? SmAddress { get; set; }
-
-    /// <summary>
-    /// SafetyMonitor device port
-    /// </summary>
-    public int? SmPort { get; set; }
-
-    /// <summary>
-    /// SafetyMonitor device number (default: 0)
-    /// </summary>
-    public int SmDeviceNumber { get; set; } = 0;
-
-    // ========== Retry Settings ==========
-
-    /// <summary>
-    /// Number of discovery retry attempts (default: 3)
-    /// </summary>
-    public int DiscoveryRetries { get; set; } = 3;
-
-    /// <summary>
-    /// Number of data retrieval retry attempts (default: 3)
-    /// </summary>
-    public int DataRetries { get; set; } = 3;
-
-    /// <summary>
-    /// Delay between retry attempts in milliseconds (default: 1000)
-    /// </summary>
-    public int RetryDelay { get; set; } = 1000;
-
-    // ========== Output Settings ==========
-
-    /// <summary>
-    /// Suppress data output to console
-    /// </summary>
-    public bool Quiet { get; set; }
-
-    // ========== Database Settings ==========
-
-    /// <summary>
-    /// Path to database storage root directory
-    /// </summary>
-    public string? StoragePath { get; set; }
-
-    /// <summary>
-    /// Database user name (default: SYSDBA)
-    /// </summary>
-    public string? DbUser { get; set; } = "SYSDBA";
-
-    /// <summary>
-    /// Database password (default: masterkey)
-    /// </summary>
-    public string? DbPassword { get; set; } = "masterkey";
-
-    // ========== Continuous Mode Settings ==========
+    #region Public Properties
 
     /// <summary>
     /// Enable continuous data collection mode
@@ -97,16 +14,108 @@ public class CommandLineOptions {
     public bool Continuous { get; set; }
 
     /// <summary>
-    /// Interval between data collections in seconds (default: 3)
+    /// Number of data retrieval retry attempts (default: 3)
     /// </summary>
-    public int Interval { get; set; } = 3;
+    public int DataRetries { get; set; } = 3;
+
+    /// <summary>
+    /// Database password (default: masterkey)
+    /// </summary>
+    public string? DbPassword { get; set; } = "masterkey";
+
+    /// <summary>
+    /// Database user name (default: SYSDBA)
+    /// </summary>
+    public string? DbUser { get; set; } = "SYSDBA";
+
+    /// <summary>
+    /// Number of discovery retry attempts (default: 3)
+    /// </summary>
+    public int DiscoveryRetries { get; set; } = 3;
 
     /// <summary>
     /// Delay in seconds after fatal error in continuous mode (default: 30)
     /// </summary>
     public int ErrorRetryDelay { get; set; } = 30;
 
+    // ========== Continuous Mode Settings ==========
+    /// <summary>
+    /// Interval between data collections in seconds (default: 3)
+    /// </summary>
+    public int Interval { get; set; } = 3;
+
+    /// <summary>
+    /// ObservingConditions device IP address
+    /// </summary>
+    public string? OcAddress { get; set; }
+
+    /// <summary>
+    /// ObservingConditions device number (default: 0)
+    /// </summary>
+    public int OcDeviceNumber { get; set; } = 0;
+
+    /// <summary>
+    /// ObservingConditions device name for discovery
+    /// </summary>
+    public string? OcName { get; set; }
+    /// <summary>
+    /// ObservingConditions device port
+    /// </summary>
+    public int? OcPort { get; set; }
+    // ========== SafetyMonitor Device ==========
+
+    /// <summary>
+    /// Check if ObservingConditions uses discovery (name-based)
+    /// </summary>
+    public bool OcUsesDiscovery => !string.IsNullOrWhiteSpace(OcName);
+
+    /// <summary>
+    /// Suppress data output to console
+    /// </summary>
+    public bool Quiet { get; set; }
+
+    // ========== Retry Settings ==========
+    /// <summary>
+    /// Delay between retry attempts in milliseconds (default: 1000)
+    /// </summary>
+    public int RetryDelay { get; set; } = 1000;
+
+    /// <summary>
+    /// SafetyMonitor device IP address
+    /// </summary>
+    public string? SmAddress { get; set; }
+
+    /// <summary>
+    /// SafetyMonitor device number (default: 0)
+    /// </summary>
+    public int SmDeviceNumber { get; set; } = 0;
+
+    /// <summary>
+    /// SafetyMonitor device name for discovery
+    /// </summary>
+    public string? SmName { get; set; }
+    /// <summary>
+    /// SafetyMonitor device port
+    /// </summary>
+    public int? SmPort { get; set; }
+    // ========== Output Settings ==========
+    // ========== Database Settings ==========
+
+    /// <summary>
+    /// Check if SafetyMonitor uses discovery (name-based)
+    /// </summary>
+    public bool SmUsesDiscovery => !string.IsNullOrWhiteSpace(SmName);
+
+    /// <summary>
+    /// Path to database storage root directory
+    /// </summary>
+    public string? StoragePath { get; set; }
+
+    #endregion Public Properties
+
     // ========== Validation Methods ==========
+
+    #region Public Methods
 
     /// <summary>
     /// Validate that ObservingConditions device configuration is valid
@@ -152,13 +161,5 @@ public class CommandLineOptions {
         return true;
     }
 
-    /// <summary>
-    /// Check if ObservingConditions uses discovery (name-based)
-    /// </summary>
-    public bool OcUsesDiscovery => !string.IsNullOrWhiteSpace(OcName);
-
-    /// <summary>
-    /// Check if SafetyMonitor uses discovery (name-based)
-    /// </summary>
-    public bool SmUsesDiscovery => !string.IsNullOrWhiteSpace(SmName);
+    #endregion Public Methods
 }

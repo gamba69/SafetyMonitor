@@ -1,7 +1,7 @@
 using ASCOM.Alpaca.Clients;
 using ASCOM.Alpaca.Discovery;
-using ASCOM.Common.DeviceInterfaces;
 using ASCOM.Common;
+using ASCOM.Common.DeviceInterfaces;
 using SafetyMonitorData.Configuration;
 using SafetyMonitorData.Utilities;
 
@@ -12,7 +12,14 @@ namespace SafetyMonitorData.Services;
 /// </summary>
 public class DeviceConnectionService(
     CommandLineOptions options) {
+
+    #region Private Fields
+
     private readonly CommandLineOptions _options = options;
+
+    #endregion Private Fields
+
+    #region Public Methods
 
     /// <summary>
     /// Connect to ObservingConditions device
@@ -54,6 +61,95 @@ public class DeviceConnectionService(
                 _options.SmDeviceNumber,
                 cancellationToken);
         }
+    }
+
+    #endregion Public Methods
+
+    #region Private Methods
+
+    /// <summary>
+    /// Create Alpaca client for the specified device type
+    /// </summary>
+    private static T CreateClient<T>(DeviceTypes deviceType, string host, int port, int deviceNumber) where T : IAscomDevice {
+        // Create client configuration (default settings)
+        var config = new AlpacaConfiguration {
+            IpAddressString = host,
+            PortNumber = port,
+            RemoteDeviceNumber = deviceNumber
+        };
+
+        IAscomDevice client = deviceType switch {
+            DeviceTypes.ObservingConditions => new AlpacaObservingConditions(config),
+            DeviceTypes.SafetyMonitor => new AlpacaSafetyMonitor(config),
+            _ => throw new ArgumentException($"Unsupported device type: {deviceType}")
+        };
+
+        return (T)client;
+    }
+
+    /// <summary>
+    /// Perform Alpaca discovery to find a device using AlpacaDiscovery static methods
+    /// </summary>
+    private static async Task<AscomDevice?> DiscoverDeviceAsync(
+        string deviceName,
+        DeviceTypes deviceType,
+        CancellationToken cancellationToken) {
+        // Use static discovery method from AlpacaDiscovery class
+        // Discovery duration default is 2 seconds, which should be sufficient
+        var devices = await AlpacaDiscovery.GetAscomDevicesAsync(
+            deviceTypes: deviceType,
+            discoveryPort: 32227,
+            discoveryDuration: 2.0,
+            cancellationToken: cancellationToken);
+
+        // Find matching device by name
+        var matchingDevice = devices.FirstOrDefault(d =>
+            d.AscomDeviceName.Equals(deviceName, StringComparison.OrdinalIgnoreCase));
+
+        return matchingDevice;
+    }
+
+    /// <summary>
+    /// Connect to device by address and port
+    /// </summary>
+    private async Task<T> ConnectByAddressAsync<T>(
+        string address,
+        int port,
+        DeviceTypes deviceType,
+        int deviceNumber,
+        CancellationToken cancellationToken) where T : IAscomDevice {
+        ConsoleOutput.Info($"Connecting to {deviceType} device at {address}:{port}...");
+
+        var client = CreateClient<T>(deviceType, address, port, deviceNumber);
+        await ConnectClientAsync(client, cancellationToken);
+
+        return client;
+    }
+
+    /// <summary>
+    /// Connect to the device with retry logic
+    /// </summary>
+    private async Task ConnectClientAsync(IAscomDevice client, CancellationToken cancellationToken) {
+        await RetryPolicy.ExecuteAsync(
+            async () => {
+                // Set Connected property
+                client.Connected = true;
+
+                // Verify connection
+                if (!client.Connected) {
+                    throw new Exception("Failed to set Connected = true");
+                }
+
+                ConsoleOutput.Info($"Successfully connected to {client.Name}");
+
+                return true;
+            },
+            _options.DataRetries,
+            TimeSpan.FromMilliseconds(_options.RetryDelay),
+            (attempt, ex) => {
+                ConsoleOutput.Warning($"Connection attempt {attempt}/{_options.DataRetries} failed: {ex.Message}");
+            },
+            cancellationToken);
     }
 
     /// <summary>
@@ -102,88 +198,5 @@ public class DeviceConnectionService(
         return client;
     }
 
-    /// <summary>
-    /// Connect to device by address and port
-    /// </summary>
-    private async Task<T> ConnectByAddressAsync<T>(
-        string address,
-        int port,
-        DeviceTypes deviceType,
-        int deviceNumber,
-        CancellationToken cancellationToken) where T : IAscomDevice {
-        ConsoleOutput.Info($"Connecting to {deviceType} device at {address}:{port}...");
-
-        var client = CreateClient<T>(deviceType, address, port, deviceNumber);
-        await ConnectClientAsync(client, cancellationToken);
-
-        return client;
-    }
-
-    /// <summary>
-    /// Perform Alpaca discovery to find a device using AlpacaDiscovery static methods
-    /// </summary>
-    private static async Task<AscomDevice?> DiscoverDeviceAsync(
-        string deviceName,
-        DeviceTypes deviceType,
-        CancellationToken cancellationToken) {
-        // Use static discovery method from AlpacaDiscovery class
-        // Discovery duration default is 2 seconds, which should be sufficient
-        var devices = await AlpacaDiscovery.GetAscomDevicesAsync(
-            deviceTypes: deviceType,
-            discoveryPort: 32227,
-            discoveryDuration: 2.0,
-            cancellationToken: cancellationToken);
-
-        // Find matching device by name
-        var matchingDevice = devices.FirstOrDefault(d =>
-            d.AscomDeviceName.Equals(deviceName, StringComparison.OrdinalIgnoreCase));
-
-        return matchingDevice;
-    }
-
-    /// <summary>
-    /// Create Alpaca client for the specified device type
-    /// </summary>
-    private static T CreateClient<T>(DeviceTypes deviceType, string host, int port, int deviceNumber) where T : IAscomDevice {
-        // Create client configuration (default settings)
-        var config = new AlpacaConfiguration {
-            IpAddressString = host,
-            PortNumber = port,
-            RemoteDeviceNumber = deviceNumber
-        };
-
-        IAscomDevice client = deviceType switch {
-            DeviceTypes.ObservingConditions => new AlpacaObservingConditions(config),
-            DeviceTypes.SafetyMonitor => new AlpacaSafetyMonitor(config),
-            _ => throw new ArgumentException($"Unsupported device type: {deviceType}")
-        };
-
-        return (T)client;
-    }
-
-    /// <summary>
-    /// Connect to the device with retry logic
-    /// </summary>
-    private async Task ConnectClientAsync(IAscomDevice client, CancellationToken cancellationToken) {
-        await RetryPolicy.ExecuteAsync(
-            async () => {
-                // Set Connected property
-                client.Connected = true;
-
-                // Verify connection
-                if (!client.Connected) {
-                    throw new Exception("Failed to set Connected = true");
-                }
-
-                ConsoleOutput.Info($"Successfully connected to {client.Name}");
-
-                return true;
-            },
-            _options.DataRetries,
-            TimeSpan.FromMilliseconds(_options.RetryDelay),
-            (attempt, ex) => {
-                ConsoleOutput.Warning($"Connection attempt {attempt}/{_options.DataRetries} failed: {ex.Message}");
-            },
-            cancellationToken);
-    }
+    #endregion Private Methods
 }
