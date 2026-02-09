@@ -1,6 +1,7 @@
 using DataStorage.Models;
 using MaterialSkin;
 using SafetyMonitorView.Models;
+using System.Collections;
 
 namespace SafetyMonitorView.Forms;
 
@@ -177,14 +178,20 @@ public class ChartTileEditorForm : Form {
             Width = 140,
             DataSource = Enum.GetValues<MetricType>().Select(m => new { Value = m, Display = m.GetDisplayName() }).ToList(),
             DisplayMember = "Display",
-            ValueMember = "Value"
+            ValueMember = "Value",
+            ValueType = typeof(MetricType)
         });
 
         _metricsGrid.Columns.Add(new DataGridViewComboBoxColumn {
             Name = "Function",
             HeaderText = "Aggregation",
             Width = 100,
-            DataSource = Enum.GetValues<AggregationFunction>().ToList()
+            DataSource = Enum.GetValues<AggregationFunction>()
+                .Select(f => new { Value = f, Display = f.ToString() })
+                .ToList(),
+            DisplayMember = "Display",
+            ValueMember = "Value",
+            ValueType = typeof(AggregationFunction)
         });
 
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Label", HeaderText = "Label", Width = 100 });
@@ -194,6 +201,7 @@ public class ChartTileEditorForm : Form {
 
         _metricsGrid.CellClick += MetricsGrid_CellClick;
         _metricsGrid.CellFormatting += MetricsGrid_CellFormatting;
+        _metricsGrid.DataError += MetricsGrid_DataError;
         mainLayout.Controls.Add(_metricsGrid, 0, 2);
 
         // Row 3: Add/Remove buttons
@@ -320,6 +328,51 @@ public class ChartTileEditorForm : Form {
         }
     }
 
+    private void MetricsGrid_DataError(object? sender, DataGridViewDataErrorEventArgs e) {
+        if (e.RowIndex < 0 || e.ColumnIndex < 0) {
+            return;
+        }
+
+        if (e.Context.HasFlag(DataGridViewDataErrorContexts.Commit)) {
+            e.ThrowException = false;
+            return;
+        }
+
+        if (_metricsGrid.Columns[e.ColumnIndex] is DataGridViewComboBoxColumn comboColumn) {
+            var cellValue = _metricsGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value;
+            if (cellValue is string rawValue && comboColumn.ValueType?.IsEnum == true) {
+                if (Enum.TryParse(comboColumn.ValueType, rawValue, true, out var parsed)) {
+                    _metricsGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = parsed;
+                    e.ThrowException = false;
+                    return;
+                }
+            }
+
+            if (e.Context.HasFlag(DataGridViewDataErrorContexts.Formatting)) {
+                var fallback = GetComboBoxFallbackValue(comboColumn);
+                if (fallback != null) {
+                    _metricsGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = fallback;
+                }
+            }
+        }
+
+        e.ThrowException = false;
+    }
+
+    private static object? GetComboBoxFallbackValue(DataGridViewComboBoxColumn column) {
+        if (!string.IsNullOrWhiteSpace(column.ValueMember) && column.DataSource is IEnumerable source) {
+            var first = source.Cast<object>().FirstOrDefault();
+            if (first != null) {
+                var property = first.GetType().GetProperty(column.ValueMember);
+                if (property != null) {
+                    return property.GetValue(first);
+                }
+            }
+        }
+
+        return column.Items.Count > 0 ? column.Items[0] : null;
+    }
+
     private void RemoveMetricButton_Click(object? sender, EventArgs e) {
         if (_metricsGrid.SelectedRows.Count > 0) {
             foreach (DataGridViewRow row in _metricsGrid.SelectedRows) {
@@ -383,7 +436,7 @@ public class ChartTileEditorForm : Form {
 
     private void LoadPeriodPresets() {
         _periodComboBox.Items.Clear();
-        _periodPresets = ChartPeriodPresetStore.GetPresetItems().ToList();
+        _periodPresets = [.. ChartPeriodPresetStore.GetPresetItems()];
         foreach (var preset in _periodPresets) {
             _periodComboBox.Items.Add(preset.Label);
         }

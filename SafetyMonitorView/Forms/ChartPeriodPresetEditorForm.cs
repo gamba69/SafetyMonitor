@@ -177,7 +177,7 @@ public class ChartPeriodPresetEditorForm : Form {
         _moveUpButton.Click += (s, e) => MoveSelectedRow(-1);
         editButtonsPanel.Controls.Add(_moveUpButton);
 
-        _moveDownButton = new Button { Text = "Move Down", Width = 90, Height = 30, Font = normalFont };
+        _moveDownButton = new Button { Text = "Move Dn", Width = 90, Height = 30, Font = normalFont };
         _moveDownButton.Click += (s, e) => MoveSelectedRow(1);
         editButtonsPanel.Controls.Add(_moveDownButton);
 
