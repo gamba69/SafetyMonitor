@@ -158,45 +158,52 @@ public class ChartPeriodPresetEditorForm : Form {
 
         mainLayout.Controls.Add(_presetGrid, 0, 1);
 
-        var editButtonsPanel = new FlowLayoutPanel {
+        var editButtonsPanel = new TableLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
-            WrapContents = false,
-            Margin = new Padding(0, 5, 0, 10)
+            ColumnCount = 4,
+            RowCount = 1,
+            Margin = new Padding(0, 5, 0, 10),
+            GrowStyle = TableLayoutPanelGrowStyle.FixedSize
         };
+        editButtonsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        editButtonsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        editButtonsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        editButtonsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-        _addButton = new Button { Text = "Add", Width = 90, Height = 30, Font = normalFont, Margin = new Padding(0, 0, 10, 0) };
-        _addButton.Click += AddPresetButton_Click;
-        editButtonsPanel.Controls.Add(_addButton);
+        _addButton = new Button { Text = "Add", Width = 90, Height = 30, Font = normalFont, Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Left }; _addButton.Click += AddPresetButton_Click;
+        editButtonsPanel.Controls.Add(_addButton, 0, 0);
 
-        _removeButton = new Button { Text = "Remove", Width = 90, Height = 30, Font = normalFont, BackColor = Color.IndianRed, Margin = new Padding(0, 0, 10, 0) };
+        _removeButton = new Button { Text = "Remove", Width = 90, Height = 30, Font = normalFont, BackColor = Color.IndianRed, Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Left };
         _removeButton.Click += RemovePresetButton_Click;
-        editButtonsPanel.Controls.Add(_removeButton);
+        editButtonsPanel.Controls.Add(_removeButton, 1, 0);
 
-        _moveUpButton = new Button { Text = "Move Up", Width = 90, Height = 30, Font = normalFont, Margin = new Padding(0, 0, 10, 0) };
+        _moveUpButton = new Button { Text = "Move Up", Width = 90, Height = 30, Font = normalFont, Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Left };
         _moveUpButton.Click += (s, e) => MoveSelectedRow(-1);
-        editButtonsPanel.Controls.Add(_moveUpButton);
+        editButtonsPanel.Controls.Add(_moveUpButton, 2, 0);
 
-        _moveDownButton = new Button { Text = "Move Dn", Width = 90, Height = 30, Font = normalFont };
+        _moveDownButton = new Button { Text = "Move Down", Width = 90, Height = 30, Font = normalFont, Anchor = AnchorStyles.Left };
         _moveDownButton.Click += (s, e) => MoveSelectedRow(1);
-        editButtonsPanel.Controls.Add(_moveDownButton);
+        editButtonsPanel.Controls.Add(_moveDownButton, 3, 0);
 
         mainLayout.Controls.Add(editButtonsPanel, 0, 2);
 
-        var buttonPanel = new FlowLayoutPanel {
+        var buttonPanel = new TableLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.RightToLeft,
-            Margin = new Padding(0, 10, 0, 0)
+            ColumnCount = 3,
+            RowCount = 1,
+            Margin = new Padding(0, 10, 0, 0),
+            GrowStyle = TableLayoutPanelGrowStyle.FixedSize
         };
 
-        _cancelButton = new Button { Text = "Cancel", Width = 90, Height = 35, Font = normalFont, Margin = new Padding(0) };
+        _cancelButton = new Button { Text = "Cancel", Width = 90, Height = 35, Font = normalFont, Margin = new Padding(0), Anchor = AnchorStyles.Right };
         _cancelButton.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
-        buttonPanel.Controls.Add(_cancelButton);
+        buttonPanel.Controls.Add(_cancelButton, 2, 0);
 
-        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = new Font("Roboto", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
+        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = new Font("Roboto", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Right };
         _saveButton.Click += SaveButton_Click;
-        buttonPanel.Controls.Add(_saveButton);
+        buttonPanel.Controls.Add(_saveButton, 1, 0);
 
         mainLayout.Controls.Add(buttonPanel, 0, 3);
 
