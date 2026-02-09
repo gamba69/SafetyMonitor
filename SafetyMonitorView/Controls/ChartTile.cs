@@ -97,11 +97,11 @@ public class ChartTile : Panel {
                 }
             }
         } else if (distinctMetrics.Count == 1) {
-            // Single metric — add a unit label to the default left axis
-            var unit = distinctMetrics[0].GetUnit();
-            if (!string.IsNullOrEmpty(unit)) {
-                _plot.Plot.Axes.Left.Label.Text = unit;
-            }
+            var metric = distinctMetrics[0];
+            var labelText = BuildAxisLabel(metric);
+            var representativeColor = ScottPlot.Color.FromColor(
+                _config.MetricAggregations.First(a => a.Metric == metric).Color);
+            StyleAxis(_plot.Plot.Axes.Left, labelText, representativeColor);
         }
 
         foreach (var agg in _config.MetricAggregations) {
@@ -111,7 +111,9 @@ public class ChartTile : Panel {
             if (data.Count == 0) {
                 continue;
             }
-            var timestamps = data.Select(d => d.Timestamp.ToOADate()).ToArray();
+            var timestamps = data.Select(d => DateTime.SpecifyKind(d.Timestamp, DateTimeKind.Utc)
+                .ToLocalTime()
+                .ToOADate()).ToArray();
             var values = data.Select(d => agg.Metric.GetValue(d) ?? double.NaN).ToArray();
             var validData = timestamps
                 .Zip(values, (t, v) => new { Time = t, Value = v })
@@ -439,10 +441,6 @@ public class ChartTile : Panel {
             .Select(a => a.Metric)
             .Distinct()
             .ToList();
-
-        if (distinctMetrics.Count <= 1) {
-            return;
-        }
 
         for (int i = 0; i < distinctMetrics.Count; i++) {
             var metric = distinctMetrics[i];
