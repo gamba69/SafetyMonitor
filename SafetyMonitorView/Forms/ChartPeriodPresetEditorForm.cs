@@ -15,6 +15,7 @@ public class ChartPeriodPresetEditorForm : Form {
     private Button _moveUpButton = null!;
     private Button _removeButton = null!;
     private Button _saveButton = null!;
+    private readonly List<ChartPeriodUnit> _units = Enum.GetValues<ChartPeriodUnit>().ToList();
 
     #endregion Private Fields
 
@@ -151,8 +152,9 @@ public class ChartPeriodPresetEditorForm : Form {
             Name = "Unit",
             HeaderText = "Unit",
             Width = 120,
-            DataSource = Enum.GetValues<ChartPeriodUnit>().ToList()
+            DataSource = _units
         });
+        _presetGrid.DataError += (_, e) => { e.ThrowException = false; };
 
         mainLayout.Controls.Add(_presetGrid, 0, 1);
 
@@ -205,7 +207,8 @@ public class ChartPeriodPresetEditorForm : Form {
     private void LoadPresets() {
         _presetGrid.Rows.Clear();
         foreach (var preset in _presets) {
-            _presetGrid.Rows.Add(preset.Name, preset.Value, preset.Unit);
+            var unit = _units.Contains(preset.Unit) ? preset.Unit : ChartPeriodUnit.Hours;
+            _presetGrid.Rows.Add(preset.Name, preset.Value, unit);
         }
     }
 

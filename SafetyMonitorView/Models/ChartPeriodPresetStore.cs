@@ -110,10 +110,13 @@ public static class ChartPeriodPresetStore {
                 if (preset == null || string.IsNullOrWhiteSpace(preset.Name) || preset.Value <= 0) {
                     continue;
                 }
+                var unit = Enum.IsDefined(typeof(ChartPeriodUnit), preset.Unit)
+                    ? preset.Unit
+                    : ChartPeriodUnit.Hours;
                 list.Add(new ChartPeriodPresetDefinition {
                     Name = preset.Name.Trim(),
                     Value = preset.Value,
-                    Unit = preset.Unit
+                    Unit = unit
                 });
             }
         }
