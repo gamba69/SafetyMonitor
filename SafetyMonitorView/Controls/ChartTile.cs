@@ -139,7 +139,10 @@ public class ChartTile : Panel {
         ApplyThemeColors();
         if (_config.ShowLegend && _config.MetricAggregations.Count > 1) {
             _plot.Plot.ShowLegend();
+        } else {
+            _plot.Plot.HideLegend();
         }
+
         if (_config.ShowGrid) {
             var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
             _plot.Plot.Grid.MajorLineColor = ScottPlot.Color.FromColor(
@@ -255,10 +258,16 @@ public class ChartTile : Panel {
             _plot.Plot.FigureBackground.Color = ScottPlot.Color.FromColor(Color.White);
             _plot.Plot.DataBackground.Color = ScottPlot.Color.FromColor(Color.White);
             _plot.Plot.Axes.Color(ScottPlot.Color.FromColor(Color.Black));
+            _plot.Plot.Legend.BackgroundColor = ScottPlot.Color.FromColor(Color.White);
+            _plot.Plot.Legend.FontColor = ScottPlot.Color.FromColor(Color.Black);
+            _plot.Plot.Legend.OutlineColor = ScottPlot.Color.FromColor(Color.LightGray);
         } else {
             _plot.Plot.FigureBackground.Color = ScottPlot.Color.FromColor(Color.FromArgb(35, 47, 52));
             _plot.Plot.DataBackground.Color = ScottPlot.Color.FromColor(Color.FromArgb(35, 47, 52));
             _plot.Plot.Axes.Color(ScottPlot.Color.FromColor(Color.White));
+            _plot.Plot.Legend.BackgroundColor = ScottPlot.Color.FromColor(Color.FromArgb(46, 61, 66));
+            _plot.Plot.Legend.FontColor = ScottPlot.Color.FromColor(Color.White);
+            _plot.Plot.Legend.OutlineColor = ScottPlot.Color.FromColor(Color.FromArgb(80, 102, 110));
         }
 
         // Axes.Color() resets ALL axes to the same color,
