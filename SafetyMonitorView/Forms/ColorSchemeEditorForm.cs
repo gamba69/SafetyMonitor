@@ -15,6 +15,7 @@ public class ColorSchemeEditorForm : Form {
     private Button _duplicateButton = null!;
     private CheckBox _gradientCheckBox = null!;
     private bool _isDirty;
+    private bool _isLoading;
     private TextBox _nameTextBox = null!;
     private Button _newButton = null!;
     private Panel _previewPanel = null!;
@@ -63,7 +64,7 @@ public class ColorSchemeEditorForm : Form {
     private void AddStop_Click(object? sender, EventArgs e) {
         var rowIdx = _stopsGrid.Rows.Add("", "", "", "");
         _stopsGrid.Rows[rowIdx].Tag = Color.Gray;
-        _isDirty = true;
+        UpdateDirtyState();
     }
 
     private void ApplyTheme() {
@@ -211,10 +212,10 @@ public class ColorSchemeEditorForm : Form {
         var namePanel = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 35, WrapContents = false, AutoSize = false };
         namePanel.Controls.Add(new Label { Text = "Name:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 6, 5, 0) });
         _nameTextBox = new TextBox { Width = 250, Font = normalFont, Margin = new Padding(0, 2, 15, 0) };
-        _nameTextBox.TextChanged += (s, e) => _isDirty = true;
+        _nameTextBox.TextChanged += (s, e) => UpdateDirtyState();
         namePanel.Controls.Add(_nameTextBox);
         _gradientCheckBox = new CheckBox { Text = "Gradient interpolation", Font = normalFont, AutoSize = true, Margin = new Padding(0, 4, 0, 0) };
-        _gradientCheckBox.CheckedChanged += (s, e) => { _isDirty = true; UpdatePreview(); };
+        _gradientCheckBox.CheckedChanged += (s, e) => { UpdateDirtyState(); UpdatePreview(); };
         namePanel.Controls.Add(_gradientCheckBox);
 
         var stopsLabel = new Label { Text = "Color Stops:", Font = titleFont, Dock = DockStyle.Top, AutoSize = true, Margin = new Padding(0, 5, 0, 3) };
@@ -234,8 +235,8 @@ public class ColorSchemeEditorForm : Form {
         };
         SetupGridColumns();
         _stopsGrid.CellClick += StopsGrid_CellClick;
-        _stopsGrid.CellValueChanged += (s, e) => { _isDirty = true; UpdatePreview(); };
-        _stopsGrid.CellEndEdit += (s, e) => { _isDirty = true; UpdatePreview(); };
+        _stopsGrid.CellValueChanged += (s, e) => { UpdateDirtyState(); UpdatePreview(); };
+        _stopsGrid.CellEndEdit += (s, e) => { UpdateDirtyState(); UpdatePreview(); };
 
         var gridButtons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 38, FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(0, 3, 0, 3) };
         var addStopBtn = new Button { Text = "Add Stop", Width = 90, Height = 30, Font = normalFont };
@@ -296,6 +297,7 @@ public class ColorSchemeEditorForm : Form {
     }
 
     private void LoadSchemeToEditor(ColorScheme scheme) {
+        _isLoading = true;
         _nameTextBox.Text = scheme.Name;
         _nameTextBox.ReadOnly = ColorSchemeService.IsBuiltIn(scheme.Name);
         _gradientCheckBox.Checked = scheme.IsGradient;
@@ -310,6 +312,7 @@ public class ColorSchemeEditorForm : Form {
             _stopsGrid.Rows[rowIdx].Tag = stop.Color;
         }
         UpdatePreview();
+        _isLoading = false;
     }
 
     private void MoveDownStop_Click(object? sender, EventArgs e) {
@@ -338,7 +341,7 @@ public class ColorSchemeEditorForm : Form {
         _stopsGrid.Rows.Insert(newIdx, values);
         _stopsGrid.Rows[newIdx].Tag = tag;
         _stopsGrid.CurrentCell = _stopsGrid.Rows[newIdx].Cells[0];
-        _isDirty = true;
+        UpdateDirtyState();
         UpdatePreview();
     }
 
@@ -442,7 +445,7 @@ public class ColorSchemeEditorForm : Form {
         }
 
         _stopsGrid.Rows.Remove(_stopsGrid.CurrentRow);
-        _isDirty = true;
+        UpdateDirtyState();
         UpdatePreview();
     }
 
@@ -546,7 +549,7 @@ public class ColorSchemeEditorForm : Form {
             if (ThemedColorPicker.ShowPicker(currentColor, out var pickedColor) == DialogResult.OK) {
                 row.Tag = pickedColor;
                 _stopsGrid.InvalidateRow(e.RowIndex);
-                _isDirty = true;
+                UpdateDirtyState();
                 UpdatePreview();
             }
         }
@@ -567,6 +570,56 @@ public class ColorSchemeEditorForm : Form {
 
     private void UpdatePreview() {
         _previewPanel.Invalidate();
+    }
+
+    private void UpdateDirtyState() {
+        if (_isLoading) {
+            return;
+        }
+
+        if (_currentScheme == null) {
+            _isDirty = false;
+            return;
+        }
+
+        _isDirty = !AreSchemesEqual(_currentScheme, ReadSchemeFromEditor());
+    }
+
+    private static bool AreSchemesEqual(ColorScheme original, ColorScheme updated) {
+        if (!string.Equals(original.Name?.Trim() ?? "", updated.Name?.Trim() ?? "", StringComparison.Ordinal)) {
+            return false;
+        }
+
+        if (original.IsGradient != updated.IsGradient) {
+            return false;
+        }
+
+        if (original.Stops.Count != updated.Stops.Count) {
+            return false;
+        }
+
+        for (int i = 0; i < original.Stops.Count; i++) {
+            var originalStop = original.Stops[i];
+            var updatedStop = updated.Stops[i];
+
+            if (originalStop.MinValue != updatedStop.MinValue) {
+                return false;
+            }
+
+            if (originalStop.MaxValue != updatedStop.MaxValue) {
+                return false;
+            }
+
+            if (originalStop.Color.ToArgb() != updatedStop.Color.ToArgb()) {
+                return false;
+            }
+
+            if (!string.Equals(originalStop.Description ?? "", updatedStop.Description ?? "", StringComparison.Ordinal)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     #endregion Private Methods
