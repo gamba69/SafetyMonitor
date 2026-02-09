@@ -105,7 +105,7 @@ public class DashboardPanel : TableLayoutPanel {
         }
     }
 
-    private void OnChartPeriodChanged(ChartTile source, ChartPeriod period) {
+    private void OnChartPeriodChanged(ChartTile source, ChartPeriod period, TimeSpan? customDuration) {
         if (!_linkChartPeriods) {
             return;
         }
@@ -114,7 +114,7 @@ public class DashboardPanel : TableLayoutPanel {
             if (ReferenceEquals(chartTile, source)) {
                 continue;
             }
-            chartTile.SetPeriod(period);
+            chartTile.SetPeriod(period, customDuration);
         }
     }
 

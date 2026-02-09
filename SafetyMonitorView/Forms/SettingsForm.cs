@@ -1,4 +1,5 @@
 using MaterialSkin;
+using SafetyMonitorView.Models;
 
 namespace SafetyMonitorView.Forms;
 
@@ -8,18 +9,25 @@ public class SettingsForm : Form {
     private Button _browseButton = null!;
     private Button _cancelButton = null!;
     private Label _connectionStatusLabel = null!;
+    private Button _editPresetsButton = null!;
     private NumericUpDown _refreshIntervalNumeric = null!;
     private Button _saveButton = null!;
     private TextBox _storagePathTextBox = null!;
     private Button _testConnectionButton = null!;
+    private List<ChartPeriodPresetDefinition> _chartPeriodPresets = [];
 
     #endregion Private Fields
 
     #region Public Constructors
 
-    public SettingsForm(string currentStoragePath, int currentRefreshInterval) {
+    public SettingsForm(string currentStoragePath, int currentRefreshInterval, IEnumerable<ChartPeriodPresetDefinition> chartPeriodPresets) {
         StoragePath = currentStoragePath;
         RefreshInterval = currentRefreshInterval;
+        _chartPeriodPresets = chartPeriodPresets.Select(p => new ChartPeriodPresetDefinition {
+            Name = p.Name,
+            Value = p.Value,
+            Unit = p.Unit
+        }).ToList();
 
         InitializeComponent();
         ApplyTheme();
@@ -32,6 +40,7 @@ public class SettingsForm : Form {
 
     public int RefreshInterval { get; private set; } = 5;
     public string StoragePath { get; private set; } = "";
+    public List<ChartPeriodPresetDefinition> ChartPeriodPresets { get; private set; } = [];
 
     #endregion Public Properties
 
@@ -103,6 +112,13 @@ public class SettingsForm : Form {
         Close();
     }
 
+    private void EditPresetsButton_Click(object? sender, EventArgs e) {
+        using var editor = new ChartPeriodPresetEditorForm((IEnumerable<Models.ChartPeriodPresetDefinition>)_chartPeriodPresets);
+        if (editor.ShowDialog(this) == DialogResult.OK) {
+            _chartPeriodPresets = editor.Presets;
+        }
+    }
+
     private void InitializeComponent() {
         Text = "Settings";
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -120,7 +136,7 @@ public class SettingsForm : Form {
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 7,
+            RowCount = 9,
             AutoSize = true
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -129,8 +145,10 @@ public class SettingsForm : Form {
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 2: Test Connection + Status
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 3: Refresh Interval label
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Refresh Interval
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 5: Spacer
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Buttons
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Presets label
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Presets button
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 7: Spacer
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 8: Buttons
 
         // Row 0: Storage Path label
         var storagePathLabel = new Label {
@@ -218,10 +236,31 @@ public class SettingsForm : Form {
         };
         mainLayout.Controls.Add(_refreshIntervalNumeric, 0, 4);
 
-        // Row 5: Spacer
-        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 5);
+        // Row 5: Presets label
+        var presetsLabel = new Label {
+            Text = "Chart Period Presets:",
+            Font = titleFont,
+            AutoSize = true,
+            Margin = new Padding(0, 5, 0, 5)
+        };
+        mainLayout.Controls.Add(presetsLabel, 0, 5);
 
-        // Row 6: Buttons
+        // Row 6: Presets button
+        _editPresetsButton = new Button {
+            Text = "Edit Presets...",
+            Width = 140,
+            Height = 30,
+            Font = normalFont,
+            Margin = new Padding(0, 0, 0, 10)
+        };
+        _editPresetsButton.Click += EditPresetsButton_Click;
+        mainLayout.Controls.Add(_editPresetsButton, 0, 6);
+
+        // Row 7: Spacer
+        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 7);
+
+
+        // Row 8: Buttons
         var buttonPanel = new FlowLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -249,12 +288,12 @@ public class SettingsForm : Form {
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
 
-        mainLayout.Controls.Add(buttonPanel, 0, 6);
+        mainLayout.Controls.Add(buttonPanel, 0, 8);
 
         Controls.Add(mainLayout);
 
         // Set form size
-        ClientSize = new Size(550, 320);
+        ClientSize = new Size(550, 380);
     }
     private void LoadSettings() {
         _storagePathTextBox.Text = StoragePath;
@@ -263,6 +302,11 @@ public class SettingsForm : Form {
     private void SaveButton_Click(object? sender, EventArgs e) {
         StoragePath = _storagePathTextBox.Text;
         RefreshInterval = (int)_refreshIntervalNumeric.Value;
+        ChartPeriodPresets = _chartPeriodPresets.Select(p => new ChartPeriodPresetDefinition {
+            Name = p.Name,
+            Value = p.Value,
+            Unit = p.Unit
+        }).ToList();
 
         DialogResult = DialogResult.OK;
         Close();

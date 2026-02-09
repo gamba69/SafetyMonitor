@@ -17,6 +17,7 @@ public class ChartTileEditorForm : Form {
     private DateTimePicker _endTimePicker = null!;
     private DataGridView _metricsGrid = null!;
     private ComboBox _periodComboBox = null!;
+    private List<ChartPeriodPreset> _periodPresets = [];
     private NumericUpDown _rowSpanNumeric = null!;
     private Button _saveButton = null!;
     private CheckBox _showGridCheckBox = null!;
@@ -207,8 +208,8 @@ public class ChartTileEditorForm : Form {
         // Row 4: Period + Custom End Time
         var periodPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = false, Margin = new Padding(0, 5, 0, 5) };
         periodPanel.Controls.Add(new Label { Text = "Period:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 5, 5, 0) });
-        _periodComboBox = new ComboBox { Width = 120, Font = normalFont, DropDownStyle = ComboBoxStyle.DropDownList, Margin = new Padding(0, 0, 15, 0) };
-        _periodComboBox.Items.AddRange(["15 Minutes", "1 Hour", "6 Hours", "24 Hours", "7 Days", "30 Days"]);
+        _periodComboBox = new ComboBox { Width = 140, Font = normalFont, DropDownStyle = ComboBoxStyle.DropDownList, Margin = new Padding(0, 0, 15, 0) };
+        LoadPeriodPresets();
         periodPanel.Controls.Add(_periodComboBox);
         _useCustomEndTimeCheckBox = new CheckBox { Text = "Custom End Time:", Font = normalFont, AutoSize = true, Margin = new Padding(10, 4, 5, 0) };
         _useCustomEndTimeCheckBox.CheckedChanged += (s, e) => _endTimePicker.Enabled = _useCustomEndTimeCheckBox.Checked;
@@ -263,7 +264,7 @@ public class ChartTileEditorForm : Form {
     }
     private void LoadConfig() {
         _titleTextBox.Text = _config.Title;
-        _periodComboBox.SelectedIndex = (int)_config.Period;
+        SetSelectedPeriodPreset();
 
         if (_config.CustomEndTime.HasValue) {
             _useCustomEndTimeCheckBox.Checked = true;
@@ -317,7 +318,14 @@ public class ChartTileEditorForm : Form {
     }
     private void SaveButton_Click(object? sender, EventArgs e) {
         _config.Title = _titleTextBox.Text;
-        _config.Period = (ChartPeriod)_periodComboBox.SelectedIndex;
+        if (_periodComboBox.SelectedIndex < 0 || _periodComboBox.SelectedIndex >= _periodPresets.Count) {
+            ThemedMessageBox.Show(this, "Please select a chart period preset.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        var selectedPreset = _periodPresets[_periodComboBox.SelectedIndex];
+        _config.Period = selectedPreset.Period;
+        _config.CustomPeriodDuration = selectedPreset.Period == ChartPeriod.Custom ? selectedPreset.Duration : null;
 
         _config.CustomEndTime = _useCustomEndTimeCheckBox.Checked ? _endTimePicker.Value : null;
 
@@ -358,6 +366,32 @@ public class ChartTileEditorForm : Form {
 
         DialogResult = DialogResult.OK;
         Close();
+    }
+
+    private void LoadPeriodPresets() {
+        _periodComboBox.Items.Clear();
+        _periodPresets = ChartPeriodPresetStore.GetPresetItems().ToList();
+        foreach (var preset in _periodPresets) {
+            _periodComboBox.Items.Add(preset.Label);
+        }
+    }
+
+    private void SetSelectedPeriodPreset() {
+        var index = ChartPeriodPresetStore.FindMatchingPresetIndex(
+            _config.CustomPeriodDuration, _config.Period, _periodPresets);
+        if (index >= 0) {
+            _periodComboBox.SelectedIndex = index;
+            return;
+        }
+
+        if (_config.CustomPeriodDuration.HasValue) {
+            var label = $"Custom ({ChartPeriodPresetStore.FormatDuration(_config.CustomPeriodDuration.Value)})";
+            _periodPresets.Add(new ChartPeriodPreset(label, _config.CustomPeriodDuration.Value, ChartPeriod.Custom));
+            _periodComboBox.Items.Add(label);
+            _periodComboBox.SelectedIndex = _periodPresets.Count - 1;
+        } else if (_periodComboBox.Items.Count > 0) {
+            _periodComboBox.SelectedIndex = 0;
+        }
     }
 
     #endregion Private Methods

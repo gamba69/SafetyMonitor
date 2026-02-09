@@ -38,6 +38,7 @@ public class ChartTileConfig : TileConfig {
     #region Public Properties
 
     public TimeSpan? CustomAggregationInterval { get; set; }
+    public TimeSpan? CustomPeriodDuration { get; set; }
     public DateTime? CustomEndTime { get; set; }
     public DateTime? CustomStartTime { get; set; }
     public List<MetricAggregation> MetricAggregations { get; set; } = [];

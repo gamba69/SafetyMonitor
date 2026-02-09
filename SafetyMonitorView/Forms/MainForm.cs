@@ -49,6 +49,11 @@ public class MainForm : MaterialForm {
 
         // Load settings BEFORE initializing UI
         _appSettings = _appSettingsService.LoadSettings();
+        if (_appSettings.ChartPeriodPresets == null || _appSettings.ChartPeriodPresets.Count == 0) {
+            _appSettings.ChartPeriodPresets = ChartPeriodPresetStore.CreateDefaultPresets();
+        }
+        ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
+
 
         // Apply theme from settings
         _skinManager.Theme = _appSettings.IsDarkTheme
@@ -554,11 +559,13 @@ public class MainForm : MaterialForm {
     }
 
     private void ShowSettings() {
-        using var settingsForm = new SettingsForm(_appSettings.StoragePath, _appSettings.RefreshInterval);
+        using var settingsForm = new SettingsForm(_appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ChartPeriodPresets);
         if (settingsForm.ShowDialog() == DialogResult.OK) {
             _appSettings.StoragePath = settingsForm.StoragePath;
             _appSettings.RefreshInterval = settingsForm.RefreshInterval;
+            _appSettings.ChartPeriodPresets = settingsForm.ChartPeriodPresets;
             _appSettingsService.SaveSettings(_appSettings);
+            ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
 
             _dataService = new DataService(_appSettings.StoragePath);
             UpdateStatusBar();

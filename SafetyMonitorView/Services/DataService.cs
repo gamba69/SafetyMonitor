@@ -45,13 +45,14 @@ public class DataService {
         ChartPeriod period,
         DateTime? customStart = null,
         DateTime? customEnd = null,
+        TimeSpan? customDuration = null,
         TimeSpan? aggregationInterval = null,
         AggregationFunction? aggregationFunction = null) {
         if (_storage == null) {
             return [];
         }
         try {
-            var (startTime, endTime) = GetPeriodRange(period, customStart, customEnd);
+            var (startTime, endTime) = GetPeriodRange(period, customStart, customEnd, customDuration);
             if (aggregationInterval.HasValue && aggregationFunction.HasValue) {
                 return [.. _storage.GetData(
                     startTime,
@@ -88,7 +89,8 @@ public class DataService {
     private static (DateTime start, DateTime end) GetPeriodRange(
         ChartPeriod period,
         DateTime? customStart,
-        DateTime? customEnd) {
+        DateTime? customEnd,
+        TimeSpan? customDuration) {
         var endTime = customEnd ?? DateTime.UtcNow;
         var startTime = period switch {
             ChartPeriod.Last15Minutes => endTime.AddMinutes(-15),
@@ -97,7 +99,7 @@ public class DataService {
             ChartPeriod.Last24Hours => endTime.AddHours(-24),
             ChartPeriod.Last7Days => endTime.AddDays(-7),
             ChartPeriod.Last30Days => endTime.AddDays(-30),
-            ChartPeriod.Custom => customStart ?? endTime.AddHours(-24),
+            ChartPeriod.Custom => customStart ?? (customDuration.HasValue ? endTime.Add(-customDuration.Value) : endTime.AddHours(-24)),
             _ => endTime.AddHours(-24)
         };
         return (startTime, endTime);

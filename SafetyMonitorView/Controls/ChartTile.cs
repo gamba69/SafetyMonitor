@@ -15,6 +15,7 @@ public class ChartTile : Panel {
     private readonly DataService _dataService;
     private readonly List<ScottPlot.IAxis> _extraAxes = [];
     private bool _initialized;
+    private List<ChartPeriodPreset> _periodPresets = [];
     private ComboBox? _periodSelector;
     private bool _suppressPeriodChange;
     private FormsPlot? _plot;
@@ -25,7 +26,7 @@ public class ChartTile : Panel {
 
     #region Public Events
 
-    public event Action<ChartTile, ChartPeriod>? PeriodChanged;
+    public event Action<ChartTile, ChartPeriod, TimeSpan?>? PeriodChanged;
 
     #endregion Public Events
 
@@ -113,7 +114,7 @@ public class ChartTile : Panel {
 
         foreach (var agg in _config.MetricAggregations) {
             var data = _dataService.GetChartData(
-                _config.Period, _config.CustomStartTime, _config.CustomEndTime,
+                _config.Period, _config.CustomStartTime, _config.CustomEndTime, _config.CustomPeriodDuration,
                 aggregationInterval, agg.Function);
             if (data.Count == 0) {
                 continue;
@@ -183,14 +184,13 @@ public class ChartTile : Panel {
         Invalidate(true);
     }
 
-    public void SetPeriod(ChartPeriod period, bool refreshData = true) {
+    public void SetPeriod(ChartPeriod period, TimeSpan? customDuration = null, bool refreshData = true) {
         _config.Period = period;
+        _config.CustomPeriodDuration = period == ChartPeriod.Custom ? customDuration : null;
         if (_periodSelector != null) {
             try {
                 _suppressPeriodChange = true;
-                if (_periodSelector.SelectedIndex != (int)period) {
-                    _periodSelector.SelectedIndex = (int)period;
-                }
+                SetSelectedPeriodPreset();
             } finally {
                 _suppressPeriodChange = false;
             }
@@ -228,6 +228,13 @@ public class ChartTile : Panel {
             _initialized = true;
             InitializeUI();
         }
+    }
+
+    protected override void Dispose(bool disposing) {
+        if (disposing) {
+            ChartPeriodPresetStore.PresetsChanged -= HandlePresetsChanged;
+        }
+        base.Dispose(disposing);
     }
 
     #endregion Protected Methods
@@ -381,16 +388,10 @@ public class ChartTile : Panel {
             ForeColor = fg
         };
         _periodSelector.DrawItem += PeriodSelector_DrawItem;
-        _periodSelector.Items.AddRange(["15 Minutes", "1 Hour", "6 Hours", "24 Hours", "7 Days", "30 Days"]);
-        _periodSelector.SelectedIndex = (int)_config.Period;
-        _periodSelector.SelectedIndexChanged += (s, e) => {
-            if (_suppressPeriodChange) {
-                return;
-            }
-            _config.Period = (ChartPeriod)_periodSelector.SelectedIndex;
-            RefreshData();
-            PeriodChanged?.Invoke(this, _config.Period);
-        };
+        LoadPeriodPresets();
+        SetSelectedPeriodPreset();
+        _periodSelector.SelectionChangeCommitted += (s, e) => UpdatePeriodFromSelection();
+        ChartPeriodPresetStore.PresetsChanged += HandlePresetsChanged;
 
         _topPanel.Controls.Add(_titleLabel);
         _topPanel.Controls.Add(_periodSelector);
@@ -455,6 +456,71 @@ public class ChartTile : Panel {
         var text = _periodSelector.Items[e.Index]?.ToString() ?? "";
         using var fgBrush = new SolidBrush(fg);
         e.Graphics.DrawString(text, e.Font ?? _periodSelector.Font, fgBrush, e.Bounds);
+    }
+
+    private void HandlePresetsChanged() {
+        if (_periodSelector == null) {
+            return;
+        }
+
+        if (_periodSelector.InvokeRequired) {
+            _periodSelector.BeginInvoke(HandlePresetsChanged);
+            return;
+        }
+
+        LoadPeriodPresets();
+        SetSelectedPeriodPreset();
+    }
+    
+    private void LoadPeriodPresets() {
+        if (_periodSelector == null) {
+            return;
+        }
+
+        _periodSelector.Items.Clear();
+        _periodPresets = ChartPeriodPresetStore.GetPresetItems().ToList();
+        foreach (var preset in _periodPresets) {
+            _periodSelector.Items.Add(preset.Label);
+        }
+    }
+
+    private void SetSelectedPeriodPreset() {
+        if (_periodSelector == null) {
+            return;
+        }
+
+        var index = ChartPeriodPresetStore.FindMatchingPresetIndex(
+            _config.CustomPeriodDuration, _config.Period, _periodPresets);
+        if (index >= 0) {
+            _periodSelector.SelectedIndex = index;
+            return;
+        }
+
+        if (_config.CustomPeriodDuration.HasValue) {
+            var label = $"Custom ({ChartPeriodPresetStore.FormatDuration(_config.CustomPeriodDuration.Value)})";
+            _periodPresets.Add(new ChartPeriodPreset(label, _config.CustomPeriodDuration.Value, ChartPeriod.Custom));
+            _periodSelector.Items.Add(label);
+            _periodSelector.SelectedIndex = _periodPresets.Count - 1;
+        } else if (_periodSelector.Items.Count > 0) {
+            _periodSelector.SelectedIndex = 0;
+        }
+    }
+
+    private void UpdatePeriodFromSelection() {
+        if (_periodSelector == null || _suppressPeriodChange) {
+            return;
+        }
+
+        var index = _periodSelector.SelectedIndex;
+        if (index < 0 || index >= _periodPresets.Count) {
+            return;
+        }
+
+        var preset = _periodPresets[index];
+        _config.Period = preset.Period;
+        _config.CustomPeriodDuration = preset.Period == ChartPeriod.Custom ? preset.Duration : null;
+        RefreshData();
+        PeriodChanged?.Invoke(this, _config.Period, _config.CustomPeriodDuration);
     }
 
     /// <summary>
