@@ -53,7 +53,7 @@ public class ChartTileEditorForm : Form {
     private void AddMetricButton_Click(object? sender, EventArgs e) {
         var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, 2.0f, false);
         _metricsGrid.Rows[newRow].Tag = Color.Blue;
-        _metricsGrid.Rows[newRow].Cells["Color"].Style.BackColor = Color.Blue;
+        _metricsGrid.InvalidateRow(newRow);
     }
 
     private void ApplyTheme() {
@@ -188,11 +188,12 @@ public class ChartTileEditorForm : Form {
         });
 
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Label", HeaderText = "Label", Width = 100 });
-        _metricsGrid.Columns.Add(new DataGridViewButtonColumn { Name = "Color", HeaderText = "Color", Width = 70, Text = "Choose", UseColumnTextForButtonValue = true });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Color", HeaderText = "Color", Width = 70, ReadOnly = true });
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "LineWidth", HeaderText = "Width", Width = 55 });
         _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "ShowMarkers", HeaderText = "Markers", Width = 65 });
 
         _metricsGrid.CellClick += MetricsGrid_CellClick;
+        _metricsGrid.CellFormatting += MetricsGrid_CellFormatting;
         mainLayout.Controls.Add(_metricsGrid, 0, 2);
 
         // Row 3: Add/Remove buttons
@@ -293,7 +294,7 @@ public class ChartTileEditorForm : Form {
         foreach (var agg in _config.MetricAggregations) {
             var rowIndex = _metricsGrid.Rows.Add(agg.Metric, agg.Function, agg.Label, null!, agg.LineWidth, agg.ShowMarkers);
             _metricsGrid.Rows[rowIndex].Tag = agg.Color;
-            _metricsGrid.Rows[rowIndex].Cells["Color"].Style.BackColor = agg.Color;
+            _metricsGrid.InvalidateRow(rowIndex); ;
         }
     }
     private void MetricsGrid_CellClick(object? sender, DataGridViewCellEventArgs e) {
@@ -302,7 +303,19 @@ public class ChartTileEditorForm : Form {
             var currentColor = _metricsGrid.Rows[e.RowIndex].Tag as Color? ?? Color.Blue;
             if (ThemedColorPicker.ShowPicker(currentColor, out var pickedColor) == DialogResult.OK) {
                 _metricsGrid.Rows[e.RowIndex].Tag = pickedColor;
-                _metricsGrid.Rows[e.RowIndex].Cells["Color"].Style.BackColor = pickedColor;
+                _metricsGrid.InvalidateRow(e.RowIndex);
+            }
+        }
+    }
+
+    private void MetricsGrid_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e) {
+        if (e.ColumnIndex == 3 && e.RowIndex >= 0) // Color column
+        {
+            var row = _metricsGrid.Rows[e.RowIndex];
+            if (row.Tag is Color color) {
+                e.Value = "";
+                e.CellStyle!.BackColor = color;
+                e.CellStyle.SelectionBackColor = color;
             }
         }
     }
