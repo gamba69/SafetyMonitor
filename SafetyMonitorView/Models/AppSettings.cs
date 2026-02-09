@@ -6,6 +6,7 @@ public class AppSettings {
     // Theme settings
     public bool IsDarkTheme { get; set; } = false;
     public bool IsMaximized { get; set; } = false;
+    public bool LinkChartPeriods { get; set; } = false;
 
     // Dashboard settings
     public Guid? LastDashboardId { get; set; }

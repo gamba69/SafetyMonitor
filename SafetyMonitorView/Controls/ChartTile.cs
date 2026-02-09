@@ -16,11 +16,18 @@ public class ChartTile : Panel {
     private readonly List<ScottPlot.IAxis> _extraAxes = [];
     private bool _initialized;
     private ComboBox? _periodSelector;
+    private bool _suppressPeriodChange;
     private FormsPlot? _plot;
     private Label? _titleLabel;
     private Panel? _topPanel;
 
     #endregion Private Fields
+
+    #region Public Events
+
+    public event Action<ChartTile, ChartPeriod>? PeriodChanged;
+
+    #endregion Public Events
 
     #region Public Constructors
 
@@ -174,6 +181,24 @@ public class ChartTile : Panel {
         }
         _plot.Refresh();
         Invalidate(true);
+    }
+
+    public void SetPeriod(ChartPeriod period, bool refreshData = true) {
+        _config.Period = period;
+        if (_periodSelector != null) {
+            try {
+                _suppressPeriodChange = true;
+                if (_periodSelector.SelectedIndex != (int)period) {
+                    _periodSelector.SelectedIndex = (int)period;
+                }
+            } finally {
+                _suppressPeriodChange = false;
+            }
+        }
+
+        if (refreshData) {
+            RefreshData();
+        }
     }
 
     #endregion Public Methods
@@ -359,8 +384,12 @@ public class ChartTile : Panel {
         _periodSelector.Items.AddRange(["15 Minutes", "1 Hour", "6 Hours", "24 Hours", "7 Days", "30 Days"]);
         _periodSelector.SelectedIndex = (int)_config.Period;
         _periodSelector.SelectedIndexChanged += (s, e) => {
+            if (_suppressPeriodChange) {
+                return;
+            }
             _config.Period = (ChartPeriod)_periodSelector.SelectedIndex;
             RefreshData();
+            PeriodChanged?.Invoke(this, _config.Period);
         };
 
         _topPanel.Controls.Add(_titleLabel);

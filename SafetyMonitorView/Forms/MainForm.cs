@@ -23,6 +23,7 @@ public class MainForm : MaterialForm {
     private List<Dashboard> _dashboards = [];
     private ToolStripStatusLabel _dataPathLabel = null!;
     private DataService _dataService;
+    private CheckBox _linkChartsCheckBox = null!;
     private RadioButton _lightThemeButton = null!;
     private MenuStrip _mainMenu = null!;
     private ThemedMenuRenderer _menuRenderer = null!;
@@ -305,10 +306,24 @@ public class MainForm : MaterialForm {
             AutoScroll = false
         };
 
+        _linkChartsCheckBox = new CheckBox {
+            Text = "Linked charts",
+            AutoSize = true,
+            Checked = _appSettings.LinkChartPeriods
+        };
+        _linkChartsCheckBox.CheckedChanged += (s, e) => {
+            _appSettings.LinkChartPeriods = _linkChartsCheckBox.Checked;
+            _appSettingsService.SaveSettings(_appSettings);
+            _dashboardPanel?.SetLinkChartPeriods(_linkChartsCheckBox.Checked);
+        };
+
         _quickAccessPanel.Controls.AddRange([
             themeLabel, _lightThemeButton, _darkThemeButton,
-            separator, dashboardLabel, _quickDashboardsPanel
+            separator, dashboardLabel, _quickDashboardsPanel, _linkChartsCheckBox
         ]);
+
+        PositionLinkChartsCheckbox();
+        _quickAccessPanel.SizeChanged += (s, e) => PositionLinkChartsCheckbox();
     }
 
     private void DeleteCurrentDashboard() {
@@ -428,6 +443,7 @@ public class MainForm : MaterialForm {
         }
 
         _dashboardPanel = new DashboardPanel(dashboard, _dataService) { Dock = DockStyle.Fill };
+        _dashboardPanel.SetLinkChartPeriods(_appSettings.LinkChartPeriods);
         _dashboardContainer.Controls.Add(_dashboardPanel);
         _statusLabel.Text = $"Dashboard: {dashboard.Name}";
 
@@ -611,6 +627,17 @@ public class MainForm : MaterialForm {
 
         _quickAccessPanel.BackColor = panelBg;
         ApplyQuickAccessColors(_quickAccessPanel, panelBg, fg);
+    }
+
+    private void PositionLinkChartsCheckbox() {
+        if (_linkChartsCheckBox == null) {
+            return;
+        }
+
+        var x = Math.Max(_quickAccessPanel.Width - _linkChartsCheckBox.Width - 15, 10);
+        _linkChartsCheckBox.Location = new Point(x, 13);
+        _linkChartsCheckBox.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        _linkChartsCheckBox.BringToFront();
     }
 
     private void UpdateQuickDashboards() {

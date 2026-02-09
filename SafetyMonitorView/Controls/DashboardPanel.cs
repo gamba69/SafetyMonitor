@@ -10,6 +10,7 @@ public class DashboardPanel : TableLayoutPanel {
     private readonly Dashboard _dashboard;
     private readonly DataService _dataService;
     private readonly Dictionary<Guid, Control> _tileControls = [];
+    private bool _linkChartPeriods;
     private bool _tilesCreated;
 
     #endregion Private Fields
@@ -36,6 +37,9 @@ public class DashboardPanel : TableLayoutPanel {
                 ct.RefreshData();
             }
         }
+    }
+    public void SetLinkChartPeriods(bool linkChartPeriods) {
+        _linkChartPeriods = linkChartPeriods;
     }
 
     public void UpdateTheme() {
@@ -90,11 +94,27 @@ public class DashboardPanel : TableLayoutPanel {
                 _ => null
             };
             if (tileControl != null) {
+                if (tileControl is ChartTile chartTile) {
+                    chartTile.PeriodChanged += OnChartPeriodChanged;
+                }
                 Controls.Add(tileControl, tileConfig.Column, tileConfig.Row);
                 SetColumnSpan(tileControl, tileConfig.ColumnSpan);
                 SetRowSpan(tileControl, tileConfig.RowSpan);
                 _tileControls[tileConfig.Id] = tileControl;
             }
+        }
+    }
+
+    private void OnChartPeriodChanged(ChartTile source, ChartPeriod period) {
+        if (!_linkChartPeriods) {
+            return;
+        }
+
+        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+            if (ReferenceEquals(chartTile, source)) {
+                continue;
+            }
+            chartTile.SetPeriod(period);
         }
     }
 
