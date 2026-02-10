@@ -59,6 +59,13 @@ public class ChartPeriodPresetEditorForm : Form {
         _presetGrid.DefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
         _presetGrid.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(53, 70, 76);
         _presetGrid.ColumnHeadersDefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
+        if (_presetGrid.Columns["Unit"] is DataGridViewComboBoxColumn unitColumn) {
+            unitColumn.DefaultCellStyle.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
+            unitColumn.DefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
+            unitColumn.DefaultCellStyle.SelectionBackColor = _presetGrid.DefaultCellStyle.SelectionBackColor;
+            unitColumn.DefaultCellStyle.SelectionForeColor = _presetGrid.DefaultCellStyle.SelectionForeColor;
+            unitColumn.FlatStyle = FlatStyle.Popup;
+        }
         _presetGrid.EnableHeadersVisualStyles = false;
 
         ApplyThemeRecursive(this, isLight);
@@ -130,7 +137,9 @@ public class ChartPeriodPresetEditorForm : Form {
             Dock = DockStyle.Fill,
             AllowUserToAddRows = false,
             AutoGenerateColumns = false,
+            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+            RowHeadersVisible = false,
             Font = normalFont,
             Margin = new Padding(0, 0, 0, 5)
         };
@@ -138,20 +147,21 @@ public class ChartPeriodPresetEditorForm : Form {
         _presetGrid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "Name",
             HeaderText = "Name",
-            Width = 180
+            FillWeight = 50
         });
         _presetGrid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "Value",
             HeaderText = "Value",
-            Width = 80
+            FillWeight = 24
         });
         _presetGrid.Columns.Add(new DataGridViewComboBoxColumn {
             Name = "Unit",
             HeaderText = "Unit",
-            Width = 120,
+            FillWeight = 26,
             DataSource = _units
         });
         _presetGrid.DataError += (_, e) => { e.ThrowException = false; };
+        _presetGrid.EditingControlShowing += PresetGrid_EditingControlShowing;
 
         mainLayout.Controls.Add(_presetGrid, 0, 1);
 
@@ -206,8 +216,6 @@ public class ChartPeriodPresetEditorForm : Form {
         _cancelButton.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
         buttonPanel.Controls.Add(_cancelButton, 2, 0);
 
-
-
         mainLayout.Controls.Add(buttonPanel, 0, 3);
 
         Controls.Add(mainLayout);
@@ -238,6 +246,41 @@ public class ChartPeriodPresetEditorForm : Form {
         _presetGrid.Rows.Insert(newIndex, row);
         _presetGrid.ClearSelection();
         row.Selected = true;
+    }
+
+    private void PresetGrid_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e) {
+        if (_presetGrid.CurrentCell?.OwningColumn.Name != "Unit" || e.Control is not ComboBox comboBox) {
+            return;
+        }
+
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        comboBox.DrawMode = DrawMode.OwnerDrawFixed;
+        comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+        comboBox.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
+        comboBox.ForeColor = isLight ? Color.Black : Color.White;
+        comboBox.DrawItem -= UnitComboBox_DrawItem;
+        comboBox.DrawItem += UnitComboBox_DrawItem;
+    }
+
+    private static void UnitComboBox_DrawItem(object? sender, DrawItemEventArgs e) {
+        if (sender is not ComboBox comboBox || e.Index < 0) {
+            return;
+        }
+
+        var bg = comboBox.BackColor;
+        var fg = comboBox.ForeColor;
+
+        if ((e.State & DrawItemState.Selected) != 0 && (e.State & DrawItemState.ComboBoxEdit) == 0) {
+            bg = SystemColors.Highlight;
+            fg = SystemColors.HighlightText;
+        }
+
+        using var bgBrush = new SolidBrush(bg);
+        e.Graphics.FillRectangle(bgBrush, e.Bounds);
+
+        var text = comboBox.Items[e.Index]?.ToString() ?? "";
+        using var fgBrush = new SolidBrush(fg);
+        e.Graphics.DrawString(text, e.Font ?? comboBox.Font, fgBrush, e.Bounds);
     }
 
     private void RemovePresetButton_Click(object? sender, EventArgs e) {
