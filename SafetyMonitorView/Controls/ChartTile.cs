@@ -370,8 +370,13 @@ public class ChartTile : Panel {
         contextMenu.RenderMode = ToolStripRenderMode.Professional;
         contextMenu.Renderer = _contextMenuRenderer;
         contextMenu.ShowImageMargin = true;
+        contextMenu.ImageScalingSize = new Size(MenuIconSize, MenuIconSize);
         contextMenu.BackColor = menuBackground;
         contextMenu.ForeColor = menuText;
+
+        if (contextMenu is ToolStripDropDownMenu rootDropDownMenu) {
+            rootDropDownMenu.ShowImageMargin = true;
+        }
 
         ApplyContextMenuItemColors(contextMenu.Items, menuBackground, menuText);
         ApplyContextMenuIcons(contextMenu.Items, menuText);
@@ -385,6 +390,7 @@ public class ChartTile : Panel {
         DetachPlotContextMenu();
         _plotContextMenu = contextMenu;
         _plotContextMenu.Opening += PlotContextMenu_Opening;
+        _plotContextMenu.ItemAdded += PlotContextMenu_ItemAdded;
     }
 
     private void DetachPlotContextMenu() {
@@ -393,12 +399,47 @@ public class ChartTile : Panel {
         }
 
         _plotContextMenu.Opening -= PlotContextMenu_Opening;
+        _plotContextMenu.ItemAdded -= PlotContextMenu_ItemAdded;
         _plotContextMenu = null;
     }
 
     private void PlotContextMenu_Opening(object? sender, System.ComponentModel.CancelEventArgs e) {
         if (sender is ContextMenuStrip contextMenu) {
             ApplyPlotContextMenuTheme(contextMenu);
+            // ScottPlot may continue mutating menu items during Opening; apply again on the next UI tick.
+            contextMenu.BeginInvoke(() => {
+                if (!contextMenu.IsDisposed) {
+                    ApplyPlotContextMenuTheme(contextMenu);
+                }
+            });
+        }
+    }
+
+    private void PlotContextMenu_ItemAdded(object? sender, ToolStripItemEventArgs e) {
+        if (sender is ContextMenuStrip) {
+            var skinManager = MaterialSkinManager.Instance;
+            var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+            var menuBackground = isLight ? Color.White : Color.FromArgb(38, 52, 57);
+            var menuText = isLight ? Color.FromArgb(33, 33, 33) : Color.FromArgb(240, 240, 240);
+
+            e.Item?.BackColor = menuBackground;
+            e.Item?.ForeColor = menuText;
+
+            if (e.Item is ToolStripMenuItem menuItem) {
+                if (menuItem.DropDown is ToolStripDropDownMenu dropDownMenu) {
+                    dropDownMenu.ShowImageMargin = true;
+                }
+
+                var iconName = GetContextMenuIconName(menuItem.Text);
+                if (!string.IsNullOrEmpty(iconName)) {
+                    ConfigureMenuItemIcon(menuItem, iconName, menuText);
+                }
+
+                if (menuItem.DropDownItems.Count > 0) {
+                    ApplyContextMenuItemColors(menuItem.DropDownItems, menuBackground, menuText);
+                    ApplyContextMenuIcons(menuItem.DropDownItems, menuText);
+                }
+            }
         }
     }
 
@@ -414,15 +455,24 @@ public class ChartTile : Panel {
 
             var iconName = GetContextMenuIconName(menuItem.Text);
             if (!string.IsNullOrEmpty(iconName)) {
-                menuItem.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
-                menuItem.Image?.Dispose();
-                menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize);
+                ConfigureMenuItemIcon(menuItem, iconName, iconColor);
             }
 
             if (menuItem.DropDownItems.Count > 0) {
                 ApplyContextMenuIcons(menuItem.DropDownItems, iconColor);
             }
         }
+    }
+
+    private static void ConfigureMenuItemIcon(ToolStripMenuItem menuItem, string iconName, Color iconColor) {
+        menuItem.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
+        menuItem.ImageScaling = ToolStripItemImageScaling.None;
+        menuItem.TextImageRelation = TextImageRelation.ImageBeforeText;
+        menuItem.ImageAlign = ContentAlignment.MiddleLeft;
+        menuItem.ImageTransparentColor = Color.Transparent;
+
+        menuItem.Image?.Dispose();
+        menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize);
     }
 
     private static string GetContextMenuIconName(string? menuText) {
@@ -451,7 +501,6 @@ public class ChartTile : Panel {
             }
         }
     }
-
 
     /// <summary>
     /// Removes any extra axes added during the previous RefreshData call.

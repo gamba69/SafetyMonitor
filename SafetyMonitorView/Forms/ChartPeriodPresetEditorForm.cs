@@ -15,18 +15,18 @@ public class ChartPeriodPresetEditorForm : Form {
     private Button _moveUpButton = null!;
     private Button _removeButton = null!;
     private Button _saveButton = null!;
-    private readonly List<ChartPeriodUnit> _units = Enum.GetValues<ChartPeriodUnit>().ToList();
+    private readonly List<ChartPeriodUnit> _units = [.. Enum.GetValues<ChartPeriodUnit>()];
 
     #endregion Private Fields
 
     #region Public Constructors
 
     public ChartPeriodPresetEditorForm(IEnumerable<ChartPeriodPresetDefinition> presets) {
-        _presets = presets.Select(p => new ChartPeriodPresetDefinition {
+        _presets = [.. presets.Select(p => new ChartPeriodPresetDefinition {
             Name = p.Name,
             Value = p.Value,
             Unit = p.Unit
-        }).ToList();
+        })];
 
         InitializeComponent();
         ApplyTheme();
@@ -249,7 +249,7 @@ public class ChartPeriodPresetEditorForm : Form {
     }
 
     private void PresetGrid_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e) {
-        if (_presetGrid.CurrentCell?.OwningColumn.Name != "Unit" || e.Control is not ComboBox comboBox) {
+        if (_presetGrid.CurrentCell?.OwningColumn?.Name != "Unit" || e.Control is not ComboBox comboBox) {
             return;
         }
 
