@@ -27,7 +27,7 @@ public class MainForm : MaterialForm {
     private RadioButton _lightThemeButton = null!;
     private MenuStrip _mainMenu = null!;
     private ThemedMenuRenderer _menuRenderer = null!;
-    private const int MenuIconSize = 20;
+    private const int MenuIconSize = 16;
     private Panel _quickAccessPanel = null!;
     private FlowLayoutPanel _quickDashboardsPanel = null!;
     private System.Windows.Forms.Timer? _refreshTimer;

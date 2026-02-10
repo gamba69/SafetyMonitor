@@ -17,7 +17,7 @@ public class ChartTile : Panel {
     private readonly List<ScottPlot.IAxis> _extraAxes = [];
     private bool _initialized;
     private readonly ThemedMenuRenderer _contextMenuRenderer = new();
-    private const int MenuIconSize = 20;
+    private const int MenuIconSize = 16;
     private ContextMenuStrip? _plotContextMenu;
     private List<ChartPeriodPreset> _periodPresets = [];
     private ComboBox? _periodSelector;
@@ -369,6 +369,7 @@ public class ChartTile : Panel {
 
         contextMenu.RenderMode = ToolStripRenderMode.Professional;
         contextMenu.Renderer = _contextMenuRenderer;
+        contextMenu.ShowImageMargin = true;
         contextMenu.BackColor = menuBackground;
         contextMenu.ForeColor = menuText;
 
@@ -407,8 +408,13 @@ public class ChartTile : Panel {
                 continue;
             }
 
+            if (menuItem.DropDown is ToolStripDropDownMenu dropDownMenu) {
+                dropDownMenu.ShowImageMargin = true;
+            }
+
             var iconName = GetContextMenuIconName(menuItem.Text);
             if (!string.IsNullOrEmpty(iconName)) {
+                menuItem.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
                 menuItem.Image?.Dispose();
                 menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize);
             }
