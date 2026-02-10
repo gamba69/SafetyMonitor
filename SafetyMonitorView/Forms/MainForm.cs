@@ -155,7 +155,7 @@ public class MainForm : MaterialForm {
             "Duplicate Current" => "copy",
             "Delete Current" => "delete",
             "Color Schemes..." => "palette",
-            "Chart Period Presets..." => "schedule",
+            "Chart Period..." => "schedule",
             _ => ""
         };
     }
@@ -234,8 +234,8 @@ public class MainForm : MaterialForm {
         themeMenu.DropDownItems.Add(CreateMenuItem("Dark", "dark", iconColor, (s, e) => { _darkThemeButton.Checked = true; }));
         viewMenu.DropDownItems.Add(themeMenu);
         viewMenu.DropDownItems.Add(new ToolStripSeparator());
+        viewMenu.DropDownItems.Add(CreateMenuItem("Chart Period...", "schedule", iconColor, (s, e) => ShowChartPeriodPresetEditor()));
         viewMenu.DropDownItems.Add(CreateMenuItem("Color Schemes...", "palette", iconColor, (s, e) => ShowColorSchemeEditor()));
-        viewMenu.DropDownItems.Add(CreateMenuItem("Chart Period Presets...", "schedule", iconColor, (s, e) => ShowChartPeriodPresetEditor()));
 
         var helpMenu = new ToolStripMenuItem("Help");
         helpMenu.DropDownItems.Add(CreateMenuItem("About", "about", iconColor, (s, e) => ShowAbout()));
