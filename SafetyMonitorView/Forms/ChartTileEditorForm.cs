@@ -204,7 +204,7 @@ public class ChartTileEditorForm : Form {
 
         _metricsGrid.Columns.Add(new DataGridViewComboBoxColumn {
             Name = "Function",
-            HeaderText = "Aggregation",
+            HeaderText = "Agg.",
             FillWeight = 22,
             DataSource = Enum.GetValues<AggregationFunction>()
                 .Select(f => new { Value = f, Display = f.ToString() })
@@ -214,11 +214,11 @@ public class ChartTileEditorForm : Form {
             ValueType = typeof(AggregationFunction)
         });
 
-        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Label", HeaderText = "Label", FillWeight = 20 });
-        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Color", HeaderText = "Color", FillWeight = 13, ReadOnly = true });
-        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "LineWidth", HeaderText = "Width", FillWeight = 8 });
-        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Smooth", HeaderText = "Smooth", FillWeight = 10 });
-        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "ShowMarkers", HeaderText = "Markers", Visible = false });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Label", HeaderText = "Label", FillWeight = 18 });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Color", HeaderText = "Clr", FillWeight = 6, ReadOnly = true });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "LineWidth", HeaderText = "W", FillWeight = 7 });
+        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Smooth", HeaderText = "Smth", FillWeight = 8 });
+        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "ShowMarkers", HeaderText = "Mark", FillWeight = 12 });
 
         _metricsGrid.CellClick += MetricsGrid_CellClick;
         _metricsGrid.CellFormatting += MetricsGrid_CellFormatting;
@@ -231,7 +231,7 @@ public class ChartTileEditorForm : Form {
         var addMetricButton = new Button { Text = "Add Metric", Width = 110, Height = 30, Font = normalFont, Margin = new Padding(0, 0, 10, 0) };
         addMetricButton.Click += AddMetricButton_Click;
         gridButtonPanel.Controls.Add(addMetricButton);
-        var removeMetricButton = new Button { Text = "Remove", Width = 90, Height = 30, Font = normalFont };
+        var removeMetricButton = new Button { Text = "Remove", Width = 90, Height = 30, Font = normalFont, Margin = new Padding(0) };
         removeMetricButton.Click += RemoveMetricButton_Click;
         gridButtonPanel.Controls.Add(removeMetricButton);
         mainLayout.Controls.Add(gridButtonPanel, 0, 3);
@@ -291,7 +291,8 @@ public class ChartTileEditorForm : Form {
         Controls.Add(mainLayout);
 
         // Set form size
-        ClientSize = new Size(600, 550);
+        MinimumSize = new Size(760, 590);
+        ClientSize = new Size(760, 550);
     }
     private void LoadConfig() {
         _titleTextBox.Text = _config.Title;
