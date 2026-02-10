@@ -1,6 +1,5 @@
 using SafetyMonitorView.Models;
 using System.Drawing.Drawing2D;
-using System.Windows.Forms;
 
 namespace SafetyMonitorView.Services;
 
@@ -145,13 +144,11 @@ public static class MaterialIcons {
             _ => $"msg_info_{style}"
         };
 
-        var color = icon switch {
-            MessageBoxIcon.Error => Color.FromArgb(220, 53, 69),
-            MessageBoxIcon.Warning => Color.FromArgb(255, 193, 7),
-            MessageBoxIcon.Information => Color.FromArgb(13, 110, 253),
-            MessageBoxIcon.Question => Color.FromArgb(13, 110, 253),
-            _ => isLightTheme ? Color.Black : Color.White
-        };
+        // Keep message-box icons neutral so they adapt to theme instead of using accent colors.
+        // Light theme: dark outlined icon. Dark theme: light filled icon.
+        var color = isLightTheme
+            ? Color.FromArgb(24, 24, 24)
+            : Color.FromArgb(120, 120, 120);
 
         return GetIcon(iconName, color, size);
     }

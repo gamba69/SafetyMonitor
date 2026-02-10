@@ -106,7 +106,7 @@ public class ThemedMessageBox : Form {
 
         _messageLabel.ForeColor = isLight ? Color.Black : Color.White;
         _iconPicture.Image?.Dispose();
-        _iconPicture.Image = MaterialIcons.GetMessageBoxIcon(_icon, isLight, 24);
+        _iconPicture.Image = MaterialIcons.GetMessageBoxIcon(_icon, isLight, 72);
         _iconPicture.Visible = _iconPicture.Image != null;
 
         foreach (Control control in _buttonPanel.Controls) {
@@ -177,7 +177,7 @@ public class ThemedMessageBox : Form {
 
         // Icon
         _iconPicture = new PictureBox {
-            Size = new Size(24, 24),
+            Size = new Size(72, 72),
             SizeMode = PictureBoxSizeMode.Zoom,
             Margin = new Padding(0, 4, 15, 0)
         };
