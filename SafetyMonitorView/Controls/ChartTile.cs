@@ -137,6 +137,7 @@ public class ChartTile : Panel {
             scatter.Color = ScottPlot.Color.FromColor(agg.Color);
             scatter.LineWidth = agg.LineWidth;
             scatter.MarkerSize = agg.ShowMarkers ? 5 : 0;
+            scatter.Smooth = agg.Smooth;
 
             // Assign this series to its dedicated Y axis when multiple axes are active
             if (useMultipleAxes && axisMap.TryGetValue(agg.Metric, out var yAxis)) {

@@ -54,7 +54,7 @@ public class ChartTileEditorForm : Form {
     }
 
     private void AddMetricButton_Click(object? sender, EventArgs e) {
-        var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, 2.0f, false);
+        var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, 2.0f, false, false);
         _metricsGrid.Rows[newRow].Tag = Color.Blue;
         _metricsGrid.InvalidateRow(newRow);
     }
@@ -217,6 +217,7 @@ public class ChartTileEditorForm : Form {
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Label", HeaderText = "Label", FillWeight = 20 });
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Color", HeaderText = "Color", FillWeight = 13, ReadOnly = true });
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "LineWidth", HeaderText = "Width", FillWeight = 8 });
+        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Smooth", HeaderText = "Smooth", FillWeight = 10 });
         _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "ShowMarkers", HeaderText = "Markers", Visible = false });
 
         _metricsGrid.CellClick += MetricsGrid_CellClick;
@@ -321,7 +322,7 @@ public class ChartTileEditorForm : Form {
         _columnSpanNumeric.Value = _config.ColumnSpan;
 
         foreach (var agg in _config.MetricAggregations) {
-            var rowIndex = _metricsGrid.Rows.Add(agg.Metric, agg.Function, agg.Label, null!, agg.LineWidth, agg.ShowMarkers);
+            var rowIndex = _metricsGrid.Rows.Add(agg.Metric, agg.Function, agg.Label, null!, agg.LineWidth, agg.Smooth, agg.ShowMarkers);
             _metricsGrid.Rows[rowIndex].Tag = agg.Color;
             _metricsGrid.InvalidateRow(rowIndex); ;
         }
@@ -449,6 +450,7 @@ public class ChartTileEditorForm : Form {
                 Label = row.Cells["Label"].Value?.ToString() ?? "",
                 Color = (Color)(row.Tag ?? Color.Blue),
                 LineWidth = float.Parse(row.Cells["LineWidth"].Value?.ToString() ?? "2"),
+                Smooth = (bool)(row.Cells["Smooth"].Value ?? false),
                 ShowMarkers = (bool)(row.Cells["ShowMarkers"].Value ?? false)
             };
             _config.MetricAggregations.Add(agg);
