@@ -414,6 +414,8 @@ public class MainForm : MaterialForm {
         _menuRenderer = new ThemedMenuRenderer();
         _menuRenderer.UpdateTheme();
         _mainMenu.Renderer = _menuRenderer;
+        ToolStripManager.Renderer = _menuRenderer;
+        ToolStripManager.VisualStylesEnabled = false;
         _mainMenu.BackColor = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT
             ? Color.FromArgb(250, 250, 250)
             : Color.FromArgb(35, 47, 52);
@@ -642,6 +644,7 @@ public class MainForm : MaterialForm {
 
     private void UpdateMenuTheme() {
         _menuRenderer.UpdateTheme();
+        ToolStripManager.Renderer = _menuRenderer;
 
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var iconColor = isLight ? Color.Black : Color.White;

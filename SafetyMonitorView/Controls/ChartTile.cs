@@ -1,4 +1,5 @@
 using MaterialSkin;
+using SafetyMonitorView.Forms;
 using SafetyMonitorView.Models;
 using SafetyMonitorView.Services;
 using ScottPlot.WinForms;
@@ -15,6 +16,8 @@ public class ChartTile : Panel {
     private readonly DataService _dataService;
     private readonly List<ScottPlot.IAxis> _extraAxes = [];
     private bool _initialized;
+    private readonly ThemedMenuRenderer _contextMenuRenderer = new();
+    private ContextMenuStrip? _plotContextMenu;
     private List<ChartPeriodPreset> _periodPresets = [];
     private ComboBox? _periodSelector;
     private bool _suppressPeriodChange;
@@ -172,6 +175,7 @@ public class ChartTile : Panel {
 
         ApplyThemeColors();
         ApplyTileColors();
+        ApplyPlotContextMenuTheme();
         // Restore title font that may have been overwritten by MaterialSkinManager
         var expectedFont = CreateSafeFont("Roboto", 11, System.Drawing.FontStyle.Bold);
         if (_titleLabel.Font.Size != expectedFont.Size || _titleLabel.Font.Style != expectedFont.Style) {
@@ -234,6 +238,7 @@ public class ChartTile : Panel {
     protected override void Dispose(bool disposing) {
         if (disposing) {
             ChartPeriodPresetStore.PresetsChanged -= HandlePresetsChanged;
+            DetachPlotContextMenu();
         }
         base.Dispose(disposing);
     }
@@ -344,6 +349,67 @@ public class ChartTile : Panel {
         }
     }
 
+    private void ApplyPlotContextMenuTheme() {
+        if (_plot?.ContextMenuStrip == null) {
+            return;
+        }
+
+        AttachPlotContextMenu(_plot.ContextMenuStrip);
+        ApplyPlotContextMenuTheme(_plot.ContextMenuStrip);
+    }
+
+    private void ApplyPlotContextMenuTheme(ContextMenuStrip contextMenu) {
+        var skinManager = MaterialSkinManager.Instance;
+        var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+        var menuBackground = isLight ? Color.White : Color.FromArgb(38, 52, 57);
+        var menuText = isLight ? Color.FromArgb(33, 33, 33) : Color.FromArgb(240, 240, 240);
+
+        _contextMenuRenderer.UpdateTheme();
+
+        contextMenu.RenderMode = ToolStripRenderMode.Professional;
+        contextMenu.Renderer = _contextMenuRenderer;
+        contextMenu.BackColor = menuBackground;
+        contextMenu.ForeColor = menuText;
+
+        ApplyContextMenuItemColors(contextMenu.Items, menuBackground, menuText);
+    }
+
+    private void AttachPlotContextMenu(ContextMenuStrip contextMenu) {
+        if (ReferenceEquals(_plotContextMenu, contextMenu)) {
+            return;
+        }
+
+        DetachPlotContextMenu();
+        _plotContextMenu = contextMenu;
+        _plotContextMenu.Opening += PlotContextMenu_Opening;
+    }
+
+    private void DetachPlotContextMenu() {
+        if (_plotContextMenu == null) {
+            return;
+        }
+
+        _plotContextMenu.Opening -= PlotContextMenu_Opening;
+        _plotContextMenu = null;
+    }
+
+    private void PlotContextMenu_Opening(object? sender, System.ComponentModel.CancelEventArgs e) {
+        if (sender is ContextMenuStrip contextMenu) {
+            ApplyPlotContextMenuTheme(contextMenu);
+        }
+    }
+    private static void ApplyContextMenuItemColors(ToolStripItemCollection items, Color backColor, Color foreColor) {
+        foreach (ToolStripItem item in items) {
+            item.BackColor = backColor;
+            item.ForeColor = foreColor;
+
+            if (item is ToolStripMenuItem menuItem && menuItem.DropDownItems.Count > 0) {
+                ApplyContextMenuItemColors(menuItem.DropDownItems, backColor, foreColor);
+            }
+        }
+    }
+
+
     /// <summary>
     /// Removes any extra axes added during the previous RefreshData call.
     /// </summary>
@@ -421,6 +487,14 @@ public class ChartTile : Panel {
             Dock = DockStyle.Fill,         // Use explicit safe font (Segoe UI is guaranteed on Windows)
             Font = new Font("Segoe UI", 9f, System.Drawing.FontStyle.Regular)
         };
+        _plot.ContextMenuStripChanged += (s, e) => {
+            if (_plot?.ContextMenuStrip != null) {
+                AttachPlotContextMenu(_plot.ContextMenuStrip);
+            } else {
+                DetachPlotContextMenu();
+            }
+            ApplyPlotContextMenuTheme();
+        };
 
         // Add _topPanel first (it's safe)
         Controls.Add(_topPanel);
@@ -472,7 +546,7 @@ public class ChartTile : Panel {
         LoadPeriodPresets();
         SetSelectedPeriodPreset();
     }
-    
+
     private void LoadPeriodPresets() {
         if (_periodSelector == null) {
             return;
