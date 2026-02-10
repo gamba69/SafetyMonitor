@@ -35,6 +35,7 @@ public class MainForm : MaterialForm {
     private StatusStrip _statusStrip = null!;
 
     private System.Windows.Forms.Timer? _themeTimer;
+    private bool _isExitConfirmed;
 
     #endregion Private Fields
 
@@ -84,6 +85,23 @@ public class MainForm : MaterialForm {
     #region Protected Methods
 
     protected override void OnFormClosing(FormClosingEventArgs e) {
+        if (!_isExitConfirmed && e.CloseReason == CloseReason.UserClosing) {
+            var confirmExit = ThemedMessageBox.Show(
+                this,
+                "Exit Safety Monitor?",
+                "Exit Confirmation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question
+            );
+
+            if (confirmExit != DialogResult.Yes) {
+                e.Cancel = true;
+                return;
+            }
+
+            _isExitConfirmed = true;
+        }
+
         // Save window settings before closing
         SaveWindowSettings();
 

@@ -1,5 +1,6 @@
 using SafetyMonitorView.Models;
 using System.Drawing.Drawing2D;
+using System.Windows.Forms;
 
 namespace SafetyMonitorView.Services;
 
@@ -43,6 +44,14 @@ public static class MaterialIcons {
         ["info"] = DrawInfo,
         ["about"] = DrawInfo,
         ["help"] = DrawHelp,
+        ["msg_info_outlined"] = DrawMsgInfoOutlined,
+        ["msg_info_filled"] = DrawMsgInfoFilled,
+        ["msg_warning_outlined"] = DrawMsgWarningOutlined,
+        ["msg_warning_filled"] = DrawMsgWarningFilled,
+        ["msg_error_outlined"] = DrawMsgErrorOutlined,
+        ["msg_error_filled"] = DrawMsgErrorFilled,
+        ["msg_question_outlined"] = DrawMsgQuestionOutlined,
+        ["msg_question_filled"] = DrawMsgQuestionFilled,
         ["refresh"] = DrawRefresh,
         ["schedule"] = DrawSchedule,
         ["timer"] = DrawSchedule,
@@ -116,6 +125,35 @@ public static class MaterialIcons {
         _cache[key] = bitmap;
 
         return (Bitmap)bitmap.Clone();
+    }
+
+    /// <summary>
+    /// Gets a themed material icon for message boxes.
+    /// Light theme uses outlined style, dark theme uses filled style.
+    /// </summary>
+    public static Bitmap? GetMessageBoxIcon(MessageBoxIcon icon, bool isLightTheme, int size = 28) {
+        if (icon == MessageBoxIcon.None) {
+            return null;
+        }
+
+        var style = isLightTheme ? "outlined" : "filled";
+        var iconName = icon switch {
+            MessageBoxIcon.Error => $"msg_error_{style}",
+            MessageBoxIcon.Warning => $"msg_warning_{style}",
+            MessageBoxIcon.Information => $"msg_info_{style}",
+            MessageBoxIcon.Question => $"msg_question_{style}",
+            _ => $"msg_info_{style}"
+        };
+
+        var color = icon switch {
+            MessageBoxIcon.Error => Color.FromArgb(220, 53, 69),
+            MessageBoxIcon.Warning => Color.FromArgb(255, 193, 7),
+            MessageBoxIcon.Information => Color.FromArgb(13, 110, 253),
+            MessageBoxIcon.Question => Color.FromArgb(13, 110, 253),
+            _ => isLightTheme ? Color.Black : Color.White
+        };
+
+        return GetIcon(iconName, color, size);
     }
 
     /// <summary>
@@ -965,6 +1003,122 @@ public static class MaterialIcons {
         // Extra gust marks
         using var gustPen = MakePen(c, r.Width / PW3);
         g.DrawLine(gustPen, x1 + r.Width * 0.15f, r.Y + r.Height * 0.88f, x1 + r.Width * 0.4f, r.Y + r.Height * 0.88f);
+    }
+
+    private static void DrawMsgErrorFilled(Graphics g, RectangleF r, Color c) {
+        using var brush = new SolidBrush(c);
+        g.FillEllipse(brush, r);
+
+        using var pen = MakePen(Color.White, r.Width / (PW - 2));
+        var p = r.Width * 0.24f;
+        g.DrawLine(pen, r.Left + p, r.Top + p, r.Right - p, r.Bottom - p);
+        g.DrawLine(pen, r.Right - p, r.Top + p, r.Left + p, r.Bottom - p);
+    }
+
+    private static void DrawMsgErrorOutlined(Graphics g, RectangleF r, Color c) {
+        using var pen = MakePen(c, r.Width / PW);
+        g.DrawEllipse(pen, r);
+
+        var p = r.Width * 0.24f;
+        g.DrawLine(pen, r.Left + p, r.Top + p, r.Right - p, r.Bottom - p);
+        g.DrawLine(pen, r.Right - p, r.Top + p, r.Left + p, r.Bottom - p);
+    }
+
+    private static void DrawMsgInfoFilled(Graphics g, RectangleF r, Color c) {
+        using var brush = new SolidBrush(c);
+        g.FillEllipse(brush, r);
+
+        using var pen = MakePen(Color.White, r.Width / (PW - 1));
+        var cx = r.Left + r.Width / 2;
+        g.DrawLine(pen, cx, r.Top + r.Height * 0.43f, cx, r.Top + r.Height * 0.72f);
+
+        var dot = r.Width * 0.1f;
+        g.FillEllipse(Brushes.White, cx - dot / 2, r.Top + r.Height * 0.24f, dot, dot);
+    }
+
+    private static void DrawMsgInfoOutlined(Graphics g, RectangleF r, Color c) {
+        using var pen = MakePen(c, r.Width / PW);
+        g.DrawEllipse(pen, r);
+
+        var cx = r.Left + r.Width / 2;
+        g.DrawLine(pen, cx, r.Top + r.Height * 0.43f, cx, r.Top + r.Height * 0.72f);
+
+        var dot = r.Width * 0.1f;
+        using var brush = new SolidBrush(c);
+        g.FillEllipse(brush, cx - dot / 2, r.Top + r.Height * 0.24f, dot, dot);
+    }
+
+    private static void DrawMsgQuestionFilled(Graphics g, RectangleF r, Color c) {
+        using var brush = new SolidBrush(c);
+        g.FillEllipse(brush, r);
+
+        using var pen = MakePen(Color.White, r.Width / (PW - 1));
+        using var path = new GraphicsPath();
+        path.AddBezier(
+            new PointF(r.Left + r.Width * 0.3f, r.Top + r.Height * 0.35f),
+            new PointF(r.Left + r.Width * 0.34f, r.Top + r.Height * 0.2f),
+            new PointF(r.Left + r.Width * 0.62f, r.Top + r.Height * 0.2f),
+            new PointF(r.Left + r.Width * 0.64f, r.Top + r.Height * 0.35f));
+        path.AddBezier(
+            new PointF(r.Left + r.Width * 0.64f, r.Top + r.Height * 0.35f),
+            new PointF(r.Left + r.Width * 0.65f, r.Top + r.Height * 0.47f),
+            new PointF(r.Left + r.Width * 0.48f, r.Top + r.Height * 0.5f),
+            new PointF(r.Left + r.Width * 0.48f, r.Top + r.Height * 0.62f));
+        g.DrawPath(pen, path);
+
+        var dot = r.Width * 0.1f;
+        g.FillEllipse(Brushes.White, r.Left + r.Width * 0.48f - dot / 2, r.Top + r.Height * 0.75f, dot, dot);
+    }
+
+    private static void DrawMsgQuestionOutlined(Graphics g, RectangleF r, Color c) {
+        using var pen = MakePen(c, r.Width / PW);
+        g.DrawEllipse(pen, r);
+
+        using var path = new GraphicsPath();
+        path.AddBezier(
+            new PointF(r.Left + r.Width * 0.3f, r.Top + r.Height * 0.35f),
+            new PointF(r.Left + r.Width * 0.34f, r.Top + r.Height * 0.2f),
+            new PointF(r.Left + r.Width * 0.62f, r.Top + r.Height * 0.2f),
+            new PointF(r.Left + r.Width * 0.64f, r.Top + r.Height * 0.35f));
+        path.AddBezier(
+            new PointF(r.Left + r.Width * 0.64f, r.Top + r.Height * 0.35f),
+            new PointF(r.Left + r.Width * 0.65f, r.Top + r.Height * 0.47f),
+            new PointF(r.Left + r.Width * 0.48f, r.Top + r.Height * 0.5f),
+            new PointF(r.Left + r.Width * 0.48f, r.Top + r.Height * 0.62f));
+        g.DrawPath(pen, path);
+
+        var dot = r.Width * 0.1f;
+        using var brush = new SolidBrush(c);
+        g.FillEllipse(brush, r.Left + r.Width * 0.48f - dot / 2, r.Top + r.Height * 0.75f, dot, dot);
+    }
+
+    private static void DrawMsgWarningFilled(Graphics g, RectangleF r, Color c) {
+        var p1 = new PointF(r.Left + r.Width * 0.5f, r.Top + r.Height * 0.08f);
+        var p2 = new PointF(r.Left + r.Width * 0.9f, r.Bottom - r.Height * 0.08f);
+        var p3 = new PointF(r.Left + r.Width * 0.1f, r.Bottom - r.Height * 0.08f);
+
+        using var brush = new SolidBrush(c);
+        g.FillPolygon(brush, [p1, p2, p3]);
+
+        using var pen = MakePen(Color.White, r.Width / (PW - 1));
+        g.DrawLine(pen, r.Left + r.Width * 0.5f, r.Top + r.Height * 0.35f, r.Left + r.Width * 0.5f, r.Top + r.Height * 0.63f);
+
+        var dot = r.Width * 0.1f;
+        g.FillEllipse(Brushes.White, r.Left + r.Width * 0.5f - dot / 2, r.Top + r.Height * 0.72f, dot, dot);
+    }
+
+    private static void DrawMsgWarningOutlined(Graphics g, RectangleF r, Color c) {
+        var p1 = new PointF(r.Left + r.Width * 0.5f, r.Top + r.Height * 0.08f);
+        var p2 = new PointF(r.Left + r.Width * 0.9f, r.Bottom - r.Height * 0.08f);
+        var p3 = new PointF(r.Left + r.Width * 0.1f, r.Bottom - r.Height * 0.08f);
+
+        using var pen = MakePen(c, r.Width / PW);
+        g.DrawPolygon(pen, [p1, p2, p3]);
+        g.DrawLine(pen, r.Left + r.Width * 0.5f, r.Top + r.Height * 0.35f, r.Left + r.Width * 0.5f, r.Top + r.Height * 0.63f);
+
+        var dot = r.Width * 0.1f;
+        using var brush = new SolidBrush(c);
+        g.FillEllipse(brush, r.Left + r.Width * 0.5f - dot / 2, r.Top + r.Height * 0.72f, dot, dot);
     }
 
     // ── Helper: standard thin pen ──────────────────────────────────
