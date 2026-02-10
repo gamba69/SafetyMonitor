@@ -211,8 +211,8 @@ public class ThemedMessageBox : Form {
         var baseWidth = Math.Max(320, preferredSize.Width + 40);
         var baseHeight = Math.Max(150, preferredSize.Height + 40);
         ClientSize = new Size(
-            (int)Math.Round(baseWidth * 0.6f),
-            (int)Math.Round(baseHeight * 0.4f)
+            (int)Math.Round(baseWidth * 0.7f),
+            (int)Math.Round(baseHeight * 0.5f)
         );
     }
 

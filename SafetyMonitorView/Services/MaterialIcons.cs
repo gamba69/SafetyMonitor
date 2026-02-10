@@ -147,8 +147,8 @@ public static class MaterialIcons {
         // Keep message-box icons neutral so they adapt to theme instead of using accent colors.
         // Light theme: dark outlined icon. Dark theme: light filled icon.
         var color = isLightTheme
-            ? Color.FromArgb(24, 24, 24)
-            : Color.FromArgb(120, 120, 120);
+            ? Color.FromArgb(48, 48, 48)
+            : Color.FromArgb(96, 96, 96);
 
         return GetIcon(iconName, color, size);
     }
