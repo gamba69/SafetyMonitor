@@ -59,12 +59,11 @@ public class SettingsForm : Form {
                     lbl.ForeColor = isLight ? Color.Black : Color.White;
                     break;
                 case Button btn:
-                    if (btn == _cancelButton) {
-                        btn.BackColor = Color.Gray;
-                    } else {
-                        btn.BackColor = Color.FromArgb(0, 121, 107);
-                    }
-                    btn.ForeColor = Color.White;
+                    var isPrimary = btn == _saveButton;
+                    var isCancel = btn == _cancelButton;
+                    btn.BackColor = isPrimary ? Color.FromArgb(0, 121, 107)
+                        : (isCancel ? Color.Gray : (isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(53, 70, 76)));
+                    btn.ForeColor = (isPrimary || isCancel) ? Color.White : (isLight ? Color.Black : Color.White);
                     btn.FlatStyle = FlatStyle.Flat;
                     btn.FlatAppearance.BorderSize = 0;
                     break;

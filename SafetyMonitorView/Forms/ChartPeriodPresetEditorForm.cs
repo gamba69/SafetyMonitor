@@ -71,14 +71,11 @@ public class ChartPeriodPresetEditorForm : Form {
                     lbl.ForeColor = isLight ? Color.Black : Color.White;
                     break;
                 case Button btn:
-                    if (btn == _cancelButton) {
-                        btn.BackColor = Color.Gray;
-                    } else if (btn == _removeButton) {
-                        btn.BackColor = Color.IndianRed;
-                    } else {
-                        btn.BackColor = Color.FromArgb(0, 121, 107);
-                    }
-                    btn.ForeColor = Color.White;
+                    var isPrimary = btn == _saveButton;
+                    var isCancel = btn == _cancelButton;
+                    btn.BackColor = isPrimary ? Color.FromArgb(0, 121, 107)
+                        : (isCancel ? Color.Gray : (isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(53, 70, 76)));
+                    btn.ForeColor = (isPrimary || isCancel) ? Color.White : (isLight ? Color.Black : Color.White);
                     btn.FlatStyle = FlatStyle.Flat;
                     btn.FlatAppearance.BorderSize = 0;
                     break;
@@ -174,7 +171,7 @@ public class ChartPeriodPresetEditorForm : Form {
         _addButton = new Button { Text = "Add", Width = 90, Height = 30, Font = normalFont, Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Left }; _addButton.Click += AddPresetButton_Click;
         editButtonsPanel.Controls.Add(_addButton, 0, 0);
 
-        _removeButton = new Button { Text = "Remove", Width = 90, Height = 30, Font = normalFont, BackColor = Color.IndianRed, Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Left };
+        _removeButton = new Button { Text = "Remove", Width = 90, Height = 30, Font = normalFont, Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Left };
         _removeButton.Click += RemovePresetButton_Click;
         editButtonsPanel.Controls.Add(_removeButton, 1, 0);
 

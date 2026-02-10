@@ -83,15 +83,12 @@ public class ChartTileEditorForm : Form {
                     break;
 
                 case Button btn:
-                    if (btn == _cancelButton) {
-                        btn.BackColor = Color.Gray;
-                    } else if (btn.BackColor == Color.IndianRed) {
-                        btn.BackColor = Color.IndianRed;
-                    } else {
-                        btn.BackColor = Color.FromArgb(0, 121, 107);
-                    }
+                    var isPrimary = btn == _saveButton;
+                    var isCancel = btn == _cancelButton;
+                    btn.BackColor = isPrimary ? Color.FromArgb(0, 121, 107)
+                        : (isCancel ? Color.Gray : (isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(53, 70, 76)));
 
-                    btn.ForeColor = Color.White;
+                    btn.ForeColor = (isPrimary || isCancel) ? Color.White : (isLight ? Color.Black : Color.White);
                     btn.FlatStyle = FlatStyle.Flat;
                     btn.FlatAppearance.BorderSize = 0;
                     break;
@@ -209,7 +206,7 @@ public class ChartTileEditorForm : Form {
         var addMetricButton = new Button { Text = "Add Metric", Width = 110, Height = 30, Font = normalFont, Margin = new Padding(0, 0, 10, 0) };
         addMetricButton.Click += AddMetricButton_Click;
         gridButtonPanel.Controls.Add(addMetricButton);
-        var removeMetricButton = new Button { Text = "Remove", Width = 90, Height = 30, Font = normalFont, BackColor = Color.IndianRed };
+        var removeMetricButton = new Button { Text = "Remove", Width = 90, Height = 30, Font = normalFont };
         removeMetricButton.Click += RemoveMetricButton_Click;
         gridButtonPanel.Controls.Add(removeMetricButton);
         mainLayout.Controls.Add(gridButtonPanel, 0, 3);
