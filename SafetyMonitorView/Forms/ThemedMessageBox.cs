@@ -1,4 +1,5 @@
 using MaterialSkin;
+using SafetyMonitorView.Services;
 
 namespace SafetyMonitorView.Forms;
 
@@ -13,7 +14,7 @@ public class ThemedMessageBox : Form {
     private readonly MessageBoxIcon _icon;
     private readonly string _message;
     private FlowLayoutPanel _buttonPanel = null!;
-    private Label _iconLabel = null!;
+    private PictureBox _iconPicture = null!;
     private Label _messageLabel = null!;
 
     #endregion Private Fields
@@ -75,7 +76,7 @@ public class ThemedMessageBox : Form {
     private void AddButton(string text, DialogResult result, bool isPrimary, Font font) {
         var button = new Button {
             Text = text,
-            Width = 90,
+            Width = 70,
             Height = 35,
             Font = isPrimary ? new Font(font, FontStyle.Bold) : font,
             Margin = new Padding(0, 0, 10, 0),
@@ -104,7 +105,9 @@ public class ThemedMessageBox : Form {
         ForeColor = isLight ? Color.Black : Color.White;
 
         _messageLabel.ForeColor = isLight ? Color.Black : Color.White;
-        _iconLabel.ForeColor = GetIconColor(isLight);
+        _iconPicture.Image?.Dispose();
+        _iconPicture.Image = MaterialIcons.GetMessageBoxIcon(_icon, isLight, 24);
+        _iconPicture.Visible = _iconPicture.Image != null;
 
         foreach (Control control in _buttonPanel.Controls) {
             if (control is Button btn) {
@@ -147,26 +150,6 @@ public class ThemedMessageBox : Form {
         }
     }
 
-    private Color GetIconColor(bool isLight) {
-        return _icon switch {
-            MessageBoxIcon.Error => Color.FromArgb(220, 53, 69),
-            MessageBoxIcon.Warning => Color.FromArgb(255, 193, 7),
-            MessageBoxIcon.Information => Color.FromArgb(13, 110, 253),
-            MessageBoxIcon.Question => Color.FromArgb(13, 110, 253),
-            _ => isLight ? Color.Black : Color.White
-        };
-    }
-
-    private string GetIconText() {
-        return _icon switch {
-            MessageBoxIcon.Error => "❌",
-            MessageBoxIcon.Warning => "⚠️",
-            MessageBoxIcon.Information => "ℹ️",
-            MessageBoxIcon.Question => "❓",
-            _ => ""
-        };
-    }
-
     private void InitializeComponent() {
         Text = _caption;
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -179,7 +162,6 @@ public class ThemedMessageBox : Form {
         Padding = new Padding(20);
 
         var normalFont = new Font("Roboto", 10f);
-        var iconFont = new Font("Segoe UI Emoji", 28f);
 
         // Main layout
         var mainLayout = new TableLayoutPanel {
@@ -194,14 +176,12 @@ public class ThemedMessageBox : Form {
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Buttons row
 
         // Icon
-        _iconLabel = new Label {
-            Font = iconFont,
-            AutoSize = true,
-            Margin = new Padding(0, 0, 15, 0),
-            TextAlign = ContentAlignment.TopCenter,
-            Text = GetIconText()
+        _iconPicture = new PictureBox {
+            Size = new Size(24, 24),
+            SizeMode = PictureBoxSizeMode.Zoom,
+            Margin = new Padding(0, 4, 15, 0)
         };
-        mainLayout.Controls.Add(_iconLabel, 0, 0);
+        mainLayout.Controls.Add(_iconPicture, 0, 0);
 
         // Message
         _messageLabel = new Label {
@@ -228,11 +208,22 @@ public class ThemedMessageBox : Form {
 
         // Calculate form size
         var preferredSize = mainLayout.GetPreferredSize(new Size(500, 300));
+        var baseWidth = Math.Max(320, preferredSize.Width + 40);
+        var baseHeight = Math.Max(150, preferredSize.Height + 40);
         ClientSize = new Size(
-            Math.Max(320, preferredSize.Width + 40),
-            Math.Max(150, preferredSize.Height + 40)
+            (int)Math.Round(baseWidth * 0.6f),
+            (int)Math.Round(baseHeight * 0.4f)
         );
     }
+
+    protected override void Dispose(bool disposing) {
+        if (disposing) {
+            _iconPicture?.Image?.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+
 
     #endregion Private Methods
 }
