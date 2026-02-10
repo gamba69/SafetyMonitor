@@ -155,6 +155,7 @@ public class MainForm : MaterialForm {
             "Duplicate Current" => "copy",
             "Delete Current" => "delete",
             "Color Schemes..." => "palette",
+            "Chart Period Presets..." => "schedule",
             _ => ""
         };
     }
@@ -234,6 +235,7 @@ public class MainForm : MaterialForm {
         viewMenu.DropDownItems.Add(themeMenu);
         viewMenu.DropDownItems.Add(new ToolStripSeparator());
         viewMenu.DropDownItems.Add(CreateMenuItem("Color Schemes...", "palette", iconColor, (s, e) => ShowColorSchemeEditor()));
+        viewMenu.DropDownItems.Add(CreateMenuItem("Chart Period Presets...", "schedule", iconColor, (s, e) => ShowChartPeriodPresetEditor()));
 
         var helpMenu = new ToolStripMenuItem("Help");
         helpMenu.DropDownItems.Add(CreateMenuItem("About", "about", iconColor, (s, e) => ShowAbout()));
@@ -558,14 +560,25 @@ public class MainForm : MaterialForm {
         editor.ShowDialog(this);
     }
 
+    private void ShowChartPeriodPresetEditor() {
+        using var editor = new ChartPeriodPresetEditorForm(_appSettings.ChartPeriodPresets);
+        if (editor.ShowDialog(this) == DialogResult.OK) {
+            _appSettings.ChartPeriodPresets = editor.Presets;
+            _appSettingsService.SaveSettings(_appSettings);
+            ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
+
+            if (_currentDashboard != null) {
+                LoadDashboard(_currentDashboard);
+            }
+        }
+    }
+
     private void ShowSettings() {
-        using var settingsForm = new SettingsForm(_appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ChartPeriodPresets);
+        using var settingsForm = new SettingsForm(_appSettings.StoragePath, _appSettings.RefreshInterval);
         if (settingsForm.ShowDialog() == DialogResult.OK) {
             _appSettings.StoragePath = settingsForm.StoragePath;
             _appSettings.RefreshInterval = settingsForm.RefreshInterval;
-            _appSettings.ChartPeriodPresets = settingsForm.ChartPeriodPresets;
             _appSettingsService.SaveSettings(_appSettings);
-            ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
 
             _dataService = new DataService(_appSettings.StoragePath);
             UpdateStatusBar();

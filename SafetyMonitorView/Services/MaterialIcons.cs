@@ -44,6 +44,8 @@ public static class MaterialIcons {
         ["about"] = DrawInfo,
         ["help"] = DrawHelp,
         ["refresh"] = DrawRefresh,
+        ["schedule"] = DrawSchedule,
+        ["timer"] = DrawSchedule,
         ["save"] = DrawSave,
         ["folder"] = DrawFolder,
         ["chart"] = DrawChart,
@@ -659,6 +661,27 @@ public static class MaterialIcons {
         var arrowY = cy + arcR * (float)Math.Sin(-60 * Math.PI / 180);
         g.DrawLine(pen, arrowX, arrowY, arrowX - r.Width * 0.13f, arrowY);
         g.DrawLine(pen, arrowX, arrowY, arrowX - r.Width * 0.07f, arrowY + r.Height * 0.1f);
+    }
+
+    private static void DrawSchedule(Graphics g, RectangleF r, Color c) {
+        using var pen = MakePen(c, r.Width / PW);
+
+        var cx = r.X + r.Width / 2f;
+        var cy = r.Y + r.Height / 2f;
+        var radius = r.Width * 0.33f;
+
+        // Clock circle
+        g.DrawEllipse(pen, cx - radius, cy - radius, radius * 2f, radius * 2f);
+
+        // Clock hands
+        g.DrawLine(pen, cx, cy, cx, cy - radius * 0.5f);
+        g.DrawLine(pen, cx, cy, cx + radius * 0.4f, cy);
+
+        // Preset list lines
+        g.DrawLine(pen, r.X + r.Width * 0.1f, r.Y + r.Height * 0.2f, r.X + r.Width * 0.38f, r.Y + r.Height * 0.2f);
+        g.DrawLine(pen, r.X + r.Width * 0.1f, r.Y + r.Height * 0.8f, r.X + r.Width * 0.38f, r.Y + r.Height * 0.8f);
+        g.DrawLine(pen, r.X + r.Width * 0.62f, r.Y + r.Height * 0.2f, r.X + r.Width * 0.9f, r.Y + r.Height * 0.2f);
+        g.DrawLine(pen, r.X + r.Width * 0.62f, r.Y + r.Height * 0.8f, r.X + r.Width * 0.9f, r.Y + r.Height * 0.8f);
     }
 
     private static void DrawSave(Graphics g, RectangleF r, Color c) {
