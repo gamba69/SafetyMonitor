@@ -10,6 +10,8 @@ public class ChartTileEditorForm : Form {
     #region Private Fields
 
     private readonly ChartTileConfig _config;
+    private Color _inputBackColor;
+    private Color _inputForeColor;
 
     private ComboBox _aggregationUnitComboBox = null!;
     private NumericUpDown _aggregationValueNumeric = null!;
@@ -60,17 +62,31 @@ public class ChartTileEditorForm : Form {
     private void ApplyTheme() {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+        _inputBackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
+        _inputForeColor = isLight ? Color.Black : Color.White;
 
         BackColor = isLight ? Color.FromArgb(250, 250, 250) : Color.FromArgb(38, 52, 57);
-        ForeColor = isLight ? Color.Black : Color.White;
+        ForeColor = _inputForeColor;
 
         // DataGridView special handling
         _metricsGrid.BackgroundColor = isLight ? Color.White : Color.FromArgb(35, 47, 52);
-        _metricsGrid.DefaultCellStyle.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
-        _metricsGrid.DefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
+        _metricsGrid.DefaultCellStyle.BackColor = _inputBackColor;
+        _metricsGrid.DefaultCellStyle.ForeColor = _inputForeColor;
+        _metricsGrid.DefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(33, 150, 243) : Color.FromArgb(0, 121, 107);
+        _metricsGrid.DefaultCellStyle.SelectionForeColor = Color.White;
         _metricsGrid.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(53, 70, 76);
-        _metricsGrid.ColumnHeadersDefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
+        _metricsGrid.ColumnHeadersDefaultCellStyle.ForeColor = _inputForeColor;
         _metricsGrid.EnableHeadersVisualStyles = false;
+        _metricsGrid.GridColor = isLight ? Color.LightGray : Color.FromArgb(70, 90, 98);
+
+        foreach (var comboBoxColumn in _metricsGrid.Columns.OfType<DataGridViewComboBoxColumn>()) {
+            comboBoxColumn.FlatStyle = FlatStyle.Flat;
+            comboBoxColumn.DisplayStyle = DataGridViewComboBoxDisplayStyle.DropDownButton;
+            comboBoxColumn.DefaultCellStyle.BackColor = _inputBackColor;
+            comboBoxColumn.DefaultCellStyle.ForeColor = _inputForeColor;
+            comboBoxColumn.DefaultCellStyle.SelectionBackColor = _metricsGrid.DefaultCellStyle.SelectionBackColor;
+            comboBoxColumn.DefaultCellStyle.SelectionForeColor = _metricsGrid.DefaultCellStyle.SelectionForeColor;
+        }
 
         ApplyThemeRecursive(this, isLight);
     }
@@ -94,18 +110,19 @@ public class ChartTileEditorForm : Form {
                     break;
 
                 case TextBox txt:
-                    txt.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
-                    txt.ForeColor = isLight ? Color.Black : Color.White;
+                    txt.BackColor = _inputBackColor;
+                    txt.ForeColor = _inputForeColor;
                     break;
 
                 case ComboBox cmb:
-                    cmb.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
-                    cmb.ForeColor = isLight ? Color.Black : Color.White;
+                    cmb.BackColor = _inputBackColor;
+                    cmb.ForeColor = _inputForeColor;
+                    cmb.FlatStyle = FlatStyle.Flat;
                     break;
 
                 case NumericUpDown num:
-                    num.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
-                    num.ForeColor = isLight ? Color.Black : Color.White;
+                    num.BackColor = _inputBackColor;
+                    num.ForeColor = _inputForeColor;
                     break;
 
                 case CheckBox chk:
@@ -113,7 +130,11 @@ public class ChartTileEditorForm : Form {
                     break;
 
                 case DateTimePicker dtp:
-                    dtp.CalendarForeColor = isLight ? Color.Black : Color.White;
+                    dtp.CalendarForeColor = _inputForeColor;
+                    dtp.CalendarMonthBackground = _inputBackColor;
+                    dtp.CalendarTitleBackColor = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(53, 70, 76);
+                    dtp.CalendarTitleForeColor = _inputForeColor;
+                    dtp.CalendarTrailingForeColor = isLight ? Color.Gray : Color.LightGray;
                     break;
             }
             ApplyThemeRecursive(control, isLight);
@@ -164,7 +185,9 @@ public class ChartTileEditorForm : Form {
             Dock = DockStyle.Fill,
             AllowUserToAddRows = false,
             AutoGenerateColumns = false,
+            RowHeadersVisible = false,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             Font = normalFont,
             Margin = new Padding(0, 0, 0, 5)
         };
@@ -172,7 +195,7 @@ public class ChartTileEditorForm : Form {
         _metricsGrid.Columns.Add(new DataGridViewComboBoxColumn {
             Name = "Metric",
             HeaderText = "Metric",
-            Width = 140,
+            FillWeight = 32,
             DataSource = Enum.GetValues<MetricType>().Select(m => new { Value = m, Display = m.GetDisplayName() }).ToList(),
             DisplayMember = "Display",
             ValueMember = "Value",
@@ -182,7 +205,7 @@ public class ChartTileEditorForm : Form {
         _metricsGrid.Columns.Add(new DataGridViewComboBoxColumn {
             Name = "Function",
             HeaderText = "Aggregation",
-            Width = 100,
+            FillWeight = 22,
             DataSource = Enum.GetValues<AggregationFunction>()
                 .Select(f => new { Value = f, Display = f.ToString() })
                 .ToList(),
@@ -191,14 +214,15 @@ public class ChartTileEditorForm : Form {
             ValueType = typeof(AggregationFunction)
         });
 
-        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Label", HeaderText = "Label", Width = 100 });
-        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Color", HeaderText = "Color", Width = 70, ReadOnly = true });
-        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "LineWidth", HeaderText = "Width", Width = 55 });
-        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "ShowMarkers", HeaderText = "Markers", Width = 65 });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Label", HeaderText = "Label", FillWeight = 20 });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Color", HeaderText = "Color", FillWeight = 13, ReadOnly = true });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "LineWidth", HeaderText = "Width", FillWeight = 8 });
+        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "ShowMarkers", HeaderText = "Markers", Visible = false });
 
         _metricsGrid.CellClick += MetricsGrid_CellClick;
         _metricsGrid.CellFormatting += MetricsGrid_CellFormatting;
         _metricsGrid.DataError += MetricsGrid_DataError;
+        _metricsGrid.EditingControlShowing += MetricsGrid_EditingControlShowing;
         mainLayout.Controls.Add(_metricsGrid, 0, 2);
 
         // Row 3: Add/Remove buttons
@@ -266,7 +290,7 @@ public class ChartTileEditorForm : Form {
         Controls.Add(mainLayout);
 
         // Set form size
-        ClientSize = new Size(580, 550);
+        ClientSize = new Size(600, 550);
     }
     private void LoadConfig() {
         _titleTextBox.Text = _config.Title;
@@ -303,7 +327,7 @@ public class ChartTileEditorForm : Form {
         }
     }
     private void MetricsGrid_CellClick(object? sender, DataGridViewCellEventArgs e) {
-        if (e.RowIndex >= 0 && e.ColumnIndex == 3) // Color column
+        if (e.RowIndex >= 0 && _metricsGrid.Columns[e.ColumnIndex].Name == "Color")
         {
             var currentColor = _metricsGrid.Rows[e.RowIndex].Tag as Color? ?? Color.Blue;
             if (ThemedColorPicker.ShowPicker(currentColor, out var pickedColor) == DialogResult.OK) {
@@ -314,7 +338,7 @@ public class ChartTileEditorForm : Form {
     }
 
     private void MetricsGrid_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e) {
-        if (e.ColumnIndex == 3 && e.RowIndex >= 0) // Color column
+        if (e.RowIndex >= 0 && _metricsGrid.Columns[e.ColumnIndex].Name == "Color")
         {
             var row = _metricsGrid.Rows[e.RowIndex];
             if (row.Tag is Color color) {
@@ -354,6 +378,14 @@ public class ChartTileEditorForm : Form {
         }
 
         e.ThrowException = false;
+    }
+
+    private void MetricsGrid_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e) {
+        if (e.Control is ComboBox comboBox) {
+            comboBox.BackColor = _inputBackColor;
+            comboBox.ForeColor = _inputForeColor;
+            comboBox.FlatStyle = FlatStyle.Flat;
+        }
     }
 
     private static object? GetComboBoxFallbackValue(DataGridViewComboBoxColumn column) {
