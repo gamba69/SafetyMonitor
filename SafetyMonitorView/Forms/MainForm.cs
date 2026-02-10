@@ -27,6 +27,7 @@ public class MainForm : MaterialForm {
     private RadioButton _lightThemeButton = null!;
     private MenuStrip _mainMenu = null!;
     private ThemedMenuRenderer _menuRenderer = null!;
+    private const int MenuIconSize = 20;
     private Panel _quickAccessPanel = null!;
     private FlowLayoutPanel _quickDashboardsPanel = null!;
     private System.Windows.Forms.Timer? _refreshTimer;
@@ -36,6 +37,7 @@ public class MainForm : MaterialForm {
 
     private System.Windows.Forms.Timer? _themeTimer;
     private bool _isExitConfirmed;
+    private bool _shouldStartMaximized;
 
     #endregion Private Fields
 
@@ -132,6 +134,11 @@ public class MainForm : MaterialForm {
 
     protected override void OnShown(EventArgs e) {
         base.OnShown(e);
+
+        if (_shouldStartMaximized && WindowState != FormWindowState.Maximized) {
+            WindowState = FormWindowState.Maximized;
+        }
+
         // Re-apply theme after MaterialSkinManager has finished its initialization
         ScheduleThemeReapply();
     }
@@ -152,7 +159,7 @@ public class MainForm : MaterialForm {
 
     private static ToolStripMenuItem CreateMenuItem(string text, string iconName, Color iconColor, EventHandler? onClick) {
         var item = new ToolStripMenuItem(text) {
-            Image = MaterialIcons.GetIcon(iconName, iconColor, 16)
+            Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize)
         };
         if (onClick != null) {
             item.Click += onClick;
@@ -185,7 +192,7 @@ public class MainForm : MaterialForm {
                 var iconName = GetIconNameForMenuItem(menuItem.Text!);
                 if (!string.IsNullOrEmpty(iconName)) {
                     menuItem.Image?.Dispose();
-                    menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, 16);
+                    menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize);
                 }
 
                 // Recursively update submenu items
@@ -197,8 +204,6 @@ public class MainForm : MaterialForm {
     }
 
     private void ApplyWindowSettings() {
-        // ИЗМЕНЕНО: улучшенная логика применения настроек
-
         // Apply window size
         if (_appSettings.WindowWidth > 0 && _appSettings.WindowHeight > 0) {
             Size = new Size(_appSettings.WindowWidth, _appSettings.WindowHeight);
@@ -228,10 +233,9 @@ public class MainForm : MaterialForm {
             StartPosition = FormStartPosition.CenterScreen;
         }
 
-        // Apply maximized state AFTER size and position
-        if (_appSettings.IsMaximized) {
-            WindowState = FormWindowState.Maximized;
-        }
+        // Apply maximized state after the form is shown.
+        // Restoring maximized state before the first show can produce incorrect work area bounds.
+        _shouldStartMaximized = _appSettings.IsMaximized;
     }
 
     private void CreateMenuItems() {
@@ -526,15 +530,16 @@ public class MainForm : MaterialForm {
     }
 
     private void SaveWindowSettings() {
-        // Save window state
         _appSettings.IsMaximized = WindowState == FormWindowState.Maximized;
 
-        // Save window size and position (only if not maximized)
-        if (WindowState == FormWindowState.Normal) {
-            _appSettings.WindowWidth = Width;
-            _appSettings.WindowHeight = Height;
-            _appSettings.WindowX = Left;
-            _appSettings.WindowY = Top;
+        // Persist normal bounds even when the window is maximized.
+        // This avoids stale geometry that can cause incorrect maximize behavior on next startup.
+        var normalBounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
+        if (normalBounds.Width > 0 && normalBounds.Height > 0) {
+            _appSettings.WindowWidth = normalBounds.Width;
+            _appSettings.WindowHeight = normalBounds.Height;
+            _appSettings.WindowX = normalBounds.Left;
+            _appSettings.WindowY = normalBounds.Top;
         }
 
         _appSettingsService.SaveSettings(_appSettings);

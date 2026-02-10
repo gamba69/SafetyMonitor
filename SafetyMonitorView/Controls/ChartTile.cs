@@ -17,6 +17,7 @@ public class ChartTile : Panel {
     private readonly List<ScottPlot.IAxis> _extraAxes = [];
     private bool _initialized;
     private readonly ThemedMenuRenderer _contextMenuRenderer = new();
+    private const int MenuIconSize = 20;
     private ContextMenuStrip? _plotContextMenu;
     private List<ChartPeriodPreset> _periodPresets = [];
     private ComboBox? _periodSelector;
@@ -372,6 +373,7 @@ public class ChartTile : Panel {
         contextMenu.ForeColor = menuText;
 
         ApplyContextMenuItemColors(contextMenu.Items, menuBackground, menuText);
+        ApplyContextMenuIcons(contextMenu.Items, menuText);
     }
 
     private void AttachPlotContextMenu(ContextMenuStrip contextMenu) {
@@ -397,6 +399,41 @@ public class ChartTile : Panel {
         if (sender is ContextMenuStrip contextMenu) {
             ApplyPlotContextMenuTheme(contextMenu);
         }
+    }
+
+    private static void ApplyContextMenuIcons(ToolStripItemCollection items, Color iconColor) {
+        foreach (ToolStripItem item in items) {
+            if (item is not ToolStripMenuItem menuItem) {
+                continue;
+            }
+
+            var iconName = GetContextMenuIconName(menuItem.Text);
+            if (!string.IsNullOrEmpty(iconName)) {
+                menuItem.Image?.Dispose();
+                menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize);
+            }
+
+            if (menuItem.DropDownItems.Count > 0) {
+                ApplyContextMenuIcons(menuItem.DropDownItems, iconColor);
+            }
+        }
+    }
+
+    private static string GetContextMenuIconName(string? menuText) {
+        if (string.IsNullOrWhiteSpace(menuText)) {
+            return string.Empty;
+        }
+
+        var normalizedText = menuText.ToLowerInvariant();
+        return normalizedText switch {
+            var t when t.Contains("copy") => "copy",
+            var t when t.Contains("save") => "save",
+            var t when t.Contains("open") => "folder",
+            var t when t.Contains("help") => "help",
+            var t when t.Contains("reset") => "refresh",
+            var t when t.Contains("autoscale") => "refresh",
+            _ => string.Empty
+        };
     }
     private static void ApplyContextMenuItemColors(ToolStripItemCollection items, Color backColor, Color foreColor) {
         foreach (ToolStripItem item in items) {
