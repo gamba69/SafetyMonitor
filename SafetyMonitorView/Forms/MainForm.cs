@@ -32,12 +32,13 @@ public class MainForm : MaterialForm {
     private FlowLayoutPanel _quickDashboardsPanel = null!;
     private System.Windows.Forms.Timer? _refreshTimer;
     private ToolStripStatusLabel _statusLabel = null!;
-    // ДОБАВЛЕНО: флаг загрузки
     private StatusStrip _statusStrip = null!;
 
     private System.Windows.Forms.Timer? _themeTimer;
     private bool _isExitConfirmed;
+    private bool _restoreToMaximizedAfterMinimize;
     private bool _shouldStartMaximized;
+    private FormWindowState _windowStateBeforeMinimize = FormWindowState.Normal;
 
     #endregion Private Fields
 
@@ -80,7 +81,7 @@ public class MainForm : MaterialForm {
         UpdateStatusBar();
         SetupRefreshTimer();
 
-        _isLoading = false;  // ДОБАВЛЕНО: загрузка завершена
+        _isLoading = false;
     }
 
     #endregion Public Constructors
@@ -126,6 +127,26 @@ public class MainForm : MaterialForm {
 
     protected override void OnResize(EventArgs e) {
         base.OnResize(e);
+
+        if (!_isLoading) {
+            if (WindowState == FormWindowState.Minimized) {
+                _restoreToMaximizedAfterMinimize = _windowStateBeforeMinimize == FormWindowState.Maximized;
+            } else {
+                if (_windowStateBeforeMinimize == FormWindowState.Minimized
+                    && _restoreToMaximizedAfterMinimize
+                    && WindowState == FormWindowState.Normal) {
+                    BeginInvoke(() => {
+                        if (WindowState == FormWindowState.Normal) {
+                            WindowState = FormWindowState.Maximized;
+                        }
+                    });
+                }
+
+                _restoreToMaximizedAfterMinimize = false;
+            }
+
+            _windowStateBeforeMinimize = WindowState;
+        }
 
         // ИЗМЕНЕНО: сохранять только после загрузки
         if (!_isLoading && (WindowState == FormWindowState.Maximized || WindowState == FormWindowState.Normal)) {

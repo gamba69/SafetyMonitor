@@ -6,7 +6,6 @@ public class EditableTileControl : Panel {
     #region Private Fields
 
     private readonly Dashboard _dashboard;
-    // ДОБАВЛЕНО: Сохраняем шрифт как поле
     private readonly Font _titleFont;
 
     private Button _deleteButton = null!;
@@ -25,7 +24,6 @@ public class EditableTileControl : Panel {
         Config = config;
         _dashboard = dashboard;
 
-        // ДОБАВЛЕНО: Создаем шрифт один раз
         _titleFont = new Font("Roboto", 10, FontStyle.Bold);
 
         InitializeUI();
@@ -59,7 +57,6 @@ public class EditableTileControl : Panel {
 
     #region Protected Methods
 
-    // ДОБАВЛЕНО: Освобождение ресурсов шрифта
     protected override void Dispose(bool disposing) {
         if (disposing) {
             _titleFont?.Dispose();
@@ -67,13 +64,9 @@ public class EditableTileControl : Panel {
         base.Dispose(disposing);
     }
 
-    // ДОБАВЛЕНО: Защита от изменения шрифтов MaterialSkinManager
     protected override void OnFontChanged(EventArgs e) {
         base.OnFontChanged(e);
-
-        // Восстанавливаем наш шрифт
         _titleLabel?.Font = _titleFont;
-
     }
 
     #endregion Protected Methods
