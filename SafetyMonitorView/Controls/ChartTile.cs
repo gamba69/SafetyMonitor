@@ -452,6 +452,7 @@ public class ChartTile : Panel {
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var menuBackground = isLight ? Color.White : Color.FromArgb(38, 52, 57);
         var menuText = isLight ? Color.FromArgb(33, 33, 33) : Color.FromArgb(240, 240, 240);
+        var menuIconColor = isLight ? Color.FromArgb(33, 33, 33) : Color.FromArgb(240, 240, 240);
 
         _contextMenuRenderer.UpdateTheme();
 
@@ -463,6 +464,7 @@ public class ChartTile : Panel {
         contextMenu.ImageScalingSize = new Size(MenuIconSize, MenuIconSize);
 
         ApplyContextMenuItemColors(contextMenu.Items, menuBackground, menuText);
+        UpdateContextMenuIcons(contextMenu.Items, menuIconColor);
     }
 
     private ContextMenuStrip CreatePlotContextMenu() {
@@ -493,11 +495,29 @@ public class ChartTile : Panel {
             ImageScaling = ToolStripItemImageScaling.None,
             TextImageRelation = TextImageRelation.ImageBeforeText,
             ImageAlign = ContentAlignment.MiddleLeft,
-            TextAlign = ContentAlignment.MiddleLeft
+            TextAlign = ContentAlignment.MiddleLeft,
+            Tag = iconName
         };
 
         item.Click += onClick;
         return item;
+    }
+
+    private static void UpdateContextMenuIcons(ToolStripItemCollection items, Color iconColor) {
+        foreach (ToolStripItem item in items) {
+            if (item is not ToolStripMenuItem menuItem) {
+                continue;
+            }
+
+            if (menuItem.Tag is string iconName && !string.IsNullOrWhiteSpace(iconName)) {
+                menuItem.Image?.Dispose();
+                menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize);
+            }
+
+            if (menuItem.DropDownItems.Count > 0) {
+                UpdateContextMenuIcons(menuItem.DropDownItems, iconColor);
+            }
+        }
     }
 
     private void HandleSaveImageClick(object? sender, EventArgs e) {
