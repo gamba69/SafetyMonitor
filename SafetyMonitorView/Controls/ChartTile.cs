@@ -142,6 +142,7 @@ public class ChartTile : Panel {
             scatter.LineWidth = agg.LineWidth;
             scatter.MarkerSize = agg.ShowMarkers ? 5 : 0;
             scatter.Smooth = agg.Smooth;
+            ApplySmoothTension(scatter, agg);
 
             // Assign this series to its dedicated Y axis when multiple axes are active
             if (useMultipleAxes && axisMap.TryGetValue(agg.Metric, out var yAxis)) {
@@ -259,6 +260,20 @@ public class ChartTile : Panel {
         return string.IsNullOrEmpty(unit)
             ? metric.GetDisplayName()
             : $"{metric.GetDisplayName()} ({unit})";
+    }
+
+    private static void ApplySmoothTension(object scatter, MetricAggregation aggregation) {
+        if (!aggregation.Smooth) {
+            return;
+        }
+
+        var smoothTensionProperty = scatter.GetType().GetProperty("SmoothTension");
+        if (smoothTensionProperty == null || !smoothTensionProperty.CanWrite) {
+            return;
+        }
+
+        var clampedTension = Math.Clamp(aggregation.Tension, 0f, 3f);
+        smoothTensionProperty.SetValue(scatter, clampedTension);
     }
 
     /// <summary>

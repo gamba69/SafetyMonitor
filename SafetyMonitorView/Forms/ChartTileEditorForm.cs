@@ -54,7 +54,7 @@ public class ChartTileEditorForm : Form {
     }
 
     private void AddMetricButton_Click(object? sender, EventArgs e) {
-        var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, 2.0f, false, false);
+        var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, 2.0f, false, 0.5f, false);
         _metricsGrid.Rows[newRow].Tag = Color.Blue;
         _metricsGrid.InvalidateRow(newRow);
     }
@@ -218,6 +218,7 @@ public class ChartTileEditorForm : Form {
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Color", HeaderText = "Clr", FillWeight = 6, ReadOnly = true });
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "LineWidth", HeaderText = "W", FillWeight = 7 });
         _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Smooth", HeaderText = "Smth", FillWeight = 8 });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Tension", HeaderText = "Tns", FillWeight = 8 });
         _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "ShowMarkers", HeaderText = "Mark", FillWeight = 12 });
 
         _metricsGrid.CellClick += MetricsGrid_CellClick;
@@ -323,7 +324,7 @@ public class ChartTileEditorForm : Form {
         _columnSpanNumeric.Value = _config.ColumnSpan;
 
         foreach (var agg in _config.MetricAggregations) {
-            var rowIndex = _metricsGrid.Rows.Add(agg.Metric, agg.Function, agg.Label, null!, agg.LineWidth, agg.Smooth, agg.ShowMarkers);
+            var rowIndex = _metricsGrid.Rows.Add(agg.Metric, agg.Function, agg.Label, null!, agg.LineWidth, agg.Smooth, agg.Tension, agg.ShowMarkers);
             _metricsGrid.Rows[rowIndex].Tag = agg.Color;
             _metricsGrid.InvalidateRow(rowIndex); ;
         }
@@ -390,6 +391,15 @@ public class ChartTileEditorForm : Form {
         }
     }
 
+
+    private static float ParseTension(string? rawValue) {
+        if (!float.TryParse(rawValue, out var tension)) {
+            return 0.5f;
+        }
+
+        return Math.Clamp(tension, 0f, 3f);
+    }
+
     private static object? GetComboBoxFallbackValue(DataGridViewComboBoxColumn column) {
         if (!string.IsNullOrWhiteSpace(column.ValueMember) && column.DataSource is IEnumerable source) {
             var first = source.Cast<object>().FirstOrDefault();
@@ -452,6 +462,7 @@ public class ChartTileEditorForm : Form {
                 Color = (Color)(row.Tag ?? Color.Blue),
                 LineWidth = float.Parse(row.Cells["LineWidth"].Value?.ToString() ?? "2"),
                 Smooth = (bool)(row.Cells["Smooth"].Value ?? false),
+                Tension = ParseTension(row.Cells["Tension"].Value?.ToString()),
                 ShowMarkers = (bool)(row.Cells["ShowMarkers"].Value ?? false)
             };
             _config.MetricAggregations.Add(agg);

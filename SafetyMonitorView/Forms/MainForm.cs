@@ -591,7 +591,6 @@ public class MainForm : MaterialForm {
 
         var message = "Unable to connect to SQL Server. Application terminated."
             + Environment.NewLine
-            + Environment.NewLine
             + details;
 
         ThemedMessageBox.Show(
@@ -607,7 +606,14 @@ public class MainForm : MaterialForm {
     }
 
     private void ShowAbout() {
-        ThemedMessageBox.Show(this, "SafetyMonitorView v1.0\nASCOM Alpaca\nSafety Monitor Dashboard\n©2026 DreamSky Observatory",
+        var message = "SafetyMonitorView v1.0"
+            + Environment.NewLine
+            + "ASCOM Alpaca"
+            + Environment.NewLine
+            + "Safety Monitor Dashboard"
+            + Environment.NewLine
+            + "©2026 DreamSky Observatory";
+        ThemedMessageBox.Show(this, message,
             "About SafetyMonitorView", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
