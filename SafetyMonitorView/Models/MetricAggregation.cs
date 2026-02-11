@@ -5,6 +5,7 @@ public class MetricAggregation {
     #region Public Properties
 
     public Color Color { get; set; } = Color.Blue;
+    public Color DarkThemeColor { get; set; } = Color.Empty;
     public DataStorage.Models.AggregationFunction Function { get; set; }
     public string Label { get; set; } = "";
     public float LineWidth { get; set; } = 2f;
@@ -14,4 +15,16 @@ public class MetricAggregation {
     public bool ShowMarkers { get; set; } = false;
 
     #endregion Public Properties
+
+    #region Public Methods
+
+    public Color GetColorForTheme(bool isLightTheme) {
+        if (isLightTheme) {
+            return Color;
+        }
+
+        return DarkThemeColor.IsEmpty ? Color : DarkThemeColor;
+    }
+
+    #endregion Public Methods
 }

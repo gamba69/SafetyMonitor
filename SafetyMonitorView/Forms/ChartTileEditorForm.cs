@@ -7,6 +7,20 @@ namespace SafetyMonitorView.Forms;
 
 public class ChartTileEditorForm : Form {
 
+    #region Private Types
+
+    private sealed class MetricRowColors {
+
+        #region Public Fields
+
+        public Color Dark = Color.LightSkyBlue;
+        public Color Light = Color.Blue;
+
+        #endregion Public Fields
+    }
+
+    #endregion Private Types
+
     #region Private Fields
 
     private readonly ChartTileConfig _config;
@@ -54,8 +68,8 @@ public class ChartTileEditorForm : Form {
     }
 
     private void AddMetricButton_Click(object? sender, EventArgs e) {
-        var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, 2.0f, false, 0.5f, false);
-        _metricsGrid.Rows[newRow].Tag = Color.Blue;
+        var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, null!, 2.0f, false, 0.5f, false);
+        _metricsGrid.Rows[newRow].Tag = new MetricRowColors();
         _metricsGrid.InvalidateRow(newRow);
     }
 
@@ -215,7 +229,8 @@ public class ChartTileEditorForm : Form {
         });
 
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Label", HeaderText = "Label", FillWeight = 18 });
-        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Color", HeaderText = "Clr", FillWeight = 6, ReadOnly = true });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "LightColor", HeaderText = "Light", FillWeight = 8, ReadOnly = true });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "DarkColor", HeaderText = "Dark", FillWeight = 8, ReadOnly = true });
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "LineWidth", HeaderText = "W", FillWeight = 7 });
         _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Smooth", HeaderText = "Smth", FillWeight = 8 });
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Tension", HeaderText = "Tns", FillWeight = 8 });
@@ -324,32 +339,54 @@ public class ChartTileEditorForm : Form {
         _columnSpanNumeric.Value = _config.ColumnSpan;
 
         foreach (var agg in _config.MetricAggregations) {
-            var rowIndex = _metricsGrid.Rows.Add(agg.Metric, agg.Function, agg.Label, null!, agg.LineWidth, agg.Smooth, agg.Tension, agg.ShowMarkers);
-            _metricsGrid.Rows[rowIndex].Tag = agg.Color;
-            _metricsGrid.InvalidateRow(rowIndex); ;
+            var rowIndex = _metricsGrid.Rows.Add(agg.Metric, agg.Function, agg.Label, null!, null!, agg.LineWidth, agg.Smooth, agg.Tension, agg.ShowMarkers);
+            _metricsGrid.Rows[rowIndex].Tag = new MetricRowColors {
+                Light = agg.Color,
+                Dark = agg.DarkThemeColor.IsEmpty ? agg.Color : agg.DarkThemeColor
+            };
+            _metricsGrid.InvalidateRow(rowIndex);
         }
     }
     private void MetricsGrid_CellClick(object? sender, DataGridViewCellEventArgs e) {
-        if (e.RowIndex >= 0 && _metricsGrid.Columns[e.ColumnIndex].Name == "Color")
-        {
-            var currentColor = _metricsGrid.Rows[e.RowIndex].Tag as Color? ?? Color.Blue;
-            if (ThemedColorPicker.ShowPicker(currentColor, out var pickedColor) == DialogResult.OK) {
-                _metricsGrid.Rows[e.RowIndex].Tag = pickedColor;
-                _metricsGrid.InvalidateRow(e.RowIndex);
-            }
+        if (e.RowIndex < 0) {
+            return;
         }
+
+        var columnName = _metricsGrid.Columns[e.ColumnIndex].Name;
+        if (columnName is not ("LightColor" or "DarkColor")) {
+            return;
+        }
+
+        var rowColors = EnsureRowColors(_metricsGrid.Rows[e.RowIndex]);
+        var currentColor = columnName == "LightColor" ? rowColors.Light : rowColors.Dark;
+        if (ThemedColorPicker.ShowPicker(currentColor, out var pickedColor) != DialogResult.OK) {
+            return;
+        }
+
+        if (columnName == "LightColor") {
+            rowColors.Light = pickedColor;
+        } else {
+            rowColors.Dark = pickedColor;
+        }
+
+        _metricsGrid.InvalidateRow(e.RowIndex);
     }
 
     private void MetricsGrid_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e) {
-        if (e.RowIndex >= 0 && _metricsGrid.Columns[e.ColumnIndex].Name == "Color")
-        {
-            var row = _metricsGrid.Rows[e.RowIndex];
-            if (row.Tag is Color color) {
-                e.Value = "";
-                e.CellStyle!.BackColor = color;
-                e.CellStyle.SelectionBackColor = color;
-            }
+        if (e.RowIndex < 0) {
+            return;
         }
+
+        var columnName = _metricsGrid.Columns[e.ColumnIndex].Name;
+        if (columnName is not ("LightColor" or "DarkColor")) {
+            return;
+        }
+
+        var colors = EnsureRowColors(_metricsGrid.Rows[e.RowIndex]);
+        var color = columnName == "LightColor" ? colors.Light : colors.Dark;
+        e.Value = string.Empty;
+        e.CellStyle!.BackColor = color;
+        e.CellStyle.SelectionBackColor = color;
     }
 
     private void MetricsGrid_DataError(object? sender, DataGridViewDataErrorEventArgs e) {
@@ -398,6 +435,22 @@ public class ChartTileEditorForm : Form {
         }
 
         return Math.Clamp(tension, 0f, 3f);
+    }
+
+    private static MetricRowColors EnsureRowColors(DataGridViewRow row) {
+        if (row.Tag is MetricRowColors colors) {
+            return colors;
+        }
+
+        if (row.Tag is Color color) {
+            var migratedColors = new MetricRowColors { Light = color, Dark = color };
+            row.Tag = migratedColors;
+            return migratedColors;
+        }
+
+        var defaultColors = new MetricRowColors();
+        row.Tag = defaultColors;
+        return defaultColors;
     }
 
     private static object? GetComboBoxFallbackValue(DataGridViewComboBoxColumn column) {
@@ -455,11 +508,13 @@ public class ChartTileEditorForm : Form {
                 continue;
             }
 
+            var colors = EnsureRowColors(row);
             var agg = new MetricAggregation {
                 Metric = (MetricType)row.Cells["Metric"].Value!,
                 Function = (AggregationFunction)row.Cells["Function"].Value!,
                 Label = row.Cells["Label"].Value?.ToString() ?? "",
-                Color = (Color)(row.Tag ?? Color.Blue),
+                Color = colors.Light,
+                DarkThemeColor = colors.Dark,
                 LineWidth = float.Parse(row.Cells["LineWidth"].Value?.ToString() ?? "2"),
                 Smooth = (bool)(row.Cells["Smooth"].Value ?? false),
                 Tension = ParseTension(row.Cells["Tension"].Value?.ToString()),

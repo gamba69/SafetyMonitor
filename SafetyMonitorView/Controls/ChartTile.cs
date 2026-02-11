@@ -73,6 +73,7 @@ public class ChartTile : Panel {
 
         var aggregationInterval = _config.CustomAggregationInterval
             ?? DataService.GetRecommendedAggregationInterval(_config.Period);
+        var isLightTheme = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
 
         // Determine distinct metric types to decide if multiple Y axes are needed
         var distinctMetrics = _config.MetricAggregations
@@ -90,7 +91,7 @@ public class ChartTile : Panel {
 
                 // Use the color of the first series for this metric to tint the axis
                 var representativeColor = ScottPlot.Color.FromColor(
-                    _config.MetricAggregations.First(a => a.Metric == metric).Color);
+                    _config.MetricAggregations.First(a => a.Metric == metric).GetColorForTheme(isLightTheme));
 
                 if (i == 0) {
                     // First metric — use the built-in left Y axis
@@ -112,7 +113,7 @@ public class ChartTile : Panel {
             var metric = distinctMetrics[0];
             var labelText = BuildAxisLabel(metric);
             var representativeColor = ScottPlot.Color.FromColor(
-                _config.MetricAggregations.First(a => a.Metric == metric).Color);
+                _config.MetricAggregations.First(a => a.Metric == metric).GetColorForTheme(isLightTheme));
             StyleAxis(_plot.Plot.Axes.Left, labelText, representativeColor);
             axisMap[metric] = _plot.Plot.Axes.Left;
         }
@@ -144,7 +145,7 @@ public class ChartTile : Panel {
             hasVisibleSeries = true;
             metricsWithData.Add(agg.Metric);
             scatter.LegendText = agg.Label;
-            scatter.Color = ScottPlot.Color.FromColor(agg.Color);
+            scatter.Color = ScottPlot.Color.FromColor(agg.GetColorForTheme(isLightTheme));
             scatter.LineWidth = agg.LineWidth;
             scatter.MarkerSize = agg.ShowMarkers ? 5 : 0;
             scatter.Smooth = agg.Smooth;
@@ -202,7 +203,8 @@ public class ChartTile : Panel {
         } else {
             expectedFont.Dispose();
         }
-        _plot.Refresh();
+        // Rebuild plottables so series colors are recalculated for the active theme.
+        RefreshData();
         Invalidate(true);
     }
 
@@ -870,11 +872,12 @@ public class ChartTile : Panel {
             .Select(a => a.Metric)
             .Distinct()
             .ToList();
+        var isLightTheme = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
 
         for (int i = 0; i < distinctMetrics.Count; i++) {
             var metric = distinctMetrics[i];
             var representativeColor = ScottPlot.Color.FromColor(
-                _config.MetricAggregations.First(a => a.Metric == metric).Color);
+                _config.MetricAggregations.First(a => a.Metric == metric).GetColorForTheme(isLightTheme));
 
             ScottPlot.IYAxis? axis = null;
             if (i == 0) {
