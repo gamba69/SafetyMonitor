@@ -14,7 +14,7 @@ public class ChartTile : Panel {
 
     private readonly ChartTileConfig _config;
     private readonly DataService _dataService;
-    private readonly List<ScottPlot.IAxis> _extraAxes = [];
+    private readonly List<ScottPlot.IYAxis> _extraAxes = [];
     private bool _initialized;
     private readonly ThemedMenuRenderer _contextMenuRenderer = new();
     private const int MenuIconSize = 16;
@@ -83,6 +83,7 @@ public class ChartTile : Panel {
 
         bool useMultipleAxes = distinctMetrics.Count > 1;
         var axisMap = new Dictionary<MetricType, ScottPlot.IYAxis>();
+        var axisStyleMap = new Dictionary<MetricType, (string LabelText, ScottPlot.Color Color)>();
 
         if (useMultipleAxes) {
             for (int i = 0; i < distinctMetrics.Count; i++) {
@@ -92,6 +93,7 @@ public class ChartTile : Panel {
                 // Use the color of the first series for this metric to tint the axis
                 var representativeColor = ScottPlot.Color.FromColor(
                     _config.MetricAggregations.First(a => a.Metric == metric).GetColorForTheme(isLightTheme));
+                axisStyleMap[metric] = (labelText, representativeColor);
 
                 if (i == 0) {
                     // First metric — use the built-in left Y axis
@@ -114,6 +116,7 @@ public class ChartTile : Panel {
             var labelText = BuildAxisLabel(metric);
             var representativeColor = ScottPlot.Color.FromColor(
                 _config.MetricAggregations.First(a => a.Metric == metric).GetColorForTheme(isLightTheme));
+            axisStyleMap[metric] = (labelText, representativeColor);
             StyleAxis(_plot.Plot.Axes.Left, labelText, representativeColor);
             axisMap[metric] = _plot.Plot.Axes.Left;
         }
@@ -166,9 +169,8 @@ public class ChartTile : Panel {
             _plot.Plot.Axes.SetLimitsX(startTime.ToOADate(), endTime.ToOADate());
         }
 
-        ApplyYAxisVisibility(axisMap, metricsWithData);
-
         ApplyThemeColors();
+        ApplyYAxisVisibility(axisMap, axisStyleMap, metricsWithData);
         if (_config.ShowLegend && _config.MetricAggregations.Count > 1) {
             _plot.Plot.ShowLegend();
         } else {
@@ -353,23 +355,41 @@ public class ChartTile : Panel {
 
     private void ApplyYAxisVisibility(
         IReadOnlyDictionary<MetricType, ScottPlot.IYAxis> axisMap,
+        IReadOnlyDictionary<MetricType, (string LabelText, ScottPlot.Color Color)> axisStyleMap,
         IReadOnlySet<MetricType> metricsWithData) {
         if (_plot == null) {
             return;
         }
 
-        SetAxisVisibility(_plot.Plot.Axes.Left, false);
-        SetAxisVisibility(_plot.Plot.Axes.Right, false);
+        SetAxisNeutralState(_plot.Plot.Axes.Left);
+        SetAxisNeutralState(_plot.Plot.Axes.Right);
 
         foreach (var axis in _extraAxes) {
-            SetAxisVisibility(axis, false);
+            SetAxisNeutralState(axis);
         }
 
-        foreach (var metric in metricsWithData) {
-            if (axisMap.TryGetValue(metric, out var axis)) {
+        foreach (var (metric, axis) in axisMap) {
+            if (!metricsWithData.Contains(metric)) {
+                continue;
+            }
+
+            if (axisStyleMap.TryGetValue(metric, out var axisStyle)) {
+                StyleAxis(axis, axisStyle.LabelText, axisStyle.Color);
                 SetAxisVisibility(axis, true);
             }
         }
+    }
+
+    private static void SetAxisNeutralState(ScottPlot.IYAxis axis) {
+        SetAxisVisibility(axis, true);
+
+        var neutralColor = ScottPlot.Color.FromColor(Color.White);
+        axis.Label.Text = string.Empty;
+        axis.Label.ForeColor = neutralColor;
+        axis.TickLabelStyle.ForeColor = neutralColor;
+        axis.FrameLineStyle.Color = neutralColor;
+        axis.MajorTickStyle.Color = neutralColor;
+        axis.MinorTickStyle.Color = neutralColor;
     }
 
     private static void SetAxisVisibility(object axis, bool isVisible) {
@@ -885,7 +905,7 @@ public class ChartTile : Panel {
             } else if (i == 1) {
                 axis = _plot.Plot.Axes.Right;
             } else if (i - 2 < _extraAxes.Count) {
-                axis = _extraAxes[i - 2] as ScottPlot.IYAxis;
+                axis = _extraAxes[i - 2];
             }
 
             if (axis == null) {
