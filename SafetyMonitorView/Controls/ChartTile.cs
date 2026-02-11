@@ -114,7 +114,11 @@ public class ChartTile : Panel {
             var representativeColor = ScottPlot.Color.FromColor(
                 _config.MetricAggregations.First(a => a.Metric == metric).Color);
             StyleAxis(_plot.Plot.Axes.Left, labelText, representativeColor);
+            axisMap[metric] = _plot.Plot.Axes.Left;
         }
+
+        var hasVisibleSeries = false;
+        var metricsWithData = new HashSet<MetricType>();
 
         foreach (var agg in _config.MetricAggregations) {
             var data = _dataService.GetChartData(
@@ -137,6 +141,8 @@ public class ChartTile : Panel {
             var validTimes = validData.Select(x => x.Time).ToArray();
             var validValues = validData.Select(x => x.Value).ToArray();
             var scatter = _plot.Plot.Add.Scatter(validTimes, validValues);
+            hasVisibleSeries = true;
+            metricsWithData.Add(agg.Metric);
             scatter.LegendText = agg.Label;
             scatter.Color = ScottPlot.Color.FromColor(agg.Color);
             scatter.LineWidth = agg.LineWidth;
@@ -151,7 +157,16 @@ public class ChartTile : Panel {
         }
 
         _plot.Plot.Axes.DateTimeTicksBottom();
-        _plot.Plot.Axes.AutoScale();
+
+        if (hasVisibleSeries) {
+            _plot.Plot.Axes.AutoScale();
+        } else {
+            var (startTime, endTime) = GetConfiguredPeriodRange();
+            _plot.Plot.Axes.SetLimitsX(startTime.ToOADate(), endTime.ToOADate());
+        }
+
+        ApplyYAxisVisibility(axisMap, metricsWithData);
+
         ApplyThemeColors();
         if (_config.ShowLegend && _config.MetricAggregations.Count > 1) {
             _plot.Plot.ShowLegend();
@@ -303,6 +318,63 @@ public class ChartTile : Panel {
         axis.FrameLineStyle.Color = color;
         axis.MajorTickStyle.Color = color;
         axis.MinorTickStyle.Color = color;
+    }
+
+    private (DateTime start, DateTime end) GetConfiguredPeriodRange() {
+        var endTime = _config.CustomEndTime.HasValue
+            ? ToLocalChartTime(_config.CustomEndTime.Value)
+            : DateTime.Now;
+
+        var startTime = _config.Period switch {
+            ChartPeriod.Last15Minutes => endTime.AddMinutes(-15),
+            ChartPeriod.LastHour => endTime.AddHours(-1),
+            ChartPeriod.Last6Hours => endTime.AddHours(-6),
+            ChartPeriod.Last24Hours => endTime.AddHours(-24),
+            ChartPeriod.Last7Days => endTime.AddDays(-7),
+            ChartPeriod.Last30Days => endTime.AddDays(-30),
+            ChartPeriod.Custom => _config.CustomStartTime.HasValue
+                ? ToLocalChartTime(_config.CustomStartTime.Value)
+                : (_config.CustomPeriodDuration.HasValue
+                    ? endTime.Add(-_config.CustomPeriodDuration.Value)
+                    : endTime.AddHours(-24)),
+            _ => endTime.AddHours(-24)
+        };
+
+        return (startTime, endTime);
+    }
+
+    private static DateTime ToLocalChartTime(DateTime value) => value.Kind switch {
+        DateTimeKind.Utc => value.ToLocalTime(),
+        DateTimeKind.Local => value,
+        _ => DateTime.SpecifyKind(value, DateTimeKind.Local)
+    };
+
+    private void ApplyYAxisVisibility(
+        IReadOnlyDictionary<MetricType, ScottPlot.IYAxis> axisMap,
+        IReadOnlySet<MetricType> metricsWithData) {
+        if (_plot == null) {
+            return;
+        }
+
+        SetAxisVisibility(_plot.Plot.Axes.Left, false);
+        SetAxisVisibility(_plot.Plot.Axes.Right, false);
+
+        foreach (var axis in _extraAxes) {
+            SetAxisVisibility(axis, false);
+        }
+
+        foreach (var metric in metricsWithData) {
+            if (axisMap.TryGetValue(metric, out var axis)) {
+                SetAxisVisibility(axis, true);
+            }
+        }
+    }
+
+    private static void SetAxisVisibility(object axis, bool isVisible) {
+        var property = axis.GetType().GetProperty("IsVisible");
+        if (property?.CanWrite == true && property.PropertyType == typeof(bool)) {
+            property.SetValue(axis, isVisible);
+        }
     }
 
     private void ApplyThemeColors() {
