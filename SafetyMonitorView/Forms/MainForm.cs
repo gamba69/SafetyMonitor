@@ -589,7 +589,7 @@ public class MainForm : MaterialForm {
         _refreshTimer?.Stop();
         _statusLabel.Text = "SQL connection failed";
 
-        var message = "Не удалось подключиться к SQL серверу. Получение данных остановлено. Приложение будет закрыто."
+        var message = "Unable to connect to SQL Server. Application terminated."
             + Environment.NewLine
             + Environment.NewLine
             + details;
@@ -597,7 +597,7 @@ public class MainForm : MaterialForm {
         ThemedMessageBox.Show(
             this,
             message,
-            "Ошибка подключения",
+            "Connection error",
             MessageBoxButtons.OK,
             MessageBoxIcon.Error
         );
@@ -607,7 +607,7 @@ public class MainForm : MaterialForm {
     }
 
     private void ShowAbout() {
-        ThemedMessageBox.Show(this, "SafetyMonitorView v1.0\n\nSafety Monitor Dashboard\nFor ASCOM Alpaca devices\n\n© 2026",
+        ThemedMessageBox.Show(this, "SafetyMonitorView v1.0\nASCOM Alpaca\nSafety Monitor Dashboard\n©2026 DreamSky Observatory",
             "About SafetyMonitorView", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
