@@ -69,6 +69,7 @@ public class MainForm : MaterialForm {
         );
 
         _dataService = new DataService(_appSettings.StoragePath);
+        AttachDataServiceHandlers();
 
         // Set default font for the form
         Font = new Font("Roboto", 9f, FontStyle.Regular);
@@ -575,6 +576,36 @@ public class MainForm : MaterialForm {
         _refreshTimer.Start();
     }
 
+    private void AttachDataServiceHandlers() {
+        _dataService.ConnectionFailed += OnDataServiceConnectionFailed;
+    }
+
+    private void OnDataServiceConnectionFailed(string details) {
+        if (InvokeRequired) {
+            BeginInvoke(() => OnDataServiceConnectionFailed(details));
+            return;
+        }
+
+        _refreshTimer?.Stop();
+        _statusLabel.Text = "SQL connection failed";
+
+        var message = "Не удалось подключиться к SQL серверу. Получение данных остановлено. Приложение будет закрыто."
+            + Environment.NewLine
+            + Environment.NewLine
+            + details;
+
+        ThemedMessageBox.Show(
+            this,
+            message,
+            "Ошибка подключения",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Error
+        );
+
+        _isExitConfirmed = true;
+        Close();
+    }
+
     private void ShowAbout() {
         ThemedMessageBox.Show(this, "SafetyMonitorView v1.0\n\nSafety Monitor Dashboard\nFor ASCOM Alpaca devices\n\n© 2026",
             "About SafetyMonitorView", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -606,6 +637,7 @@ public class MainForm : MaterialForm {
             _appSettingsService.SaveSettings(_appSettings);
 
             _dataService = new DataService(_appSettings.StoragePath);
+            AttachDataServiceHandlers();
             UpdateStatusBar();
 
             _refreshTimer?.Interval = _appSettings.RefreshInterval * 1000;

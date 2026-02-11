@@ -1,4 +1,5 @@
 using DataStorage.Models;
+using FirebirdSql.Data.FirebirdClient;
 using SafetyMonitorView.Models;
 
 namespace SafetyMonitorView.Services;
@@ -8,6 +9,7 @@ public class DataService {
     #region Private Fields
 
     private readonly DataStorage.DataStorage? _storage;
+    private bool _isConnectionFailed;
 
     #endregion Private Fields
 
@@ -26,6 +28,8 @@ public class DataService {
     #region Public Properties
 
     public bool IsConnected => _storage != null;
+
+    public event Action<string>? ConnectionFailed;
 
     #endregion Public Properties
 
@@ -51,6 +55,11 @@ public class DataService {
         if (_storage == null) {
             return [];
         }
+
+        if (_isConnectionFailed) {
+            return [];
+        }
+
         try {
             var (startTime, endTime) = GetPeriodRange(period, customStart, customEnd, customDuration);
             if (aggregationInterval.HasValue && aggregationFunction.HasValue) {
@@ -63,6 +72,9 @@ public class DataService {
             } else {
                 return [.. _storage.GetData(startTime, endTime)];
             }
+        } catch (FbException ex) {
+            HandleConnectionFailure(ex.Message);
+            return [];
         } catch {
             return [];
         }
@@ -72,11 +84,19 @@ public class DataService {
         if (_storage == null) {
             return null;
         }
+
+        if (_isConnectionFailed) {
+            return null;
+        }
+
         try {
             var endTime = DateTime.UtcNow;
             var startTime = endTime.AddMinutes(-500);
             var data = _storage.GetData(startTime, endTime);
             return data.OrderByDescending(d => d.Timestamp).FirstOrDefault();
+        } catch (FbException ex) {
+            HandleConnectionFailure(ex.Message);
+            return null;
         } catch {
             return null;
         }
@@ -103,6 +123,15 @@ public class DataService {
             _ => endTime.AddHours(-24)
         };
         return (startTime, endTime);
+    }
+
+    private void HandleConnectionFailure(string details) {
+        if (_isConnectionFailed) {
+            return;
+        }
+
+        _isConnectionFailed = true;
+        ConnectionFailed?.Invoke(details);
     }
 
     #endregion Private Methods
