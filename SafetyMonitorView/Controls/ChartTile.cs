@@ -239,7 +239,9 @@ public class ChartTile : Panel {
     protected override void Dispose(bool disposing) {
         if (disposing) {
             ChartPeriodPresetStore.PresetsChanged -= HandlePresetsChanged;
-            DetachPlotContextMenu();
+            _plot?.MouseUp -= Plot_MouseUp;
+            _plotContextMenu?.Dispose();
+            _plotContextMenu = null;
         }
         base.Dispose(disposing);
     }
@@ -351,12 +353,11 @@ public class ChartTile : Panel {
     }
 
     private void ApplyPlotContextMenuTheme() {
-        if (_plot?.ContextMenuStrip == null) {
+        if (_plotContextMenu == null) {
             return;
         }
 
-        AttachPlotContextMenu(_plot.ContextMenuStrip);
-        ApplyPlotContextMenuTheme(_plot.ContextMenuStrip);
+        ApplyPlotContextMenuTheme(_plotContextMenu);
     }
 
     private void ApplyPlotContextMenuTheme(ContextMenuStrip contextMenu) {
@@ -370,127 +371,189 @@ public class ChartTile : Panel {
         contextMenu.RenderMode = ToolStripRenderMode.Professional;
         contextMenu.Renderer = _contextMenuRenderer;
         contextMenu.ShowImageMargin = true;
-        contextMenu.ImageScalingSize = new Size(MenuIconSize, MenuIconSize);
         contextMenu.BackColor = menuBackground;
         contextMenu.ForeColor = menuText;
-
-        if (contextMenu is ToolStripDropDownMenu rootDropDownMenu) {
-            rootDropDownMenu.ShowImageMargin = true;
-        }
+        contextMenu.ImageScalingSize = new Size(MenuIconSize, MenuIconSize);
 
         ApplyContextMenuItemColors(contextMenu.Items, menuBackground, menuText);
-        ApplyContextMenuIcons(contextMenu.Items, menuText);
     }
 
-    private void AttachPlotContextMenu(ContextMenuStrip contextMenu) {
-        if (ReferenceEquals(_plotContextMenu, contextMenu)) {
+    private ContextMenuStrip CreatePlotContextMenu() {
+        var contextMenu = new ContextMenuStrip {
+            ShowImageMargin = true,
+            ImageScalingSize = new Size(MenuIconSize, MenuIconSize)
+        };
+
+        contextMenu.Items.Add(CreatePlotMenuItem("Save Image", "save", HandleSaveImageClick));
+        contextMenu.Items.Add(CreatePlotMenuItem("Copy to Clipboard", "copy", HandleCopyImageClick));
+        contextMenu.Items.Add(CreatePlotMenuItem("Autoscale", "refresh", HandleAutoscaleClick));
+        contextMenu.Items.Add(CreatePlotMenuItem("Open in New Window", "folder", HandleOpenInWindowClick));
+
+        contextMenu.Opening += (_, _) => ApplyPlotContextMenuTheme(contextMenu);
+        return contextMenu;
+    }
+
+    private static ToolStripMenuItem CreatePlotMenuItem(string text, string iconName, EventHandler onClick) {
+        var iconColor = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT
+            ? Color.FromArgb(33, 33, 33)
+            : Color.FromArgb(240, 240, 240);
+
+        var item = new ToolStripMenuItem(text) {
+            // Keep classic image+text mode for platforms where image margin works,
+            // and also include an ASCII marker in text so item origin is always visible.
+            DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+            Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize),
+            ImageScaling = ToolStripItemImageScaling.None,
+            TextImageRelation = TextImageRelation.ImageBeforeText,
+            ImageAlign = ContentAlignment.MiddleLeft,
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+
+        item.Click += onClick;
+        return item;
+    }
+
+    private void HandleSaveImageClick(object? sender, EventArgs e) {
+        if (_plot == null) {
             return;
         }
 
-        DetachPlotContextMenu();
-        _plotContextMenu = contextMenu;
-        _plotContextMenu.Opening += PlotContextMenu_Opening;
-        _plotContextMenu.ItemAdded += PlotContextMenu_ItemAdded;
-    }
+        using var dialog = new SaveFileDialog {
+            Filter = "PNG Image|*.png",
+            DefaultExt = "png",
+            AddExtension = true,
+            FileName = $"{_config.Title}.png"
+        };
 
-    private void DetachPlotContextMenu() {
-        if (_plotContextMenu == null) {
+        if (dialog.ShowDialog() != DialogResult.OK) {
             return;
         }
 
-        _plotContextMenu.Opening -= PlotContextMenu_Opening;
-        _plotContextMenu.ItemAdded -= PlotContextMenu_ItemAdded;
-        _plotContextMenu = null;
+        using var bmp = CapturePlotBitmap();
+        bmp?.Save(dialog.FileName, System.Drawing.Imaging.ImageFormat.Png);
     }
 
-    private void PlotContextMenu_Opening(object? sender, System.ComponentModel.CancelEventArgs e) {
-        if (sender is ContextMenuStrip contextMenu) {
-            ApplyPlotContextMenuTheme(contextMenu);
-            // ScottPlot may continue mutating menu items during Opening; apply again on the next UI tick.
-            contextMenu.BeginInvoke(() => {
-                if (!contextMenu.IsDisposed) {
-                    ApplyPlotContextMenuTheme(contextMenu);
-                }
-            });
+    private void HandleCopyImageClick(object? sender, EventArgs e) {
+        using var bmp = CapturePlotBitmap();
+        if (bmp != null) {
+            Clipboard.SetImage((Bitmap)bmp.Clone());
         }
     }
 
-    private void PlotContextMenu_ItemAdded(object? sender, ToolStripItemEventArgs e) {
-        if (sender is ContextMenuStrip) {
-            var skinManager = MaterialSkinManager.Instance;
-            var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
-            var menuBackground = isLight ? Color.White : Color.FromArgb(38, 52, 57);
-            var menuText = isLight ? Color.FromArgb(33, 33, 33) : Color.FromArgb(240, 240, 240);
+    private void HandleAutoscaleClick(object? sender, EventArgs e) {
+        if (_plot == null) {
+            return;
+        }
 
-            e.Item?.BackColor = menuBackground;
-            e.Item?.ForeColor = menuText;
+        _plot.Plot.Axes.AutoScale();
+        _plot.Refresh();
+    }
 
-            if (e.Item is ToolStripMenuItem menuItem) {
-                if (menuItem.DropDown is ToolStripDropDownMenu dropDownMenu) {
-                    dropDownMenu.ShowImageMargin = true;
-                }
+    private void HandleOpenInWindowClick(object? sender, EventArgs e) {
+        if (_plot == null) {
+            return;
+        }
 
-                var iconName = GetContextMenuIconName(menuItem.Text);
-                if (!string.IsNullOrEmpty(iconName)) {
-                    ConfigureMenuItemIcon(menuItem, iconName, menuText);
-                }
+        using var bmp = CapturePlotBitmap();
+        if (bmp == null) {
+            return;
+        }
 
-                if (menuItem.DropDownItems.Count > 0) {
-                    ApplyContextMenuItemColors(menuItem.DropDownItems, menuBackground, menuText);
-                    ApplyContextMenuIcons(menuItem.DropDownItems, menuText);
-                }
-            }
+        var previewForm = new Form {
+            Text = string.IsNullOrWhiteSpace(_config.Title) ? "Chart" : _config.Title,
+            StartPosition = FormStartPosition.CenterParent,
+            Width = Math.Max(640, _plot.Width + 40),
+            Height = Math.Max(420, _plot.Height + 80)
+        };
+
+        var pictureBox = new PictureBox {
+            Dock = DockStyle.Fill,
+            Image = (Bitmap)bmp.Clone(),
+            SizeMode = PictureBoxSizeMode.Zoom,
+            BackColor = Color.Black
+        };
+
+        previewForm.FormClosed += (_, _) => pictureBox.Image?.Dispose();
+        previewForm.Controls.Add(pictureBox);
+        previewForm.Show(this);
+    }
+
+    private Bitmap? CapturePlotBitmap() {
+        if (_plot == null || _plot.Width <= 0 || _plot.Height <= 0) {
+            return null;
+        }
+
+        var bmp = new Bitmap(_plot.Width, _plot.Height);
+        _plot.DrawToBitmap(bmp, new Rectangle(Point.Empty, _plot.Size));
+        return bmp;
+    }
+
+    private void Plot_MouseUp(object? sender, MouseEventArgs e) {
+        if (e.Button != MouseButtons.Right || _plot == null || _plotContextMenu == null) {
+            return;
+        }
+
+        ApplyPlotContextMenuTheme();
+        _plotContextMenu.Show(_plot, e.Location);
+    }
+
+    private void TryDisableScottPlotBuiltInContextMenu() {
+        if (_plot == null) {
+            return;
+        }
+
+        try {
+            var target = _plot as object;
+            // Best-effort compatibility across ScottPlot versions:
+            // disable any bool menu-related switch and clear menu-like object properties.
+            DisableMenuMembersRecursive(target, 0);
+        } catch {
+            // no-op (feature is best effort)
         }
     }
 
-    private static void ApplyContextMenuIcons(ToolStripItemCollection items, Color iconColor) {
-        foreach (ToolStripItem item in items) {
-            if (item is not ToolStripMenuItem menuItem) {
+    private static void DisableMenuMembersRecursive(object target, int depth) {
+        if (depth > 2) {
+            return;
+        }
+
+        var type = target.GetType();
+        foreach (var prop in type.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)) {
+            if (!prop.CanRead) {
                 continue;
             }
 
-            if (menuItem.DropDown is ToolStripDropDownMenu dropDownMenu) {
-                dropDownMenu.ShowImageMargin = true;
+            var name = prop.Name.ToLowerInvariant();
+            object? value;
+            try {
+                value = prop.GetValue(target);
+            } catch {
+                continue;
             }
 
-            var iconName = GetContextMenuIconName(menuItem.Text);
-            if (!string.IsNullOrEmpty(iconName)) {
-                ConfigureMenuItemIcon(menuItem, iconName, iconColor);
+            if (prop.CanWrite) {
+                try {
+                    if (prop.PropertyType == typeof(bool) && (name.Contains("menu") || name.Contains("context"))) {
+                        prop.SetValue(target, false);
+                    } else if (!prop.PropertyType.IsValueType && (name.Contains("menu") || name.Contains("context"))) {
+                        prop.SetValue(target, null);
+                    }
+                } catch {
+                    // ignore setter failures
+                }
             }
 
-            if (menuItem.DropDownItems.Count > 0) {
-                ApplyContextMenuIcons(menuItem.DropDownItems, iconColor);
+            if (value == null) {
+                continue;
+            }
+
+            var valueType = value.GetType();
+            if (valueType.Namespace != null && valueType.Namespace.StartsWith("ScottPlot", StringComparison.Ordinal)) {
+                DisableMenuMembersRecursive(value, depth + 1);
             }
         }
     }
 
-    private static void ConfigureMenuItemIcon(ToolStripMenuItem menuItem, string iconName, Color iconColor) {
-        menuItem.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
-        menuItem.ImageScaling = ToolStripItemImageScaling.None;
-        menuItem.TextImageRelation = TextImageRelation.ImageBeforeText;
-        menuItem.ImageAlign = ContentAlignment.MiddleLeft;
-        menuItem.ImageTransparentColor = Color.Transparent;
-
-        menuItem.Image?.Dispose();
-        menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize);
-    }
-
-    private static string GetContextMenuIconName(string? menuText) {
-        if (string.IsNullOrWhiteSpace(menuText)) {
-            return string.Empty;
-        }
-
-        var normalizedText = menuText.ToLowerInvariant();
-        return normalizedText switch {
-            var t when t.Contains("copy") => "copy",
-            var t when t.Contains("save") => "save",
-            var t when t.Contains("open") => "folder",
-            var t when t.Contains("help") => "help",
-            var t when t.Contains("reset") => "refresh",
-            var t when t.Contains("autoscale") => "refresh",
-            _ => string.Empty
-        };
-    }
     private static void ApplyContextMenuItemColors(ToolStripItemCollection items, Color backColor, Color foreColor) {
         foreach (ToolStripItem item in items) {
             item.BackColor = backColor;
@@ -579,14 +642,11 @@ public class ChartTile : Panel {
             Dock = DockStyle.Fill,         // Use explicit safe font (Segoe UI is guaranteed on Windows)
             Font = new Font("Segoe UI", 9f, System.Drawing.FontStyle.Regular)
         };
-        _plot.ContextMenuStripChanged += (s, e) => {
-            if (_plot?.ContextMenuStrip != null) {
-                AttachPlotContextMenu(_plot.ContextMenuStrip);
-            } else {
-                DetachPlotContextMenu();
-            }
-            ApplyPlotContextMenuTheme();
-        };
+        _plotContextMenu = CreatePlotContextMenu();
+        _plot.ContextMenuStrip = null;
+        _plot.MouseUp += Plot_MouseUp;
+        TryDisableScottPlotBuiltInContextMenu();
+        ApplyPlotContextMenuTheme();
 
         // Add _topPanel first (it's safe)
         Controls.Add(_topPanel);
@@ -645,7 +705,7 @@ public class ChartTile : Panel {
         }
 
         _periodSelector.Items.Clear();
-        _periodPresets = ChartPeriodPresetStore.GetPresetItems().ToList();
+        _periodPresets = [.. ChartPeriodPresetStore.GetPresetItems()];
         foreach (var preset in _periodPresets) {
             _periodSelector.Items.Add(preset.Label);
         }

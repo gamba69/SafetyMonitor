@@ -59,23 +59,12 @@ public class ThemedMenuRenderer : ToolStripProfessionalRenderer {
         e.Graphics.DrawLines(pen, points);
     }
 
-    protected override void OnRenderItemImage(ToolStripItemImageRenderEventArgs e) {
-        if (e.Image == null) {
-            base.OnRenderItemImage(e);
-            return;
-        }
-
-        // Explicitly draw menu item icons because some context-menu paths can skip default image rendering.
-        var bounds = e.ImageRectangle;
-        var x = bounds.X + Math.Max(0, (bounds.Width - e.Image.Width) / 2);
-        var y = bounds.Y + Math.Max(0, (bounds.Height - e.Image.Height) / 2);
-        e.Graphics.DrawImage(e.Image, x, y, e.Image.Width, e.Image.Height);
-    }
-
     protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e) {
         e.TextColor = _isLight ? Color.FromArgb(33, 33, 33) : Color.FromArgb(240, 240, 240);
         base.OnRenderItemText(e);
     }
+
+
 
     #endregion Protected Methods
 
