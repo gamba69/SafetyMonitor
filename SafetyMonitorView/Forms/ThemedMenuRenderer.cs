@@ -1,4 +1,5 @@
 using MaterialSkin;
+using System.Drawing.Drawing2D;
 
 namespace SafetyMonitorView.Forms;
 
@@ -42,21 +43,29 @@ public class ThemedMenuRenderer : ToolStripProfessionalRenderer {
         var rect = new Rectangle(e.ImageRectangle.X - 2, e.ImageRectangle.Y - 2,
             e.ImageRectangle.Width + 4, e.ImageRectangle.Height + 4);
 
-        using var brush = new SolidBrush(_isLight
-            ? Color.FromArgb(40, 0, 121, 107)
-            : Color.FromArgb(60, 0, 150, 136));
+        var iconColor = _isLight ? Color.FromArgb(100, 100, 100) : Color.FromArgb(180, 180, 180);
+
+        using var brush = new SolidBrush(Color.FromArgb(_isLight ? 28 : 42, iconColor));
         e.Graphics.FillRectangle(brush, rect);
 
         // Draw checkmark
-        using var pen = new Pen(_isLight ? Color.FromArgb(0, 121, 107) : Color.FromArgb(77, 182, 172), 2);
+        var previousSmoothing = e.Graphics.SmoothingMode;
+        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+        using var pen = new Pen(iconColor, 2.2f) {
+            StartCap = LineCap.Round,
+            EndCap = LineCap.Round,
+            LineJoin = LineJoin.Round
+        };
         var checkRect = e.ImageRectangle;
         var points = new Point[]
         {
-            new(checkRect.X + 3, checkRect.Y + checkRect.Height / 2),
-            new(checkRect.X + checkRect.Width / 3 + 1, checkRect.Y + checkRect.Height - 4),
+            new(checkRect.X + 3, checkRect.Y + (checkRect.Height / 2) + 1),
+            new(checkRect.X + (checkRect.Width / 2) - 1, checkRect.Y + checkRect.Height - 4),
             new(checkRect.X + checkRect.Width - 3, checkRect.Y + 4)
         };
         e.Graphics.DrawLines(pen, points);
+        e.Graphics.SmoothingMode = previousSmoothing;
     }
 
     protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e) {
