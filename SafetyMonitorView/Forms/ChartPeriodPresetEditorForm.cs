@@ -296,7 +296,7 @@ public class ChartPeriodPresetEditorForm : Form {
         foreach (DataGridViewRow row in _presetGrid.Rows) {
             var name = row.Cells["Name"].Value?.ToString() ?? "";
             var valueText = row.Cells["Value"].Value?.ToString() ?? "";
-            var unit = row.Cells["Unit"].Value is ChartPeriodUnit unitValue ? unitValue : ChartPeriodUnit.Hours;
+            var unit = ParseChartPeriodUnit(row.Cells["Unit"].Value);
 
             if (string.IsNullOrWhiteSpace(name)) {
                 ThemedMessageBox.Show(this, "Each preset must have a name.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -323,6 +323,22 @@ public class ChartPeriodPresetEditorForm : Form {
         Presets = newPresets;
         DialogResult = DialogResult.OK;
         Close();
+    }
+
+    private static ChartPeriodUnit ParseChartPeriodUnit(object? value) {
+        if (value is ChartPeriodUnit unitValue) {
+            return unitValue;
+        }
+
+        if (value is string text && Enum.TryParse<ChartPeriodUnit>(text, true, out var parsedFromText)) {
+            return parsedFromText;
+        }
+
+        if (value is int intValue && Enum.IsDefined(typeof(ChartPeriodUnit), intValue)) {
+            return (ChartPeriodUnit)intValue;
+        }
+
+        return ChartPeriodUnit.Hours;
     }
 
     #endregion Private Methods
