@@ -25,8 +25,8 @@ public class ChartTile : Panel {
     private bool _suppressPeriodChange;
     private bool _suppressStaticRangeChange;
     private bool _isStaticMode;
-    private DateTimePicker? _staticStartPicker;
-    private DateTimePicker? _staticEndPicker;
+    private ThemedDateTimePicker? _staticStartPicker;
+    private ThemedDateTimePicker? _staticEndPicker;
     private FlowLayoutPanel? _staticRangePanel;
     private System.Windows.Forms.Timer? _staticModeTimer;
     private TimeSpan _staticModeTimeout = TimeSpan.FromMinutes(2);
@@ -544,6 +544,8 @@ public class ChartTile : Panel {
             _staticRangePanel.BackColor = tileBg;
         }
 
+        _staticStartPicker?.ApplyTheme();
+        _staticEndPicker?.ApplyTheme();
     }
 
     private void ApplyPlotContextMenuTheme() {
@@ -1175,10 +1177,8 @@ public class ChartTile : Panel {
         }
     }
 
-
-
-    private static DateTimePicker CreateStaticDatePicker() {
-        return new DateTimePicker {
+    private static ThemedDateTimePicker CreateStaticDatePicker() {
+        return new ThemedDateTimePicker {
             Width = 170,
             Format = DateTimePickerFormat.Custom,
             CustomFormat = "yyyy-MM-dd HH:mm:ss",
