@@ -137,6 +137,7 @@ public class AxisRulesEditorForm : Form {
         });
 
         _rulesGrid.CellValidating += RulesGrid_CellValidating;
+        _rulesGrid.EditingControlShowing += RulesGrid_EditingControlShowing;
         mainLayout.Controls.Add(_rulesGrid, 0, 1);
 
         // Row 2: Add / Remove buttons
@@ -310,6 +311,9 @@ public class AxisRulesEditorForm : Form {
         if (_rulesGrid.Columns["Metric"] is DataGridViewComboBoxColumn metricCol) {
             metricCol.DefaultCellStyle.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
             metricCol.DefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
+            metricCol.DefaultCellStyle.SelectionBackColor = _rulesGrid.DefaultCellStyle.SelectionBackColor;
+            metricCol.DefaultCellStyle.SelectionForeColor = _rulesGrid.DefaultCellStyle.SelectionForeColor;
+            metricCol.FlatStyle = FlatStyle.Popup;
         }
 
         ApplyThemeRecursive(this, isLight);
@@ -333,6 +337,17 @@ public class AxisRulesEditorForm : Form {
             }
             ApplyThemeRecursive(control, isLight);
         }
+    }
+
+    private void RulesGrid_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e) {
+        if (_rulesGrid.CurrentCell?.OwningColumn?.Name != "Metric" || e.Control is not ComboBox comboBox) {
+            return;
+        }
+
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+        comboBox.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
+        comboBox.ForeColor = isLight ? Color.Black : Color.White;
     }
 
     #endregion Private Methods
