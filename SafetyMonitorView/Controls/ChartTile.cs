@@ -391,7 +391,8 @@ public class ChartTile : Panel {
     private static void SetAxisNeutralState(ScottPlot.IYAxis axis) {
         SetAxisVisibility(axis, true);
 
-        var neutralColor = ScottPlot.Color.FromColor(Color.White);
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        var neutralColor = ScottPlot.Color.FromColor(isLight ? Color.Black : Color.White);
         axis.Label.Text = string.Empty;
         axis.Label.ForeColor = neutralColor;
         axis.TickLabelStyle.ForeColor = neutralColor;
@@ -745,10 +746,9 @@ public class ChartTile : Panel {
             DrawMode = DrawMode.OwnerDrawFixed,
             BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66),
             ForeColor = fg,
-            FlatStyle = FlatStyle.Popup
+            FlatStyle = FlatStyle.Standard
         };
         _periodSelector.DrawItem += PeriodSelector_DrawItem;
-        ThemedComboBoxStyler.ApplyNativeTheme(_periodSelector);
         LoadPeriodPresets();
         SetSelectedPeriodPreset();
         _periodSelector.SelectionChangeCommitted += (s, e) => UpdatePeriodFromSelection();
