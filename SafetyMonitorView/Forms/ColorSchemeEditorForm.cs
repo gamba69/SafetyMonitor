@@ -105,13 +105,16 @@ public class ColorSchemeEditorForm : Form {
                     lb.ForeColor = isLight ? Color.Black : Color.White;
                     break;
                 case DataGridView dgv:
+                    var darkSelectionColor = Color.FromArgb(0, 121, 107);
                     dgv.BackgroundColor = isLight ? Color.White : Color.FromArgb(42, 56, 61);
                     dgv.DefaultCellStyle.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
                     dgv.DefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
-                    dgv.DefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(200, 210, 240) : Color.FromArgb(80, 90, 120);
+                    dgv.DefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(200, 210, 240) : darkSelectionColor;
                     dgv.DefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
                     dgv.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(235, 235, 235) : Color.FromArgb(38, 52, 57);
                     dgv.ColumnHeadersDefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
+                    dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(235, 235, 235) : darkSelectionColor;
+                    dgv.ColumnHeadersDefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
                     dgv.EnableHeadersVisualStyles = false;
                     dgv.GridColor = isLight ? Color.FromArgb(210, 210, 210) : Color.FromArgb(80, 80, 80);
                     break;
@@ -537,6 +540,10 @@ public class ColorSchemeEditorForm : Form {
             AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
             ValueType = typeof(string)
         });
+
+        foreach (DataGridViewColumn column in _stopsGrid.Columns) {
+            column.SortMode = DataGridViewColumnSortMode.NotSortable;
+        }
 
         _stopsGrid.CellFormatting += StopsGrid_CellFormatting;
     }

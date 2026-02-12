@@ -57,8 +57,13 @@ public class ChartPeriodPresetEditorForm : Form {
         _presetGrid.BackgroundColor = isLight ? Color.White : Color.FromArgb(35, 47, 52);
         _presetGrid.DefaultCellStyle.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
         _presetGrid.DefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
+        var darkSelectionColor = Color.FromArgb(0, 121, 107);
+        _presetGrid.DefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(195, 225, 220) : darkSelectionColor;
+        _presetGrid.DefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
         _presetGrid.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(53, 70, 76);
         _presetGrid.ColumnHeadersDefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
+        _presetGrid.ColumnHeadersDefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(240, 240, 240) : darkSelectionColor;
+        _presetGrid.ColumnHeadersDefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
         if (_presetGrid.Columns["Unit"] is DataGridViewComboBoxColumn unitColumn) {
             unitColumn.DefaultCellStyle.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
             unitColumn.DefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
@@ -160,6 +165,10 @@ public class ChartPeriodPresetEditorForm : Form {
             FillWeight = 26,
             DataSource = _units
         });
+
+        foreach (DataGridViewColumn column in _presetGrid.Columns) {
+            column.SortMode = DataGridViewColumnSortMode.NotSortable;
+        }
         _presetGrid.DataError += (_, e) => { e.ThrowException = false; };
         _presetGrid.EditingControlShowing += PresetGrid_EditingControlShowing;
 

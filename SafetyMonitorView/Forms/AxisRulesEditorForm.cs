@@ -136,6 +136,10 @@ public class AxisRulesEditorForm : Form {
             FillWeight = 13
         });
 
+        foreach (DataGridViewColumn column in _rulesGrid.Columns) {
+            column.SortMode = DataGridViewColumnSortMode.NotSortable;
+        }
+
         _rulesGrid.CellValidating += RulesGrid_CellValidating;
         _rulesGrid.EditingControlShowing += RulesGrid_EditingControlShowing;
         mainLayout.Controls.Add(_rulesGrid, 0, 1);
@@ -302,10 +306,14 @@ public class AxisRulesEditorForm : Form {
         _rulesGrid.BackgroundColor = isLight ? Color.White : Color.FromArgb(35, 47, 52);
         _rulesGrid.DefaultCellStyle.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
         _rulesGrid.DefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
-        _rulesGrid.DefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(195, 225, 220) : Color.FromArgb(40, 90, 85);
+        var darkSelectionColor = Color.FromArgb(0, 121, 107);
+        _rulesGrid.DefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(195, 225, 220) : darkSelectionColor;
         _rulesGrid.DefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
         _rulesGrid.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(53, 70, 76);
         _rulesGrid.ColumnHeadersDefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
+        _rulesGrid.ColumnHeadersDefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(240, 240, 240) : darkSelectionColor;
+        _rulesGrid.ColumnHeadersDefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
+
         _rulesGrid.GridColor = isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(60, 75, 80);
 
         if (_rulesGrid.Columns["Metric"] is DataGridViewComboBoxColumn metricCol) {

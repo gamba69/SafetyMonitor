@@ -86,10 +86,13 @@ public class ChartTileEditorForm : Form {
         _metricsGrid.BackgroundColor = isLight ? Color.White : Color.FromArgb(35, 47, 52);
         _metricsGrid.DefaultCellStyle.BackColor = _inputBackColor;
         _metricsGrid.DefaultCellStyle.ForeColor = _inputForeColor;
-        _metricsGrid.DefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(33, 150, 243) : Color.FromArgb(0, 121, 107);
+        var darkSelectionColor = Color.FromArgb(0, 121, 107);
+        _metricsGrid.DefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(33, 150, 243) : darkSelectionColor;
         _metricsGrid.DefaultCellStyle.SelectionForeColor = Color.White;
         _metricsGrid.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(53, 70, 76);
         _metricsGrid.ColumnHeadersDefaultCellStyle.ForeColor = _inputForeColor;
+        _metricsGrid.ColumnHeadersDefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(240, 240, 240) : darkSelectionColor;
+        _metricsGrid.ColumnHeadersDefaultCellStyle.SelectionForeColor = _inputForeColor;
         _metricsGrid.EnableHeadersVisualStyles = false;
         _metricsGrid.GridColor = isLight ? Color.LightGray : Color.FromArgb(70, 90, 98);
 
@@ -235,6 +238,10 @@ public class ChartTileEditorForm : Form {
         _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Smooth", HeaderText = "Smth", FillWeight = 8 });
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Tension", HeaderText = "Tns", FillWeight = 8 });
         _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "ShowMarkers", HeaderText = "Mark", FillWeight = 12 });
+
+        foreach (DataGridViewColumn column in _metricsGrid.Columns) {
+            column.SortMode = DataGridViewColumnSortMode.NotSortable;
+        }
 
         _metricsGrid.CellClick += MetricsGrid_CellClick;
         _metricsGrid.CellFormatting += MetricsGrid_CellFormatting;
