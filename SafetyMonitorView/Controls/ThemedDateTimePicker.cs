@@ -2,6 +2,7 @@ using MaterialSkin;
 using System.Drawing.Text;
 using System.Globalization;
 using System.ComponentModel;
+using System.Text.RegularExpressions;
 
 namespace SafetyMonitorView.Controls;
 
@@ -205,13 +206,25 @@ public class ThemedDateTimePicker : UserControl {
     #region Private Methods
 
     private string GetFormattedText() {
+        var normalizedCustomFormat = NormalizeTimeFormat(_customFormat);
         return _format switch {
             DateTimePickerFormat.Long => _value.ToString("D", CultureInfo.InvariantCulture),
             DateTimePickerFormat.Short => _value.ToString("d", CultureInfo.InvariantCulture),
             DateTimePickerFormat.Time => _value.ToString("T", CultureInfo.InvariantCulture),
-            DateTimePickerFormat.Custom => _value.ToString(_customFormat, CultureInfo.InvariantCulture),
-            _ => _value.ToString(_customFormat, CultureInfo.InvariantCulture)
+            DateTimePickerFormat.Custom => _value.ToString(normalizedCustomFormat, CultureInfo.InvariantCulture),
+            _ => _value.ToString(normalizedCustomFormat, CultureInfo.InvariantCulture)
         };
+    }
+
+    private static string NormalizeTimeFormat(string format) {
+        if (string.IsNullOrWhiteSpace(format)) {
+            return format;
+        }
+
+        var normalized = Regex.Replace(format, @"(?<!H)H(?!H)", "HH");
+        normalized = Regex.Replace(normalized, @"(?<!h)h(?!h)", "hh");
+        normalized = Regex.Replace(normalized, @"(?<!m)m(?!m)", "mm");
+        return normalized;
     }
 
     private void TextPanel_Paint(object? sender, PaintEventArgs e) {
@@ -339,6 +352,8 @@ public class ThemedDateTimePicker : UserControl {
         private readonly Label _monthLabel;
         private readonly Button _prevButton;
         private readonly Button _nextButton;
+        private readonly Button _prevYearButton;
+        private readonly Button _nextYearButton;
         private readonly BufferedPanel _dayHeaderPanel;
         private readonly Panel? _timePanel;
         private NumericUpDown? _hourSpin;
@@ -402,7 +417,7 @@ public class ThemedDateTimePicker : UserControl {
                               + (_showTime ? _timeRowHeight : 0);
             ClientSize = new Size(totalWidth, totalHeight);
 
-            // ── Header: [◀] Month Year [▶] ──
+            // ── Header: [|◀][◀] Month Year [▶][▶|] ──
             _headerPanel = new BufferedPanel {
                 Dock = DockStyle.Top,
                 Height = _headerHeight,
@@ -410,21 +425,29 @@ public class ThemedDateTimePicker : UserControl {
             };
 
             var navBtnSize = Scale(24, dpiScale);
-            _prevButton = CreateNavButton("\u25C0", -1, navBtnSize);
-            _prevButton.Location = new Point(_pad, (_headerHeight - navBtnSize) / 2);
+            _prevYearButton = CreateYearNavButton("◁", -1, navBtnSize);
+            _prevYearButton.Location = new Point(_pad, (_headerHeight - navBtnSize) / 2);
+            _headerPanel.Controls.Add(_prevYearButton);
+
+            _prevButton = CreateNavButton("◀", -1, navBtnSize);
+            _prevButton.Location = new Point(_pad + navBtnSize, (_headerHeight - navBtnSize) / 2);
             _headerPanel.Controls.Add(_prevButton);
 
-            _nextButton = CreateNavButton("\u25B6", 1, navBtnSize);
-            _nextButton.Location = new Point(totalWidth - navBtnSize - _pad, (_headerHeight - navBtnSize) / 2);
+            _nextButton = CreateNavButton("▶", 1, navBtnSize);
+            _nextButton.Location = new Point(totalWidth - navBtnSize * 2 - _pad, (_headerHeight - navBtnSize) / 2);
             _headerPanel.Controls.Add(_nextButton);
+
+            _nextYearButton = CreateYearNavButton("▷", 1, navBtnSize);
+            _nextYearButton.Location = new Point(totalWidth - navBtnSize - _pad, (_headerHeight - navBtnSize) / 2);
+            _headerPanel.Controls.Add(_nextYearButton);
 
             _monthLabel = new Label {
                 TextAlign = ContentAlignment.MiddleCenter,
                 Font = _headerFont,
                 ForeColor = _fg,
                 BackColor = _headerBg,
-                Location = new Point(navBtnSize + _pad, 0),
-                Size = new Size(totalWidth - 2 * (navBtnSize + _pad), _headerHeight),
+                Location = new Point(navBtnSize * 2 + _pad, 0),
+                Size = new Size(totalWidth - 2 * (navBtnSize * 2 + _pad), _headerHeight),
                 Cursor = Cursors.Default
             };
             UpdateMonthLabel();
@@ -509,7 +532,7 @@ public class ThemedDateTimePicker : UserControl {
                 Text = text,
                 Size = new Size(size, size),
                 FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 7f),
+                Font = new Font("Segoe UI", 8f),
                 ForeColor = _fg,
                 BackColor = _headerBg,
                 Cursor = Cursors.Hand,
@@ -519,6 +542,27 @@ public class ThemedDateTimePicker : UserControl {
             btn.FlatAppearance.MouseOverBackColor = _hoverBg;
             btn.Click += (_, _) => {
                 _displayMonth = _displayMonth.AddMonths(monthDelta);
+                UpdateMonthLabel();
+                _calendarPanel.Invalidate();
+            };
+            return btn;
+        }
+
+        private Button CreateYearNavButton(string text, int yearDelta, int size) {
+            var btn = new Button {
+                Text = text,
+                Size = new Size(size, size),
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 8f),
+                ForeColor = _fg,
+                BackColor = _headerBg,
+                Cursor = Cursors.Hand,
+                TabStop = false
+            };
+            btn.FlatAppearance.BorderSize = 0;
+            btn.FlatAppearance.MouseOverBackColor = _hoverBg;
+            btn.Click += (_, _) => {
+                _displayMonth = _displayMonth.AddYears(yearDelta);
                 UpdateMonthLabel();
                 _calendarPanel.Invalidate();
             };
@@ -734,6 +778,7 @@ public class ThemedDateTimePicker : UserControl {
                 ForeColor = _fg,
                 Margin = new System.Windows.Forms.Padding(0, 0, Scale(2, dpiScale), 0)
             };
+            _hourSpin.ValueChanged += (_, _) => EnsureLeadingZeros(_hourSpin);
             flow.Controls.Add(_hourSpin);
 
             flow.Controls.Add(new Label {
@@ -754,6 +799,7 @@ public class ThemedDateTimePicker : UserControl {
                 ForeColor = _fg,
                 Margin = new System.Windows.Forms.Padding(0, 0, Scale(6, dpiScale), 0)
             };
+            _minuteSpin.ValueChanged += (_, _) => EnsureLeadingZeros(_minuteSpin);
             flow.Controls.Add(_minuteSpin);
 
             var nowBtn = new Button {
@@ -781,6 +827,16 @@ public class ThemedDateTimePicker : UserControl {
             flow.Controls.Add(nowBtn);
 
             _timePanel.Controls.Add(flow);
+
+            EnsureLeadingZeros(_hourSpin);
+            EnsureLeadingZeros(_minuteSpin);
+        }
+
+        private static void EnsureLeadingZeros(NumericUpDown? numericUpDown) {
+            if (numericUpDown?.Controls.Count > 1 && numericUpDown.Controls[1] is TextBox textBox) {
+                textBox.Text = ((int)numericUpDown.Value).ToString("00", CultureInfo.InvariantCulture);
+                textBox.SelectionStart = textBox.Text.Length;
+            }
         }
 
         #endregion
