@@ -275,6 +275,12 @@ public class ChartPeriodPresetEditorForm : Form {
     }
 
     private void SaveButton_Click(object? sender, EventArgs e) {
+        if (_presetGrid.IsCurrentCellInEditMode) {
+            _presetGrid.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            _presetGrid.EndEdit();
+        }
+        Validate();
+
         var newPresets = new List<ChartPeriodPresetDefinition>();
         foreach (DataGridViewRow row in _presetGrid.Rows) {
             var name = row.Cells["Name"].Value?.ToString() ?? "";

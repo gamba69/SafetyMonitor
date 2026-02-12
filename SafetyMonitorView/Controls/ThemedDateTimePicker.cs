@@ -1,5 +1,7 @@
 using MaterialSkin;
+using System.Drawing.Text;
 using System.Globalization;
+using System.ComponentModel;
 
 namespace SafetyMonitorView.Controls;
 
@@ -24,6 +26,7 @@ public class ThemedDateTimePicker : UserControl {
     private bool _isButtonHovering;
     private bool _isDroppedDown;
     private CalendarPopup? _popup;
+    private bool _enforcingSafeFont;
 
     // Theme colors
     private Color _backColor;
@@ -43,6 +46,7 @@ public class ThemedDateTimePicker : UserControl {
                  ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
 
         Height = 28;
+        Font = CreateSafeFont();
 
         _textPanel = new Panel { Dock = DockStyle.Fill, Cursor = Cursors.Hand };
         _textPanel.Paint += TextPanel_Paint;
@@ -72,6 +76,7 @@ public class ThemedDateTimePicker : UserControl {
 
     #region Public Properties
 
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public DateTime Value {
         get => _value;
         set {
@@ -85,21 +90,25 @@ public class ThemedDateTimePicker : UserControl {
         }
     }
 
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public DateTime MinDate {
         get => _minDate;
         set { _minDate = value; if (_value < _minDate) Value = _minDate; }
     }
 
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public DateTime MaxDate {
         get => _maxDate;
         set { _maxDate = value; if (_value > _maxDate) Value = _maxDate; }
     }
 
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public string CustomFormat {
         get => _customFormat;
         set { _customFormat = value; Invalidate(true); }
     }
 
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public DateTimePickerFormat Format {
         get => _format;
         set { _format = value; Invalidate(true); }
@@ -161,6 +170,37 @@ public class ThemedDateTimePicker : UserControl {
     }
 
     #endregion Protected Methods
+
+    protected override void OnFontChanged(EventArgs e) {
+        base.OnFontChanged(e);
+
+        if (_enforcingSafeFont) {
+            return;
+        }
+
+        if (!IsInstalledFont(Font?.FontFamily?.Name)) {
+            try {
+                _enforcingSafeFont = true;
+                Font = CreateSafeFont();
+            } finally {
+                _enforcingSafeFont = false;
+            }
+        }
+    }
+
+    private static Font CreateSafeFont() {
+        return new Font("Segoe UI", 9f, FontStyle.Regular);
+    }
+
+    private static bool IsInstalledFont(string? familyName) {
+        if (string.IsNullOrWhiteSpace(familyName)) {
+            return false;
+        }
+
+        var installedFonts = new InstalledFontCollection();
+        return installedFonts.Families.Any(f =>
+            string.Equals(f.Name, familyName, StringComparison.OrdinalIgnoreCase));
+    }
 
     #region Private Methods
 
