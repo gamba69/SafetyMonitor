@@ -17,6 +17,8 @@ public class DashboardPanel : TableLayoutPanel {
 
     #region Public Constructors
 
+    public event Action? DashboardChanged;
+
     public DashboardPanel(Dashboard dashboard, DataService dataService) {
         _dashboard = dashboard;
         _dataService = dataService;
@@ -96,6 +98,7 @@ public class DashboardPanel : TableLayoutPanel {
             if (tileControl != null) {
                 if (tileControl is ChartTile chartTile) {
                     chartTile.PeriodChanged += OnChartPeriodChanged;
+                    chartTile.ViewSettingsChanged += OnChartViewSettingsChanged;
                 }
                 Controls.Add(tileControl, tileConfig.Column, tileConfig.Row);
                 SetColumnSpan(tileControl, tileConfig.ColumnSpan);
@@ -116,6 +119,10 @@ public class DashboardPanel : TableLayoutPanel {
             }
             chartTile.SetPeriod(period, customDuration);
         }
+    }
+
+    private void OnChartViewSettingsChanged(ChartTile source) {
+        DashboardChanged?.Invoke();
     }
 
     private void InitializeUI() {

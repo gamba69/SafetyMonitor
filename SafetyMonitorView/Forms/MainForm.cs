@@ -498,6 +498,7 @@ public class MainForm : MaterialForm {
         }
 
         _dashboardPanel = new DashboardPanel(dashboard, _dataService) { Dock = DockStyle.Fill };
+        _dashboardPanel.DashboardChanged += OnDashboardChanged;
         _dashboardPanel.SetLinkChartPeriods(_appSettings.LinkChartPeriods);
         _dashboardContainer.Controls.Add(_dashboardPanel);
         _statusLabel.Text = $"Dashboard: {dashboard.Name}";
@@ -551,6 +552,14 @@ public class MainForm : MaterialForm {
     private void OnFirstHandleCreated(object? sender, EventArgs e) {
         HandleCreated -= OnFirstHandleCreated;
         BeginInvoke(() => _dashboardPanel?.RefreshData());
+    }
+
+    private void OnDashboardChanged() {
+        if (_currentDashboard == null) {
+            return;
+        }
+
+        _dashboardService.SaveDashboard(_currentDashboard);
     }
 
     private void SaveWindowSettings() {

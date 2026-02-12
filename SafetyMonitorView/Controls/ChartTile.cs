@@ -32,6 +32,7 @@ public class ChartTile : Panel {
     #region Public Events
 
     public event Action<ChartTile, ChartPeriod, TimeSpan?>? PeriodChanged;
+    public event Action<ChartTile>? ViewSettingsChanged;
 
     #endregion Public Events
 
@@ -185,6 +186,7 @@ public class ChartTile : Panel {
         }
 
         if (_config.ShowGrid) {
+            _plot.Plot.ShowGrid();
             var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
             _plot.Plot.Grid.MajorLineColor = ScottPlot.Color.FromColor(
                 isLight ? Color.LightGray : Color.FromArgb(53, 70, 76));
@@ -504,13 +506,89 @@ public class ChartTile : Panel {
             ImageScalingSize = new Size(MenuIconSize, MenuIconSize)
         };
 
+        contextMenu.Opening += (_, _) => {
+            RebuildPlotContextMenu(contextMenu);
+            ApplyPlotContextMenuTheme(contextMenu);
+        };
+
+        RebuildPlotContextMenu(contextMenu);
+        return contextMenu;
+    }
+
+    private void RebuildPlotContextMenu(ContextMenuStrip contextMenu) {
+        contextMenu.Items.Clear();
+
         contextMenu.Items.Add(CreatePlotMenuItem("Save Image", "save", HandleSaveImageClick));
         contextMenu.Items.Add(CreatePlotMenuItem("Copy to Clipboard", "copy", HandleCopyImageClick));
         contextMenu.Items.Add(CreatePlotMenuItem("Autoscale", "refresh", HandleAutoscaleClick));
         contextMenu.Items.Add(CreatePlotMenuItem("Open in New Window", "folder", HandleOpenInWindowClick));
+        contextMenu.Items.Add(new ToolStripSeparator());
 
-        contextMenu.Opening += (_, _) => ApplyPlotContextMenuTheme(contextMenu);
-        return contextMenu;
+        AddToggleMenuItems(contextMenu);
+    }
+
+    private void AddToggleMenuItems(ContextMenuStrip contextMenu) {
+        var legendItem = CreateToggleMenuItem("Legend", "chart", _config.ShowLegend, (_, _) => {
+            _config.ShowLegend = !_config.ShowLegend;
+            ApplyViewSettings();
+        });
+
+        var gridItem = CreateToggleMenuItem("Grid", "chart", _config.ShowGrid, (_, _) => {
+            _config.ShowGrid = !_config.ShowGrid;
+            ApplyViewSettings();
+        });
+
+        contextMenu.Items.Add(legendItem);
+        contextMenu.Items.Add(gridItem);
+
+        if (_config.MetricAggregations.Count == 0) {
+            return;
+        }
+
+        if (_config.MetricAggregations.Count == 1) {
+            var aggregation = _config.MetricAggregations[0];
+            contextMenu.Items.Add(CreateToggleMenuItem("Smoothing", "chart", aggregation.Smooth, (_, _) => {
+                aggregation.Smooth = !aggregation.Smooth;
+                ApplyViewSettings();
+            }));
+        } else {
+            var smoothItem = new ToolStripMenuItem("Smoothing") { Tag = "chart" };
+            foreach (var aggregation in _config.MetricAggregations) {
+                smoothItem.DropDownItems.Add(CreateToggleMenuItem(GetAggregationDisplayName(aggregation), "chart", aggregation.Smooth, (_, _) => {
+                    aggregation.Smooth = !aggregation.Smooth;
+                    ApplyViewSettings();
+                }));
+            }
+            contextMenu.Items.Add(smoothItem);
+        }
+
+        contextMenu.Items.Add(CreateToggleMenuItem("Markers", "chart", _config.MetricAggregations.Any(x => x.ShowMarkers), (_, _) => {
+            var enableMarkers = !_config.MetricAggregations.All(x => x.ShowMarkers);
+            foreach (var aggregation in _config.MetricAggregations) {
+                aggregation.ShowMarkers = enableMarkers;
+            }
+            ApplyViewSettings();
+        }));
+    }
+
+    private static string GetAggregationDisplayName(MetricAggregation aggregation) {
+        if (!string.IsNullOrWhiteSpace(aggregation.Label)) {
+            return aggregation.Label;
+        }
+
+        return $"{aggregation.Metric.GetDisplayName()} ({aggregation.Function})";
+    }
+
+    private void ApplyViewSettings() {
+        RefreshData();
+        ViewSettingsChanged?.Invoke(this);
+    }
+
+    private static ToolStripMenuItem CreateToggleMenuItem(string text, string iconName, bool isChecked, EventHandler onClick) {
+        var iconForState = isChecked ? "check" : iconName;
+        var item = CreatePlotMenuItem(text, iconForState, onClick);
+        item.Checked = isChecked;
+        return item;
     }
 
     private static ToolStripMenuItem CreatePlotMenuItem(string text, string iconName, EventHandler onClick) {
