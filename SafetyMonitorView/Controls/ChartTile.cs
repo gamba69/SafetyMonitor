@@ -23,6 +23,18 @@ public class ChartTile : Panel {
     private List<ChartPeriodPreset> _periodPresets = [];
     private ComboBox? _periodSelector;
     private bool _suppressPeriodChange;
+    private bool _suppressStaticRangeChange;
+    private bool _isStaticMode;
+    private DateTimePicker? _staticStartPicker;
+    private DateTimePicker? _staticEndPicker;
+    private FlowLayoutPanel? _staticRangePanel;
+    private System.Windows.Forms.Timer? _staticModeTimer;
+    private TimeSpan _staticModeTimeout = TimeSpan.FromMinutes(2);
+    private DateTime _lastChartInteractionUtc = DateTime.MinValue;
+    private double? _lastXAxisMin;
+    private double? _lastXAxisMax;
+    private ChartPeriod _autoPeriod;
+    private TimeSpan? _autoCustomDuration;
     private FormsPlot? _plot;
     private Label? _titleLabel;
     private Panel? _topPanel;
@@ -32,6 +44,8 @@ public class ChartTile : Panel {
     #region Public Events
 
     public event Action<ChartTile, ChartPeriod, TimeSpan?>? PeriodChanged;
+    public event Action<ChartTile, DateTime, DateTime>? StaticRangeChanged;
+    public event Action<ChartTile>? AutoModeRestored;
     public event Action<ChartTile>? ViewSettingsChanged;
 
     #endregion Public Events
@@ -49,6 +63,8 @@ public class ChartTile : Panel {
         // and if parent has an invalid font (e.g., "Roboto" not installed),
         // Controls.Add() will throw when accessing FontHandle.
         Font = SystemFonts.DefaultFont;
+        _autoPeriod = _config.Period;
+        _autoCustomDuration = _config.CustomPeriodDuration;
     }
 
     #endregion Public Constructors
@@ -69,6 +85,7 @@ public class ChartTile : Panel {
         if (_config.MetricAggregations.Count == 0) {
             _plot.Plot.Title("No metrics configured");
             ApplyThemeColors();
+            RememberCurrentXAxisLimits();
             _plot.Refresh();
             return;
         }
@@ -167,10 +184,12 @@ public class ChartTile : Panel {
         // Clear any previously added axis rules
         _plot.Plot.Axes.Rules.Clear();
 
-        if (hasVisibleSeries) {
+        var (startTime, endTime) = GetConfiguredPeriodRange();
+        if (_isStaticMode) {
+            _plot.Plot.Axes.SetLimitsX(startTime.ToOADate(), endTime.ToOADate());
+        } else if (hasVisibleSeries) {
             _plot.Plot.Axes.AutoScale();
         } else {
-            var (startTime, endTime) = GetConfiguredPeriodRange();
             _plot.Plot.Axes.SetLimitsX(startTime.ToOADate(), endTime.ToOADate());
         }
 
@@ -194,6 +213,7 @@ public class ChartTile : Panel {
         } else {
             _plot.Plot.HideGrid();
         }
+        RememberCurrentXAxisLimits();
         _plot.Refresh();
     }
 
@@ -220,6 +240,12 @@ public class ChartTile : Panel {
     }
 
     public void SetPeriod(ChartPeriod period, TimeSpan? customDuration = null, bool refreshData = true) {
+        _autoPeriod = period;
+        _autoCustomDuration = period == ChartPeriod.Custom ? customDuration : null;
+        if (_isStaticMode) {
+            SetStaticMode(false);
+        }
+
         _config.Period = period;
         _config.CustomPeriodDuration = period == ChartPeriod.Custom ? customDuration : null;
         if (_periodSelector != null) {
@@ -233,6 +259,38 @@ public class ChartTile : Panel {
 
         if (refreshData) {
             RefreshData();
+        }
+    }
+
+
+    public void SetStaticModeTimeout(TimeSpan timeout) {
+        _staticModeTimeout = timeout < TimeSpan.FromSeconds(10)
+            ? TimeSpan.FromSeconds(10)
+            : timeout;
+    }
+
+    public void SetStaticRange(DateTime startLocal, DateTime endLocal, bool raiseEvents = true) {
+        if (endLocal <= startLocal) {
+            return;
+        }
+
+        EnterStaticMode(startLocal, endLocal, raiseEvents);
+    }
+
+    public void ExitStaticMode(bool raiseEvents = true) {
+        if (!_isStaticMode) {
+            return;
+        }
+
+        SetStaticMode(false);
+        _config.Period = _autoPeriod;
+        _config.CustomPeriodDuration = _autoCustomDuration;
+        _config.CustomStartTime = null;
+        _config.CustomEndTime = null;
+        RefreshData();
+
+        if (raiseEvents) {
+            AutoModeRestored?.Invoke(this);
         }
     }
 
@@ -270,6 +328,14 @@ public class ChartTile : Panel {
             ChartPeriodPresetStore.PresetsChanged -= HandlePresetsChanged;
             MetricAxisRuleStore.RulesChanged -= HandleAxisRulesChanged;
             _plot?.MouseUp -= Plot_MouseUp;
+            _plot?.MouseWheel -= Plot_MouseWheel;
+            _plot?.MouseDoubleClick -= Plot_MouseDoubleClick;
+            if (_staticModeTimer != null) {
+                _staticModeTimer.Stop();
+                _staticModeTimer.Tick -= StaticModeTimer_Tick;
+                _staticModeTimer.Dispose();
+                _staticModeTimer = null;
+            }
             _plotContextMenu?.Dispose();
             _plotContextMenu = null;
         }
@@ -470,6 +536,11 @@ public class ChartTile : Panel {
             _periodSelector.ForeColor = fg;
             _periodSelector.Invalidate();
         }
+
+        if (_staticRangePanel != null && _staticRangePanel.BackColor != tileBg) {
+            _staticRangePanel.BackColor = tileBg;
+        }
+
     }
 
     private void ApplyPlotContextMenuTheme() {
@@ -661,7 +732,9 @@ public class ChartTile : Panel {
             return;
         }
 
+        ExitStaticMode();
         _plot.Plot.Axes.AutoScale();
+        RememberCurrentXAxisLimits();
         _plot.Refresh();
     }
 
@@ -705,6 +778,8 @@ public class ChartTile : Panel {
     }
 
     private void Plot_MouseUp(object? sender, MouseEventArgs e) {
+        DetectXAxisInteraction();
+
         if (e.Button != MouseButtons.Right || _plot == null || _plotContextMenu == null) {
             return;
         }
@@ -836,6 +911,21 @@ public class ChartTile : Panel {
         _topPanel.Controls.Add(_titleLabel);
         _topPanel.Controls.Add(_periodSelector);
 
+        _staticRangePanel = new FlowLayoutPanel {
+            Dock = DockStyle.Right,
+            Width = 360,
+            AutoSize = false,
+            WrapContents = false,
+            Visible = false,
+            BackColor = tileBg
+        };
+
+        _staticStartPicker = CreateStaticDatePicker();
+        _staticEndPicker = CreateStaticDatePicker();
+        _staticRangePanel.Controls.Add(_staticStartPicker);
+        _staticRangePanel.Controls.Add(_staticEndPicker);
+        _topPanel.Controls.Add(_staticRangePanel);
+
         // Guard against MaterialSkinManager overwriting our colors.
         // MSM walks the control tree and sets BackColor directly;
         // this handler fires immediately and corrects it.
@@ -855,6 +945,12 @@ public class ChartTile : Panel {
                 _periodSelector.BackColor = expected;
             }
         };
+        _staticStartPicker?.ValueChanged += StaticPicker_ValueChanged;
+        _staticEndPicker?.ValueChanged += StaticPicker_ValueChanged;
+
+        _staticModeTimer = new System.Windows.Forms.Timer { Interval = 1000 };
+        _staticModeTimer.Tick += StaticModeTimer_Tick;
+        _staticModeTimer.Start();
 
         _plot = new FormsPlot {
             Dock = DockStyle.Fill,         // Use explicit safe font (Segoe UI is guaranteed on Windows)
@@ -863,6 +959,8 @@ public class ChartTile : Panel {
         _plotContextMenu = CreatePlotContextMenu();
         _plot.ContextMenuStrip = null;
         _plot.MouseUp += Plot_MouseUp;
+        _plot.MouseWheel += Plot_MouseWheel;
+        _plot.MouseDoubleClick += Plot_MouseDoubleClick;
         TryDisableScottPlotBuiltInContextMenu();
         ApplyPlotContextMenuTheme();
 
@@ -1029,6 +1127,8 @@ public class ChartTile : Panel {
         }
 
         var preset = _periodPresets[index];
+        _autoPeriod = preset.Period;
+        _autoCustomDuration = preset.Period == ChartPeriod.Custom ? preset.Duration : null;
         _config.Period = preset.Period;
         _config.CustomPeriodDuration = preset.Period == ChartPeriod.Custom ? preset.Duration : null;
         RefreshData();
@@ -1072,5 +1172,122 @@ public class ChartTile : Panel {
         }
     }
 
+
+
+    private static DateTimePicker CreateStaticDatePicker() {
+        return new DateTimePicker {
+            Width = 170,
+            Format = DateTimePickerFormat.Custom,
+            CustomFormat = "yyyy-MM-dd HH:mm:ss",
+            Margin = new Padding(4, 2, 4, 2)
+        };
+    }
+
+    private void SetStaticMode(bool enabled) {
+        _isStaticMode = enabled;
+        _periodSelector?.Visible = !enabled;
+        _staticRangePanel?.Visible = enabled;
+    }
+
+    private void EnterStaticMode(DateTime startLocal, DateTime endLocal, bool raiseEvents) {
+        if (!_isStaticMode) {
+            _autoPeriod = _config.Period;
+            _autoCustomDuration = _config.CustomPeriodDuration;
+        }
+
+        SetStaticMode(true);
+        _config.Period = ChartPeriod.Custom;
+        _config.CustomStartTime = startLocal.ToUniversalTime();
+        _config.CustomEndTime = endLocal.ToUniversalTime();
+        _config.CustomPeriodDuration = endLocal - startLocal;
+        _lastChartInteractionUtc = DateTime.UtcNow;
+        SyncStaticPickers(startLocal, endLocal);
+        RefreshData();
+
+        if (raiseEvents) {
+            StaticRangeChanged?.Invoke(this, startLocal, endLocal);
+        }
+    }
+
+    private void SyncStaticPickers(DateTime startLocal, DateTime endLocal) {
+        if (_staticStartPicker == null || _staticEndPicker == null) {
+            return;
+        }
+
+        try {
+            _suppressStaticRangeChange = true;
+            _staticStartPicker.Value = startLocal;
+            _staticEndPicker.Value = endLocal;
+        } finally {
+            _suppressStaticRangeChange = false;
+        }
+    }
+
+    private void StaticPicker_ValueChanged(object? sender, EventArgs e) {
+        if (_suppressStaticRangeChange || _staticStartPicker == null || _staticEndPicker == null) {
+            return;
+        }
+
+        var start = _staticStartPicker.Value;
+        var end = _staticEndPicker.Value;
+        if (end <= start) {
+            return;
+        }
+
+        EnterStaticMode(start, end, raiseEvents: true);
+    }
+
+    private void StaticModeTimer_Tick(object? sender, EventArgs e) {
+        if (!_isStaticMode || _lastChartInteractionUtc == DateTime.MinValue) {
+            return;
+        }
+
+        if (DateTime.UtcNow - _lastChartInteractionUtc >= _staticModeTimeout) {
+            ExitStaticMode();
+        }
+    }
+
+    private void Plot_MouseWheel(object? sender, MouseEventArgs e) {
+        DetectXAxisInteraction();
+    }
+
+    private void Plot_MouseDoubleClick(object? sender, MouseEventArgs e) {
+        DetectXAxisInteraction();
+    }
+
+    private void DetectXAxisInteraction() {
+        if (_plot == null) {
+            return;
+        }
+
+        var limits = _plot.Plot.Axes.GetLimits();
+        if (double.IsNaN(limits.Left) || double.IsNaN(limits.Right) || limits.Right <= limits.Left) {
+            return;
+        }
+
+        if (_lastXAxisMin.HasValue && _lastXAxisMax.HasValue
+            && Math.Abs(_lastXAxisMin.Value - limits.Left) < 1e-9
+            && Math.Abs(_lastXAxisMax.Value - limits.Right) < 1e-9) {
+            return;
+        }
+
+        var start = DateTime.FromOADate(limits.Left);
+        var end = DateTime.FromOADate(limits.Right);
+        EnterStaticMode(start, end, raiseEvents: true);
+    }
+
+    private void RememberCurrentXAxisLimits() {
+        if (_plot == null) {
+            return;
+        }
+
+        var limits = _plot.Plot.Axes.GetLimits();
+        if (double.IsNaN(limits.Left) || double.IsNaN(limits.Right)) {
+            return;
+        }
+
+        _lastXAxisMin = limits.Left;
+        _lastXAxisMax = limits.Right;
+    }
     #endregion Private Methods
 }

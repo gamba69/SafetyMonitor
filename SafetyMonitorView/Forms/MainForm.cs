@@ -497,7 +497,7 @@ public class MainForm : MaterialForm {
             _dashboardPanel.Dispose();
         }
 
-        _dashboardPanel = new DashboardPanel(dashboard, _dataService) { Dock = DockStyle.Fill };
+        _dashboardPanel = new DashboardPanel(dashboard, _dataService, _appSettings.ChartStaticModeTimeoutSeconds) { Dock = DockStyle.Fill };
         _dashboardPanel.DashboardChanged += OnDashboardChanged;
         _dashboardPanel.SetLinkChartPeriods(_appSettings.LinkChartPeriods);
         _dashboardContainer.Controls.Add(_dashboardPanel);
@@ -677,10 +677,11 @@ public class MainForm : MaterialForm {
     }
 
     private void ShowSettings() {
-        using var settingsForm = new SettingsForm(_appSettings.StoragePath, _appSettings.RefreshInterval);
+        using var settingsForm = new SettingsForm(_appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ChartStaticModeTimeoutSeconds);
         if (settingsForm.ShowDialog() == DialogResult.OK) {
             _appSettings.StoragePath = settingsForm.StoragePath;
             _appSettings.RefreshInterval = settingsForm.RefreshInterval;
+            _appSettings.ChartStaticModeTimeoutSeconds = settingsForm.ChartStaticTimeoutSeconds;
             _appSettingsService.SaveSettings(_appSettings);
 
             _dataService = new DataService(_appSettings.StoragePath);
@@ -688,6 +689,7 @@ public class MainForm : MaterialForm {
             UpdateStatusBar();
 
             _refreshTimer?.Interval = _appSettings.RefreshInterval * 1000;
+            _dashboardPanel?.SetChartStaticModeTimeoutSeconds(_appSettings.ChartStaticModeTimeoutSeconds);
 
             if (_currentDashboard != null) {
                 LoadDashboard(_currentDashboard);

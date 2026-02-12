@@ -8,6 +8,7 @@ public class SettingsForm : Form {
     private Button _browseButton = null!;
     private Button _cancelButton = null!;
     private Label _connectionStatusLabel = null!;
+    private NumericUpDown _chartStaticTimeoutNumeric = null!;
     private NumericUpDown _refreshIntervalNumeric = null!;
     private Button _saveButton = null!;
     private TextBox _storagePathTextBox = null!;
@@ -17,9 +18,10 @@ public class SettingsForm : Form {
 
     #region Public Constructors
 
-    public SettingsForm(string currentStoragePath, int currentRefreshInterval) {
+    public SettingsForm(string currentStoragePath, int currentRefreshInterval, int currentChartStaticTimeoutSeconds) {
         StoragePath = currentStoragePath;
         RefreshInterval = currentRefreshInterval;
+        ChartStaticTimeoutSeconds = currentChartStaticTimeoutSeconds;
 
         InitializeComponent();
         ApplyTheme();
@@ -31,6 +33,7 @@ public class SettingsForm : Form {
     #region Public Properties
 
     public int RefreshInterval { get; private set; } = 5;
+    public int ChartStaticTimeoutSeconds { get; private set; } = 120;
     public string StoragePath { get; private set; } = "";
     #endregion Public Properties
 
@@ -118,7 +121,7 @@ public class SettingsForm : Form {
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 7,
+            RowCount = 9,
             AutoSize = true
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -127,8 +130,10 @@ public class SettingsForm : Form {
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 2: Test Connection + Status
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 3: Refresh Interval label
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Refresh Interval
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 5: Spacer
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Buttons
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Static timeout label
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Static timeout value
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 7: Spacer
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 8: Buttons
 
         // Row 0: Storage Path label
         var storagePathLabel = new Label {
@@ -216,8 +221,26 @@ public class SettingsForm : Form {
         };
         mainLayout.Controls.Add(_refreshIntervalNumeric, 0, 4);
 
+        var chartStaticTimeoutLabel = new Label {
+            Text = "Chart static mode timeout (seconds):",
+            Font = titleFont,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 5)
+        };
+        mainLayout.Controls.Add(chartStaticTimeoutLabel, 0, 5);
+
+        _chartStaticTimeoutNumeric = new NumericUpDown {
+            Width = 100,
+            Minimum = 10,
+            Maximum = 3600,
+            Value = 120,
+            Font = normalFont,
+            Margin = new Padding(0, 0, 0, 20)
+        };
+        mainLayout.Controls.Add(_chartStaticTimeoutNumeric, 0, 6);
+
         // Row 5: Spacer
-        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 5);
+        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 7);
 
 
         // Row 6: Buttons
@@ -248,20 +271,22 @@ public class SettingsForm : Form {
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
 
-        mainLayout.Controls.Add(buttonPanel, 0, 6);
+        mainLayout.Controls.Add(buttonPanel, 0, 8);
 
         Controls.Add(mainLayout);
 
         // Set form size
-        ClientSize = new Size(550, 300);
+        ClientSize = new Size(550, 360);
     }
     private void LoadSettings() {
         _storagePathTextBox.Text = StoragePath;
         _refreshIntervalNumeric.Value = RefreshInterval;
+        _chartStaticTimeoutNumeric.Value = ChartStaticTimeoutSeconds;
     }
     private void SaveButton_Click(object? sender, EventArgs e) {
         StoragePath = _storagePathTextBox.Text;
         RefreshInterval = (int)_refreshIntervalNumeric.Value;
+        ChartStaticTimeoutSeconds = (int)_chartStaticTimeoutNumeric.Value;
 
         DialogResult = DialogResult.OK;
         Close();

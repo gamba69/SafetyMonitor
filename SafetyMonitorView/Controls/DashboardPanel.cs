@@ -11,6 +11,7 @@ public class DashboardPanel : TableLayoutPanel {
     private readonly DataService _dataService;
     private readonly Dictionary<Guid, Control> _tileControls = [];
     private bool _linkChartPeriods;
+    private int _chartStaticModeTimeoutSeconds;
     private bool _tilesCreated;
 
     #endregion Private Fields
@@ -19,9 +20,10 @@ public class DashboardPanel : TableLayoutPanel {
 
     public event Action? DashboardChanged;
 
-    public DashboardPanel(Dashboard dashboard, DataService dataService) {
+    public DashboardPanel(Dashboard dashboard, DataService dataService, int chartStaticModeTimeoutSeconds) {
         _dashboard = dashboard;
         _dataService = dataService;
+        _chartStaticModeTimeoutSeconds = chartStaticModeTimeoutSeconds;
         // Set a valid font to prevent GDI+ errors when child controls inherit font
         Font = SystemFonts.DefaultFont;
         InitializeUI();
@@ -43,6 +45,14 @@ public class DashboardPanel : TableLayoutPanel {
     public void SetLinkChartPeriods(bool linkChartPeriods) {
         _linkChartPeriods = linkChartPeriods;
     }
+
+    public void SetChartStaticModeTimeoutSeconds(int seconds) {
+        _chartStaticModeTimeoutSeconds = Math.Max(10, seconds);
+        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+            chartTile.SetStaticModeTimeout(TimeSpan.FromSeconds(_chartStaticModeTimeoutSeconds));
+        }
+    }
+
 
     public void UpdateTheme() {
         var skinManager = MaterialSkin.MaterialSkinManager.Instance;
@@ -98,7 +108,10 @@ public class DashboardPanel : TableLayoutPanel {
             if (tileControl != null) {
                 if (tileControl is ChartTile chartTile) {
                     chartTile.PeriodChanged += OnChartPeriodChanged;
+                    chartTile.StaticRangeChanged += OnChartStaticRangeChanged;
+                    chartTile.AutoModeRestored += OnChartAutoModeRestored;
                     chartTile.ViewSettingsChanged += OnChartViewSettingsChanged;
+                    chartTile.SetStaticModeTimeout(TimeSpan.FromSeconds(_chartStaticModeTimeoutSeconds));
                 }
                 Controls.Add(tileControl, tileConfig.Column, tileConfig.Row);
                 SetColumnSpan(tileControl, tileConfig.ColumnSpan);
@@ -118,6 +131,36 @@ public class DashboardPanel : TableLayoutPanel {
                 continue;
             }
             chartTile.SetPeriod(period, customDuration);
+        }
+    }
+
+
+
+    private void OnChartStaticRangeChanged(ChartTile source, DateTime start, DateTime end) {
+        if (!_linkChartPeriods) {
+            return;
+        }
+
+        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+            if (ReferenceEquals(chartTile, source)) {
+                continue;
+            }
+
+            chartTile.SetStaticRange(start, end, raiseEvents: false);
+        }
+    }
+
+    private void OnChartAutoModeRestored(ChartTile source) {
+        if (!_linkChartPeriods) {
+            return;
+        }
+
+        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+            if (ReferenceEquals(chartTile, source)) {
+                continue;
+            }
+
+            chartTile.ExitStaticMode(raiseEvents: false);
         }
     }
 

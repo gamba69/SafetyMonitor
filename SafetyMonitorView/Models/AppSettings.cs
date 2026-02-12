@@ -7,6 +7,7 @@ public class AppSettings {
     public bool IsDarkTheme { get; set; } = false;
     public bool IsMaximized { get; set; } = false;
     public bool LinkChartPeriods { get; set; } = false;
+    public int ChartStaticModeTimeoutSeconds { get; set; } = 120;
 
     // Dashboard settings
     public Guid? LastDashboardId { get; set; }
