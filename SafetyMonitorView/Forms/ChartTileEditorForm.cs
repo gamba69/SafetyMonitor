@@ -533,12 +533,13 @@ public class ChartTileEditorForm : Form {
             return;
         }
 
-        if (_config.CustomPeriodDuration.HasValue) {
-            var label = $"Custom ({ChartPeriodPresetStore.FormatDuration(_config.CustomPeriodDuration.Value)})";
-            _periodPresets.Add(new ChartPeriodPreset(label, _config.CustomPeriodDuration.Value, ChartPeriod.Custom));
-            _periodComboBox.Items.Add(label);
-            _periodComboBox.SelectedIndex = _periodPresets.Count - 1;
-        } else if (_periodComboBox.Items.Count > 0) {
+        var fallbackPreset = ChartPeriodPresetStore.GetFallbackPreset(_periodPresets);
+        _config.Period = fallbackPreset.Period;
+        _config.CustomPeriodDuration = fallbackPreset.Period == ChartPeriod.Custom
+            ? fallbackPreset.Duration
+            : null;
+
+        if (_periodComboBox.Items.Count > 0) {
             _periodComboBox.SelectedIndex = 0;
         }
     }

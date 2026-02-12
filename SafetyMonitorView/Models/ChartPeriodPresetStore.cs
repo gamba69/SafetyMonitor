@@ -54,6 +54,14 @@ public static class ChartPeriodPresetStore {
         return -1;
     }
 
+    public static ChartPeriodPreset GetFallbackPreset(IReadOnlyList<ChartPeriodPreset> presets) {
+        if (presets.Count > 0) {
+            return presets[0];
+        }
+
+        return new ChartPeriodPreset("24 Hours", TimeSpan.FromHours(24), ChartPeriod.Last24Hours);
+    }
+
     public static string FormatDuration(TimeSpan duration) {
         if (duration.TotalDays >= 1 && IsWholeNumber(duration.TotalDays)) {
             var days = (int)Math.Round(duration.TotalDays);

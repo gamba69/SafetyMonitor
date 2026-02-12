@@ -65,6 +65,13 @@ public class ChartTile : Panel {
         Font = SystemFonts.DefaultFont;
         _autoPeriod = _config.Period;
         _autoCustomDuration = _config.CustomPeriodDuration;
+
+        // Legacy configs may persist a Custom period from static mode.
+        // Auto mode must never keep ad-hoc custom windows.
+        if (_autoPeriod == ChartPeriod.Custom && !_autoCustomDuration.HasValue) {
+            _autoPeriod = ChartPeriod.Last24Hours;
+            _config.Period = _autoPeriod;
+        }
     }
 
     #endregion Public Constructors
@@ -1104,19 +1111,28 @@ public class ChartTile : Panel {
             return;
         }
 
+        var targetPeriod = _isStaticMode ? _autoPeriod : _config.Period;
+        var targetDuration = _isStaticMode ? _autoCustomDuration : _config.CustomPeriodDuration;
+
         var index = ChartPeriodPresetStore.FindMatchingPresetIndex(
-            _config.CustomPeriodDuration, _config.Period, _periodPresets);
+            targetDuration, targetPeriod, _periodPresets);
         if (index >= 0) {
             _periodSelector.SelectedIndex = index;
             return;
         }
 
-        if (_config.CustomPeriodDuration.HasValue) {
-            var label = $"Custom ({ChartPeriodPresetStore.FormatDuration(_config.CustomPeriodDuration.Value)})";
-            _periodPresets.Add(new ChartPeriodPreset(label, _config.CustomPeriodDuration.Value, ChartPeriod.Custom));
-            _periodSelector.Items.Add(label);
-            _periodSelector.SelectedIndex = _periodPresets.Count - 1;
-        } else if (_periodSelector.Items.Count > 0) {
+        var fallbackPreset = ChartPeriodPresetStore.GetFallbackPreset(_periodPresets);
+        _autoPeriod = fallbackPreset.Period;
+        _autoCustomDuration = fallbackPreset.Period == ChartPeriod.Custom
+            ? fallbackPreset.Duration
+            : null;
+
+        if (!_isStaticMode) {
+            _config.Period = _autoPeriod;
+            _config.CustomPeriodDuration = _autoCustomDuration;
+        }
+
+        if (_periodSelector.Items.Count > 0) {
             _periodSelector.SelectedIndex = 0;
         }
     }
