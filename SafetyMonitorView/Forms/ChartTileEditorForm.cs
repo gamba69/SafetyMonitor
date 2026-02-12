@@ -31,7 +31,6 @@ public class ChartTileEditorForm : Form {
     private NumericUpDown _aggregationValueNumeric = null!;
     private Button _cancelButton = null!;
     private NumericUpDown _columnSpanNumeric = null!;
-    private DateTimePicker _endTimePicker = null!;
     private DataGridView _metricsGrid = null!;
     private ComboBox _periodComboBox = null!;
     private List<ChartPeriodPreset> _periodPresets = [];
@@ -40,7 +39,6 @@ public class ChartTileEditorForm : Form {
     private CheckBox _showGridCheckBox = null!;
     private CheckBox _showLegendCheckBox = null!;
     private TextBox _titleTextBox = null!;
-    private CheckBox _useCustomEndTimeCheckBox = null!;
 
     #endregion Private Fields
 
@@ -144,13 +142,6 @@ public class ChartTileEditorForm : Form {
                     chk.ForeColor = isLight ? Color.Black : Color.White;
                     break;
 
-                case DateTimePicker dtp:
-                    dtp.CalendarForeColor = _inputForeColor;
-                    dtp.CalendarMonthBackground = _inputBackColor;
-                    dtp.CalendarTitleBackColor = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(53, 70, 76);
-                    dtp.CalendarTitleForeColor = _inputForeColor;
-                    dtp.CalendarTrailingForeColor = isLight ? Color.Gray : Color.LightGray;
-                    break;
             }
             ApplyThemeRecursive(control, isLight);
         }
@@ -257,17 +248,12 @@ public class ChartTileEditorForm : Form {
         gridButtonPanel.Controls.Add(removeMetricButton);
         mainLayout.Controls.Add(gridButtonPanel, 0, 3);
 
-        // Row 4: Period + Custom End Time
+        // Row 4: Period
         var periodPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = false, Margin = new Padding(0, 5, 0, 5) };
         periodPanel.Controls.Add(new Label { Text = "Period:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 5, 5, 0) });
         _periodComboBox = new ComboBox { Width = 140, Font = normalFont, DropDownStyle = ComboBoxStyle.DropDownList, Margin = new Padding(0, 0, 15, 0) };
         LoadPeriodPresets();
         periodPanel.Controls.Add(_periodComboBox);
-        _useCustomEndTimeCheckBox = new CheckBox { Text = "Custom End Time:", Font = normalFont, AutoSize = true, Margin = new Padding(10, 4, 5, 0) };
-        _useCustomEndTimeCheckBox.CheckedChanged += (s, e) => _endTimePicker.Enabled = _useCustomEndTimeCheckBox.Checked;
-        periodPanel.Controls.Add(_useCustomEndTimeCheckBox);
-        _endTimePicker = new DateTimePicker { Width = 160, Font = normalFont, Format = DateTimePickerFormat.Custom, CustomFormat = "yyyy-MM-dd HH:mm", Enabled = false };
-        periodPanel.Controls.Add(_endTimePicker);
         mainLayout.Controls.Add(periodPanel, 0, 4);
 
         // Row 5: Aggregation + Options
@@ -318,11 +304,6 @@ public class ChartTileEditorForm : Form {
     private void LoadConfig() {
         _titleTextBox.Text = _config.Title;
         SetSelectedPeriodPreset();
-
-        if (_config.CustomEndTime.HasValue) {
-            _useCustomEndTimeCheckBox.Checked = true;
-            _endTimePicker.Value = _config.CustomEndTime.Value;
-        }
 
         if (_config.CustomAggregationInterval.HasValue) {
             var interval = _config.CustomAggregationInterval.Value;
@@ -491,7 +472,7 @@ public class ChartTileEditorForm : Form {
         _config.Period = selectedPreset.Period;
         _config.CustomPeriodDuration = selectedPreset.Period == ChartPeriod.Custom ? selectedPreset.Duration : null;
 
-        _config.CustomEndTime = _useCustomEndTimeCheckBox.Checked ? _endTimePicker.Value : null;
+        _config.CustomEndTime = null;
 
         var value = (int)_aggregationValueNumeric.Value;
         _config.CustomAggregationInterval = _aggregationUnitComboBox.SelectedIndex switch {

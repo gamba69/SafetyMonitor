@@ -15,13 +15,12 @@
 - **Multiple Metrics:** Display any combination of metrics
 - **Multiple Aggregations:** Min/Avg/Max of same metric
 - **Custom Aggregation Interval:** Manual specification (seconds/minutes/hours)
-- **Custom End Time:** View historical data (not just "now")
 - **Per-Series Styling:** Color, line width, markers
 - **Interactive Period Selector:** 15min to 30 days
 
 ### 3. Tile Editors ✅
 - **ValueTileEditorForm:** Edit metric, color scheme, decimals, icon, size
-- **ChartTileEditorForm:** Edit metrics/aggregations with DataGridView, custom intervals, custom end time, styling
+- **ChartTileEditorForm:** Edit metrics/aggregations with DataGridView, custom intervals, styling
 - **Full Integration:** Opens from EditableTileControl
 
 ### 4. SettingsForm ✅
@@ -149,7 +148,6 @@ Chart Tile Configuration:
 ```
 Chart Configuration:
 - Period: 7 Days
-- Custom End Time: 2026-01-28 23:59
 - Custom Aggregation: 30 minutes
 - View data from a week ago!
 ```
@@ -296,7 +294,6 @@ Metrics and Aggregations:
   - Temperature | Average   | "Avg" | Green  | 2.5 | No
   - Temperature | Maximum   | "Max" | Red    | 1.5 | Yes
 Aggregation Interval: 10 Minutes
-Custom End Time: [ ] Use Now  or  [2026-01-28 23:59]
 Show Legend: [✓]
 Show Grid: [✓]
 Size: 2 rows × 4 columns
@@ -325,7 +322,6 @@ Refresh Interval: 5 seconds
 1. **Color Schemes:** Temperature scheme has gradient enabled for smooth transitions
 2. **Chart Performance:** Use aggregation for long periods (7+ days)
 3. **Quick Access:** Mark up to 5 dashboards for one-click switching
-4. **Historical Data:** Uncheck "Use Now" to view past data
 5. **Multiple Metrics:** Can show any combination (e.g. Temp + Humidity)
 6. **Window Settings:** Size/position/theme automatically saved
 

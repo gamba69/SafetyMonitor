@@ -145,7 +145,10 @@ public class ChartTile : Panel {
 
         foreach (var agg in _config.MetricAggregations) {
             var data = _dataService.GetChartData(
-                _config.Period, _config.CustomStartTime, _config.CustomEndTime, _config.CustomPeriodDuration,
+                _config.Period,
+                _config.CustomStartTime,
+                _isStaticMode ? _config.CustomEndTime : null,
+                _config.CustomPeriodDuration,
                 aggregationInterval, agg.Function);
             if (data.Count == 0) {
                 continue;
@@ -401,7 +404,7 @@ public class ChartTile : Panel {
     }
 
     private (DateTime start, DateTime end) GetConfiguredPeriodRange() {
-        var endTime = _config.CustomEndTime.HasValue
+        var endTime = _isStaticMode && _config.CustomEndTime.HasValue
             ? ToLocalChartTime(_config.CustomEndTime.Value)
             : DateTime.Now;
 
