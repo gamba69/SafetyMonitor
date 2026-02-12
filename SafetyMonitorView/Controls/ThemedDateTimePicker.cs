@@ -1,7 +1,7 @@
 using MaterialSkin;
+using System.ComponentModel;
 using System.Drawing.Text;
 using System.Globalization;
-using System.ComponentModel;
 using System.Text.RegularExpressions;
 
 namespace SafetyMonitorView.Controls;
@@ -417,7 +417,7 @@ public class ThemedDateTimePicker : UserControl {
                               + (_showTime ? _timeRowHeight : 0);
             ClientSize = new Size(totalWidth, totalHeight);
 
-            // ── Header: [|◀][◀] Month Year [▶][▶|] ──
+            // ── Header: [◁][◀] Month Year [▶][▷] ──
             _headerPanel = new BufferedPanel {
                 Dock = DockStyle.Top,
                 Height = _headerHeight,
@@ -532,7 +532,8 @@ public class ThemedDateTimePicker : UserControl {
                 Text = text,
                 Size = new Size(size, size),
                 FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 8f),
+                Font = new Font("Segoe UI", 10f, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleCenter,
                 ForeColor = _fg,
                 BackColor = _headerBg,
                 Cursor = Cursors.Hand,
@@ -553,7 +554,8 @@ public class ThemedDateTimePicker : UserControl {
                 Text = text,
                 Size = new Size(size, size),
                 FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 8f),
+                Font = new Font("Segoe UI", 10f, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleCenter,
                 ForeColor = _fg,
                 BackColor = _headerBg,
                 Cursor = Cursors.Hand,
@@ -769,7 +771,8 @@ public class ThemedDateTimePicker : UserControl {
             });
 
             _hourSpin = new NumericUpDown {
-                Minimum = 0, Maximum = 23,
+                Minimum = 0,
+                Maximum = 23,
                 Value = _selectedDate.Hour,
                 Width = spinWidth,
                 Height = spinHeight,
@@ -790,7 +793,8 @@ public class ThemedDateTimePicker : UserControl {
             });
 
             _minuteSpin = new NumericUpDown {
-                Minimum = 0, Maximum = 59,
+                Minimum = 0,
+                Maximum = 59,
                 Value = _selectedDate.Minute,
                 Width = spinWidth,
                 Height = spinHeight,
