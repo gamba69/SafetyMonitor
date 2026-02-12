@@ -74,9 +74,7 @@ public class ValueTileEditorForm : Form {
                     txt.ForeColor = isLight ? Color.Black : Color.White;
                     break;
                 case ComboBox cmb:
-                    cmb.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
-                    cmb.ForeColor = isLight ? Color.Black : Color.White;
-                    cmb.FlatStyle = FlatStyle.Flat;
+                    ThemedComboBoxStyler.Apply(cmb, isLight);
                     break;
                 case NumericUpDown num:
                     num.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);

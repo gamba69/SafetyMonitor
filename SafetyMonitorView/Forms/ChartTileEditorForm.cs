@@ -132,9 +132,7 @@ public class ChartTileEditorForm : Form {
                     break;
 
                 case ComboBox cmb:
-                    cmb.BackColor = _inputBackColor;
-                    cmb.ForeColor = _inputForeColor;
-                    cmb.FlatStyle = FlatStyle.Flat;
+                    ThemedComboBoxStyler.Apply(cmb, isLight);
                     break;
 
                 case NumericUpDown num:
@@ -429,9 +427,8 @@ public class ChartTileEditorForm : Form {
 
     private void MetricsGrid_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e) {
         if (e.Control is ComboBox comboBox) {
-            comboBox.BackColor = _inputBackColor;
-            comboBox.ForeColor = _inputForeColor;
-            comboBox.FlatStyle = FlatStyle.Flat;
+            var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+            ThemedComboBoxStyler.Apply(comboBox, isLight);
         }
     }
 

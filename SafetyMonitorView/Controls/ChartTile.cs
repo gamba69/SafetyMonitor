@@ -744,9 +744,11 @@ public class ChartTile : Panel {
             DropDownStyle = ComboBoxStyle.DropDownList,
             DrawMode = DrawMode.OwnerDrawFixed,
             BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66),
-            ForeColor = fg
+            ForeColor = fg,
+            FlatStyle = FlatStyle.Popup
         };
         _periodSelector.DrawItem += PeriodSelector_DrawItem;
+        ThemedComboBoxStyler.ApplyNativeTheme(_periodSelector);
         LoadPeriodPresets();
         SetSelectedPeriodPreset();
         _periodSelector.SelectionChangeCommitted += (s, e) => UpdatePeriodFromSelection();
@@ -811,8 +813,9 @@ public class ChartTile : Panel {
 
         // Use highlight colors for selected item in dropdown
         if ((e.State & DrawItemState.Selected) != 0 && (e.State & DrawItemState.ComboBoxEdit) == 0) {
-            bg = SystemColors.Highlight;
-            fg = SystemColors.HighlightText;
+            var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+            bg = isLight ? SystemColors.Highlight : Color.FromArgb(0, 137, 123);
+            fg = isLight ? SystemColors.HighlightText : Color.White;
         }
 
         using var bgBrush = new SolidBrush(bg);

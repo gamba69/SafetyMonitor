@@ -354,8 +354,7 @@ public class AxisRulesEditorForm : Form {
 
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
         comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
-        comboBox.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
-        comboBox.ForeColor = isLight ? Color.Black : Color.White;
+        ThemedComboBoxStyler.Apply(comboBox, isLight);
     }
 
     #endregion Private Methods

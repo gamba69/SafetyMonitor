@@ -267,28 +267,39 @@ public class SettingsForm : Form {
         Close();
     }
 
+
+    private static Color GetConnectionStatusColor(bool isSuccess) {
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+
+        if (isSuccess) {
+            return isLight ? Color.FromArgb(0, 121, 107) : Color.FromArgb(77, 208, 182);
+        }
+
+        return isLight ? Color.FromArgb(198, 40, 40) : Color.FromArgb(239, 154, 154);
+    }
+
     private void TestConnectionButton_Click(object? sender, EventArgs e) {
         var path = _storagePathTextBox.Text;
 
         if (string.IsNullOrWhiteSpace(path)) {
             _connectionStatusLabel.Text = "❌ Please specify path";
-            _connectionStatusLabel.ForeColor = Color.Red;
+            _connectionStatusLabel.ForeColor = GetConnectionStatusColor(isSuccess: false);
             return;
         }
 
         if (!Directory.Exists(path)) {
             _connectionStatusLabel.Text = "❌ Folder does not exist";
-            _connectionStatusLabel.ForeColor = Color.Red;
+            _connectionStatusLabel.ForeColor = GetConnectionStatusColor(isSuccess: false);
             return;
         }
 
         try {
             var storage = new DataStorage.DataStorage(path);
             _connectionStatusLabel.Text = "✅ Connection successful";
-            _connectionStatusLabel.ForeColor = Color.Green;
+            _connectionStatusLabel.ForeColor = GetConnectionStatusColor(isSuccess: true);
         } catch (Exception ex) {
             _connectionStatusLabel.Text = $"❌ Error: {ex.Message}";
-            _connectionStatusLabel.ForeColor = Color.Red;
+            _connectionStatusLabel.ForeColor = GetConnectionStatusColor(isSuccess: false);
         }
     }
 

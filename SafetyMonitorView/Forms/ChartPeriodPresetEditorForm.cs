@@ -96,8 +96,7 @@ public class ChartPeriodPresetEditorForm : Form {
                     txt.ForeColor = isLight ? Color.Black : Color.White;
                     break;
                 case ComboBox cmb:
-                    cmb.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
-                    cmb.ForeColor = isLight ? Color.Black : Color.White;
+                    ThemedComboBoxStyler.Apply(cmb, isLight);
                     break;
             }
 
@@ -263,33 +262,8 @@ public class ChartPeriodPresetEditorForm : Form {
         }
 
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
-        comboBox.DrawMode = DrawMode.OwnerDrawFixed;
         comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
-        comboBox.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
-        comboBox.ForeColor = isLight ? Color.Black : Color.White;
-        comboBox.DrawItem -= UnitComboBox_DrawItem;
-        comboBox.DrawItem += UnitComboBox_DrawItem;
-    }
-
-    private static void UnitComboBox_DrawItem(object? sender, DrawItemEventArgs e) {
-        if (sender is not ComboBox comboBox || e.Index < 0) {
-            return;
-        }
-
-        var bg = comboBox.BackColor;
-        var fg = comboBox.ForeColor;
-
-        if ((e.State & DrawItemState.Selected) != 0 && (e.State & DrawItemState.ComboBoxEdit) == 0) {
-            bg = SystemColors.Highlight;
-            fg = SystemColors.HighlightText;
-        }
-
-        using var bgBrush = new SolidBrush(bg);
-        e.Graphics.FillRectangle(bgBrush, e.Bounds);
-
-        var text = comboBox.Items[e.Index]?.ToString() ?? "";
-        using var fgBrush = new SolidBrush(fg);
-        e.Graphics.DrawString(text, e.Font ?? comboBox.Font, fgBrush, e.Bounds);
+        ThemedComboBoxStyler.Apply(comboBox, isLight);
     }
 
     private void RemovePresetButton_Click(object? sender, EventArgs e) {
