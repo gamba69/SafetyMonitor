@@ -1,6 +1,6 @@
 namespace SafetyMonitorView.Models;
 
-public readonly record struct ChartPeriodPreset(string Label, TimeSpan Duration, ChartPeriod Period);
+public readonly record struct ChartPeriodPreset(string Uid, string Label, TimeSpan Duration, ChartPeriod Period);
 
 public static class ChartPeriodPresetStore {
 
@@ -11,12 +11,12 @@ public static class ChartPeriodPresetStore {
     public static IReadOnlyList<ChartPeriodPresetDefinition> PresetDefinitions => _presets;
 
     public static List<ChartPeriodPresetDefinition> CreateDefaultPresets() => [
-        new ChartPeriodPresetDefinition { Name = "15 Minutes", Value = 15, Unit = ChartPeriodUnit.Minutes },
-        new ChartPeriodPresetDefinition { Name = "1 Hour", Value = 1, Unit = ChartPeriodUnit.Hours },
-        new ChartPeriodPresetDefinition { Name = "6 Hours", Value = 6, Unit = ChartPeriodUnit.Hours },
-        new ChartPeriodPresetDefinition { Name = "24 Hours", Value = 24, Unit = ChartPeriodUnit.Hours },
-        new ChartPeriodPresetDefinition { Name = "7 Days", Value = 7, Unit = ChartPeriodUnit.Days },
-        new ChartPeriodPresetDefinition { Name = "30 Days", Value = 30, Unit = ChartPeriodUnit.Days }
+        new ChartPeriodPresetDefinition { Uid = "preset-15-minutes", Name = "15 Minutes", Value = 15, Unit = ChartPeriodUnit.Minutes },
+        new ChartPeriodPresetDefinition { Uid = "preset-1-hour", Name = "1 Hour", Value = 1, Unit = ChartPeriodUnit.Hours },
+        new ChartPeriodPresetDefinition { Uid = "preset-6-hours", Name = "6 Hours", Value = 6, Unit = ChartPeriodUnit.Hours },
+        new ChartPeriodPresetDefinition { Uid = "preset-24-hours", Name = "24 Hours", Value = 24, Unit = ChartPeriodUnit.Hours },
+        new ChartPeriodPresetDefinition { Uid = "preset-7-days", Name = "7 Days", Value = 7, Unit = ChartPeriodUnit.Days },
+        new ChartPeriodPresetDefinition { Uid = "preset-30-days", Name = "30 Days", Value = 30, Unit = ChartPeriodUnit.Days }
     ];
 
     public static void SetPresets(IEnumerable<ChartPeriodPresetDefinition>? presets) {
@@ -29,25 +29,19 @@ public static class ChartPeriodPresetStore {
             .Select(def => {
                 var duration = def.ToTimeSpan();
                 var period = MapDurationToPeriod(duration);
-                return new ChartPeriodPreset(def.Name, duration, period);
+                return new ChartPeriodPreset(def.Uid, def.Name, duration, period);
             })
             .ToList();
     }
 
-    public static int FindMatchingPresetIndex(TimeSpan? duration, ChartPeriod period, IReadOnlyList<ChartPeriodPreset> presets) {
-        if (period != ChartPeriod.Custom) {
-            for (int i = 0; i < presets.Count; i++) {
-                if (presets[i].Period == period) {
-                    return i;
-                }
-            }
+    public static int FindMatchingPresetIndex(string? uid, IReadOnlyList<ChartPeriodPreset> presets) {
+        if (string.IsNullOrWhiteSpace(uid)) {
+            return -1;
         }
 
-        if (duration.HasValue) {
-            for (int i = 0; i < presets.Count; i++) {
-                if (AreDurationsClose(presets[i].Duration, duration.Value)) {
-                    return i;
-                }
+        for (int i = 0; i < presets.Count; i++) {
+            if (string.Equals(presets[i].Uid, uid, StringComparison.Ordinal)) {
+                return i;
             }
         }
 
@@ -59,7 +53,7 @@ public static class ChartPeriodPresetStore {
             return presets[0];
         }
 
-        return new ChartPeriodPreset("24 Hours", TimeSpan.FromHours(24), ChartPeriod.Last24Hours);
+        return new ChartPeriodPreset("preset-24-hours", "24 Hours", TimeSpan.FromHours(24), ChartPeriod.Last24Hours);
     }
 
     public static string FormatDuration(TimeSpan duration) {
@@ -113,15 +107,27 @@ public static class ChartPeriodPresetStore {
 
     private static List<ChartPeriodPresetDefinition> NormalizePresets(IEnumerable<ChartPeriodPresetDefinition>? presets) {
         var list = new List<ChartPeriodPresetDefinition>();
+        var usedUids = new HashSet<string>(StringComparer.Ordinal);
+
         if (presets != null) {
             foreach (var preset in presets) {
                 if (preset == null || string.IsNullOrWhiteSpace(preset.Name) || preset.Value <= 0) {
                     continue;
                 }
+
                 var unit = Enum.IsDefined(typeof(ChartPeriodUnit), preset.Unit)
                     ? preset.Unit
                     : ChartPeriodUnit.Hours;
+
+                var uid = string.IsNullOrWhiteSpace(preset.Uid)
+                    ? Guid.NewGuid().ToString("N")
+                    : preset.Uid.Trim();
+                while (!usedUids.Add(uid)) {
+                    uid = Guid.NewGuid().ToString("N");
+                }
+
                 list.Add(new ChartPeriodPresetDefinition {
+                    Uid = uid,
                     Name = preset.Name.Trim(),
                     Value = preset.Value,
                     Unit = unit

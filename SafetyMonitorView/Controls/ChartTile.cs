@@ -35,6 +35,7 @@ public class ChartTile : Panel {
     private double? _lastXAxisMax;
     private ChartPeriod _autoPeriod;
     private TimeSpan? _autoCustomDuration;
+    private string _autoPeriodPresetUid = "";
     private FormsPlot? _plot;
     private Label? _titleLabel;
     private Panel? _topPanel;
@@ -43,7 +44,7 @@ public class ChartTile : Panel {
 
     #region Public Events
 
-    public event Action<ChartTile, ChartPeriod, TimeSpan?>? PeriodChanged;
+    public event Action<ChartTile, string>? PeriodChanged;
     public event Action<ChartTile, DateTime, DateTime>? StaticRangeChanged;
     public event Action<ChartTile>? AutoModeRestored;
     public event Action<ChartTile>? ViewSettingsChanged;
@@ -65,6 +66,7 @@ public class ChartTile : Panel {
         Font = SystemFonts.DefaultFont;
         _autoPeriod = _config.Period;
         _autoCustomDuration = _config.CustomPeriodDuration;
+        _autoPeriodPresetUid = _config.PeriodPresetUid;
 
         // Legacy configs may persist a Custom period from static mode.
         // Auto mode must never keep ad-hoc custom windows.
@@ -249,15 +251,12 @@ public class ChartTile : Panel {
         Invalidate(true);
     }
 
-    public void SetPeriod(ChartPeriod period, TimeSpan? customDuration = null, bool refreshData = true) {
-        _autoPeriod = period;
-        _autoCustomDuration = period == ChartPeriod.Custom ? customDuration : null;
+    public void SetPeriodPreset(string periodPresetUid, bool refreshData = true) {
         if (_isStaticMode) {
             SetStaticMode(false);
         }
 
-        _config.Period = period;
-        _config.CustomPeriodDuration = period == ChartPeriod.Custom ? customDuration : null;
+        _config.PeriodPresetUid = periodPresetUid;
         if (_periodSelector != null) {
             try {
                 _suppressPeriodChange = true;
@@ -295,6 +294,7 @@ public class ChartTile : Panel {
         SetStaticMode(false);
         _config.Period = _autoPeriod;
         _config.CustomPeriodDuration = _autoCustomDuration;
+        _config.PeriodPresetUid = _autoPeriodPresetUid;
         _config.CustomStartTime = null;
         _config.CustomEndTime = null;
         RefreshData();
@@ -1111,23 +1111,34 @@ public class ChartTile : Panel {
             return;
         }
 
-        var targetPeriod = _isStaticMode ? _autoPeriod : _config.Period;
-        var targetDuration = _isStaticMode ? _autoCustomDuration : _config.CustomPeriodDuration;
+        var targetPresetUid = _isStaticMode ? _autoPeriodPresetUid : _config.PeriodPresetUid;
 
-        var index = ChartPeriodPresetStore.FindMatchingPresetIndex(
-            targetDuration, targetPeriod, _periodPresets);
+        var index = ChartPeriodPresetStore.FindMatchingPresetIndex(targetPresetUid, _periodPresets);
         if (index >= 0) {
+            var preset = _periodPresets[index];
+            _autoPeriodPresetUid = preset.Uid;
+            _autoPeriod = preset.Period;
+            _autoCustomDuration = preset.Period == ChartPeriod.Custom ? preset.Duration : null;
+
+            if (!_isStaticMode) {
+                _config.PeriodPresetUid = preset.Uid;
+                _config.Period = preset.Period;
+                _config.CustomPeriodDuration = _autoCustomDuration;
+            }
+
             _periodSelector.SelectedIndex = index;
             return;
         }
 
         var fallbackPreset = ChartPeriodPresetStore.GetFallbackPreset(_periodPresets);
+        _autoPeriodPresetUid = fallbackPreset.Uid;
         _autoPeriod = fallbackPreset.Period;
         _autoCustomDuration = fallbackPreset.Period == ChartPeriod.Custom
             ? fallbackPreset.Duration
             : null;
 
         if (!_isStaticMode) {
+            _config.PeriodPresetUid = _autoPeriodPresetUid;
             _config.Period = _autoPeriod;
             _config.CustomPeriodDuration = _autoCustomDuration;
         }
@@ -1148,12 +1159,14 @@ public class ChartTile : Panel {
         }
 
         var preset = _periodPresets[index];
+        _autoPeriodPresetUid = preset.Uid;
         _autoPeriod = preset.Period;
         _autoCustomDuration = preset.Period == ChartPeriod.Custom ? preset.Duration : null;
+        _config.PeriodPresetUid = preset.Uid;
         _config.Period = preset.Period;
         _config.CustomPeriodDuration = preset.Period == ChartPeriod.Custom ? preset.Duration : null;
         RefreshData();
-        PeriodChanged?.Invoke(this, _config.Period, _config.CustomPeriodDuration);
+        PeriodChanged?.Invoke(this, _config.PeriodPresetUid);
     }
 
     /// <summary>
@@ -1212,6 +1225,7 @@ public class ChartTile : Panel {
         if (!_isStaticMode) {
             _autoPeriod = _config.Period;
             _autoCustomDuration = _config.CustomPeriodDuration;
+            _autoPeriodPresetUid = _config.PeriodPresetUid;
         }
 
         SetStaticMode(true);

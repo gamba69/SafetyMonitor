@@ -121,7 +121,7 @@ public class DashboardPanel : TableLayoutPanel {
         }
     }
 
-    private void OnChartPeriodChanged(ChartTile source, ChartPeriod period, TimeSpan? customDuration) {
+    private void OnChartPeriodChanged(ChartTile source, string periodPresetUid) {
         if (!_linkChartPeriods) {
             return;
         }
@@ -130,7 +130,7 @@ public class DashboardPanel : TableLayoutPanel {
             if (ReferenceEquals(chartTile, source)) {
                 continue;
             }
-            chartTile.SetPeriod(period, customDuration);
+            chartTile.SetPeriodPreset(periodPresetUid);
         }
     }
 

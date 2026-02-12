@@ -469,6 +469,7 @@ public class ChartTileEditorForm : Form {
         }
 
         var selectedPreset = _periodPresets[_periodComboBox.SelectedIndex];
+        _config.PeriodPresetUid = selectedPreset.Uid;
         _config.Period = selectedPreset.Period;
         _config.CustomPeriodDuration = selectedPreset.Period == ChartPeriod.Custom ? selectedPreset.Duration : null;
 
@@ -526,14 +527,20 @@ public class ChartTileEditorForm : Form {
     }
 
     private void SetSelectedPeriodPreset() {
-        var index = ChartPeriodPresetStore.FindMatchingPresetIndex(
-            _config.CustomPeriodDuration, _config.Period, _periodPresets);
+        var index = ChartPeriodPresetStore.FindMatchingPresetIndex(_config.PeriodPresetUid, _periodPresets);
         if (index >= 0) {
+            var selectedPreset = _periodPresets[index];
+            _config.PeriodPresetUid = selectedPreset.Uid;
+            _config.Period = selectedPreset.Period;
+            _config.CustomPeriodDuration = selectedPreset.Period == ChartPeriod.Custom
+                ? selectedPreset.Duration
+                : null;
             _periodComboBox.SelectedIndex = index;
             return;
         }
 
         var fallbackPreset = ChartPeriodPresetStore.GetFallbackPreset(_periodPresets);
+        _config.PeriodPresetUid = fallbackPreset.Uid;
         _config.Period = fallbackPreset.Period;
         _config.CustomPeriodDuration = fallbackPreset.Period == ChartPeriod.Custom
             ? fallbackPreset.Duration

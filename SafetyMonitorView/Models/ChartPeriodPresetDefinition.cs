@@ -9,6 +9,7 @@ public enum ChartPeriodUnit {
 }
 
 public class ChartPeriodPresetDefinition {
+    public string Uid { get; set; } = Guid.NewGuid().ToString("N");
     public string Name { get; set; } = "";
     public double Value { get; set; } = 1;
     public ChartPeriodUnit Unit { get; set; } = ChartPeriodUnit.Hours;

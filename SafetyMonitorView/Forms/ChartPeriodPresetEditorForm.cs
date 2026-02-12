@@ -23,6 +23,7 @@ public class ChartPeriodPresetEditorForm : Form {
 
     public ChartPeriodPresetEditorForm(IEnumerable<ChartPeriodPresetDefinition> presets) {
         _presets = [.. presets.Select(p => new ChartPeriodPresetDefinition {
+            Uid = p.Uid,
             Name = p.Name,
             Value = p.Value,
             Unit = p.Unit
@@ -44,7 +45,7 @@ public class ChartPeriodPresetEditorForm : Form {
     #region Private Methods
 
     private void AddPresetButton_Click(object? sender, EventArgs e) {
-        _presetGrid.Rows.Add("Custom", 1, ChartPeriodUnit.Hours);
+        _presetGrid.Rows.Add(Guid.NewGuid().ToString("N"), "Custom", 1, ChartPeriodUnit.Hours);
     }
 
     private void ApplyTheme() {
@@ -149,6 +150,10 @@ public class ChartPeriodPresetEditorForm : Form {
         };
 
         _presetGrid.Columns.Add(new DataGridViewTextBoxColumn {
+            Name = "Uid",
+            Visible = false
+        });
+        _presetGrid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "Name",
             HeaderText = "Name",
             FillWeight = 50
@@ -234,7 +239,7 @@ public class ChartPeriodPresetEditorForm : Form {
         _presetGrid.Rows.Clear();
         foreach (var preset in _presets) {
             var unit = _units.Contains(preset.Unit) ? preset.Unit : ChartPeriodUnit.Hours;
-            _presetGrid.Rows.Add(preset.Name, preset.Value, unit);
+            _presetGrid.Rows.Add(preset.Uid, preset.Name, preset.Value, unit);
         }
     }
 
@@ -283,6 +288,7 @@ public class ChartPeriodPresetEditorForm : Form {
 
         var newPresets = new List<ChartPeriodPresetDefinition>();
         foreach (DataGridViewRow row in _presetGrid.Rows) {
+            var uid = row.Cells["Uid"].Value?.ToString() ?? "";
             var name = row.Cells["Name"].Value?.ToString() ?? "";
             var valueText = row.Cells["Value"].Value?.ToString() ?? "";
             var unit = ParseChartPeriodUnit(row.Cells["Unit"].Value);
@@ -298,6 +304,7 @@ public class ChartPeriodPresetEditorForm : Form {
             }
 
             newPresets.Add(new ChartPeriodPresetDefinition {
+                Uid = string.IsNullOrWhiteSpace(uid) ? Guid.NewGuid().ToString("N") : uid,
                 Name = name.Trim(),
                 Value = value,
                 Unit = unit
