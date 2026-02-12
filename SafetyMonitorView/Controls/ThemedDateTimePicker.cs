@@ -386,9 +386,9 @@ public class ThemedDateTimePicker : UserControl {
             _timeRowHeight = Scale(42, dpiScale);
 
             // Cached fonts
-            _dayFont = new Font("Segoe UI", 9f * dpiScale);
-            _dayHeaderFont = new Font("Segoe UI", 7.5f * dpiScale);
-            _headerFont = new Font("Segoe UI", 10f * dpiScale, FontStyle.Bold);
+            _dayFont = new Font("Segoe UI", 9f);
+            _dayHeaderFont = new Font("Segoe UI", 7.5f);
+            _headerFont = new Font("Segoe UI", 10f, FontStyle.Bold);
 
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.Manual;
@@ -492,7 +492,9 @@ public class ThemedDateTimePicker : UserControl {
 
         private static float GetDpiScale() {
             using var g = Graphics.FromHwnd(IntPtr.Zero);
-            return g.DpiX / 96f;
+            var nativeScale = g.DpiX / 96f;
+            var softenedScale = 1f + ((nativeScale - 1f) * 0.5f);
+            return Math.Max(1f, softenedScale);
         }
 
         private static int Scale(int value, float dpiScale) =>
@@ -698,8 +700,8 @@ public class ThemedDateTimePicker : UserControl {
         private void BuildTimeControls(float dpiScale) {
             if (_timePanel == null) return;
 
-            var normalFont = new Font("Segoe UI", 9f * dpiScale);
-            var boldFont = new Font("Segoe UI", 9f * dpiScale, FontStyle.Bold);
+            var normalFont = new Font("Segoe UI", 9f);
+            var boldFont = new Font("Segoe UI", 9f, FontStyle.Bold);
             var spinWidth = Scale(52, dpiScale);
             var spinHeight = Scale(24, dpiScale);
             var btnHeight = Scale(26, dpiScale);
