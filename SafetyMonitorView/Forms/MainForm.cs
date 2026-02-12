@@ -57,7 +57,7 @@ public class MainForm : MaterialForm {
             _appSettings.ChartPeriodPresets = ChartPeriodPresetStore.CreateDefaultPresets();
         }
         ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
-
+        MetricAxisRuleStore.SetRules(_appSettings.MetricAxisRules);
 
         // Apply theme from settings
         _skinManager.Theme = _appSettings.IsDarkTheme
@@ -201,8 +201,9 @@ public class MainForm : MaterialForm {
             "Edit Current" => "edit",
             "Duplicate Current" => "copy",
             "Delete Current" => "delete",
+            "Axis Rules..." => "chart",
+            "Chart Periods..." => "schedule",
             "Color Schemes..." => "palette",
-            "Chart Period..." => "schedule",
             _ => ""
         };
     }
@@ -278,7 +279,8 @@ public class MainForm : MaterialForm {
         themeMenu.DropDownItems.Add(CreateMenuItem("Dark", "dark", iconColor, (s, e) => { _darkThemeButton.Checked = true; }));
         viewMenu.DropDownItems.Add(themeMenu);
         viewMenu.DropDownItems.Add(new ToolStripSeparator());
-        viewMenu.DropDownItems.Add(CreateMenuItem("Chart Period...", "schedule", iconColor, (s, e) => ShowChartPeriodPresetEditor()));
+        viewMenu.DropDownItems.Add(CreateMenuItem("Axis Rules...", "chart", iconColor, (s, e) => ShowAxisRulesEditor()));
+        viewMenu.DropDownItems.Add(CreateMenuItem("Chart Periods...", "schedule", iconColor, (s, e) => ShowChartPeriodPresetEditor()));
         viewMenu.DropDownItems.Add(CreateMenuItem("Color Schemes...", "palette", iconColor, (s, e) => ShowColorSchemeEditor()));
 
         var helpMenu = new ToolStripMenuItem("Help");
@@ -636,6 +638,15 @@ public class MainForm : MaterialForm {
             + "©2026 DreamSky Observatory";
         ThemedMessageBox.Show(this, message,
             "About SafetyMonitorView", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    private void ShowAxisRulesEditor() {
+        using var editor = new AxisRulesEditorForm(_appSettings.MetricAxisRules);
+        if (editor.ShowDialog(this) == DialogResult.OK) {
+            _appSettings.MetricAxisRules = editor.Rules;
+            _appSettingsService.SaveSettings(_appSettings);
+            MetricAxisRuleStore.SetRules(_appSettings.MetricAxisRules);
+        }
     }
 
     private void ShowColorSchemeEditor() {

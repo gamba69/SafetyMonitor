@@ -3,6 +3,7 @@ using SafetyMonitorView.Forms;
 using SafetyMonitorView.Models;
 using SafetyMonitorView.Services;
 using ScottPlot.WinForms;
+using System.Data;
 using Color = System.Drawing.Color;
 using Label = System.Windows.Forms.Label;
 
@@ -162,12 +163,18 @@ public class ChartTile : Panel {
 
         _plot.Plot.Axes.DateTimeTicksBottom();
 
+        // Clear any previously added axis rules
+        _plot.Plot.Axes.Rules.Clear();
+
         if (hasVisibleSeries) {
             _plot.Plot.Axes.AutoScale();
         } else {
             var (startTime, endTime) = GetConfiguredPeriodRange();
             _plot.Plot.Axes.SetLimitsX(startTime.ToOADate(), endTime.ToOADate());
         }
+
+        // Apply per-metric Y-axis rules from the global store
+        ApplyAxisRules(axisMap);
 
         ApplyThemeColors();
         ApplyYAxisVisibility(axisMap, axisStyleMap, metricsWithData);
@@ -259,6 +266,7 @@ public class ChartTile : Panel {
     protected override void Dispose(bool disposing) {
         if (disposing) {
             ChartPeriodPresetStore.PresetsChanged -= HandlePresetsChanged;
+            MetricAxisRuleStore.RulesChanged -= HandleAxisRulesChanged;
             _plot?.MouseUp -= Plot_MouseUp;
             _plotContextMenu?.Dispose();
             _plotContextMenu = null;
@@ -355,8 +363,8 @@ public class ChartTile : Panel {
 
     private void ApplyYAxisVisibility(
         IReadOnlyDictionary<MetricType, ScottPlot.IYAxis> axisMap,
-        IReadOnlyDictionary<MetricType, (string LabelText, ScottPlot.Color Color)> axisStyleMap,
-        IReadOnlySet<MetricType> metricsWithData) {
+        Dictionary<MetricType, (string LabelText, ScottPlot.Color Color)> axisStyleMap,
+        HashSet<MetricType> metricsWithData) {
         if (_plot == null) {
             return;
         }
@@ -743,6 +751,7 @@ public class ChartTile : Panel {
         SetSelectedPeriodPreset();
         _periodSelector.SelectionChangeCommitted += (s, e) => UpdatePeriodFromSelection();
         ChartPeriodPresetStore.PresetsChanged += HandlePresetsChanged;
+        MetricAxisRuleStore.RulesChanged += HandleAxisRulesChanged;
 
         _topPanel.Controls.Add(_titleLabel);
         _topPanel.Controls.Add(_periodSelector);
@@ -812,6 +821,72 @@ public class ChartTile : Panel {
         var text = _periodSelector.Items[e.Index]?.ToString() ?? "";
         using var fgBrush = new SolidBrush(fg);
         e.Graphics.DrawString(text, e.Font ?? _periodSelector.Font, fgBrush, e.Bounds);
+    }
+
+    private void ApplyAxisRules(Dictionary<MetricType, ScottPlot.IYAxis> axisMap) {
+        if (_plot == null) {
+            return;
+        }
+
+        foreach (var (metric, yAxis) in axisMap) {
+            var rule = MetricAxisRuleStore.GetRule(metric);
+            if (rule == null) {
+                continue;
+            }
+
+            var xAxis = _plot.Plot.Axes.Bottom;
+
+            if (rule.MinBoundary.HasValue && rule.MaxBoundary.HasValue) {
+                _plot.Plot.Axes.Rules.Add(
+                new ScottPlot.AxisRules.MaximumBoundary(xAxis, yAxis,
+                    new ScottPlot.AxisLimits(
+                        double.NegativeInfinity, double.PositiveInfinity,
+                        rule.MinBoundary.Value, rule.MaxBoundary.Value)));
+            }
+
+            // MinimumBoundary вЂ” prevent panning/zooming below this Y value
+            if (rule.MinBoundary.HasValue && !rule.MaxBoundary.HasValue) {
+                _plot.Plot.Axes.Rules.Add(
+                new ScottPlot.AxisRules.MaximumBoundary(xAxis, yAxis,
+                    new ScottPlot.AxisLimits(
+                        double.NegativeInfinity, double.PositiveInfinity,
+                        rule.MinBoundary.Value, double.PositiveInfinity)));
+            }
+
+            // MaximumBoundary вЂ” prevent panning/zooming above this Y value
+            if (rule.MaxBoundary.HasValue && !rule.MinBoundary.HasValue) {
+                _plot.Plot.Axes.Rules.Add(
+                new ScottPlot.AxisRules.MaximumBoundary(xAxis, yAxis,
+                    new ScottPlot.AxisLimits(
+                        double.NegativeInfinity, double.PositiveInfinity,
+                        double.NegativeInfinity, rule.MaxBoundary.Value)));
+            }
+
+            // MaximumSpan вЂ” limit how far apart Y axis limits can be (limits zoom-out)
+            if (rule.MaxSpan.HasValue) {
+                _plot.Plot.Axes.Rules.Add(
+                new ScottPlot.AxisRules.MaximumSpan(xAxis, yAxis, double.PositiveInfinity, rule.MaxSpan.Value));
+            }
+
+            // MinimumSpan вЂ” minimum Y-axis range (limits zoom-in)
+            if (rule.MinSpan.HasValue) {
+                _plot.Plot.Axes.Rules.Add(
+                new ScottPlot.AxisRules.MinimumSpan(xAxis, yAxis, 0, rule.MinSpan.Value));
+            }
+        }
+    }
+
+    private void HandleAxisRulesChanged() {
+        if (_plot == null) {
+            return;
+        }
+
+        if (_plot.InvokeRequired) {
+            _plot.BeginInvoke(HandleAxisRulesChanged);
+            return;
+        }
+
+        RefreshData();
     }
 
     private void HandlePresetsChanged() {
