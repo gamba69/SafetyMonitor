@@ -752,20 +752,33 @@ public static class MaterialIcons {
 
         var cx = r.X + r.Width / 2f;
         var cy = r.Y + r.Height / 2f;
-        var radius = r.Width * 0.33f;
+        var radius = r.Width * 0.34f;
 
-        // Clock circle
+        // Clean period icon: classic clock face
         g.DrawEllipse(pen, cx - radius, cy - radius, radius * 2f, radius * 2f);
 
-        // Clock hands
-        g.DrawLine(pen, cx, cy, cx, cy - radius * 0.5f);
-        g.DrawLine(pen, cx, cy, cx + radius * 0.4f, cy);
+        // Center dot
+        var centerDot = r.Width * 0.035f;
+        using var centerBrush = new SolidBrush(c);
+        g.FillEllipse(centerBrush, cx - centerDot, cy - centerDot, centerDot * 2f, centerDot * 2f);
 
-        // Preset list lines
-        g.DrawLine(pen, r.X + r.Width * 0.1f, r.Y + r.Height * 0.2f, r.X + r.Width * 0.38f, r.Y + r.Height * 0.2f);
-        g.DrawLine(pen, r.X + r.Width * 0.1f, r.Y + r.Height * 0.8f, r.X + r.Width * 0.38f, r.Y + r.Height * 0.8f);
-        g.DrawLine(pen, r.X + r.Width * 0.62f, r.Y + r.Height * 0.2f, r.X + r.Width * 0.9f, r.Y + r.Height * 0.2f);
-        g.DrawLine(pen, r.X + r.Width * 0.62f, r.Y + r.Height * 0.8f, r.X + r.Width * 0.9f, r.Y + r.Height * 0.8f);
+        // Clock hands (10:10 style for balanced look)
+        g.DrawLine(pen, cx, cy, cx - radius * 0.42f, cy - radius * 0.28f);
+        g.DrawLine(pen, cx, cy, cx + radius * 0.26f, cy - radius * 0.44f);
+
+        // Quarter-hour ticks for better readability at small sizes
+        var tickInner = radius * 0.77f;
+        var tickOuter = radius * 0.92f;
+        for (var i = 0; i < 4; i++) {
+            var angle = (float)(i * Math.PI / 2);
+            var dx = (float)Math.Cos(angle);
+            var dy = (float)Math.Sin(angle);
+            g.DrawLine(pen,
+                cx + dx * tickInner,
+                cy + dy * tickInner,
+                cx + dx * tickOuter,
+                cy + dy * tickOuter);
+        }
     }
 
     private static void DrawSave(Graphics g, RectangleF r, Color c) {
