@@ -607,7 +607,7 @@ public class MainForm : MaterialForm {
             UpdateDashboardMenu(dashboardMenu);
         }
 
-        UpdateQuickDashboards();
+        UpdateQuickDashboardSelection();
 
         // Refresh data immediately instead of waiting for timer tick
         if (IsHandleCreated) {
@@ -1123,10 +1123,11 @@ public class MainForm : MaterialForm {
                 Location = new Point(x, 1),
                 TextAlign = ContentAlignment.MiddleCenter,
                 Checked = dashboard.Id == _currentDashboard?.Id,
+                Tag = dashboard.Id,
                 Margin = Padding.Empty
             };
             btn.CheckedChanged += (s, e) => {
-                if (btn.Checked) {
+                if (btn.Checked && _currentDashboard?.Id != dashboard.Id) {
                     LoadDashboard(dashboard);
                 }
             };
@@ -1138,6 +1139,22 @@ public class MainForm : MaterialForm {
         UpdateQuickAccessPanelTheme();
         return anyTextTruncated;
     }
+
+    private void UpdateQuickDashboardSelection() {
+        if (_quickDashboardsPanel == null) {
+            return;
+        }
+
+        var currentDashboardId = _currentDashboard?.Id;
+        foreach (var button in _quickDashboardsPanel.Controls.OfType<RadioButton>()) {
+            if (button.Tag is Guid dashboardId) {
+                button.Checked = dashboardId == currentDashboardId;
+            }
+        }
+
+        UpdateDashboardSwitchAppearance();
+    }
+
     private void UpdateStatusBar() {
         if (_dataService.IsConnected) {
             _dataPathLabel.Text = $"Storage: {_appSettings.StoragePath}";
