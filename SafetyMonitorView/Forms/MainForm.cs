@@ -29,8 +29,9 @@ public class MainForm : MaterialForm {
     private ThemedMenuRenderer _menuRenderer = null!;
     private const int MenuIconSize = 16;
     private Panel _quickAccessPanel = null!;
-    private FlowLayoutPanel _quickDashboardsPanel = null!;
+    private Panel _quickDashboardsPanel = null!;
     private Panel _themeSegmentPanel = null!;
+    private Label _quickAccessSeparator = null!;
     private System.Windows.Forms.Timer? _refreshTimer;
     private ToolStripStatusLabel _statusLabel = null!;
     private StatusStrip _statusStrip = null!;
@@ -320,7 +321,7 @@ public class MainForm : MaterialForm {
                 MouseOverBackColor = Color.Transparent
             },
             Font = new Font("Roboto", 9f, FontStyle.Bold),
-            Padding = new Padding(10, 2, 10, 2),
+            Padding = Padding.Empty,
             AutoSize = false,
             Size = new Size(100, 30),
             Checked = !_appSettings.IsDarkTheme
@@ -348,7 +349,7 @@ public class MainForm : MaterialForm {
                 MouseOverBackColor = Color.Transparent
             },
             Font = new Font("Roboto", 9f, FontStyle.Bold),
-            Padding = new Padding(10, 2, 10, 2),
+            Padding = Padding.Empty,
             AutoSize = false,
             Size = new Size(100, 30),
             Checked = _appSettings.IsDarkTheme
@@ -369,11 +370,8 @@ public class MainForm : MaterialForm {
         };
         _themeSegmentPanel.Controls.Add(_lightThemeButton);
         _themeSegmentPanel.Controls.Add(_darkThemeButton);
-        _lightThemeButton.Location = new Point(1, 1);
-        _darkThemeButton.Location = new Point(99, 1);
-        UpdateThemeSwitchAppearance();
 
-        var separator = new Label {
+        _quickAccessSeparator = new Label {
             Text = "|",
             Location = new Point(220, 13),
             AutoSize = true,
@@ -381,19 +379,11 @@ public class MainForm : MaterialForm {
             ForeColor = Color.Gray
         };
 
-        var dashboardLabel = new Label {
-            Text = "Quick Access:",
-            Location = new Point(240, 15),
-            AutoSize = true,
-            Font = new Font("Roboto", 10, FontStyle.Bold)
-        };
-
-        _quickDashboardsPanel = new FlowLayoutPanel {
-            Location = new Point(350, 10),
-            Size = new Size(900, 35),
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = false,
-            AutoScroll = false
+        _quickDashboardsPanel = new Panel {
+            Location = new Point(240, 10),
+            Size = new Size(0, 32),
+            Padding = new Padding(1),
+            Font = new Font("Roboto", 9f, FontStyle.Bold)
         };
 
         _linkChartsCheckBox = new CheckBox {
@@ -409,11 +399,11 @@ public class MainForm : MaterialForm {
 
         _quickAccessPanel.Controls.AddRange([
             _themeSegmentPanel,
-            separator, dashboardLabel, _quickDashboardsPanel, _linkChartsCheckBox
+            _quickAccessSeparator, _quickDashboardsPanel, _linkChartsCheckBox
         ]);
 
-        PositionLinkChartsCheckbox();
-        _quickAccessPanel.SizeChanged += (s, e) => PositionLinkChartsCheckbox();
+        RefreshQuickAccessLayout();
+        _quickAccessPanel.SizeChanged += (s, e) => RefreshQuickAccessLayout();
     }
 
     private void DeleteCurrentDashboard() {
@@ -727,6 +717,7 @@ public class MainForm : MaterialForm {
 
             _refreshTimer?.Interval = _appSettings.RefreshInterval * 1000;
             _dashboardPanel?.SetChartStaticModeTimeoutSeconds(_appSettings.ChartStaticModeTimeoutSeconds);
+            RefreshQuickAccessLayout();
 
             if (_currentDashboard != null) {
                 LoadDashboard(_currentDashboard);
@@ -792,6 +783,7 @@ public class MainForm : MaterialForm {
         _quickAccessPanel.BackColor = panelBg;
         ApplyQuickAccessColors(_quickAccessPanel, panelBg, fg);
         UpdateThemeSwitchAppearance();
+        UpdateDashboardSwitchAppearance();
     }
 
     private void UpdateThemeSwitchAppearance() {
@@ -815,6 +807,142 @@ public class MainForm : MaterialForm {
         var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
         _lightThemeButton.Image = MaterialIcons.GetIcon("light", iconColor, 16);
         _darkThemeButton.Image = MaterialIcons.GetIcon("dark", iconColor, 16);
+
+        _lightThemeButton.TextImageRelation = TextImageRelation.ImageBeforeText;
+        _darkThemeButton.TextImageRelation = TextImageRelation.ImageBeforeText;
+        _lightThemeButton.ImageAlign = ContentAlignment.MiddleLeft;
+        _darkThemeButton.ImageAlign = ContentAlignment.MiddleLeft;
+    }
+
+    private void UpdateDashboardSwitchAppearance() {
+        if (_quickDashboardsPanel == null) {
+            return;
+        }
+
+        var buttons = _quickDashboardsPanel.Controls.OfType<RadioButton>().ToList();
+        if (buttons.Count == 0) {
+            return;
+        }
+
+        var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+        var segmentBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
+        var activeBg = isLight ? Color.White : Color.FromArgb(62, 77, 84);
+        var inactiveFg = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
+        var activeFg = isLight ? Color.FromArgb(21, 28, 31) : Color.White;
+        var borderColor = isLight ? Color.FromArgb(196, 206, 211) : Color.FromArgb(70, 85, 92);
+
+        _quickDashboardsPanel.BackColor = borderColor;
+        foreach (var button in buttons) {
+            button.BackColor = button.Checked ? activeBg : segmentBg;
+            button.ForeColor = button.Checked ? activeFg : inactiveFg;
+        }
+    }
+
+
+    private void RefreshQuickAccessLayout() {
+        PositionLinkChartsCheckbox();
+        UpdateThemeSwitchLayout();
+        UpdateQuickDashboards();
+    }
+
+    private int GetQuickDashboardsLeft() {
+        return _quickAccessSeparator.Right + 10;
+    }
+
+    private int GetQuickDashboardPanelMaxWidth() {
+        var left = GetQuickDashboardsLeft();
+        const int spacingToLinkedCharts = 12;
+        return Math.Max(_linkChartsCheckBox.Left - spacingToLinkedCharts - left, 0);
+    }
+
+    private void UpdateThemeSwitchLayout() {
+        if (_themeSegmentPanel == null || _lightThemeButton == null || _darkThemeButton == null || _quickAccessSeparator == null) {
+            return;
+        }
+
+        const int left = 10;
+        const int segmentGap = 0;
+        const int segmentHeight = 30;
+        const int segmentWidth = 100;
+
+        var panelWidth = segmentWidth * 2 + 2 + segmentGap;
+        _themeSegmentPanel.Location = new Point(left, 10);
+        _themeSegmentPanel.Size = new Size(panelWidth, 32);
+
+        _lightThemeButton.Text = "Light";
+        _darkThemeButton.Text = "Dark";
+        _lightThemeButton.Padding = Padding.Empty;
+        _darkThemeButton.Padding = Padding.Empty;
+
+        _lightThemeButton.Size = new Size(segmentWidth, segmentHeight);
+        _lightThemeButton.Location = new Point(1, 1);
+        _darkThemeButton.Size = new Size(segmentWidth, segmentHeight);
+        _darkThemeButton.Location = new Point(1 + segmentWidth + segmentGap, 1);
+
+        _quickAccessSeparator.Location = new Point(_themeSegmentPanel.Right + 10, 13);
+
+        UpdateThemeSwitchAppearance();
+    }
+
+    private static int MeasureDashboardSegmentPreferredWidth(string text, Font font) {
+        var flags = TextFormatFlags.SingleLine | TextFormatFlags.NoPadding;
+        var textWidth = TextRenderer.MeasureText(text, font, new Size(int.MaxValue, int.MaxValue), flags).Width;
+        return Math.Max(80, textWidth + 24);
+    }
+
+    private static List<int> ScaleSegmentWidths(IReadOnlyList<int> preferredWidths, int targetWidth) {
+        if (preferredWidths.Count == 0 || targetWidth <= 0) {
+            return [];
+        }
+
+        var sumPreferred = preferredWidths.Sum();
+        if (sumPreferred <= targetWidth) {
+            return preferredWidths.ToList();
+        }
+
+        var scaled = preferredWidths
+            .Select(w => Math.Max(1, (int)Math.Floor(w * (double)targetWidth / sumPreferred)))
+            .ToList();
+
+        var remainder = targetWidth - scaled.Sum();
+        for (int i = 0; i < scaled.Count && remainder > 0; i++) {
+            scaled[i]++;
+            remainder--;
+        }
+
+        return scaled;
+    }
+
+    private static string TruncateWithEllipsis(string text, Font font, int maxWidth) {
+        if (string.IsNullOrEmpty(text) || maxWidth <= 0) {
+            return string.Empty;
+        }
+
+        var flags = TextFormatFlags.SingleLine | TextFormatFlags.NoPadding;
+        if (TextRenderer.MeasureText(text, font, new Size(int.MaxValue, int.MaxValue), flags).Width <= maxWidth) {
+            return text;
+        }
+
+        const string ellipsis = "...";
+        var ellipsisWidth = TextRenderer.MeasureText(ellipsis, font, new Size(int.MaxValue, int.MaxValue), flags).Width;
+        if (ellipsisWidth >= maxWidth) {
+            return ellipsis;
+        }
+
+        int low = 0;
+        int high = text.Length;
+        while (low < high) {
+            var mid = (low + high + 1) / 2;
+            var candidate = text[..mid] + ellipsis;
+            var candidateWidth = TextRenderer.MeasureText(candidate, font, new Size(int.MaxValue, int.MaxValue), flags).Width;
+            if (candidateWidth <= maxWidth) {
+                low = mid;
+            } else {
+                high = mid - 1;
+            }
+        }
+
+        return text[..low] + ellipsis;
     }
 
     private void PositionLinkChartsCheckbox() {
@@ -828,26 +956,77 @@ public class MainForm : MaterialForm {
         _linkChartsCheckBox.BringToFront();
     }
 
-    private void UpdateQuickDashboards() {
+    private bool UpdateQuickDashboards() {
         _quickDashboardsPanel.Controls.Clear();
 
         var quickDashboards = _dashboards.Where(d => d.IsQuickAccess).Take(5).ToList();
+        if (quickDashboards.Count == 0) {
+            _quickDashboardsPanel.Size = new Size(0, 32);
+            UpdateQuickAccessPanelTheme();
+            return false;
+        }
 
-        foreach (var dashboard in quickDashboards) {
+        var segmentPanelLeft = GetQuickDashboardsLeft();
+        var preferredWidths = quickDashboards
+            .Select(d => MeasureDashboardSegmentPreferredWidth(d.Name, _quickDashboardsPanel.Font))
+            .ToList();
+
+        var maxPanelWidth = GetQuickDashboardPanelMaxWidth();
+        var desiredPanelInnerWidth = preferredWidths.Sum();
+        var desiredPanelWidth = desiredPanelInnerWidth + 2;
+        var panelWidth = Math.Min(maxPanelWidth, desiredPanelWidth);
+
+        _quickDashboardsPanel.Location = new Point(segmentPanelLeft, 10);
+        _quickDashboardsPanel.Size = new Size(Math.Max(panelWidth, 0), 32);
+
+        var innerWidth = Math.Max(_quickDashboardsPanel.Width - 2, 0);
+        if (innerWidth == 0) {
+            UpdateQuickAccessPanelTheme();
+            return quickDashboards.Count > 0;
+        }
+
+        var segmentWidths = ScaleSegmentWidths(preferredWidths, innerWidth);
+        var x = 1;
+        var anyTextTruncated = false;
+
+        for (int i = 0; i < quickDashboards.Count; i++) {
+            var dashboard = quickDashboards[i];
+            var segmentWidth = segmentWidths[i];
+            var renderedText = TruncateWithEllipsis(dashboard.Name, _quickDashboardsPanel.Font, Math.Max(segmentWidth - 12, 1));
+            if (!string.Equals(renderedText, dashboard.Name, StringComparison.Ordinal)) {
+                anyTextTruncated = true;
+            }
+
             var btn = new RadioButton {
-                Text = dashboard.Name,
-                AutoSize = true,
+                Text = renderedText,
+                Appearance = Appearance.Button,
+                FlatStyle = FlatStyle.Flat,
+                FlatAppearance = {
+                    BorderSize = 0,
+                    CheckedBackColor = Color.Transparent,
+                    MouseDownBackColor = Color.Transparent,
+                    MouseOverBackColor = Color.Transparent
+                },
+                Font = _quickDashboardsPanel.Font,
+                AutoSize = false,
+                Size = new Size(segmentWidth, 30),
+                Location = new Point(x, 1),
+                TextAlign = ContentAlignment.MiddleCenter,
                 Checked = dashboard.Id == _currentDashboard?.Id,
-                Margin = new Padding(0, 5, 15, 0)
+                Margin = Padding.Empty
             };
             btn.CheckedChanged += (s, e) => {
                 if (btn.Checked) {
                     LoadDashboard(dashboard);
                 }
             };
+
             _quickDashboardsPanel.Controls.Add(btn);
+            x += segmentWidth;
         }
+
         UpdateQuickAccessPanelTheme();
+        return anyTextTruncated;
     }
     private void UpdateStatusBar() {
         if (_dataService.IsConnected) {

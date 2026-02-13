@@ -78,6 +78,9 @@ public class SettingsForm : Form {
                     num.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
                     num.ForeColor = isLight ? Color.Black : Color.White;
                     break;
+                case CheckBox chk:
+                    chk.ForeColor = isLight ? Color.Black : Color.White;
+                    break;
             }
 
             ApplyThemeRecursive(control, isLight);
@@ -276,7 +279,7 @@ public class SettingsForm : Form {
         Controls.Add(mainLayout);
 
         // Set form size
-        ClientSize = new Size(550, 360);
+        ClientSize = new Size(550, 370);
     }
     private void LoadSettings() {
         _storagePathTextBox.Text = StoragePath;
