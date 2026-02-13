@@ -1,5 +1,6 @@
 using SafetyMonitorView.Models;
 using System.Drawing.Drawing2D;
+using System.Drawing.Text;
 
 namespace SafetyMonitorView.Services;
 
@@ -23,6 +24,79 @@ public static class MaterialIcons {
 
     // Cache for rendered icons (key: "name_size_color")
     private static readonly Dictionary<string, Bitmap> _cache = [];
+
+    // Material icon glyphs (codepoints from Material Icons / Material Symbols fonts).
+    private static readonly Dictionary<string, string> _fontGlyphs = new() {
+        ["settings"] = "\uE8B8",
+        ["exit"] = "\uE879",
+        ["add"] = "\uE145",
+        ["new"] = "\uE145",
+        ["edit"] = "\uE3C9",
+        ["copy"] = "\uE14D",
+        ["duplicate"] = "\uE14D",
+        ["delete"] = "\uE872",
+        ["theme"] = "\uE3A1",
+        ["palette"] = "\uE40A",
+        ["light"] = "\uE430",
+        ["light_mode"] = "\uE430",
+        ["dark"] = "\uE51C",
+        ["dark_mode"] = "\uE51C",
+        ["info"] = "\uE88E",
+        ["about"] = "\uE88E",
+        ["help"] = "\uE887",
+        ["msg_info_outlined"] = "\uE88F",
+        ["msg_info_filled"] = "\uE88E",
+        ["msg_warning_outlined"] = "\uE002",
+        ["msg_warning_filled"] = "\uE002",
+        ["msg_error_outlined"] = "\uE001",
+        ["msg_error_filled"] = "\uE000",
+        ["msg_question_outlined"] = "\uE8FD",
+        ["msg_question_filled"] = "\uE887",
+        ["refresh"] = "\uE5D5",
+        ["schedule"] = "\uE8B5",
+        ["timer"] = "\uE8B5",
+        ["save"] = "\uE161",
+        ["folder"] = "\uE2C7",
+        ["chart"] = "\uE6E1",
+        ["check"] = "\uE5CA",
+        ["close"] = "\uE5CD",
+        ["dashboard"] = "\uE871",
+        ["link"] = "\uE157",
+        ["link_off"] = "\uE16F",
+        ["unlink"] = "\uE16F",
+        ["pan"] = "\uE925",
+        ["temperature"] = "\uE1FF",
+        ["humidity"] = "\uE798",
+        ["pressure"] = "\uE9E4",
+        ["dew_point"] = "\uE818",
+        ["cloud"] = "\uE2BD",
+        ["cloud_cover"] = "\uE2BD",
+        ["sky_temperature"] = "\uEB3B",
+        ["brightness"] = "\uE430",
+        ["sky_brightness"] = "\uE430",
+        ["sky_quality"] = "\uE838",
+        ["star"] = "\uE838",
+        ["rain"] = "\uE3AA",
+        ["rain_rate"] = "\uE3AA",
+        ["wind"] = "\uE9C4",
+        ["wind_speed"] = "\uE9C4",
+        ["wind_gust"] = "\uE9C4",
+        ["compass"] = "\uE87A",
+        ["wind_direction"] = "\uE87A",
+        ["telescope"] = "\uE2DB",
+        ["star_fwhm"] = "\uE2DB",
+        ["shield"] = "\uE9E0",
+        ["safety"] = "\uE9E0",
+        ["is_safe"] = "\uE9E0",
+    };
+
+    private static readonly string[] _fontCandidates = [
+        "Material Symbols Outlined",
+        "Material Symbols Rounded",
+        "Material Icons",
+    ];
+
+    private static readonly string? _materialFontFamily = ResolveInstalledMaterialFont();
 
     // Icon drawing delegates
     private static readonly Dictionary<string, Action<Graphics, RectangleF, Color>> _iconDrawers = new() {
@@ -114,13 +188,21 @@ public static class MaterialIcons {
     /// Gets an icon by name, rendered at the specified size and color.
     /// </summary>
     public static Bitmap? GetIcon(string name, Color color, int size = 16) {
-        var key = $"{name}_{size}_{color.ToArgb()}";
+        var normalizedName = name.ToLowerInvariant();
+        var key = $"{normalizedName}_{size}_{color.ToArgb()}";
 
         if (_cache.TryGetValue(key, out var cached)) {
             return (Bitmap)cached.Clone();
         }
 
-        if (!_iconDrawers.TryGetValue(name.ToLowerInvariant(), out var drawer)) {
+        if (_materialFontFamily is not null && _fontGlyphs.TryGetValue(normalizedName, out var glyph)) {
+            var bitmapFromFont = RenderFontIcon(glyph, color, size);
+            _cache[key] = bitmapFromFont;
+
+            return (Bitmap)bitmapFromFont.Clone();
+        }
+
+        if (!_iconDrawers.TryGetValue(normalizedName, out var drawer)) {
             return null;
         }
 
@@ -1212,6 +1294,40 @@ public static class MaterialIcons {
         hires.Dispose();
 
         return bitmap;
+    }
+
+    private static Bitmap RenderFontIcon(string glyph, Color color, int size) {
+        var bitmap = new Bitmap(size, size, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+        using var g = Graphics.FromImage(bitmap);
+        using var brush = new SolidBrush(color);
+        using var sf = new StringFormat {
+            Alignment = StringAlignment.Center,
+            LineAlignment = StringAlignment.Center,
+            FormatFlags = StringFormatFlags.NoClip,
+        };
+
+        g.Clear(Color.Transparent);
+        g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+
+        var fontSize = size * 0.78f;
+        using var font = new Font(_materialFontFamily!, fontSize, FontStyle.Regular, GraphicsUnit.Pixel);
+        g.DrawString(glyph, font, brush, new RectangleF(0, 0, size, size), sf);
+
+        return bitmap;
+    }
+
+    private static string? ResolveInstalledMaterialFont() {
+        using var installedFonts = new InstalledFontCollection();
+        var installed = installedFonts.Families.Select(f => f.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var candidate in _fontCandidates) {
+            if (installed.Contains(candidate)) {
+                return candidate;
+            }
+        }
+
+        return null;
     }
 
     #endregion Private Methods
