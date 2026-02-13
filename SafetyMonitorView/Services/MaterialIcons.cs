@@ -60,6 +60,9 @@ public static class MaterialIcons {
         ["check"] = DrawCheck,
         ["close"] = DrawClose,
         ["dashboard"] = DrawDashboard,
+        ["link"] = DrawLink,
+        ["link_off"] = DrawLinkOff,
+        ["unlink"] = DrawLinkOff,
         // Metric tile icons
         ["temperature"] = DrawTemperature,
         ["humidity"] = DrawHumidity,
@@ -559,6 +562,24 @@ public static class MaterialIcons {
                             r.Width * 0.1f, r.Height * 0.1f);
 
         g.DrawLine(pen, cx, r.Y + r.Height * 0.45f, cx, r.Y + r.Height * 0.72f);
+    }
+
+    private static void DrawLink(Graphics g, RectangleF r, Color c) {
+        using var pen = MakePen(c, r.Width / (PW - 3), false);
+        var h = r.Height * 0.36f;
+        g.DrawArc(pen, r.X + r.Width * 0.05f, r.Y + r.Height * 0.3f, r.Width * 0.45f, h, 315, 240);
+        g.DrawArc(pen, r.X + r.Width * 0.5f, r.Y + r.Height * 0.34f, r.Width * 0.45f, h, 135, 240);
+        g.DrawLine(pen,
+            r.X + r.Width * 0.4f, r.Y + r.Height * 0.52f,
+            r.X + r.Width * 0.6f, r.Y + r.Height * 0.48f);
+    }
+
+    private static void DrawLinkOff(Graphics g, RectangleF r, Color c) {
+        DrawLink(g, r, c);
+        using var pen = MakePen(c, r.Width / (PW - 3));
+        g.DrawLine(pen,
+            r.X + r.Width * 0.2f, r.Y + r.Height * 0.2f,
+            r.X + r.Width * 0.8f, r.Y + r.Height * 0.8f);
     }
 
     private static void DrawLightMode(Graphics g, RectangleF r, Color c) {
