@@ -633,27 +633,23 @@ public static class MaterialIcons {
     private static void DrawPalette(Graphics g, RectangleF r, Color c) {
         using var pen = MakePen(c, r.Width / PW);
 
-        // Palette shape using bezier for organic form
-        using var path = new GraphicsPath();
-        path.AddBezier(
-            new PointF(r.X + r.Width * 0.5f, r.Y + r.Height * 0.12f),
-            new PointF(r.X + r.Width * 0.9f, r.Y + r.Height * 0.12f),
-            new PointF(r.X + r.Width * 0.95f, r.Y + r.Height * 0.85f),
-            new PointF(r.X + r.Width * 0.5f, r.Y + r.Height * 0.85f));
-        path.AddBezier(
-            new PointF(r.X + r.Width * 0.5f, r.Y + r.Height * 0.85f),
-            new PointF(r.X + r.Width * 0.05f, r.Y + r.Height * 0.85f),
-            new PointF(r.X + r.Width * 0.05f, r.Y + r.Height * 0.12f),
-            new PointF(r.X + r.Width * 0.5f, r.Y + r.Height * 0.12f));
-        g.DrawPath(pen, path);
+        // Color swatches metaphor (no brush/palette): three overlapping chips.
+        var chipR = r.Width * 0.2f;
+        var left = new PointF(r.X + r.Width * 0.34f, r.Y + r.Height * 0.44f);
+        var right = new PointF(r.X + r.Width * 0.62f, r.Y + r.Height * 0.44f);
+        var bottom = new PointF(r.X + r.Width * 0.48f, r.Y + r.Height * 0.66f);
 
-        // Color dots
-        using var brush = new SolidBrush(c);
-        var dotSize = r.Width * 0.1f;
-        g.FillEllipse(brush, r.X + r.Width * 0.27f, r.Y + r.Height * 0.35f, dotSize, dotSize);
-        g.FillEllipse(brush, r.X + r.Width * 0.47f, r.Y + r.Height * 0.28f, dotSize, dotSize);
-        g.FillEllipse(brush, r.X + r.Width * 0.64f, r.Y + r.Height * 0.38f, dotSize, dotSize);
-        g.FillEllipse(brush, r.X + r.Width * 0.55f, r.Y + r.Height * 0.58f, dotSize, dotSize);
+        g.DrawEllipse(pen, left.X - chipR, left.Y - chipR, chipR * 2, chipR * 2);
+        g.DrawEllipse(pen, right.X - chipR, right.Y - chipR, chipR * 2, chipR * 2);
+        g.DrawEllipse(pen, bottom.X - chipR, bottom.Y - chipR, chipR * 2, chipR * 2);
+
+        // Small sparkle in the corner to communicate "theme/customization".
+        using var accentPen = MakePen(c, r.Width / PW3);
+        var sx = r.X + r.Width * 0.82f;
+        var sy = r.Y + r.Height * 0.2f;
+        var arm = r.Width * 0.09f;
+        g.DrawLine(accentPen, sx - arm, sy, sx + arm, sy);
+        g.DrawLine(accentPen, sx, sy - arm, sx, sy + arm);
     }
 
     private static void DrawPressure(Graphics g, RectangleF r, Color c) {
