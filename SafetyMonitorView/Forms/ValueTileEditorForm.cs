@@ -1,4 +1,5 @@
 using MaterialSkin;
+using SafetyMonitorView.Controls;
 using SafetyMonitorView.Models;
 using SafetyMonitorView.Services;
 
@@ -10,10 +11,10 @@ public class ValueTileEditorForm : Form {
     private readonly ColorSchemeService _colorSchemeService;
     private readonly ValueTileConfig _config;
     private Button _cancelButton = null!;
-    private ComboBox _colorSchemeComboBox = null!;
+    private ThemedComboBox _colorSchemeComboBox = null!;
     private NumericUpDown _columnSpanNumeric = null!;
     private NumericUpDown _decimalPlacesNumeric = null!;
-    private ComboBox _metricComboBox = null!;
+    private ThemedComboBox _metricComboBox = null!;
     private NumericUpDown _rowSpanNumeric = null!;
     private Button _saveButton = null!;
     private CheckBox _showIconCheckBox = null!;
@@ -73,6 +74,9 @@ public class ValueTileEditorForm : Form {
                     txt.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
                     txt.ForeColor = isLight ? Color.Black : Color.White;
                     break;
+                case ThemedComboBox tcmb:
+                    tcmb.ApplyTheme();
+                    break;
                 case ComboBox cmb:
                     ThemedComboBoxStyler.Apply(cmb, isLight);
                     break;
@@ -105,8 +109,8 @@ public class ValueTileEditorForm : Form {
         FormBorderStyle = FormBorderStyle.FixedDialog;
         Padding = new Padding(15);
 
-        var titleFont = new Font("Roboto", 9.5f, FontStyle.Bold);
-        var normalFont = new Font("Roboto", 9.5f);
+        var titleFont = CreateSafeFont("Roboto", 9.5f, FontStyle.Bold);
+        var normalFont = CreateSafeFont("Roboto", 9.5f);
 
         // Main layout
         var mainLayout = new TableLayoutPanel {
@@ -130,7 +134,7 @@ public class ValueTileEditorForm : Form {
         mainLayout.Controls.Add(titlePanel, 0, 0);
 
         // Row 1: Metric
-        _metricComboBox = new ComboBox { Font = normalFont, Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
+        _metricComboBox = new ThemedComboBox { Font = normalFont, Dock = DockStyle.Fill };
         foreach (MetricType metric in Enum.GetValues<MetricType>()) {
             _metricComboBox.Items.Add(metric.GetDisplayName());
         }
@@ -139,7 +143,7 @@ public class ValueTileEditorForm : Form {
         mainLayout.Controls.Add(metricPanel, 0, 1);
 
         // Row 2: Color Scheme with Edit button
-        _colorSchemeComboBox = new ComboBox { Font = normalFont, Width = 200, DropDownStyle = ComboBoxStyle.DropDownList };
+        _colorSchemeComboBox = new ThemedComboBox { Font = normalFont, Width = 200 };
         RefreshColorSchemeCombo();
         var editSchemesButton = new Button { Text = "Edit Schemes...", Width = 110, Height = 27, Font = normalFont, Margin = new Padding(10, 0, 0, 0) };
         editSchemesButton.Click += EditSchemesButton_Click;
@@ -180,7 +184,7 @@ public class ValueTileEditorForm : Form {
         _cancelButton = new Button { Text = "Cancel", Width = 90, Height = 35, Font = normalFont, Margin = new Padding(0) };
         _cancelButton.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
         buttonPanel.Controls.Add(_cancelButton);
-        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = new Font("Roboto", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
+        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = CreateSafeFont("Roboto", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
         mainLayout.Controls.Add(buttonPanel, 0, 7);
@@ -234,6 +238,20 @@ public class ValueTileEditorForm : Form {
 
         DialogResult = DialogResult.OK;
         Close();
+    }
+
+    private static Font CreateSafeFont(string familyName, float emSize, FontStyle style = FontStyle.Regular) {
+        try {
+            var font = new Font(familyName, emSize, style);
+            _ = font.GetHeight(); // verify GDI+ handle is actually valid
+            return font;
+        } catch {
+            try {
+                return new Font("Segoe UI", emSize, style);
+            } catch {
+                return new Font(SystemFonts.DefaultFont.FontFamily, emSize, style);
+            }
+        }
     }
 
     #endregion Private Methods

@@ -53,8 +53,8 @@ public class AxisRulesEditorForm : Form {
         FormBorderStyle = FormBorderStyle.FixedDialog;
         Padding = new Padding(15);
 
-        var titleFont = new Font("Roboto", 9.5f, FontStyle.Bold);
-        var normalFont = new Font("Roboto", 9.5f);
+        var titleFont = CreateSafeFont("Roboto", 9.5f, FontStyle.Bold);
+        var normalFont = CreateSafeFont("Roboto", 9.5f);
 
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
@@ -196,7 +196,7 @@ public class AxisRulesEditorForm : Form {
             Text = "Save",
             Width = 100,
             Height = 35,
-            Font = new Font("Roboto", 10f, FontStyle.Bold),
+            Font = CreateSafeFont("Roboto", 10f, FontStyle.Bold),
             Margin = new Padding(0, 0, 10, 0)
         };
         _saveButton.Click += SaveButton_Click;
@@ -353,8 +353,23 @@ public class AxisRulesEditorForm : Form {
         }
 
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        comboBox.Font = CreateSafeFont(comboBox.Font.FontFamily.Name, comboBox.Font.Size, comboBox.Font.Style);
         comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
         ThemedComboBoxStyler.Apply(comboBox, isLight);
+    }
+
+    private static Font CreateSafeFont(string familyName, float emSize, FontStyle style = FontStyle.Regular) {
+        try {
+            var font = new Font(familyName, emSize, style);
+            _ = font.GetHeight(); // verify GDI+ handle is actually valid
+            return font;
+        } catch {
+            try {
+                return new Font("Segoe UI", emSize, style);
+            } catch {
+                return new Font(SystemFonts.DefaultFont.FontFamily, emSize, style);
+            }
+        }
     }
 
     #endregion Private Methods

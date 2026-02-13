@@ -21,7 +21,7 @@ public class ChartTile : Panel {
     private const int MenuIconSize = 16;
     private ContextMenuStrip? _plotContextMenu;
     private List<ChartPeriodPreset> _periodPresets = [];
-    private ComboBox? _periodSelector;
+    private ThemedComboBox? _periodSelector;
     private bool _suppressPeriodChange;
     private bool _suppressStaticRangeChange;
     private bool _isStaticMode;
@@ -544,13 +544,7 @@ public class ChartTile : Panel {
             _topPanel.BackColor = tileBg;
         }
         if (_periodSelector != null) {
-            var comboBg = isLight ? Color.White : Color.FromArgb(46, 61, 66);
-            if (_periodSelector.BackColor != comboBg) {
-                _periodSelector.BackColor = comboBg;
-            }
-
-            _periodSelector.ForeColor = fg;
-            _periodSelector.Invalidate();
+            _periodSelector.ApplyTheme();
         }
 
         if (_staticRangePanel != null && _staticRangePanel.BackColor != tileBg) {
@@ -910,19 +904,15 @@ public class ChartTile : Panel {
             ForeColor = fg
         };
 
-        _periodSelector = new ComboBox {
+        _periodSelector = new ThemedComboBox {
             Dock = DockStyle.Right,
-            Width = 120,
-            DropDownStyle = ComboBoxStyle.DropDownList,
-            DrawMode = DrawMode.OwnerDrawFixed,
-            BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66),
-            ForeColor = fg,
-            FlatStyle = FlatStyle.Standard
+            Width = 120
         };
-        _periodSelector.DrawItem += PeriodSelector_DrawItem;
         LoadPeriodPresets();
         SetSelectedPeriodPreset();
-        _periodSelector.SelectionChangeCommitted += (s, e) => UpdatePeriodFromSelection();
+        _periodSelector.SelectedIndexChanged += (s, e) => {
+            if (!_suppressPeriodChange) UpdatePeriodFromSelection();
+        };
         ChartPeriodPresetStore.PresetsChanged += HandlePresetsChanged;
         MetricAxisRuleStore.RulesChanged += HandleAxisRulesChanged;
 
@@ -1045,14 +1035,6 @@ public class ChartTile : Panel {
                 _topPanel.BackColor = expected;
             }
         };
-        _periodSelector.BackColorChanged += (s, e) => {
-            var sm = MaterialSkinManager.Instance;
-            var light = sm.Theme == MaterialSkinManager.Themes.LIGHT;
-            var expected = light ? Color.White : Color.FromArgb(46, 61, 66);
-            if (_periodSelector.BackColor != expected) {
-                _periodSelector.BackColor = expected;
-            }
-        };
         _modeSwitchContainer!.BackColorChanged += (s, e) => {
             var sm = MaterialSkinManager.Instance;
             var light = sm.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -1091,33 +1073,6 @@ public class ChartTile : Panel {
             UpdateTheme();
         });
     }
-    /// <summary>
-    /// Owner-draw handler for ComboBox. WinForms ComboBox with DropDownList
-    /// ignores BackColor for the main field — we must paint it ourselves.
-    /// </summary>
-    private void PeriodSelector_DrawItem(object? sender, DrawItemEventArgs e) {
-        if (e.Index < 0 || _periodSelector == null) {
-            return;
-        }
-
-        var bg = _periodSelector.BackColor;
-        var fg = _periodSelector.ForeColor;
-
-        // Use highlight colors for selected item in dropdown
-        if ((e.State & DrawItemState.Selected) != 0 && (e.State & DrawItemState.ComboBoxEdit) == 0) {
-            var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
-            bg = isLight ? SystemColors.Highlight : Color.FromArgb(0, 137, 123);
-            fg = isLight ? SystemColors.HighlightText : Color.White;
-        }
-
-        using var bgBrush = new SolidBrush(bg);
-        e.Graphics.FillRectangle(bgBrush, e.Bounds);
-
-        var text = _periodSelector.Items[e.Index]?.ToString() ?? "";
-        using var fgBrush = new SolidBrush(fg);
-        e.Graphics.DrawString(text, e.Font ?? _periodSelector.Font, fgBrush, e.Bounds);
-    }
-
     private void ApplyAxisRules(Dictionary<MetricType, ScottPlot.IYAxis> axisMap) {
         if (_plot == null) {
             return;

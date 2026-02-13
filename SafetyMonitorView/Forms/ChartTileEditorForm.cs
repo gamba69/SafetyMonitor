@@ -1,5 +1,6 @@
 using DataStorage.Models;
 using MaterialSkin;
+using SafetyMonitorView.Controls;
 using SafetyMonitorView.Models;
 using System.Collections;
 
@@ -27,12 +28,12 @@ public class ChartTileEditorForm : Form {
     private Color _inputBackColor;
     private Color _inputForeColor;
 
-    private ComboBox _aggregationUnitComboBox = null!;
+    private ThemedComboBox _aggregationUnitComboBox = null!;
     private NumericUpDown _aggregationValueNumeric = null!;
     private Button _cancelButton = null!;
     private NumericUpDown _columnSpanNumeric = null!;
     private DataGridView _metricsGrid = null!;
-    private ComboBox _periodComboBox = null!;
+    private ThemedComboBox _periodComboBox = null!;
     private List<ChartPeriodPreset> _periodPresets = [];
     private NumericUpDown _rowSpanNumeric = null!;
     private Button _saveButton = null!;
@@ -129,6 +130,10 @@ public class ChartTileEditorForm : Form {
                     txt.ForeColor = _inputForeColor;
                     break;
 
+                case ThemedComboBox tcmb:
+                    tcmb.ApplyTheme();
+                    break;
+
                 case ComboBox cmb:
                     ThemedComboBoxStyler.Apply(cmb, isLight);
                     break;
@@ -157,8 +162,8 @@ public class ChartTileEditorForm : Form {
         FormBorderStyle = FormBorderStyle.FixedDialog;
         Padding = new Padding(15);
 
-        var titleFont = new Font("Roboto", 9.5f, FontStyle.Bold);
-        var normalFont = new Font("Roboto", 9.5f);
+        var titleFont = CreateSafeFont("Roboto", 9.5f, FontStyle.Bold);
+        var normalFont = CreateSafeFont("Roboto", 9.5f);
 
         // Main layout
         var mainLayout = new TableLayoutPanel {
@@ -251,7 +256,7 @@ public class ChartTileEditorForm : Form {
         // Row 4: Period
         var periodPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = false, Margin = new Padding(0, 5, 0, 5) };
         periodPanel.Controls.Add(new Label { Text = "Period:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 5, 5, 0) });
-        _periodComboBox = new ComboBox { Width = 140, Font = normalFont, DropDownStyle = ComboBoxStyle.DropDownList, Margin = new Padding(0, 0, 15, 0) };
+        _periodComboBox = new ThemedComboBox { Width = 140, Font = normalFont, Margin = new Padding(0, 0, 15, 0) };
         LoadPeriodPresets();
         periodPanel.Controls.Add(_periodComboBox);
         mainLayout.Controls.Add(periodPanel, 0, 4);
@@ -261,7 +266,7 @@ public class ChartTileEditorForm : Form {
         aggPanel.Controls.Add(new Label { Text = "Aggregation:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 5, 5, 0) });
         _aggregationValueNumeric = new NumericUpDown { Width = 70, Minimum = 1, Maximum = 1440, Value = 5, Font = normalFont, Margin = new Padding(0, 0, 5, 0) };
         aggPanel.Controls.Add(_aggregationValueNumeric);
-        _aggregationUnitComboBox = new ComboBox { Width = 90, Font = normalFont, DropDownStyle = ComboBoxStyle.DropDownList, Margin = new Padding(0, 0, 15, 0) };
+        _aggregationUnitComboBox = new ThemedComboBox { Width = 90, Font = normalFont, Margin = new Padding(0, 0, 15, 0) };
         _aggregationUnitComboBox.Items.AddRange(["Seconds", "Minutes", "Hours"]);
         _aggregationUnitComboBox.SelectedIndex = 1;
         aggPanel.Controls.Add(_aggregationUnitComboBox);
@@ -290,7 +295,7 @@ public class ChartTileEditorForm : Form {
         _cancelButton = new Button { Text = "Cancel", Width = 90, Height = 35, Font = normalFont, Margin = new Padding(0) };
         _cancelButton.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
         buttonPanel.Controls.Add(_cancelButton);
-        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = new Font("Roboto", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
+        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = CreateSafeFont("Roboto", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
         mainLayout.Controls.Add(buttonPanel, 0, 8);
@@ -408,6 +413,7 @@ public class ChartTileEditorForm : Form {
 
     private void MetricsGrid_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e) {
         if (e.Control is ComboBox comboBox) {
+            comboBox.Font = CreateSafeFont(comboBox.Font.FontFamily.Name, comboBox.Font.Size, comboBox.Font.Style);
             var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
             ThemedComboBoxStyler.Apply(comboBox, isLight);
         }
@@ -548,6 +554,20 @@ public class ChartTileEditorForm : Form {
 
         if (_periodComboBox.Items.Count > 0) {
             _periodComboBox.SelectedIndex = 0;
+        }
+    }
+
+    private static Font CreateSafeFont(string familyName, float emSize, FontStyle style = FontStyle.Regular) {
+        try {
+            var font = new Font(familyName, emSize, style);
+            _ = font.GetHeight(); // verify GDI+ handle is actually valid
+            return font;
+        } catch {
+            try {
+                return new Font("Segoe UI", emSize, style);
+            } catch {
+                return new Font(SystemFonts.DefaultFont.FontFamily, emSize, style);
+            }
         }
     }
 

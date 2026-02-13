@@ -1,4 +1,5 @@
 ﻿using MaterialSkin;
+using SafetyMonitorView.Controls;
 using SafetyMonitorView.Models;
 
 namespace SafetyMonitorView.Forms;
@@ -96,6 +97,9 @@ public class ChartPeriodPresetEditorForm : Form {
                     txt.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
                     txt.ForeColor = isLight ? Color.Black : Color.White;
                     break;
+                case ThemedComboBox tcmb:
+                    tcmb.ApplyTheme();
+                    break;
                 case ComboBox cmb:
                     ThemedComboBoxStyler.Apply(cmb, isLight);
                     break;
@@ -115,8 +119,8 @@ public class ChartPeriodPresetEditorForm : Form {
         FormBorderStyle = FormBorderStyle.FixedDialog;
         Padding = new Padding(15);
 
-        var titleFont = new Font("Roboto", 9.5f, FontStyle.Bold);
-        var normalFont = new Font("Roboto", 9.5f);
+        var titleFont = CreateSafeFont("Roboto", 9.5f, FontStyle.Bold);
+        var normalFont = CreateSafeFont("Roboto", 9.5f);
 
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
@@ -221,7 +225,7 @@ public class ChartPeriodPresetEditorForm : Form {
         buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = new Font("Roboto", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Right };
+        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = CreateSafeFont("Roboto", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Right };
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton, 1, 0);
 
@@ -267,6 +271,7 @@ public class ChartPeriodPresetEditorForm : Form {
         }
 
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        comboBox.Font = CreateSafeFont(comboBox.Font.FontFamily.Name, comboBox.Font.Size, comboBox.Font.Style);
         comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
         ThemedComboBoxStyler.Apply(comboBox, isLight);
     }
@@ -335,6 +340,20 @@ public class ChartPeriodPresetEditorForm : Form {
         }
 
         return ChartPeriodUnit.Hours;
+    }
+
+    private static Font CreateSafeFont(string familyName, float emSize, FontStyle style = FontStyle.Regular) {
+        try {
+            var font = new Font(familyName, emSize, style);
+            _ = font.GetHeight(); // verify GDI+ handle is actually valid
+            return font;
+        } catch {
+            try {
+                return new Font("Segoe UI", emSize, style);
+            } catch {
+                return new Font(SystemFonts.DefaultFont.FontFamily, emSize, style);
+            }
+        }
     }
 
     #endregion Private Methods
