@@ -63,6 +63,7 @@ public static class MaterialIcons {
         ["link"] = DrawLink,
         ["link_off"] = DrawLinkOff,
         ["unlink"] = DrawLinkOff,
+        ["pan"] = DrawPan,
         // Metric tile icons
         ["temperature"] = DrawTemperature,
         ["humidity"] = DrawHumidity,
@@ -580,6 +581,33 @@ public static class MaterialIcons {
         g.DrawLine(pen,
             r.X + r.Width * 0.2f, r.Y + r.Height * 0.2f,
             r.X + r.Width * 0.8f, r.Y + r.Height * 0.8f);
+    }
+
+    private static void DrawPan(Graphics g, RectangleF r, Color c) {
+        using var pen = MakePen(c, r.Width / PW);
+
+        // Four fingers – vertical lines (rounded caps from MakePen)
+        var fingerBottom = r.Y + r.Height * 0.48f;
+        var cx = r.X + r.Width / 2f;
+        var spacing = r.Width * 0.15f;
+
+        float[] tops = [0.16f, 0.08f, 0.10f, 0.20f];
+        for (int i = 0; i < 4; i++) {
+            var x = cx - spacing * 1.5f + i * spacing;
+            g.DrawLine(pen, x, r.Y + r.Height * tops[i], x, fingerBottom);
+        }
+
+        // Thumb – angled line to the left
+        var thumbStartX = cx - spacing * 1.5f;
+        g.DrawLine(pen,
+            thumbStartX, fingerBottom + r.Height * 0.02f,
+            r.X + r.Width * 0.07f, fingerBottom + r.Height * 0.18f);
+
+        // Palm – connecting arc below fingers
+        var palmLeft = cx - spacing * 1.9f;
+        var palmWidth = spacing * 3.8f;
+        g.DrawArc(pen, palmLeft, fingerBottom - r.Height * 0.02f,
+            palmWidth, r.Height * 0.44f, 0, 180);
     }
 
     private static void DrawLightMode(Graphics g, RectangleF r, Color c) {

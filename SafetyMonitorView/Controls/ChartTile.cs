@@ -39,6 +39,11 @@ public class ChartTile : Panel {
     private FormsPlot? _plot;
     private Label? _titleLabel;
     private Panel? _topPanel;
+    private Panel? _modeSwitchContainer;
+    private Panel? _modeSegmentPanel;
+    private RadioButton? _autoModeButton;
+    private RadioButton? _staticModeButton;
+    private Label? _countdownLabel;
 
     #endregion Private Fields
 
@@ -237,6 +242,7 @@ public class ChartTile : Panel {
         ApplyThemeColors();
         ApplyTileColors();
         ApplyPlotContextMenuTheme();
+        UpdateModeSwitchAppearance();
         // Restore title font that may have been overwritten by MaterialSkinManager
         var expectedFont = CreateSafeFont("Roboto", 11, System.Drawing.FontStyle.Bold);
         if (_titleLabel.Font.Size != expectedFont.Size || _titleLabel.Font.Style != expectedFont.Style) {
@@ -938,6 +944,96 @@ public class ChartTile : Panel {
         _staticRangePanel.Controls.Add(_staticEndPicker);
         _topPanel.Controls.Add(_staticRangePanel);
 
+        // ── Auto / Static mode switcher (rightmost in header) ──
+        _autoModeButton = new RadioButton {
+            Text = string.Empty,
+            Appearance = Appearance.Button,
+            ImageAlign = ContentAlignment.MiddleCenter,
+            TextAlign = ContentAlignment.MiddleCenter,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = {
+                BorderSize = 0,
+                CheckedBackColor = Color.Transparent,
+                MouseDownBackColor = Color.Transparent,
+                MouseOverBackColor = Color.Transparent
+            },
+            AutoSize = false,
+            Size = new Size(34, 24),
+            Checked = true,
+            Cursor = Cursors.Hand
+        };
+        _autoModeButton.CheckedChanged += (s, e) => {
+            if (_autoModeButton!.Checked && _isStaticMode) {
+                ExitStaticMode();
+            }
+            UpdateModeSwitchAppearance();
+        };
+
+        _staticModeButton = new RadioButton {
+            Text = string.Empty,
+            Appearance = Appearance.Button,
+            ImageAlign = ContentAlignment.MiddleCenter,
+            TextAlign = ContentAlignment.MiddleCenter,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = {
+                BorderSize = 0,
+                CheckedBackColor = Color.Transparent,
+                MouseDownBackColor = Color.Transparent,
+                MouseOverBackColor = Color.Transparent
+            },
+            AutoSize = false,
+            Size = new Size(34, 24),
+            Checked = false,
+            Cursor = Cursors.Hand
+        };
+        _staticModeButton.CheckedChanged += (s, e) => {
+            if (_staticModeButton!.Checked) {
+                if (_isStaticMode) {
+                    // Already in static — reset countdown timer
+                    _lastChartInteractionUtc = DateTime.UtcNow;
+                    UpdateCountdownLabel();
+                } else {
+                    // Enter static mode: freeze current auto period range
+                    var (start, end) = GetConfiguredPeriodRange();
+                    EnterStaticMode(start, end, raiseEvents: true);
+                }
+            }
+            UpdateModeSwitchAppearance();
+        };
+
+        _modeSegmentPanel = new Panel {
+            Size = new Size(70, 26),
+            Padding = new Padding(1)
+        };
+        _autoModeButton.Location = new Point(1, 1);
+        _staticModeButton.Location = new Point(35, 1);
+        _modeSegmentPanel.Controls.Add(_autoModeButton);
+        _modeSegmentPanel.Controls.Add(_staticModeButton);
+
+        _countdownLabel = new Label {
+            Text = "",
+            AutoSize = false,
+            Size = new Size(36, 26),
+            TextAlign = ContentAlignment.MiddleCenter,
+            Font = CreateSafeFont("Roboto", 8f, System.Drawing.FontStyle.Regular),
+            ForeColor = fg,
+            Visible = false
+        };
+
+        _modeSwitchContainer = new Panel {
+            Dock = DockStyle.Right,
+            Width = 112,
+            BackColor = tileBg
+        };
+
+        // Center vertically: (30 - 26) / 2 = 2
+        _countdownLabel.Location = new Point(2, 2);
+        _modeSegmentPanel.Location = new Point(112 - 70 - 2, 2);
+        _modeSwitchContainer.Controls.Add(_countdownLabel);
+        _modeSwitchContainer.Controls.Add(_modeSegmentPanel);
+        _topPanel.Controls.Add(_modeSwitchContainer);
+        UpdateModeSwitchAppearance();
+
         // Guard against MaterialSkinManager overwriting our colors.
         // MSM walks the control tree and sets BackColor directly;
         // this handler fires immediately and corrects it.
@@ -955,6 +1051,14 @@ public class ChartTile : Panel {
             var expected = light ? Color.White : Color.FromArgb(46, 61, 66);
             if (_periodSelector.BackColor != expected) {
                 _periodSelector.BackColor = expected;
+            }
+        };
+        _modeSwitchContainer!.BackColorChanged += (s, e) => {
+            var sm = MaterialSkinManager.Instance;
+            var light = sm.Theme == MaterialSkinManager.Themes.LIGHT;
+            var expected = light ? Color.White : Color.FromArgb(35, 47, 52);
+            if (_modeSwitchContainer.BackColor != expected) {
+                _modeSwitchContainer.BackColor = expected;
             }
         };
         _staticStartPicker?.ValueChanged += StaticPicker_ValueChanged;
@@ -1221,10 +1325,81 @@ public class ChartTile : Panel {
         };
     }
 
+    private void UpdateModeSwitchAppearance() {
+        if (_modeSegmentPanel == null || _autoModeButton == null
+            || _staticModeButton == null || _countdownLabel == null
+            || _modeSwitchContainer == null) {
+            return;
+        }
+
+        var skinManager = MaterialSkinManager.Instance;
+        var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+
+        var segmentBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
+        var activeBg = isLight ? Color.White : Color.FromArgb(62, 77, 84);
+        var borderColor = isLight ? Color.FromArgb(196, 206, 211) : Color.FromArgb(70, 85, 92);
+        var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
+        var tileBg = isLight ? Color.White : Color.FromArgb(35, 47, 52);
+
+        _modeSwitchContainer.BackColor = tileBg;
+        _modeSegmentPanel.BackColor = borderColor;
+        _autoModeButton.BackColor = _autoModeButton.Checked ? activeBg : segmentBg;
+        _staticModeButton.BackColor = _staticModeButton.Checked ? activeBg : segmentBg;
+
+        _autoModeButton.Image = MaterialIcons.GetIcon("schedule", iconColor, 22);
+        _autoModeButton.ImageAlign = ContentAlignment.MiddleCenter;
+        _staticModeButton.Image = MaterialIcons.GetIcon("pan", iconColor, 22);
+        _staticModeButton.ImageAlign = ContentAlignment.MiddleCenter;
+
+        _countdownLabel.ForeColor = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
+        _countdownLabel.BackColor = tileBg;
+        _countdownLabel.Visible = _isStaticMode;
+    }
+
+    private void UpdateCountdownLabel() {
+        if (_countdownLabel == null) {
+            return;
+        }
+
+        if (!_isStaticMode || _lastChartInteractionUtc == DateTime.MinValue) {
+            _countdownLabel.Visible = false;
+            return;
+        }
+
+        var elapsed = DateTime.UtcNow - _lastChartInteractionUtc;
+        var remaining = _staticModeTimeout - elapsed;
+
+        if (remaining.TotalSeconds <= 0) {
+            _countdownLabel.Text = "0:00";
+            _countdownLabel.Visible = true;
+            return;
+        }
+
+        _countdownLabel.Text = $"{(int)remaining.TotalMinutes}:{remaining.Seconds:D2}";
+        _countdownLabel.Visible = true;
+    }
+
     private void SetStaticMode(bool enabled) {
         _isStaticMode = enabled;
         _periodSelector?.Visible = !enabled;
         _staticRangePanel?.Visible = enabled;
+
+        // Sync mode switcher radio buttons
+        if (_autoModeButton != null && _staticModeButton != null) {
+            if (enabled && !_staticModeButton.Checked) {
+                _staticModeButton.Checked = true;
+            } else if (!enabled && !_autoModeButton.Checked) {
+                _autoModeButton.Checked = true;
+            }
+        }
+
+        if (_countdownLabel != null) {
+            _countdownLabel.Visible = enabled;
+        }
+        UpdateModeSwitchAppearance();
+        if (enabled) {
+            UpdateCountdownLabel();
+        }
     }
 
     private void EnterStaticMode(DateTime startLocal, DateTime endLocal, bool raiseEvents) {
@@ -1280,6 +1455,8 @@ public class ChartTile : Panel {
         if (!_isStaticMode || _lastChartInteractionUtc == DateTime.MinValue) {
             return;
         }
+
+        UpdateCountdownLabel();
 
         if (DateTime.UtcNow - _lastChartInteractionUtc >= _staticModeTimeout) {
             ExitStaticMode();
