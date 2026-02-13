@@ -30,6 +30,7 @@ public class MainForm : MaterialForm {
     private const int MenuIconSize = 16;
     private Panel _quickAccessPanel = null!;
     private FlowLayoutPanel _quickDashboardsPanel = null!;
+    private Panel _themeSegmentPanel = null!;
     private System.Windows.Forms.Timer? _refreshTimer;
     private ToolStripStatusLabel _statusLabel = null!;
     private StatusStrip _statusStrip = null!;
@@ -171,6 +172,10 @@ public class MainForm : MaterialForm {
 
     private static void ApplyQuickAccessColors(Control parent, Color bg, Color fg) {
         foreach (Control control in parent.Controls) {
+            if (control is RadioButton { Appearance: Appearance.Button }) {
+                continue;
+            }
+
             control.BackColor = bg;
             control.ForeColor = fg;
             if (control.HasChildren) {
@@ -301,17 +306,23 @@ public class MainForm : MaterialForm {
     }
 
     private void CreateQuickAccessControls() {
-        var themeLabel = new Label {
-            Text = "Theme:",
-            Location = new Point(10, 15),
-            AutoSize = true,
-            Font = new Font("Roboto", 10, FontStyle.Bold)
-        };
-
         _lightThemeButton = new RadioButton {
             Text = "Light",
-            Location = new Point(70, 13),
-            AutoSize = true,
+            Appearance = Appearance.Button,
+            TextImageRelation = TextImageRelation.ImageBeforeText,
+            ImageAlign = ContentAlignment.MiddleLeft,
+            TextAlign = ContentAlignment.MiddleCenter,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = {
+                BorderSize = 0,
+                CheckedBackColor = Color.Transparent,
+                MouseDownBackColor = Color.Transparent,
+                MouseOverBackColor = Color.Transparent
+            },
+            Font = new Font("Roboto", 9f, FontStyle.Bold),
+            Padding = new Padding(10, 2, 10, 2),
+            AutoSize = false,
+            Size = new Size(100, 30),
             Checked = !_appSettings.IsDarkTheme
         };
         _lightThemeButton.CheckedChanged += (s, e) => {
@@ -319,13 +330,27 @@ public class MainForm : MaterialForm {
                 SetTheme(MaterialSkinManager.Themes.LIGHT);
                 _appSettings.IsDarkTheme = false;
                 _appSettingsService.SaveSettings(_appSettings);
+                UpdateThemeSwitchAppearance();
             }
         };
 
         _darkThemeButton = new RadioButton {
             Text = "Dark",
-            Location = new Point(140, 13),
-            AutoSize = true,
+            Appearance = Appearance.Button,
+            TextImageRelation = TextImageRelation.ImageBeforeText,
+            ImageAlign = ContentAlignment.MiddleLeft,
+            TextAlign = ContentAlignment.MiddleCenter,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = {
+                BorderSize = 0,
+                CheckedBackColor = Color.Transparent,
+                MouseDownBackColor = Color.Transparent,
+                MouseOverBackColor = Color.Transparent
+            },
+            Font = new Font("Roboto", 9f, FontStyle.Bold),
+            Padding = new Padding(10, 2, 10, 2),
+            AutoSize = false,
+            Size = new Size(100, 30),
             Checked = _appSettings.IsDarkTheme
         };
         _darkThemeButton.CheckedChanged += (s, e) => {
@@ -333,12 +358,24 @@ public class MainForm : MaterialForm {
                 SetTheme(MaterialSkinManager.Themes.DARK);
                 _appSettings.IsDarkTheme = true;
                 _appSettingsService.SaveSettings(_appSettings);
+                UpdateThemeSwitchAppearance();
             }
         };
 
+        _themeSegmentPanel = new Panel {
+            Location = new Point(10, 10),
+            Size = new Size(200, 32),
+            Padding = new Padding(1)
+        };
+        _themeSegmentPanel.Controls.Add(_lightThemeButton);
+        _themeSegmentPanel.Controls.Add(_darkThemeButton);
+        _lightThemeButton.Location = new Point(1, 1);
+        _darkThemeButton.Location = new Point(99, 1);
+        UpdateThemeSwitchAppearance();
+
         var separator = new Label {
             Text = "|",
-            Location = new Point(210, 13),
+            Location = new Point(220, 13),
             AutoSize = true,
             Font = new Font("Roboto", 12),
             ForeColor = Color.Gray
@@ -346,13 +383,13 @@ public class MainForm : MaterialForm {
 
         var dashboardLabel = new Label {
             Text = "Quick Access:",
-            Location = new Point(230, 15),
+            Location = new Point(240, 15),
             AutoSize = true,
             Font = new Font("Roboto", 10, FontStyle.Bold)
         };
 
         _quickDashboardsPanel = new FlowLayoutPanel {
-            Location = new Point(340, 10),
+            Location = new Point(350, 10),
             Size = new Size(900, 35),
             FlowDirection = FlowDirection.LeftToRight,
             WrapContents = false,
@@ -371,7 +408,7 @@ public class MainForm : MaterialForm {
         };
 
         _quickAccessPanel.Controls.AddRange([
-            themeLabel, _lightThemeButton, _darkThemeButton,
+            _themeSegmentPanel,
             separator, dashboardLabel, _quickDashboardsPanel, _linkChartsCheckBox
         ]);
 
@@ -754,6 +791,30 @@ public class MainForm : MaterialForm {
 
         _quickAccessPanel.BackColor = panelBg;
         ApplyQuickAccessColors(_quickAccessPanel, panelBg, fg);
+        UpdateThemeSwitchAppearance();
+    }
+
+    private void UpdateThemeSwitchAppearance() {
+        if (_themeSegmentPanel == null || _lightThemeButton == null || _darkThemeButton == null) {
+            return;
+        }
+
+        var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+        var segmentBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
+        var activeBg = isLight ? Color.White : Color.FromArgb(62, 77, 84);
+        var inactiveFg = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
+        var activeFg = isLight ? Color.FromArgb(21, 28, 31) : Color.White;
+        var borderColor = isLight ? Color.FromArgb(196, 206, 211) : Color.FromArgb(70, 85, 92);
+
+        _themeSegmentPanel.BackColor = borderColor;
+        _lightThemeButton.BackColor = _lightThemeButton.Checked ? activeBg : segmentBg;
+        _darkThemeButton.BackColor = _darkThemeButton.Checked ? activeBg : segmentBg;
+        _lightThemeButton.ForeColor = _lightThemeButton.Checked ? activeFg : inactiveFg;
+        _darkThemeButton.ForeColor = _darkThemeButton.Checked ? activeFg : inactiveFg;
+
+        var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
+        _lightThemeButton.Image = MaterialIcons.GetIcon("light", iconColor, 16);
+        _darkThemeButton.Image = MaterialIcons.GetIcon("dark", iconColor, 16);
     }
 
     private void PositionLinkChartsCheckbox() {
