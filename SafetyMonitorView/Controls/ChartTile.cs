@@ -1124,6 +1124,8 @@ public class ChartTile : Panel {
                 _config.PeriodPresetUid = preset.Uid;
                 _config.Period = preset.Period;
                 _config.CustomPeriodDuration = _autoCustomDuration;
+                _config.CustomStartTime = null;
+                _config.CustomEndTime = null;
             }
 
             _periodSelector.SelectedIndex = index;
@@ -1141,6 +1143,8 @@ public class ChartTile : Panel {
             _config.PeriodPresetUid = _autoPeriodPresetUid;
             _config.Period = _autoPeriod;
             _config.CustomPeriodDuration = _autoCustomDuration;
+            _config.CustomStartTime = null;
+            _config.CustomEndTime = null;
         }
 
         if (_periodSelector.Items.Count > 0) {
@@ -1165,6 +1169,8 @@ public class ChartTile : Panel {
         _config.PeriodPresetUid = preset.Uid;
         _config.Period = preset.Period;
         _config.CustomPeriodDuration = preset.Period == ChartPeriod.Custom ? preset.Duration : null;
+        _config.CustomStartTime = null;
+        _config.CustomEndTime = null;
         RefreshData();
         PeriodChanged?.Invoke(this, _config.PeriodPresetUid);
     }
