@@ -878,8 +878,8 @@ public class MainForm : MaterialForm {
         _darkThemeButton.ForeColor = _darkThemeButton.Checked ? activeFg : inactiveFg;
 
         var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
-        _lightThemeButton.Image = MaterialIcons.GetIcon("light", iconColor, 16);
-        _darkThemeButton.Image = MaterialIcons.GetIcon("dark", iconColor, 16);
+        _lightThemeButton.Image = MaterialIcons.GetIcon("light", iconColor, 22);
+        _darkThemeButton.Image = MaterialIcons.GetIcon("dark", iconColor, 22);
 
         _lightThemeButton.ImageAlign = ContentAlignment.MiddleCenter;
         _darkThemeButton.ImageAlign = ContentAlignment.MiddleCenter;
@@ -904,8 +904,8 @@ public class MainForm : MaterialForm {
         _unlinkedChartsButton.ForeColor = _unlinkedChartsButton.Checked ? activeFg : inactiveFg;
 
         var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
-        _linkedChartsButton.Image = MaterialIcons.GetIcon("link", iconColor, 16);
-        _unlinkedChartsButton.Image = MaterialIcons.GetIcon("link_off", iconColor, 16);
+        _linkedChartsButton.Image = MaterialIcons.GetIcon("link", iconColor, 22);
+        _unlinkedChartsButton.Image = MaterialIcons.GetIcon("link_off", iconColor, 22);
         _linkedChartsButton.ImageAlign = ContentAlignment.MiddleCenter;
         _unlinkedChartsButton.ImageAlign = ContentAlignment.MiddleCenter;
     }
