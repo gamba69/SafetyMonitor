@@ -199,7 +199,7 @@ public class ThemedColorPicker : Form {
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Gray,
             ForeColor = Color.White,
-            Font = new Font("Roboto", 9.5f),
+            Font = new Font("Segoe UI", 9.5f),
             Cursor = Cursors.Hand,
             Margin = new Padding(0)
         };
@@ -212,7 +212,7 @@ public class ThemedColorPicker : Form {
             FlatStyle = FlatStyle.Flat,
             BackColor = _accent,
             ForeColor = Color.White,
-            Font = new Font("Roboto", 9.5f, FontStyle.Bold),
+            Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
             Cursor = Cursors.Hand,
             Margin = new Padding(0, 0, 10, 0)
         };
@@ -419,7 +419,7 @@ public class ThemedColorPicker : Form {
         ShowInTaskbar = false;
         BackColor = _formBg;
         ForeColor = _fg;
-        Font = new Font("Roboto", 9.5f);
+        Font = new Font("Segoe UI", 9.5f);
         Padding = new Padding(15);
         ClientSize = new Size(460, 440);
 

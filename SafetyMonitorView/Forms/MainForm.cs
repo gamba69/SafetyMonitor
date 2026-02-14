@@ -80,7 +80,7 @@ public class MainForm : MaterialForm {
         AttachDataServiceHandlers();
 
         // Set default font for the form
-        Font = new Font("Roboto", 9f, FontStyle.Regular);
+        Font = new Font("Segoe UI", 9f, FontStyle.Regular);
 
         InitializeComponent();
         ApplyWindowSettings();
@@ -317,19 +317,19 @@ public class MainForm : MaterialForm {
         _dashboardLabel = new Label {
             Text = "Dashboard",
             AutoSize = true,
-            Font = new Font("Roboto", 9f, FontStyle.Bold)
+            Font = new Font("Segoe UI", 9f, FontStyle.Bold)
         };
 
         _chartsLabel = new Label {
             Text = "Charts",
             AutoSize = true,
-            Font = new Font("Roboto", 9f, FontStyle.Bold)
+            Font = new Font("Segoe UI", 9f, FontStyle.Bold)
         };
 
         _themeLabel = new Label {
             Text = "Theme",
             AutoSize = true,
-            Font = new Font("Roboto", 9f, FontStyle.Bold)
+            Font = new Font("Segoe UI", 9f, FontStyle.Bold)
         };
 
         _lightThemeButton = new RadioButton {
@@ -345,7 +345,7 @@ public class MainForm : MaterialForm {
                 MouseDownBackColor = Color.Transparent,
                 MouseOverBackColor = Color.Transparent
             },
-            Font = new Font("Roboto", 9f, FontStyle.Bold),
+            Font = new Font("Segoe UI", 9f, FontStyle.Bold),
             Padding = Padding.Empty,
             AutoSize = false,
             Size = new Size(36, 30),
@@ -373,7 +373,7 @@ public class MainForm : MaterialForm {
                 MouseDownBackColor = Color.Transparent,
                 MouseOverBackColor = Color.Transparent
             },
-            Font = new Font("Roboto", 9f, FontStyle.Bold),
+            Font = new Font("Segoe UI", 9f, FontStyle.Bold),
             Padding = Padding.Empty,
             AutoSize = false,
             Size = new Size(36, 30),
@@ -450,7 +450,7 @@ public class MainForm : MaterialForm {
             Location = new Point(240, 10),
             Size = new Size(0, 32),
             Padding = new Padding(1),
-            Font = new Font("Roboto", 9f, FontStyle.Bold)
+            Font = new Font("Segoe UI", 9f, FontStyle.Bold)
         };
 
         _linkChartsCheckBox = new CheckBox {

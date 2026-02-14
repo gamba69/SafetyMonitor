@@ -10,7 +10,7 @@
     
     <!-- High DPI settings for .NET 10 -->
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <ApplicationDefaultFont>Roboto, 9pt</ApplicationDefaultFont>
+    <ApplicationDefaultFont>Segoe UI, 9pt</ApplicationDefaultFont>
     <ApplicationVisualStyles>true</ApplicationVisualStyles>
   </PropertyGroup>
   <ItemGroup>

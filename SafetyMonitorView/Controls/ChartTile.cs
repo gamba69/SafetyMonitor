@@ -69,7 +69,7 @@ public class ChartTile : Panel {
 
         // Set a valid font to prevent GDI+ errors during auto-scaling
         // when child controls are added. The font is inherited from parent
-        // and if parent has an invalid font (e.g., "Roboto" not installed),
+        // and if parent has an invalid font (e.g., "Segoe UI" not installed),
         // Controls.Add() will throw when accessing FontHandle.
         Font = SystemFonts.DefaultFont;
         _autoPeriod = _config.Period;
@@ -247,7 +247,7 @@ public class ChartTile : Panel {
         ApplyPlotContextMenuTheme();
         UpdateModeSwitchAppearance();
         // Restore title font that may have been overwritten by MaterialSkinManager
-        var expectedFont = CreateSafeFont("Roboto", 11, System.Drawing.FontStyle.Bold);
+        var expectedFont = CreateSafeFont("Segoe UI", 11, System.Drawing.FontStyle.Bold);
         if (_titleLabel.Font.Size != expectedFont.Size || _titleLabel.Font.Style != expectedFont.Style) {
             var oldFont = _titleLabel.Font;
             _titleLabel.Font = expectedFont;
@@ -327,7 +327,7 @@ public class ChartTile : Panel {
         }
         if (_initialized && _titleLabel != null) {
             var oldFont = _titleLabel.Font;
-            _titleLabel.Font = CreateSafeFont("Roboto", 11, System.Drawing.FontStyle.Bold);
+            _titleLabel.Font = CreateSafeFont("Segoe UI", 11, System.Drawing.FontStyle.Bold);
             oldFont.Dispose();
         }
     }
@@ -901,7 +901,7 @@ public class ChartTile : Panel {
         _titleLabel = new Label {
             Text = _config.Title,
             Dock = DockStyle.Fill,
-            Font = CreateSafeFont("Roboto", 11, System.Drawing.FontStyle.Bold),
+            Font = CreateSafeFont("Segoe UI", 11, System.Drawing.FontStyle.Bold),
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(5, 0, 0, 0),
             ForeColor = fg
@@ -1008,7 +1008,7 @@ public class ChartTile : Panel {
             AutoSize = false,
             Size = new Size(36, 26),
             TextAlign = ContentAlignment.MiddleCenter,
-            Font = CreateSafeFont("Roboto", 8f, System.Drawing.FontStyle.Regular),
+            Font = CreateSafeFont("Segoe UI", 8f, System.Drawing.FontStyle.Regular),
             ForeColor = fg,
             Visible = false
         };

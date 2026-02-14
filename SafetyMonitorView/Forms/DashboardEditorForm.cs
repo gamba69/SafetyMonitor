@@ -164,8 +164,8 @@ public class DashboardEditorForm : Form {
         FormBorderStyle = FormBorderStyle.FixedDialog;
         Padding = new Padding(20);
 
-        var titleFont = new Font("Roboto", 10f, FontStyle.Bold);
-        var normalFont = new Font("Roboto", 10f);
+        var titleFont = new Font("Segoe UI", 10f, FontStyle.Bold);
+        var normalFont = new Font("Segoe UI", 10f);
 
         // Main layout
         var mainLayout = new TableLayoutPanel {
@@ -329,7 +329,7 @@ public class DashboardEditorForm : Form {
             Text = "Save",
             Width = 100,
             Height = 35,
-            Font = new Font("Roboto", 10f, FontStyle.Bold),
+            Font = new Font("Segoe UI", 10f, FontStyle.Bold),
             Margin = new Padding(0, 0, 10, 0)
         };
         _saveButton.Click += SaveButton_Click;

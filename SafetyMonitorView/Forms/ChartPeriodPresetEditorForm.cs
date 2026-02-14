@@ -119,8 +119,8 @@ public class ChartPeriodPresetEditorForm : Form {
         FormBorderStyle = FormBorderStyle.FixedDialog;
         Padding = new Padding(15);
 
-        var titleFont = CreateSafeFont("Roboto", 9.5f, FontStyle.Bold);
-        var normalFont = CreateSafeFont("Roboto", 9.5f);
+        var titleFont = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold);
+        var normalFont = CreateSafeFont("Segoe UI", 9.5f);
 
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
@@ -225,7 +225,7 @@ public class ChartPeriodPresetEditorForm : Form {
         buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = CreateSafeFont("Roboto", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Right };
+        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Right };
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton, 1, 0);
 

@@ -180,8 +180,8 @@ public class ColorSchemeEditorForm : Form {
         ClientSize = new Size(780, 560);
         Padding = new Padding(10);
 
-        var titleFont = new Font("Roboto", 9.5f, FontStyle.Bold);
-        var normalFont = new Font("Roboto", 9.5f);
+        var titleFont = new Font("Segoe UI", 9.5f, FontStyle.Bold);
+        var normalFont = new Font("Segoe UI", 9.5f);
 
         // ══════════════════════════════════════════════════════════
         // Root: TableLayoutPanel  2 columns × 2 rows
@@ -284,7 +284,7 @@ public class ColorSchemeEditorForm : Form {
         _cancelButton.Click += (s, e) => Close();
         _cancelButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
 
-        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = new Font("Roboto", 9.5f, FontStyle.Bold), Top = 5 };
+        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), Top = 5 };
         _saveButton.Click += SaveButton_Click;
         _saveButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
 

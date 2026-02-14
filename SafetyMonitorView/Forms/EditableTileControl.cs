@@ -24,7 +24,7 @@ public class EditableTileControl : Panel {
         Config = config;
         _dashboard = dashboard;
 
-        _titleFont = new Font("Roboto", 10, FontStyle.Bold);
+        _titleFont = new Font("Segoe UI", 10, FontStyle.Bold);
 
         InitializeUI();
     }

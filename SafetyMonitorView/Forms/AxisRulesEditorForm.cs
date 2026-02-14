@@ -53,8 +53,8 @@ public class AxisRulesEditorForm : Form {
         FormBorderStyle = FormBorderStyle.FixedDialog;
         Padding = new Padding(15);
 
-        var titleFont = CreateSafeFont("Roboto", 9.5f, FontStyle.Bold);
-        var normalFont = CreateSafeFont("Roboto", 9.5f);
+        var titleFont = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold);
+        var normalFont = CreateSafeFont("Segoe UI", 9.5f);
 
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
@@ -196,7 +196,7 @@ public class AxisRulesEditorForm : Form {
             Text = "Save",
             Width = 100,
             Height = 35,
-            Font = CreateSafeFont("Roboto", 10f, FontStyle.Bold),
+            Font = CreateSafeFont("Segoe UI", 10f, FontStyle.Bold),
             Margin = new Padding(0, 0, 10, 0)
         };
         _saveButton.Click += SaveButton_Click;

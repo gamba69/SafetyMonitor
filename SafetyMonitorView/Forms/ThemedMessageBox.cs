@@ -161,7 +161,7 @@ public class ThemedMessageBox : Form {
         ShowInTaskbar = false;
         Padding = new Padding(20);
 
-        var normalFont = new Font("Roboto", 10f);
+        var normalFont = new Font("Segoe UI", 10f);
 
         // Main layout
         var mainLayout = new TableLayoutPanel {

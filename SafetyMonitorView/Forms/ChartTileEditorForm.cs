@@ -157,8 +157,8 @@ public class ChartTileEditorForm : Form {
         FormBorderStyle = FormBorderStyle.FixedDialog;
         Padding = new Padding(15);
 
-        var titleFont = CreateSafeFont("Roboto", 9.5f, FontStyle.Bold);
-        var normalFont = CreateSafeFont("Roboto", 9.5f);
+        var titleFont = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold);
+        var normalFont = CreateSafeFont("Segoe UI", 9.5f);
 
         // Main layout
         var mainLayout = new TableLayoutPanel {
@@ -290,7 +290,7 @@ public class ChartTileEditorForm : Form {
         _cancelButton = new Button { Text = "Cancel", Width = 90, Height = 35, Font = normalFont, Margin = new Padding(0) };
         _cancelButton.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
         buttonPanel.Controls.Add(_cancelButton);
-        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = CreateSafeFont("Roboto", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
+        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
         mainLayout.Controls.Add(buttonPanel, 0, 8);

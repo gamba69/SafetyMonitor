@@ -278,9 +278,9 @@ public class ValueTile : Panel {
         var unitFontSize = Math.Max(8f, Math.Min(14f, minDimension * 0.09f));
 
         // Update fonts
-        UpdateFont(_titleLabel, "Roboto", titleFontSize, FontStyle.Bold);
-        UpdateFont(_valueLabel, "Roboto", valueFontSize, FontStyle.Bold);
-        UpdateFont(_unitLabel, "Roboto", unitFontSize, FontStyle.Regular);
+        UpdateFont(_titleLabel, "Segoe UI", titleFontSize, FontStyle.Bold);
+        UpdateFont(_valueLabel, "Segoe UI", valueFontSize, FontStyle.Bold);
+        UpdateFont(_unitLabel, "Segoe UI", unitFontSize, FontStyle.Regular);
 
         // Layout: divide into quadrants with overlap allowed
         var halfWidth = contentWidth / 2;
