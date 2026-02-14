@@ -202,19 +202,19 @@ public class MainForm : MaterialForm {
 
     private static string GetIconNameForMenuItem(string text) {
         return text switch {
-            "Settings" => "settings",
-            "Exit" => "exit",
-            "Theme" => "theme",
-            "Light" => "light",
-            "Dark" => "dark",
-            "About" => "about",
-            "New Dashboard" => "add",
-            "Edit Current" => "edit",
-            "Duplicate Current" => "copy",
-            "Delete Current" => "delete",
-            "Axis Rules..." => "chart",
-            "Chart Periods..." => "schedule",
-            "Color Schemes..." => "palette",
+            "Settings" => MaterialIcons.MenuFileSettings,
+            "Exit" => MaterialIcons.MenuFileExitApp,
+            "Theme" => MaterialIcons.MenuViewTheme,
+            "Light" => MaterialIcons.ThemeLightMode,
+            "Dark" => MaterialIcons.ThemeDarkMode,
+            "About" => MaterialIcons.MenuHelpAbout,
+            "New Dashboard" => MaterialIcons.DashboardCreateNew,
+            "Edit Current" => MaterialIcons.DashboardEditCurrent,
+            "Duplicate Current" => MaterialIcons.DashboardDuplicateCurrent,
+            "Delete Current" => MaterialIcons.DashboardDeleteCurrent,
+            "Axis Rules..." => MaterialIcons.MenuViewAxisRules,
+            "Chart Periods..." => MaterialIcons.MenuViewChartPeriods,
+            "Color Schemes..." => MaterialIcons.MenuViewColorSchemes,
             _ => ""
         };
     }
@@ -277,25 +277,25 @@ public class MainForm : MaterialForm {
         var iconColor = isLight ? Color.Black : Color.White;
 
         var fileMenu = new ToolStripMenuItem("File");
-        fileMenu.DropDownItems.Add(CreateMenuItem("Settings", "settings", iconColor, (s, e) => ShowSettings()));
+        fileMenu.DropDownItems.Add(CreateMenuItem("Settings", MaterialIcons.MenuFileSettings, iconColor, (s, e) => ShowSettings()));
         fileMenu.DropDownItems.Add(new ToolStripSeparator());
-        fileMenu.DropDownItems.Add(CreateMenuItem("Exit", "exit", iconColor, (s, e) => Close()));
+        fileMenu.DropDownItems.Add(CreateMenuItem("Exit", MaterialIcons.MenuFileExitApp, iconColor, (s, e) => Close()));
 
         var dashboardMenu = new ToolStripMenuItem("Dashboards");
         UpdateDashboardMenu(dashboardMenu);
 
         var viewMenu = new ToolStripMenuItem("View");
-        var themeMenu = CreateMenuItem("Theme", "theme", iconColor, null);
-        themeMenu.DropDownItems.Add(CreateMenuItem("Light", "light", iconColor, (s, e) => { _lightThemeButton.Checked = true; }));
-        themeMenu.DropDownItems.Add(CreateMenuItem("Dark", "dark", iconColor, (s, e) => { _darkThemeButton.Checked = true; }));
+        var themeMenu = CreateMenuItem("Theme", MaterialIcons.MenuViewTheme, iconColor, null);
+        themeMenu.DropDownItems.Add(CreateMenuItem("Light", MaterialIcons.ThemeLightMode, iconColor, (s, e) => { _lightThemeButton.Checked = true; }));
+        themeMenu.DropDownItems.Add(CreateMenuItem("Dark", MaterialIcons.ThemeDarkMode, iconColor, (s, e) => { _darkThemeButton.Checked = true; }));
         viewMenu.DropDownItems.Add(themeMenu);
         viewMenu.DropDownItems.Add(new ToolStripSeparator());
-        viewMenu.DropDownItems.Add(CreateMenuItem("Axis Rules...", "chart", iconColor, (s, e) => ShowAxisRulesEditor()));
-        viewMenu.DropDownItems.Add(CreateMenuItem("Chart Periods...", "schedule", iconColor, (s, e) => ShowChartPeriodPresetEditor()));
-        viewMenu.DropDownItems.Add(CreateMenuItem("Color Schemes...", "palette", iconColor, (s, e) => ShowColorSchemeEditor()));
+        viewMenu.DropDownItems.Add(CreateMenuItem("Axis Rules...", MaterialIcons.MenuViewAxisRules, iconColor, (s, e) => ShowAxisRulesEditor()));
+        viewMenu.DropDownItems.Add(CreateMenuItem("Chart Periods...", MaterialIcons.MenuViewChartPeriods, iconColor, (s, e) => ShowChartPeriodPresetEditor()));
+        viewMenu.DropDownItems.Add(CreateMenuItem("Color Schemes...", MaterialIcons.MenuViewColorSchemes, iconColor, (s, e) => ShowColorSchemeEditor()));
 
         var helpMenu = new ToolStripMenuItem("Help");
-        helpMenu.DropDownItems.Add(CreateMenuItem("About", "about", iconColor, (s, e) => ShowAbout()));
+        helpMenu.DropDownItems.Add(CreateMenuItem("About", MaterialIcons.MenuHelpAbout, iconColor, (s, e) => ShowAbout()));
 
         _mainMenu.Items.AddRange([fileMenu, dashboardMenu, viewMenu, helpMenu]);
     }
@@ -821,11 +821,11 @@ public class MainForm : MaterialForm {
         dashboardMenu.DropDownItems.Add(new ToolStripSeparator());
 
         // Management items - with icons
-        dashboardMenu.DropDownItems.Add(CreateMenuItem("New Dashboard", "add", iconColor, (s, e) => CreateNewDashboard()));
-        dashboardMenu.DropDownItems.Add(CreateMenuItem("Edit Current", "edit", iconColor, (s, e) => EditCurrentDashboard()));
-        dashboardMenu.DropDownItems.Add(CreateMenuItem("Duplicate Current", "copy", iconColor, (s, e) => DuplicateCurrentDashboard()));
+        dashboardMenu.DropDownItems.Add(CreateMenuItem("New Dashboard", MaterialIcons.DashboardCreateNew, iconColor, (s, e) => CreateNewDashboard()));
+        dashboardMenu.DropDownItems.Add(CreateMenuItem("Edit Current", MaterialIcons.DashboardEditCurrent, iconColor, (s, e) => EditCurrentDashboard()));
+        dashboardMenu.DropDownItems.Add(CreateMenuItem("Duplicate Current", MaterialIcons.DashboardDuplicateCurrent, iconColor, (s, e) => DuplicateCurrentDashboard()));
         dashboardMenu.DropDownItems.Add(new ToolStripSeparator());
-        dashboardMenu.DropDownItems.Add(CreateMenuItem("Delete Current", "delete", iconColor, (s, e) => DeleteCurrentDashboard()));
+        dashboardMenu.DropDownItems.Add(CreateMenuItem("Delete Current", MaterialIcons.DashboardDeleteCurrent, iconColor, (s, e) => DeleteCurrentDashboard()));
     }
 
     private void UpdateMenuTheme() {
@@ -878,8 +878,8 @@ public class MainForm : MaterialForm {
         _darkThemeButton.ForeColor = _darkThemeButton.Checked ? activeFg : inactiveFg;
 
         var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
-        _lightThemeButton.Image = MaterialIcons.GetIcon("light", iconColor, 22);
-        _darkThemeButton.Image = MaterialIcons.GetIcon("dark", iconColor, 22);
+        _lightThemeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ThemeLightMode, iconColor, 22);
+        _darkThemeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ThemeDarkMode, iconColor, 22);
 
         _lightThemeButton.ImageAlign = ContentAlignment.MiddleCenter;
         _darkThemeButton.ImageAlign = ContentAlignment.MiddleCenter;
@@ -904,8 +904,8 @@ public class MainForm : MaterialForm {
         _unlinkedChartsButton.ForeColor = _unlinkedChartsButton.Checked ? activeFg : inactiveFg;
 
         var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
-        _linkedChartsButton.Image = MaterialIcons.GetIcon("link", iconColor, 22);
-        _unlinkedChartsButton.Image = MaterialIcons.GetIcon("link_off", iconColor, 22);
+        _linkedChartsButton.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarChartsLink, iconColor, 22);
+        _unlinkedChartsButton.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarChartsUnlink, iconColor, 22);
         _linkedChartsButton.ImageAlign = ContentAlignment.MiddleCenter;
         _unlinkedChartsButton.ImageAlign = ContentAlignment.MiddleCenter;
     }

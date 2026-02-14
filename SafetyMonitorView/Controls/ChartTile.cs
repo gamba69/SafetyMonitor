@@ -601,22 +601,22 @@ public class ChartTile : Panel {
     private void RebuildPlotContextMenu(ContextMenuStrip contextMenu) {
         contextMenu.Items.Clear();
 
-        contextMenu.Items.Add(CreatePlotMenuItem("Save Image", "save", HandleSaveImageClick));
-        contextMenu.Items.Add(CreatePlotMenuItem("Copy to Clipboard", "copy", HandleCopyImageClick));
-        contextMenu.Items.Add(CreatePlotMenuItem("Autoscale", "refresh", HandleAutoscaleClick));
-        contextMenu.Items.Add(CreatePlotMenuItem("Open in New Window", "folder", HandleOpenInWindowClick));
+        contextMenu.Items.Add(CreatePlotMenuItem("Save Image", MaterialIcons.PlotMenuSaveImage, HandleSaveImageClick));
+        contextMenu.Items.Add(CreatePlotMenuItem("Copy to Clipboard", MaterialIcons.PlotMenuCopyToClipboard, HandleCopyImageClick));
+        contextMenu.Items.Add(CreatePlotMenuItem("Autoscale", MaterialIcons.PlotMenuAutoscale, HandleAutoscaleClick));
+        contextMenu.Items.Add(CreatePlotMenuItem("Open in New Window", MaterialIcons.PlotMenuOpenInWindow, HandleOpenInWindowClick));
         contextMenu.Items.Add(new ToolStripSeparator());
 
         AddToggleMenuItems(contextMenu);
     }
 
     private void AddToggleMenuItems(ContextMenuStrip contextMenu) {
-        var legendItem = CreateToggleMenuItem("Legend", "chart", _config.ShowLegend, (_, _) => {
+        var legendItem = CreateToggleMenuItem("Legend", MaterialIcons.PlotMenuDisplayOption, _config.ShowLegend, (_, _) => {
             _config.ShowLegend = !_config.ShowLegend;
             ApplyViewSettings();
         });
 
-        var gridItem = CreateToggleMenuItem("Grid", "chart", _config.ShowGrid, (_, _) => {
+        var gridItem = CreateToggleMenuItem("Grid", MaterialIcons.PlotMenuDisplayOption, _config.ShowGrid, (_, _) => {
             _config.ShowGrid = !_config.ShowGrid;
             ApplyViewSettings();
         });
@@ -630,14 +630,14 @@ public class ChartTile : Panel {
 
         if (_config.MetricAggregations.Count == 1) {
             var aggregation = _config.MetricAggregations[0];
-            contextMenu.Items.Add(CreateToggleMenuItem("Smoothing", "chart", aggregation.Smooth, (_, _) => {
+            contextMenu.Items.Add(CreateToggleMenuItem("Smoothing", MaterialIcons.PlotMenuDisplayOption, aggregation.Smooth, (_, _) => {
                 aggregation.Smooth = !aggregation.Smooth;
                 ApplyViewSettings();
             }));
         } else {
-            var smoothItem = new ToolStripMenuItem("Smoothing") { Tag = "chart" };
+            var smoothItem = new ToolStripMenuItem("Smoothing") { Tag = MaterialIcons.PlotMenuDisplayOption };
             foreach (var aggregation in _config.MetricAggregations) {
-                smoothItem.DropDownItems.Add(CreateToggleMenuItem(GetAggregationDisplayName(aggregation), "chart", aggregation.Smooth, (_, _) => {
+                smoothItem.DropDownItems.Add(CreateToggleMenuItem(GetAggregationDisplayName(aggregation), MaterialIcons.PlotMenuDisplayOption, aggregation.Smooth, (_, _) => {
                     aggregation.Smooth = !aggregation.Smooth;
                     ApplyViewSettings();
                 }));
@@ -645,7 +645,7 @@ public class ChartTile : Panel {
             contextMenu.Items.Add(smoothItem);
         }
 
-        contextMenu.Items.Add(CreateToggleMenuItem("Markers", "chart", _config.MetricAggregations.Any(x => x.ShowMarkers), (_, _) => {
+        contextMenu.Items.Add(CreateToggleMenuItem("Markers", MaterialIcons.PlotMenuDisplayOption, _config.MetricAggregations.Any(x => x.ShowMarkers), (_, _) => {
             var enableMarkers = !_config.MetricAggregations.All(x => x.ShowMarkers);
             foreach (var aggregation in _config.MetricAggregations) {
                 aggregation.ShowMarkers = enableMarkers;
@@ -668,7 +668,7 @@ public class ChartTile : Panel {
     }
 
     private static ToolStripMenuItem CreateToggleMenuItem(string text, string iconName, bool isChecked, EventHandler onClick) {
-        var iconForState = isChecked ? "check" : iconName;
+        var iconForState = isChecked ? MaterialIcons.CommonCheck : iconName;
         var item = CreatePlotMenuItem(text, iconForState, onClick);
         item.Checked = isChecked;
         return item;
@@ -1301,9 +1301,9 @@ public class ChartTile : Panel {
         _autoModeButton.BackColor = _autoModeButton.Checked ? activeBg : segmentBg;
         _staticModeButton.BackColor = _staticModeButton.Checked ? activeBg : segmentBg;
 
-        _autoModeButton.Image = MaterialIcons.GetIcon("schedule", iconColor, 22);
+        _autoModeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartModeAuto, iconColor, 22);
         _autoModeButton.ImageAlign = ContentAlignment.MiddleCenter;
-        _staticModeButton.Image = MaterialIcons.GetIcon("pan", iconColor, 22);
+        _staticModeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartModeStatic, iconColor, 22);
         _staticModeButton.ImageAlign = ContentAlignment.MiddleCenter;
 
         _countdownLabel.ForeColor = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
