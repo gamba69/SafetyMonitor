@@ -1,6 +1,5 @@
 using DataStorage.Models;
 using MaterialSkin;
-using SafetyMonitorView.Controls;
 using SafetyMonitorView.Models;
 using System.Collections;
 
@@ -28,12 +27,12 @@ public class ChartTileEditorForm : Form {
     private Color _inputBackColor;
     private Color _inputForeColor;
 
-    private ThemedComboBox _aggregationUnitComboBox = null!;
+    private ComboBox _aggregationUnitComboBox = null!;
     private NumericUpDown _aggregationValueNumeric = null!;
     private Button _cancelButton = null!;
     private NumericUpDown _columnSpanNumeric = null!;
     private DataGridView _metricsGrid = null!;
-    private ThemedComboBox _periodComboBox = null!;
+    private ComboBox _periodComboBox = null!;
     private List<ChartPeriodPreset> _periodPresets = [];
     private NumericUpDown _rowSpanNumeric = null!;
     private Button _saveButton = null!;
@@ -128,10 +127,6 @@ public class ChartTileEditorForm : Form {
                 case TextBox txt:
                     txt.BackColor = _inputBackColor;
                     txt.ForeColor = _inputForeColor;
-                    break;
-
-                case ThemedComboBox tcmb:
-                    tcmb.ApplyTheme();
                     break;
 
                 case ComboBox cmb:
@@ -256,7 +251,7 @@ public class ChartTileEditorForm : Form {
         // Row 4: Period
         var periodPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = false, Margin = new Padding(0, 5, 0, 5) };
         periodPanel.Controls.Add(new Label { Text = "Period:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 5, 5, 0) });
-        _periodComboBox = new ThemedComboBox { Width = 140, Font = normalFont, Margin = new Padding(0, 0, 15, 0) };
+        _periodComboBox = new ComboBox { Width = 140, Font = normalFont, Margin = new Padding(0, 0, 15, 0), DropDownStyle = ComboBoxStyle.DropDownList };
         LoadPeriodPresets();
         periodPanel.Controls.Add(_periodComboBox);
         mainLayout.Controls.Add(periodPanel, 0, 4);
@@ -266,7 +261,7 @@ public class ChartTileEditorForm : Form {
         aggPanel.Controls.Add(new Label { Text = "Aggregation:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 5, 5, 0) });
         _aggregationValueNumeric = new NumericUpDown { Width = 70, Minimum = 1, Maximum = 1440, Value = 5, Font = normalFont, Margin = new Padding(0, 0, 5, 0) };
         aggPanel.Controls.Add(_aggregationValueNumeric);
-        _aggregationUnitComboBox = new ThemedComboBox { Width = 90, Font = normalFont, Margin = new Padding(0, 0, 15, 0) };
+        _aggregationUnitComboBox = new ComboBox { Width = 90, Font = normalFont, Margin = new Padding(0, 0, 15, 0), DropDownStyle = ComboBoxStyle.DropDownList };
         _aggregationUnitComboBox.Items.AddRange(["Seconds", "Minutes", "Hours"]);
         _aggregationUnitComboBox.SelectedIndex = 1;
         aggPanel.Controls.Add(_aggregationUnitComboBox);
