@@ -63,6 +63,9 @@ public class ChartTile : Panel {
         _dataService = dataService;
         Dock = DockStyle.Fill;
         BorderStyle = BorderStyle.FixedSingle;
+        DoubleBuffered = true;
+        SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
+        UpdateStyles();
 
         // Set a valid font to prevent GDI+ errors during auto-scaling
         // when child controls are added. The font is inherited from parent

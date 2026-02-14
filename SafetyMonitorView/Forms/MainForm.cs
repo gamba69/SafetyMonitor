@@ -170,6 +170,8 @@ public class MainForm : MaterialForm {
 
         // Re-apply theme after MaterialSkinManager has finished its initialization
         ScheduleThemeReapply();
+
+        BeginInvoke(EnsureInitialDashboardVisible);
     }
 
     #endregion Protected Methods
@@ -585,21 +587,25 @@ public class MainForm : MaterialForm {
         PerformLayout();
     }
     private void LoadDashboard(Dashboard dashboard) {
+        var wasDashboardVisible = _dashboardContainer.Visible;
         _currentDashboard = dashboard;
 
         // Save last dashboard ID
         _appSettings.LastDashboardId = dashboard.Id;
         _appSettingsService.SaveSettings(_appSettings);
 
-        if (_dashboardPanel != null) {
-            _dashboardContainer.Controls.Remove(_dashboardPanel);
-            _dashboardPanel.Dispose();
-        }
+        var previousPanel = _dashboardPanel;
 
-        _dashboardPanel = new DashboardPanel(dashboard, _dataService, _appSettings.ChartStaticModeTimeoutSeconds) { Dock = DockStyle.Fill };
+        _dashboardContainer.SuspendLayout();
+        _dashboardContainer.Visible = wasDashboardVisible;
+        _dashboardPanel = new DashboardPanel(dashboard, _dataService, _appSettings.ChartStaticModeTimeoutSeconds) {
+            Dock = DockStyle.Fill,
+            Visible = false
+        };
         _dashboardPanel.DashboardChanged += OnDashboardChanged;
         _dashboardPanel.SetLinkChartPeriods(_appSettings.LinkChartPeriods);
         _dashboardContainer.Controls.Add(_dashboardPanel);
+        _dashboardContainer.ResumeLayout(true);
         _statusLabel.Text = $"Dashboard: {dashboard.Name}";
 
         if (_mainMenu.Items.Count > 1) {
@@ -609,12 +615,7 @@ public class MainForm : MaterialForm {
 
         UpdateQuickDashboardSelection();
 
-        // Refresh data immediately instead of waiting for timer tick
-        if (IsHandleCreated) {
-            BeginInvoke(() => _dashboardPanel?.RefreshData());
-        } else {
-            HandleCreated += OnFirstHandleCreated;
-        }
+        QueueDashboardInitialRender(_dashboardPanel, previousPanel);
 
         // Reset timer so next tick is a full interval from now
         if (_refreshTimer != null) {
@@ -648,9 +649,80 @@ public class MainForm : MaterialForm {
         UpdateQuickDashboards();
     }
 
+    private void EnsureInitialDashboardVisible() {
+        if (_dashboardPanel == null) {
+            return;
+        }
+
+        if (!_dashboardPanel.Visible) {
+            _dashboardPanel.Visible = true;
+        }
+
+        _dashboardPanel.RefreshData();
+        _dashboardContainer.Visible = true;
+        _dashboardPanel.BringToFront();
+    }
+
     private void OnFirstHandleCreated(object? sender, EventArgs e) {
         HandleCreated -= OnFirstHandleCreated;
-        BeginInvoke(() => _dashboardPanel?.RefreshData());
+        if (_dashboardPanel != null) {
+            QueueDashboardInitialRender(_dashboardPanel, null);
+        }
+    }
+
+    private void QueueDashboardInitialRender(DashboardPanel panel, DashboardPanel? previousPanel) {
+        if (!IsHandleCreated) {
+            HandleCreated -= OnFirstHandleCreated;
+            HandleCreated += OnFirstHandleCreated;
+            return;
+        }
+
+        if (!panel.IsHandleCreated) {
+            panel.CreateControl();
+
+            // Invisible controls may postpone handle creation until first show.
+            // Fallback to immediate visible state so the dashboard never remains blank.
+            if (!panel.IsHandleCreated) {
+                panel.Visible = true;
+                BeginInvoke(() => {
+                    if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) {
+                        return;
+                    }
+
+                    panel.RefreshData();
+                    _dashboardContainer.Visible = true;
+                    RemoveOldDashboardPanel(previousPanel, panel);
+                });
+                return;
+            }
+
+        }
+
+        BeginInvoke(() => RefreshAndShowDashboard(panel, previousPanel));
+    }
+
+    private void RefreshAndShowDashboard(DashboardPanel panel, DashboardPanel? previousPanel) {
+        if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) {
+            return;
+        }
+
+        panel.RefreshData();
+        panel.Visible = true;
+        panel.BringToFront();
+        _dashboardContainer.Visible = true;
+        RemoveOldDashboardPanel(previousPanel, panel);
+    }
+
+    private void RemoveOldDashboardPanel(DashboardPanel? previousPanel, DashboardPanel newPanel) {
+        if (previousPanel == null || ReferenceEquals(previousPanel, newPanel) || previousPanel.IsDisposed) {
+            return;
+        }
+
+        if (_dashboardContainer.Controls.Contains(previousPanel)) {
+            _dashboardContainer.Controls.Remove(previousPanel);
+        }
+
+        previousPanel.Dispose();
     }
 
     private void OnDashboardChanged() {

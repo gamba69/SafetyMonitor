@@ -34,12 +34,23 @@ public class DashboardPanel : TableLayoutPanel {
     #region Public Methods
 
     public void RefreshData() {
-        foreach (var control in _tileControls.Values) {
-            if (control is ValueTile vt) {
-                vt.RefreshData();
-            } else if (control is ChartTile ct) {
-                ct.RefreshData();
+        SuspendLayout();
+        try {
+            foreach (var control in _tileControls.Values) {
+                if (control is ValueTile vt) {
+                    vt.RefreshData();
+                } else if (control is ChartTile ct) {
+                    ct.RefreshData();
+                }
             }
+
+            foreach (var control in _tileControls.Values) {
+                if (!control.Visible) {
+                    control.Visible = true;
+                }
+            }
+        } finally {
+            ResumeLayout(true);
         }
     }
     public void SetLinkChartPeriods(bool linkChartPeriods) {
@@ -106,6 +117,8 @@ public class DashboardPanel : TableLayoutPanel {
                 _ => null
             };
             if (tileControl != null) {
+                tileControl.Visible = false;
+
                 if (tileControl is ChartTile chartTile) {
                     chartTile.PeriodChanged += OnChartPeriodChanged;
                     chartTile.StaticRangeChanged += OnChartStaticRangeChanged;
