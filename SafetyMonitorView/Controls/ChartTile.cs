@@ -18,7 +18,7 @@ public class ChartTile : Panel {
     private readonly List<ScottPlot.IYAxis> _extraAxes = [];
     private bool _initialized;
     private readonly ThemedMenuRenderer _contextMenuRenderer = new();
-    private const int MenuIconSize = 16;
+    private const int MenuIconSize = 22;
     private ContextMenuStrip? _plotContextMenu;
     private List<ChartPeriodPreset> _periodPresets = [];
     private ThemedComboBox? _periodSelector;
