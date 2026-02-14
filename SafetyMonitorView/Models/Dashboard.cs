@@ -10,6 +10,7 @@ public class Dashboard {
     public DateTime ModifiedAt { get; set; } = DateTime.Now;
     public string Name { get; set; } = "New Dashboard";
     public int Rows { get; set; } = 4;
+    public int SortOrder { get; set; }
     public List<TileConfig> Tiles { get; set; } = [];
 
     #endregion Public Properties

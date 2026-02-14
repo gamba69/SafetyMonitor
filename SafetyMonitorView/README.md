@@ -36,7 +36,7 @@ Dashboard Editor:
 - Drag tiles to reposition
 - Visual grid with dotted lines
 - Collision detection
-- Quick Access checkbox (max 5)
+- Quick Access checkbox (max 7)
 ```
 
 ### Quick Access Controls
@@ -188,7 +188,7 @@ SafetyMonitorView/
 ### ✅ Implemented
 - [x] Drag-and-drop tile editor (WORKING!)
 - [x] Quick theme switcher (Light/Dark)
-- [x] Quick dashboard access (max 5)
+- [x] Quick dashboard access (max 7)
 - [x] English interface (ALL strings)
 - [x] Real-time data display (ValueTile)
 - [x] ScottPlot charts (ChartTile)
@@ -321,7 +321,7 @@ Refresh Interval: 5 seconds
 
 1. **Color Schemes:** Temperature scheme has gradient enabled for smooth transitions
 2. **Chart Performance:** Use aggregation for long periods (7+ days)
-3. **Quick Access:** Mark up to 5 dashboards for one-click switching
+3. **Quick Access:** Mark up to 7 dashboards for one-click switching
 5. **Multiple Metrics:** Can show any combination (e.g. Temp + Humidity)
 6. **Window Settings:** Size/position/theme automatically saved
 

@@ -250,7 +250,7 @@ public class DashboardEditorForm : Form {
 
         // Quick Access
         _quickAccessCheckBox = new CheckBox {
-            Text = "Quick Access (max 5)",
+            Text = "Quick Access (max 7)",
             Font = normalFont,
             AutoSize = true,
             Margin = new Padding(0, 5, 0, 0)

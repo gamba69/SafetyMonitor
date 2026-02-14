@@ -32,6 +32,7 @@ public class MainForm : MaterialForm {
     private MenuStrip _mainMenu = null!;
     private ThemedMenuRenderer _menuRenderer = null!;
     private const int MenuIconSize = 22;
+    private const int MaxQuickAccessDashboards = 7;
     private Panel _quickAccessPanel = null!;
     private Panel _quickDashboardsPanel = null!;
     private Panel _linkSegmentPanel = null!;
@@ -214,6 +215,7 @@ public class MainForm : MaterialForm {
             "Edit Current" => MaterialIcons.DashboardEditCurrent,
             "Duplicate Current" => MaterialIcons.DashboardDuplicateCurrent,
             "Delete Current" => MaterialIcons.DashboardDeleteCurrent,
+            "Manage Dashboards..." => MaterialIcons.DashboardEditCurrent,
             "Axis Rules..." => MaterialIcons.MenuViewAxisRules,
             "Chart Periods..." => MaterialIcons.MenuViewChartPeriods,
             "Color Schemes..." => MaterialIcons.MenuViewColorSchemes,
@@ -308,8 +310,10 @@ public class MainForm : MaterialForm {
             Rows = 4,
             Columns = 4
         };
+        dashboard.SortOrder = _dashboards.Where(d => !d.IsQuickAccess).Select(d => d.SortOrder).DefaultIfEmpty(-1).Max() + 1;
         _dashboardService.SaveDashboard(dashboard);
         _dashboards.Add(dashboard);
+        SortDashboardsForDisplay();
         LoadDashboard(dashboard);
     }
 
@@ -502,7 +506,10 @@ public class MainForm : MaterialForm {
         }
 
         var copy = _dashboardService.DuplicateDashboard(_currentDashboard);
+        copy.SortOrder = _dashboards.Where(d => d.IsQuickAccess == copy.IsQuickAccess).Select(d => d.SortOrder).DefaultIfEmpty(-1).Max() + 1;
+        _dashboardService.SaveDashboard(copy);
         _dashboards.Add(copy);
+        SortDashboardsForDisplay();
         LoadDashboard(copy);
     }
 
@@ -513,8 +520,15 @@ public class MainForm : MaterialForm {
 
         using var editor = new DashboardEditorForm(_currentDashboard);
         if (editor.ShowDialog() == DialogResult.OK && editor.Modified) {
+            if (_currentDashboard.IsQuickAccess && _dashboards.Count(d => d.IsQuickAccess && d.Id != _currentDashboard.Id) >= MaxQuickAccessDashboards) {
+                _currentDashboard.IsQuickAccess = false;
+                ThemedMessageBox.Show(this, $"Only {MaxQuickAccessDashboards} dashboards can be marked as favorite.", "Favorite dashboards", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+
             _dashboardService.SaveDashboard(_currentDashboard);
             _dashboards = _dashboardService.LoadDashboards();
+            SortDashboardsForDisplay();
+            PersistDashboardOrdering();
 
             var updatedDashboard = _dashboards.FirstOrDefault(d => d.Id == _currentDashboard.Id);
             if (updatedDashboard != null) {
@@ -626,6 +640,8 @@ public class MainForm : MaterialForm {
 
     private void LoadDashboards() {
         _dashboards = _dashboardService.LoadDashboards();
+        SortDashboardsForDisplay();
+        PersistDashboardOrdering();
 
         if (_dashboards.Count > 0) {
             // Try to load last dashboard from settings
@@ -869,6 +885,85 @@ public class MainForm : MaterialForm {
         }
     }
 
+
+    private void PersistDashboardOrdering() {
+        var changed = false;
+
+        int quickOrder = 0;
+        int regularOrder = 0;
+        foreach (var dashboard in _dashboards) {
+            int targetOrder = dashboard.IsQuickAccess ? quickOrder++ : regularOrder++;
+            if (dashboard.SortOrder != targetOrder) {
+                dashboard.SortOrder = targetOrder;
+                _dashboardService.SaveDashboard(dashboard);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            SortDashboardsForDisplay();
+        }
+    }
+
+    private void ShowDashboardManager() {
+        using var manager = new DashboardManagementForm(_dashboards, _currentDashboard?.Id);
+        if (manager.ShowDialog(this) != DialogResult.OK) {
+            return;
+        }
+
+        foreach (var deletedId in manager.DeletedDashboardIds) {
+            var dashboard = _dashboards.FirstOrDefault(d => d.Id == deletedId);
+            if (dashboard != null) {
+                _dashboardService.DeleteDashboard(dashboard);
+                _dashboards.Remove(dashboard);
+            }
+        }
+
+        var updatesById = manager.Updates.ToDictionary(u => u.DashboardId);
+        foreach (var dashboard in _dashboards) {
+            if (!updatesById.TryGetValue(dashboard.Id, out var update)) {
+                continue;
+            }
+
+            dashboard.IsQuickAccess = update.IsQuickAccess;
+            dashboard.SortOrder = update.SortOrder;
+            _dashboardService.SaveDashboard(dashboard);
+        }
+
+        _dashboards = _dashboardService.LoadDashboards();
+        SortDashboardsForDisplay();
+        PersistDashboardOrdering();
+
+        if (_dashboards.Count == 0) {
+            var fallback = Dashboard.CreateDefault();
+            fallback.SortOrder = 0;
+            _dashboardService.SaveDashboard(fallback);
+            _dashboards = [fallback];
+        }
+
+        var nextDashboard = _currentDashboard != null
+            ? _dashboards.FirstOrDefault(d => d.Id == _currentDashboard.Id)
+            : null;
+        nextDashboard ??= _dashboards.First();
+
+        LoadDashboard(nextDashboard);
+
+        if (_mainMenu.Items.Count > 1) {
+            var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1];
+            UpdateDashboardMenu(dashboardMenu);
+        }
+
+        UpdateQuickDashboards();
+    }
+
+    private void SortDashboardsForDisplay() {
+        _dashboards = _dashboards
+            .OrderByDescending(d => d.IsQuickAccess)
+            .ThenBy(d => d.SortOrder)
+            .ThenBy(d => d.Name)
+            .ToList();
+    }
+
     private void UpdateDashboardContainerTheme() {
         _dashboardContainer.BackColor = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT
             ? Color.FromArgb(250, 250, 250)
@@ -896,6 +991,7 @@ public class MainForm : MaterialForm {
         dashboardMenu.DropDownItems.Add(CreateMenuItem("New Dashboard", MaterialIcons.DashboardCreateNew, iconColor, (s, e) => CreateNewDashboard()));
         dashboardMenu.DropDownItems.Add(CreateMenuItem("Edit Current", MaterialIcons.DashboardEditCurrent, iconColor, (s, e) => EditCurrentDashboard()));
         dashboardMenu.DropDownItems.Add(CreateMenuItem("Duplicate Current", MaterialIcons.DashboardDuplicateCurrent, iconColor, (s, e) => DuplicateCurrentDashboard()));
+        dashboardMenu.DropDownItems.Add(CreateMenuItem("Manage Dashboards...", MaterialIcons.DashboardEditCurrent, iconColor, (s, e) => ShowDashboardManager()));
         dashboardMenu.DropDownItems.Add(new ToolStripSeparator());
         dashboardMenu.DropDownItems.Add(CreateMenuItem("Delete Current", MaterialIcons.DashboardDeleteCurrent, iconColor, (s, e) => DeleteCurrentDashboard()));
     }
@@ -1141,7 +1237,7 @@ public class MainForm : MaterialForm {
     private bool UpdateQuickDashboards() {
         _quickDashboardsPanel.Controls.Clear();
 
-        var quickDashboards = _dashboards.Where(d => d.IsQuickAccess).Take(5).ToList();
+        var quickDashboards = _dashboards.Where(d => d.IsQuickAccess).Take(MaxQuickAccessDashboards).ToList();
         if (quickDashboards.Count == 0) {
             _quickDashboardsPanel.Size = new Size(0, 32);
             UpdateQuickAccessPanelTheme();

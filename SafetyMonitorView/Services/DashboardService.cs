@@ -61,7 +61,10 @@ public class DashboardService {
             SaveDashboard(def);
             dashboards.Add(def);
         }
-        return [.. dashboards.OrderBy(d => d.Name)];
+        return [.. dashboards
+            .OrderByDescending(d => d.IsQuickAccess)
+            .ThenBy(d => d.SortOrder)
+            .ThenBy(d => d.Name)];
     }
 
     public void SaveDashboard(Dashboard dashboard) {
