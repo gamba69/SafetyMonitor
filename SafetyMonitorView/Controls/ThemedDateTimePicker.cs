@@ -367,6 +367,13 @@ public class ThemedDateTimePicker : UserControl {
         private readonly Font _dayHeaderFont;
         private readonly Font _headerFont;
 
+        // Animation
+        private System.Windows.Forms.Timer? _fadeTimer;
+        private bool _isClosing;
+        private const int FadeIntervalMs = 15;
+        private const double FadeInStep = 0.15;
+        private const double FadeOutStep = 0.2;
+
         public event EventHandler<DateTime>? DateSelected;
 
         public CalendarPopup(DateTime value, DateTime minDate, DateTime maxDate,
@@ -487,7 +494,8 @@ public class ThemedDateTimePicker : UserControl {
                 Controls.Add(_timePanel);
             }
 
-            Deactivate += (_, _) => Close();
+            Opacity = 0;
+            Deactivate += (_, _) => AnimateClose();
         }
 
         protected override CreateParams CreateParams {
@@ -505,11 +513,59 @@ public class ThemedDateTimePicker : UserControl {
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e) {
+            _fadeTimer?.Stop();
+            _fadeTimer?.Dispose();
             _dayFont.Dispose();
             _dayHeaderFont.Dispose();
             _headerFont.Dispose();
             base.OnFormClosed(e);
         }
+
+        protected override void OnShown(EventArgs e) {
+            base.OnShown(e);
+            StartFadeIn();
+        }
+
+        #region Animation
+
+        private void StartFadeIn() {
+            _fadeTimer?.Dispose();
+            _fadeTimer = new System.Windows.Forms.Timer { Interval = FadeIntervalMs };
+            _fadeTimer.Tick += (_, _) => {
+                var next = Opacity + FadeInStep;
+                if (next >= 1.0) {
+                    Opacity = 1.0;
+                    _fadeTimer?.Stop();
+                    _fadeTimer?.Dispose();
+                    _fadeTimer = null;
+                } else {
+                    Opacity = next;
+                }
+            };
+            _fadeTimer.Start();
+        }
+
+        private void AnimateClose() {
+            if (_isClosing) return;
+            _isClosing = true;
+            _fadeTimer?.Stop();
+            _fadeTimer?.Dispose();
+            _fadeTimer = new System.Windows.Forms.Timer { Interval = FadeIntervalMs };
+            _fadeTimer.Tick += (_, _) => {
+                var next = Opacity - FadeOutStep;
+                if (next <= 0.05) {
+                    _fadeTimer?.Stop();
+                    _fadeTimer?.Dispose();
+                    _fadeTimer = null;
+                    Close();
+                } else {
+                    Opacity = next;
+                }
+            };
+            _fadeTimer.Start();
+        }
+
+        #endregion Animation
 
         #region DPI helpers
 
@@ -736,7 +792,7 @@ public class ThemedDateTimePicker : UserControl {
 
             _selectedDate = result;
             DateSelected?.Invoke(this, result);
-            Close();
+            AnimateClose();
         }
 
         #endregion
@@ -826,7 +882,7 @@ public class ThemedDateTimePicker : UserControl {
                     _selectedDate.Year, _selectedDate.Month, _selectedDate.Day,
                     now.Hour, now.Minute, 0);
                 DateSelected?.Invoke(this, _selectedDate);
-                Close();
+                AnimateClose();
             };
             flow.Controls.Add(nowBtn);
 

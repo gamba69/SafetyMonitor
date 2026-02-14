@@ -426,6 +426,13 @@ public class ThemedComboBox : UserControl {
         // Cached font
         private readonly Font _itemFont;
 
+        // Animation
+        private System.Windows.Forms.Timer? _fadeTimer;
+        private bool _isClosing;
+        private const int FadeIntervalMs = 15;
+        private const double FadeInStep = 0.15;  // ~7 ticks = ~105ms
+        private const double FadeOutStep = 0.2;   // ~5 ticks = ~75ms
+
         public event EventHandler<int>? ItemSelected;
 
         public DropdownPopup(ThemedComboBox owner) {
@@ -479,7 +486,8 @@ public class ThemedComboBox : UserControl {
 
             Controls.Add(_listPanel);
 
-            Deactivate += (_, _) => Close();
+            Opacity = 0;
+            Deactivate += (_, _) => AnimateClose();
         }
 
         protected override void OnPaint(PaintEventArgs e) {
@@ -489,11 +497,59 @@ public class ThemedComboBox : UserControl {
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e) {
+            _fadeTimer?.Stop();
+            _fadeTimer?.Dispose();
             base.OnFormClosed(e);
             _itemFont.Dispose();
         }
 
         protected override bool ShowWithoutActivation => false;
+
+        protected override void OnShown(EventArgs e) {
+            base.OnShown(e);
+            StartFadeIn();
+        }
+
+        #region Animation
+
+        private void StartFadeIn() {
+            _fadeTimer?.Dispose();
+            _fadeTimer = new System.Windows.Forms.Timer { Interval = FadeIntervalMs };
+            _fadeTimer.Tick += (_, _) => {
+                var next = Opacity + FadeInStep;
+                if (next >= 1.0) {
+                    Opacity = 1.0;
+                    _fadeTimer?.Stop();
+                    _fadeTimer?.Dispose();
+                    _fadeTimer = null;
+                } else {
+                    Opacity = next;
+                }
+            };
+            _fadeTimer.Start();
+        }
+
+        private void AnimateClose() {
+            if (_isClosing) return;
+            _isClosing = true;
+            _fadeTimer?.Stop();
+            _fadeTimer?.Dispose();
+            _fadeTimer = new System.Windows.Forms.Timer { Interval = FadeIntervalMs };
+            _fadeTimer.Tick += (_, _) => {
+                var next = Opacity - FadeOutStep;
+                if (next <= 0.05) {
+                    _fadeTimer?.Stop();
+                    _fadeTimer?.Dispose();
+                    _fadeTimer = null;
+                    Close();
+                } else {
+                    Opacity = next;
+                }
+            };
+            _fadeTimer.Start();
+        }
+
+        #endregion Animation
 
         #region List painting
 
@@ -592,7 +648,7 @@ public class ThemedComboBox : UserControl {
             var idx = HitTestItem(e.Location);
             if (idx >= 0) {
                 ItemSelected?.Invoke(this, idx);
-                Close();
+                AnimateClose();
             }
         }
 
