@@ -314,6 +314,7 @@ public class MainForm : MaterialForm {
         _dashboardService.SaveDashboard(dashboard);
         _dashboards.Add(dashboard);
         SortDashboardsForDisplay();
+        UpdateQuickDashboards();
         LoadDashboard(dashboard);
     }
 
@@ -497,6 +498,7 @@ public class MainForm : MaterialForm {
             _dashboardService.DeleteDashboard(_currentDashboard);
             _dashboards.Remove(_currentDashboard);
             LoadDashboard(_dashboards[0]);
+            UpdateQuickDashboards();
         }
     }
 
@@ -510,6 +512,7 @@ public class MainForm : MaterialForm {
         _dashboardService.SaveDashboard(copy);
         _dashboards.Add(copy);
         SortDashboardsForDisplay();
+        UpdateQuickDashboards();
         LoadDashboard(copy);
     }
 
