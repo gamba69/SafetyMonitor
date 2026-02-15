@@ -1102,7 +1102,11 @@ public class MainForm : MaterialForm {
         foreach (var button in buttons) {
             var isMenuSelectedBadge = button.Tag is string tag && tag == "menu-selected-badge";
             if (isMenuSelectedBadge) {
-                button.BackColor = isLight ? Color.FromArgb(214, 219, 223) : Color.FromArgb(86, 99, 105);
+                var badgeBg = isLight ? Color.FromArgb(222, 222, 222) : Color.FromArgb(124, 132, 140);
+                button.BackColor = badgeBg;
+                button.FlatAppearance.CheckedBackColor = badgeBg;
+                button.FlatAppearance.MouseDownBackColor = badgeBg;
+                button.FlatAppearance.MouseOverBackColor = badgeBg;
                 button.ForeColor = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(206, 215, 220);
                 continue;
             }
