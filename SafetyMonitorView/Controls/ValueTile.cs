@@ -13,7 +13,7 @@ public class ValueTile : Panel {
     private readonly ValueTileConfig _config;
     private readonly DataService _dataService;
     private ColorScheme? _colorScheme;
-    private Color _currentIconColor = Color.Gray;
+    private Color _currentIconColor = Color.Transparent;
     private double? _currentValue;
     private PictureBox? _iconBox;
     private bool _initialized;
@@ -96,6 +96,7 @@ public class ValueTile : Panel {
             InitializeUI();
             LoadColorScheme();
             UpdateLayout();
+            ResetColors();
         }
     }
 
@@ -125,32 +126,48 @@ public class ValueTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Applies theme-based background and secondary element colors (title, unit, icon).
+    /// These colors are always the same regardless of whether data is present.
+    /// </summary>
+    private void ApplyThemeColors() {
+        if (_titleLabel == null || _valueLabel == null || _unitLabel == null || _iconBox == null) {
+            return;
+        }
+
+        var skinManager = MaterialSkinManager.Instance;
+        var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+
+        BackColor = isLight ? Color.White : Color.FromArgb(35, 47, 52);
+        _titleLabel.BackColor = Color.Transparent;
+        _valueLabel.BackColor = Color.Transparent;
+        _unitLabel.BackColor = Color.Transparent;
+        _iconBox.BackColor = Color.Transparent;
+
+        var primaryColor = isLight ? Color.Black : Color.White;
+        var secondaryColor = isLight ? Color.FromArgb(100, 100, 100) : Color.FromArgb(180, 180, 180);
+
+        _titleLabel.ForeColor = secondaryColor;
+        _unitLabel.ForeColor = secondaryColor;
+
+        SetIconColor(primaryColor);
+    }
+
     private void ApplyColorScheme() {
         if (_titleLabel == null || _valueLabel == null || _unitLabel == null || _iconBox == null) {
             return;
         }
 
-        if (_currentValue.HasValue && _colorScheme != null) {
-            var schemeColor = _colorScheme.GetColor(_currentValue.Value);
+        // Apply consistent theme colors for all elements except value
+        ApplyThemeColors();
 
-            // Apply theme-based background (same as ResetColors)
+        // Value label gets color from the color scheme
+        if (_currentValue.HasValue && _colorScheme != null) {
+            _valueLabel.ForeColor = _colorScheme.GetColor(_currentValue.Value);
+        } else {
             var skinManager = MaterialSkinManager.Instance;
             var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
-            BackColor = isLight ? Color.White : Color.FromArgb(35, 47, 52);
-            _titleLabel.BackColor = Color.Transparent;
-            _valueLabel.BackColor = Color.Transparent;
-            _unitLabel.BackColor = Color.Transparent;
-            _iconBox.BackColor = Color.Transparent;
-
-            var secondaryColor = isLight ? Color.Gray : Color.LightGray;
-
-            _titleLabel.ForeColor = secondaryColor;
-            _valueLabel.ForeColor = schemeColor;
-            _unitLabel.ForeColor = secondaryColor;
-
-            SetIconColor(secondaryColor);
-        } else {
-            ResetColors();
+            _valueLabel.ForeColor = isLight ? Color.Black : Color.White;
         }
     }
 
@@ -213,22 +230,13 @@ public class ValueTile : Panel {
             return;
         }
 
+        // Apply consistent theme colors for all elements
+        ApplyThemeColors();
+
+        // Value label uses primary theme color when no data / no scheme
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
-        BackColor = isLight ? Color.White : Color.FromArgb(35, 47, 52);
-        _titleLabel.BackColor = Color.Transparent;
-        _valueLabel.BackColor = Color.Transparent;
-        _unitLabel.BackColor = Color.Transparent;
-        _iconBox.BackColor = Color.Transparent;
-
-        var primaryColor = isLight ? Color.Black : Color.White;
-        var secondaryColor = isLight ? Color.Gray : Color.LightGray;
-
-        _titleLabel.ForeColor = secondaryColor;
-        _valueLabel.ForeColor = primaryColor;
-        _unitLabel.ForeColor = secondaryColor;
-
-        SetIconColor(secondaryColor);
+        _valueLabel.ForeColor = isLight ? Color.Black : Color.White;
     }
 
     private void SetIconColor(Color color) {
