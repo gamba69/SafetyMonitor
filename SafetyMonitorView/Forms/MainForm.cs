@@ -630,7 +630,7 @@ public class MainForm : MaterialForm {
             UpdateDashboardMenu(dashboardMenu);
         }
 
-        UpdateQuickDashboardSelection();
+        UpdateQuickDashboards();
 
         QueueDashboardInitialRender(_dashboardPanel, previousPanel);
 
@@ -1100,6 +1100,13 @@ public class MainForm : MaterialForm {
 
         _quickDashboardsPanel.BackColor = borderColor;
         foreach (var button in buttons) {
+            var isMenuSelectedBadge = button.Tag is string tag && tag == "menu-selected-badge";
+            if (isMenuSelectedBadge) {
+                button.BackColor = isLight ? Color.FromArgb(214, 219, 223) : Color.FromArgb(86, 99, 105);
+                button.ForeColor = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(206, 215, 220);
+                continue;
+            }
+
             button.BackColor = button.Checked ? activeBg : segmentBg;
             button.ForeColor = button.Checked ? activeFg : inactiveFg;
         }
@@ -1241,6 +1248,11 @@ public class MainForm : MaterialForm {
         _quickDashboardsPanel.Controls.Clear();
 
         var quickDashboards = _dashboards.Where(d => d.IsQuickAccess).Take(MaxQuickAccessDashboards).ToList();
+        var showSelectedFromMenuBadge = _currentDashboard is { IsQuickAccess: false };
+        if (showSelectedFromMenuBadge && _currentDashboard != null) {
+            quickDashboards.Add(_currentDashboard);
+        }
+
         if (quickDashboards.Count == 0) {
             _quickDashboardsPanel.Size = new Size(0, 32);
             UpdateQuickAccessPanelTheme();
@@ -1297,11 +1309,18 @@ public class MainForm : MaterialForm {
                 Tag = dashboard.Id,
                 Margin = Padding.Empty
             };
-            btn.CheckedChanged += (s, e) => {
-                if (btn.Checked && _currentDashboard?.Id != dashboard.Id) {
-                    LoadDashboard(dashboard);
-                }
-            };
+
+            if (showSelectedFromMenuBadge && dashboard.Id == _currentDashboard?.Id && !dashboard.IsQuickAccess) {
+                btn.Tag = "menu-selected-badge";
+                btn.AutoCheck = false;
+                btn.TabStop = false;
+            } else {
+                btn.CheckedChanged += (s, e) => {
+                    if (btn.Checked && _currentDashboard?.Id != dashboard.Id) {
+                        LoadDashboard(dashboard);
+                    }
+                };
+            }
 
             _quickDashboardsPanel.Controls.Add(btn);
             x += segmentWidth;
