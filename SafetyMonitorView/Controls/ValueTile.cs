@@ -55,11 +55,11 @@ public class ValueTile : Panel {
                 _valueLabel.Text = _currentValue.Value.ToString($"F{_config.DecimalPlaces}");
                 ApplyColorScheme();
             } else {
-                _valueLabel.Text = "—";
+                _valueLabel.Text = " ?";
                 ResetColors();
             }
         } else {
-            _valueLabel.Text = "N/A";
+            _valueLabel.Text = " ?";
             ResetColors();
         }
     }
@@ -189,7 +189,7 @@ public class ValueTile : Panel {
 
         // Value: large, bottom-left
         _valueLabel = new Label {
-            Text = "—",
+            Text = " ?",
             AutoSize = false,
             TextAlign = ContentAlignment.BottomLeft,
             BackColor = Color.Transparent
