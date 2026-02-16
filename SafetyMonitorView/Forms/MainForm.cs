@@ -1268,7 +1268,8 @@ public class MainForm : MaterialForm {
         _quickDashboardsPanel.Controls.Clear();
 
         var quickDashboards = _dashboards.Where(d => d.IsQuickAccess).Take(MaxQuickAccessDashboards).ToList();
-        var showSelectedFromMenuBadge = _currentDashboard is { IsQuickAccess: false };
+        var showSelectedFromMenuBadge = _currentDashboard != null
+            && quickDashboards.All(d => d.Id != _currentDashboard.Id);
         if (showSelectedFromMenuBadge && _currentDashboard != null) {
             quickDashboards.Add(_currentDashboard);
         }
@@ -1330,7 +1331,7 @@ public class MainForm : MaterialForm {
                 Margin = Padding.Empty
             };
 
-            if (showSelectedFromMenuBadge && dashboard.Id == _currentDashboard?.Id && !dashboard.IsQuickAccess) {
+            if (showSelectedFromMenuBadge && dashboard.Id == _currentDashboard?.Id) {
                 btn.Tag = "menu-selected-badge";
                 btn.AutoCheck = false;
                 btn.TabStop = false;
