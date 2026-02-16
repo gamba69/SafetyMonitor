@@ -90,7 +90,7 @@ internal static class ThemedButtonStyler {
     };
 
     private static string ResolveIcon(ButtonRole role) => role switch {
-        ButtonRole.Save => MaterialIcons.CommonSave,
+        ButtonRole.Save => MaterialIcons.CommonCheck,
         ButtonRole.Confirm => MaterialIcons.CommonCheck,
         ButtonRole.Cancel => MaterialIcons.CommonClose,
         ButtonRole.Delete => MaterialIcons.CommonDelete,
@@ -123,7 +123,7 @@ internal static class ThemedButtonStyler {
             return ButtonRole.Cancel;
         }
 
-        if (normalized.StartsWith("delete")) {
+        if (normalized.StartsWith("del")) {
             return ButtonRole.Delete;
         }
 
@@ -135,7 +135,7 @@ internal static class ThemedButtonStyler {
             return ButtonRole.Edit;
         }
 
-        if (normalized.StartsWith("copy") || normalized.StartsWith("duplicate")) {
+        if (normalized.StartsWith("copy") || normalized.StartsWith("dup")) {
             return ButtonRole.Duplicate;
         }
 
