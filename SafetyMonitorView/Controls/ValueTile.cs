@@ -145,10 +145,8 @@ public class ValueTile : Panel {
         _iconBox.BackColor = Color.Transparent;
 
         var primaryColor = isLight ? Color.Black : Color.White;
-        var secondaryColor = isLight ? Color.FromArgb(100, 100, 100) : Color.FromArgb(180, 180, 180);
-
-        _titleLabel.ForeColor = secondaryColor;
-        _unitLabel.ForeColor = secondaryColor;
+        _titleLabel.ForeColor = primaryColor;
+        _unitLabel.ForeColor = primaryColor;
 
         SetIconColor(primaryColor);
     }
