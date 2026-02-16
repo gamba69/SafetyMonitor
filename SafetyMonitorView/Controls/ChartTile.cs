@@ -30,6 +30,8 @@ public class ChartTile : Panel {
     private FlowLayoutPanel? _staticRangePanel;
     private System.Windows.Forms.Timer? _staticModeTimer;
     private TimeSpan _staticModeTimeout = TimeSpan.FromMinutes(2);
+    private double _staticAggregationPresetMatchTolerancePercent = 10;
+    private int _staticAggregationTargetPointCount = 300;
     private DateTime _lastChartInteractionUtc = DateTime.MinValue;
     private double? _lastXAxisMin;
     private double? _lastXAxisMax;
@@ -287,6 +289,17 @@ public class ChartTile : Panel {
         _staticModeTimeout = timeout < TimeSpan.FromSeconds(10)
             ? TimeSpan.FromSeconds(10)
             : timeout;
+    }
+
+    public void SetStaticAggregationSettings(double presetMatchTolerancePercent, int targetPointCount) {
+        _staticAggregationPresetMatchTolerancePercent = Math.Clamp(presetMatchTolerancePercent, 0, 100);
+        _staticAggregationTargetPointCount = Math.Max(2, targetPointCount);
+
+        UpdateAggregationInfoLabel(ResolveAggregationInterval());
+
+        if (_isStaticMode) {
+            RefreshData();
+        }
     }
 
     public void SetStaticRange(DateTime startLocal, DateTime endLocal, bool raiseEvents = true) {
@@ -1152,6 +1165,12 @@ public class ChartTile : Panel {
     }
 
     private TimeSpan? ResolveAggregationInterval() {
+        if (_isStaticMode && _config.CustomPeriodDuration.HasValue && _config.CustomPeriodDuration.Value > TimeSpan.Zero) {
+            var staticInterval = ResolveStaticAggregationInterval(_config.CustomPeriodDuration.Value);
+            _config.CustomAggregationInterval = staticInterval;
+            return staticInterval;
+        }
+
         var preset = _periodPresets.FirstOrDefault(p => string.Equals(p.Uid, _config.PeriodPresetUid, StringComparison.Ordinal));
         if (!string.IsNullOrWhiteSpace(preset.Uid) && preset.AggregationInterval > TimeSpan.Zero) {
             _config.CustomAggregationInterval = preset.AggregationInterval;
@@ -1160,6 +1179,32 @@ public class ChartTile : Panel {
 
         var legacyInterval = _config.CustomAggregationInterval;
         return legacyInterval ?? DataService.GetRecommendedAggregationInterval(_config.Period);
+    }
+
+    private TimeSpan ResolveStaticAggregationInterval(TimeSpan range) {
+        var rangeSeconds = range.TotalSeconds;
+        if (rangeSeconds <= 1) {
+            return TimeSpan.FromSeconds(1);
+        }
+
+        var toleranceRatio = _staticAggregationPresetMatchTolerancePercent / 100d;
+        var matchingPreset = _periodPresets
+            .Where(p => p.Duration > TimeSpan.Zero && p.AggregationInterval > TimeSpan.Zero)
+            .Select(p => new {
+                Preset = p,
+                RelativeDeviation = Math.Abs(range.TotalSeconds - p.Duration.TotalSeconds) / p.Duration.TotalSeconds
+            })
+            .Where(x => x.RelativeDeviation <= toleranceRatio)
+            .OrderBy(x => x.RelativeDeviation)
+            .Select(x => x.Preset)
+            .FirstOrDefault();
+
+        if (!string.IsNullOrWhiteSpace(matchingPreset.Uid) && matchingPreset.AggregationInterval > TimeSpan.Zero) {
+            return matchingPreset.AggregationInterval;
+        }
+
+        var intervalSeconds = Math.Max(1, (int)Math.Ceiling(rangeSeconds / _staticAggregationTargetPointCount));
+        return TimeSpan.FromSeconds(intervalSeconds);
     }
 
     private void UpdateAggregationInfoLabel(TimeSpan? interval) {

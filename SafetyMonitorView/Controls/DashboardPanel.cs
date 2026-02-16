@@ -12,6 +12,8 @@ public class DashboardPanel : TableLayoutPanel {
     private readonly Dictionary<Guid, Control> _tileControls = [];
     private bool _linkChartPeriods;
     private int _chartStaticModeTimeoutSeconds;
+    private double _chartStaticAggregationPresetMatchTolerancePercent;
+    private int _chartStaticAggregationTargetPointCount;
     private bool _tilesCreated;
 
     #endregion Private Fields
@@ -20,10 +22,17 @@ public class DashboardPanel : TableLayoutPanel {
 
     public event Action? DashboardChanged;
 
-    public DashboardPanel(Dashboard dashboard, DataService dataService, int chartStaticModeTimeoutSeconds) {
+    public DashboardPanel(
+        Dashboard dashboard,
+        DataService dataService,
+        int chartStaticModeTimeoutSeconds,
+        double chartStaticAggregationPresetMatchTolerancePercent,
+        int chartStaticAggregationTargetPointCount) {
         _dashboard = dashboard;
         _dataService = dataService;
         _chartStaticModeTimeoutSeconds = chartStaticModeTimeoutSeconds;
+        _chartStaticAggregationPresetMatchTolerancePercent = Math.Clamp(chartStaticAggregationPresetMatchTolerancePercent, 0, 100);
+        _chartStaticAggregationTargetPointCount = Math.Max(2, chartStaticAggregationTargetPointCount);
         // Set a valid font to prevent GDI+ errors when child controls inherit font
         Font = SystemFonts.DefaultFont;
         InitializeUI();
@@ -61,6 +70,17 @@ public class DashboardPanel : TableLayoutPanel {
         _chartStaticModeTimeoutSeconds = Math.Max(10, seconds);
         foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
             chartTile.SetStaticModeTimeout(TimeSpan.FromSeconds(_chartStaticModeTimeoutSeconds));
+        }
+    }
+
+    public void SetChartStaticAggregationOptions(double presetMatchTolerancePercent, int targetPointCount) {
+        _chartStaticAggregationPresetMatchTolerancePercent = Math.Clamp(presetMatchTolerancePercent, 0, 100);
+        _chartStaticAggregationTargetPointCount = Math.Max(2, targetPointCount);
+
+        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+            chartTile.SetStaticAggregationSettings(
+                _chartStaticAggregationPresetMatchTolerancePercent,
+                _chartStaticAggregationTargetPointCount);
         }
     }
 
@@ -125,6 +145,9 @@ public class DashboardPanel : TableLayoutPanel {
                     chartTile.AutoModeRestored += OnChartAutoModeRestored;
                     chartTile.ViewSettingsChanged += OnChartViewSettingsChanged;
                     chartTile.SetStaticModeTimeout(TimeSpan.FromSeconds(_chartStaticModeTimeoutSeconds));
+                    chartTile.SetStaticAggregationSettings(
+                        _chartStaticAggregationPresetMatchTolerancePercent,
+                        _chartStaticAggregationTargetPointCount);
                 }
                 Controls.Add(tileControl, tileConfig.Column, tileConfig.Row);
                 SetColumnSpan(tileControl, tileConfig.ColumnSpan);

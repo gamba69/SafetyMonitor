@@ -9,6 +9,8 @@ public class SettingsForm : Form {
     private Button _cancelButton = null!;
     private Label _connectionStatusLabel = null!;
     private NumericUpDown _chartStaticTimeoutNumeric = null!;
+    private NumericUpDown _chartStaticAggregationPresetMatchToleranceNumeric = null!;
+    private NumericUpDown _chartStaticAggregationTargetPointsNumeric = null!;
     private NumericUpDown _refreshIntervalNumeric = null!;
     private Button _saveButton = null!;
     private TextBox _storagePathTextBox = null!;
@@ -18,10 +20,12 @@ public class SettingsForm : Form {
 
     #region Public Constructors
 
-    public SettingsForm(string currentStoragePath, int currentRefreshInterval, int currentChartStaticTimeoutSeconds) {
+    public SettingsForm(string currentStoragePath, int currentRefreshInterval, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount) {
         StoragePath = currentStoragePath;
         RefreshInterval = currentRefreshInterval;
         ChartStaticTimeoutSeconds = currentChartStaticTimeoutSeconds;
+        ChartStaticAggregationPresetMatchTolerancePercent = Math.Clamp(currentChartStaticAggregationPresetMatchTolerancePercent, 0, 100);
+        ChartStaticAggregationTargetPointCount = Math.Max(2, currentChartStaticAggregationTargetPointCount);
 
         InitializeComponent();
         ApplyTheme();
@@ -34,6 +38,8 @@ public class SettingsForm : Form {
 
     public int RefreshInterval { get; private set; } = 5;
     public int ChartStaticTimeoutSeconds { get; private set; } = 120;
+    public double ChartStaticAggregationPresetMatchTolerancePercent { get; private set; } = 10;
+    public int ChartStaticAggregationTargetPointCount { get; private set; } = 300;
     public string StoragePath { get; private set; } = "";
     #endregion Public Properties
 
@@ -124,7 +130,7 @@ public class SettingsForm : Form {
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 9,
+            RowCount = 13,
             AutoSize = true
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -135,8 +141,12 @@ public class SettingsForm : Form {
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Refresh Interval
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Static timeout label
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Static timeout value
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 7: Spacer
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 8: Buttons
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 7: Preset tolerance label
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 8: Preset tolerance value
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 9: Target points label
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 10: Target points value
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 11: Spacer
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 12: Buttons
 
         // Row 0: Storage Path label
         var storagePathLabel = new Label {
@@ -242,11 +252,49 @@ public class SettingsForm : Form {
         };
         mainLayout.Controls.Add(_chartStaticTimeoutNumeric, 0, 6);
 
-        // Row 5: Spacer
-        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 7);
+        var staticAggregationPresetToleranceLabel = new Label {
+            Text = "Static mode preset match tolerance (%):",
+            Font = titleFont,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 5)
+        };
+        mainLayout.Controls.Add(staticAggregationPresetToleranceLabel, 0, 7);
+
+        _chartStaticAggregationPresetMatchToleranceNumeric = new NumericUpDown {
+            Width = 100,
+            Minimum = 0,
+            Maximum = 100,
+            DecimalPlaces = 1,
+            Increment = 0.5m,
+            Value = 10,
+            Font = normalFont,
+            Margin = new Padding(0, 0, 0, 20)
+        };
+        mainLayout.Controls.Add(_chartStaticAggregationPresetMatchToleranceNumeric, 0, 8);
+
+        var staticAggregationTargetPointsLabel = new Label {
+            Text = "Static mode target chart points:",
+            Font = titleFont,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 5)
+        };
+        mainLayout.Controls.Add(staticAggregationTargetPointsLabel, 0, 9);
+
+        _chartStaticAggregationTargetPointsNumeric = new NumericUpDown {
+            Width = 100,
+            Minimum = 2,
+            Maximum = 5000,
+            Value = 300,
+            Font = normalFont,
+            Margin = new Padding(0, 0, 0, 20)
+        };
+        mainLayout.Controls.Add(_chartStaticAggregationTargetPointsNumeric, 0, 10);
+
+        // Spacer
+        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 11);
 
 
-        // Row 6: Buttons
+        // Buttons
         var buttonPanel = new FlowLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -274,22 +322,26 @@ public class SettingsForm : Form {
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
 
-        mainLayout.Controls.Add(buttonPanel, 0, 8);
+        mainLayout.Controls.Add(buttonPanel, 0, 12);
 
         Controls.Add(mainLayout);
 
         // Set form size
-        ClientSize = new Size(550, 370);
+        ClientSize = new Size(550, 500);
     }
     private void LoadSettings() {
         _storagePathTextBox.Text = StoragePath;
         _refreshIntervalNumeric.Value = RefreshInterval;
         _chartStaticTimeoutNumeric.Value = ChartStaticTimeoutSeconds;
+        _chartStaticAggregationPresetMatchToleranceNumeric.Value = Math.Clamp((decimal)ChartStaticAggregationPresetMatchTolerancePercent, 0m, 100m);
+        _chartStaticAggregationTargetPointsNumeric.Value = Math.Clamp(ChartStaticAggregationTargetPointCount, 2, 5000);
     }
     private void SaveButton_Click(object? sender, EventArgs e) {
         StoragePath = _storagePathTextBox.Text;
         RefreshInterval = (int)_refreshIntervalNumeric.Value;
         ChartStaticTimeoutSeconds = (int)_chartStaticTimeoutNumeric.Value;
+        ChartStaticAggregationPresetMatchTolerancePercent = (double)_chartStaticAggregationPresetMatchToleranceNumeric.Value;
+        ChartStaticAggregationTargetPointCount = (int)_chartStaticAggregationTargetPointsNumeric.Value;
 
         DialogResult = DialogResult.OK;
         Close();

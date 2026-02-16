@@ -8,6 +8,8 @@ public class AppSettings {
     public bool IsMaximized { get; set; } = false;
     public bool LinkChartPeriods { get; set; } = false;
     public int ChartStaticModeTimeoutSeconds { get; set; } = 120;
+    public double ChartStaticAggregationPresetMatchTolerancePercent { get; set; } = 10;
+    public int ChartStaticAggregationTargetPointCount { get; set; } = 300;
 
     // Dashboard settings
     public Guid? LastDashboardId { get; set; }

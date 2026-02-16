@@ -615,7 +615,12 @@ public class MainForm : MaterialForm {
 
         _dashboardContainer.SuspendLayout();
         _dashboardContainer.Visible = wasDashboardVisible;
-        _dashboardPanel = new DashboardPanel(dashboard, _dataService, _appSettings.ChartStaticModeTimeoutSeconds) {
+        _dashboardPanel = new DashboardPanel(
+            dashboard,
+            _dataService,
+            _appSettings.ChartStaticModeTimeoutSeconds,
+            _appSettings.ChartStaticAggregationPresetMatchTolerancePercent,
+            _appSettings.ChartStaticAggregationTargetPointCount) {
             Dock = DockStyle.Fill,
             Visible = false
         };
@@ -867,11 +872,18 @@ public class MainForm : MaterialForm {
     }
 
     private void ShowSettings() {
-        using var settingsForm = new SettingsForm(_appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ChartStaticModeTimeoutSeconds);
+        using var settingsForm = new SettingsForm(
+            _appSettings.StoragePath,
+            _appSettings.RefreshInterval,
+            _appSettings.ChartStaticModeTimeoutSeconds,
+            _appSettings.ChartStaticAggregationPresetMatchTolerancePercent,
+            _appSettings.ChartStaticAggregationTargetPointCount);
         if (settingsForm.ShowDialog() == DialogResult.OK) {
             _appSettings.StoragePath = settingsForm.StoragePath;
             _appSettings.RefreshInterval = settingsForm.RefreshInterval;
             _appSettings.ChartStaticModeTimeoutSeconds = settingsForm.ChartStaticTimeoutSeconds;
+            _appSettings.ChartStaticAggregationPresetMatchTolerancePercent = settingsForm.ChartStaticAggregationPresetMatchTolerancePercent;
+            _appSettings.ChartStaticAggregationTargetPointCount = settingsForm.ChartStaticAggregationTargetPointCount;
             _appSettingsService.SaveSettings(_appSettings);
 
             _dataService = new DataService(_appSettings.StoragePath);
@@ -880,6 +892,9 @@ public class MainForm : MaterialForm {
 
             _refreshTimer?.Interval = _appSettings.RefreshInterval * 1000;
             _dashboardPanel?.SetChartStaticModeTimeoutSeconds(_appSettings.ChartStaticModeTimeoutSeconds);
+            _dashboardPanel?.SetChartStaticAggregationOptions(
+                _appSettings.ChartStaticAggregationPresetMatchTolerancePercent,
+                _appSettings.ChartStaticAggregationTargetPointCount);
             RefreshQuickAccessLayout();
 
             if (_currentDashboard != null) {
