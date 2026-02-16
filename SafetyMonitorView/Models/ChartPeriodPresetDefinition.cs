@@ -13,6 +13,7 @@ public class ChartPeriodPresetDefinition {
     public string Name { get; set; } = "";
     public double Value { get; set; } = 1;
     public ChartPeriodUnit Unit { get; set; } = ChartPeriodUnit.Hours;
+    public TimeSpan AggregationInterval { get; set; } = TimeSpan.FromMinutes(1);
 
     public TimeSpan ToTimeSpan() {
         return Unit switch {

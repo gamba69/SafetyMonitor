@@ -44,6 +44,7 @@ public class ChartTile : Panel {
     private RadioButton? _autoModeButton;
     private RadioButton? _staticModeButton;
     private Label? _countdownLabel;
+    private Label? _aggregationInfoLabel;
 
     #endregion Private Fields
 
@@ -107,8 +108,8 @@ public class ChartTile : Panel {
             return;
         }
 
-        var aggregationInterval = _config.CustomAggregationInterval
-            ?? DataService.GetRecommendedAggregationInterval(_config.Period);
+        var aggregationInterval = ResolveAggregationInterval();
+        UpdateAggregationInfoLabel(aggregationInterval);
         var isLightTheme = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
 
         // Determine distinct metric types to decide if multiple Y axes are needed
@@ -246,6 +247,7 @@ public class ChartTile : Panel {
         ApplyTileColors();
         ApplyPlotContextMenuTheme();
         UpdateModeSwitchAppearance();
+        UpdateAggregationInfoLabel(ResolveAggregationInterval());
         // Restore title font that may have been overwritten by MaterialSkinManager
         var expectedFont = CreateSafeFont("Segoe UI", 11, System.Drawing.FontStyle.Bold);
         if (_titleLabel.Font.Size != expectedFont.Size || _titleLabel.Font.Style != expectedFont.Style) {
@@ -543,6 +545,10 @@ public class ChartTile : Panel {
         }
 
         _titleLabel.ForeColor = fg;
+        if (_aggregationInfoLabel != null) {
+            _aggregationInfoLabel.BackColor = tileBg;
+            _aggregationInfoLabel.ForeColor = isLight ? Color.FromArgb(110, 110, 110) : Color.FromArgb(160, 170, 175);
+        }
         if (_topPanel != null && _topPanel.BackColor != tileBg) {
             _topPanel.BackColor = tileBg;
         }
@@ -960,6 +966,7 @@ public class ChartTile : Panel {
                 ExitStaticMode();
             }
             UpdateModeSwitchAppearance();
+        UpdateAggregationInfoLabel(ResolveAggregationInterval());
         };
 
         _staticModeButton = new RadioButton {
@@ -992,6 +999,7 @@ public class ChartTile : Panel {
                 }
             }
             UpdateModeSwitchAppearance();
+        UpdateAggregationInfoLabel(ResolveAggregationInterval());
         };
 
         _modeSegmentPanel = new Panel {
@@ -1026,6 +1034,7 @@ public class ChartTile : Panel {
         _modeSwitchContainer.Controls.Add(_modeSegmentPanel);
         _topPanel.Controls.Add(_modeSwitchContainer);
         UpdateModeSwitchAppearance();
+        UpdateAggregationInfoLabel(ResolveAggregationInterval());
 
         // Guard against MaterialSkinManager overwriting our colors.
         // MSM walks the control tree and sets BackColor directly;
@@ -1053,6 +1062,18 @@ public class ChartTile : Panel {
         _staticModeTimer.Tick += StaticModeTimer_Tick;
         _staticModeTimer.Start();
 
+
+        _aggregationInfoLabel = new Label {
+            Dock = DockStyle.Bottom,
+            Height = 18,
+            Padding = new Padding(4, 0, 4, 2),
+            TextAlign = ContentAlignment.BottomRight,
+            Font = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular),
+            ForeColor = isLight ? Color.FromArgb(110, 110, 110) : Color.FromArgb(160, 170, 175),
+            BackColor = tileBg
+        };
+        UpdateAggregationInfoLabel(ResolveAggregationInterval());
+
         _plot = new FormsPlot {
             Dock = DockStyle.Fill,         // Use explicit safe font (Segoe UI is guaranteed on Windows)
             Font = new Font("Segoe UI", 9f, System.Drawing.FontStyle.Regular)
@@ -1065,8 +1086,9 @@ public class ChartTile : Panel {
         TryDisableScottPlotBuiltInContextMenu();
         ApplyPlotContextMenuTheme();
 
-        // Add _topPanel first (it's safe)
+        // Add header and info labels first
         Controls.Add(_topPanel);
+        Controls.Add(_aggregationInfoLabel);
 
         // Use BeginInvoke to defer adding FormsPlot until message loop is ready
         // This avoids GDI+ font errors during auto-scaling
@@ -1129,6 +1151,27 @@ public class ChartTile : Panel {
         }
     }
 
+    private TimeSpan? ResolveAggregationInterval() {
+        var preset = _periodPresets.FirstOrDefault(p => string.Equals(p.Uid, _config.PeriodPresetUid, StringComparison.Ordinal));
+        if (!string.IsNullOrWhiteSpace(preset.Uid) && preset.AggregationInterval > TimeSpan.Zero) {
+            _config.CustomAggregationInterval = preset.AggregationInterval;
+            return preset.AggregationInterval;
+        }
+
+        var legacyInterval = _config.CustomAggregationInterval;
+        return legacyInterval ?? DataService.GetRecommendedAggregationInterval(_config.Period);
+    }
+
+    private void UpdateAggregationInfoLabel(TimeSpan? interval) {
+        if (_aggregationInfoLabel == null) {
+            return;
+        }
+
+        _aggregationInfoLabel.Text = interval.HasValue
+            ? $"Aggregation: {interval.Value:hh\\:mm\\:ss}"
+            : "Aggregation: raw";
+    }
+
     private void HandleAxisRulesChanged() {
         if (_plot == null) {
             return;
@@ -1186,6 +1229,7 @@ public class ChartTile : Panel {
                 _config.PeriodPresetUid = preset.Uid;
                 _config.Period = preset.Period;
                 _config.CustomPeriodDuration = _autoCustomDuration;
+                _config.CustomAggregationInterval = preset.AggregationInterval;
                 _config.CustomStartTime = null;
                 _config.CustomEndTime = null;
             }
@@ -1205,6 +1249,7 @@ public class ChartTile : Panel {
             _config.PeriodPresetUid = _autoPeriodPresetUid;
             _config.Period = _autoPeriod;
             _config.CustomPeriodDuration = _autoCustomDuration;
+            _config.CustomAggregationInterval = fallbackPreset.AggregationInterval;
             _config.CustomStartTime = null;
             _config.CustomEndTime = null;
         }
@@ -1231,6 +1276,7 @@ public class ChartTile : Panel {
         _config.PeriodPresetUid = preset.Uid;
         _config.Period = preset.Period;
         _config.CustomPeriodDuration = preset.Period == ChartPeriod.Custom ? preset.Duration : null;
+        _config.CustomAggregationInterval = preset.AggregationInterval;
         _config.CustomStartTime = null;
         _config.CustomEndTime = null;
         RefreshData();
@@ -1355,6 +1401,7 @@ public class ChartTile : Panel {
             _countdownLabel.Visible = enabled;
         }
         UpdateModeSwitchAppearance();
+        UpdateAggregationInfoLabel(ResolveAggregationInterval());
         if (enabled) {
             UpdateCountdownLabel();
         }

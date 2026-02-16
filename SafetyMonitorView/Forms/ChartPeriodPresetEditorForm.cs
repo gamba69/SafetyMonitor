@@ -17,6 +17,7 @@ public class ChartPeriodPresetEditorForm : Form {
     private Button _removeButton = null!;
     private Button _saveButton = null!;
     private readonly List<ChartPeriodUnit> _units = [.. Enum.GetValues<ChartPeriodUnit>()];
+    private readonly List<string> _aggregationUnits = ["Seconds", "Minutes", "Hours"];
 
     #endregion Private Fields
 
@@ -27,7 +28,8 @@ public class ChartPeriodPresetEditorForm : Form {
             Uid = p.Uid,
             Name = p.Name,
             Value = p.Value,
-            Unit = p.Unit
+            Unit = p.Unit,
+            AggregationInterval = p.AggregationInterval
         })];
 
         InitializeComponent();
@@ -46,7 +48,7 @@ public class ChartPeriodPresetEditorForm : Form {
     #region Private Methods
 
     private void AddPresetButton_Click(object? sender, EventArgs e) {
-        _presetGrid.Rows.Add(Guid.NewGuid().ToString("N"), "Custom", 1, ChartPeriodUnit.Hours);
+        _presetGrid.Rows.Add(Guid.NewGuid().ToString("N"), "Custom", 1, ChartPeriodUnit.Hours, 1, "Minutes");
     }
 
     private void ApplyTheme() {
@@ -66,12 +68,16 @@ public class ChartPeriodPresetEditorForm : Form {
         _presetGrid.ColumnHeadersDefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
         _presetGrid.ColumnHeadersDefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(240, 240, 240) : darkSelectionColor;
         _presetGrid.ColumnHeadersDefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
-        if (_presetGrid.Columns["Unit"] is DataGridViewComboBoxColumn unitColumn) {
-            unitColumn.DefaultCellStyle.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
-            unitColumn.DefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
-            unitColumn.DefaultCellStyle.SelectionBackColor = _presetGrid.DefaultCellStyle.SelectionBackColor;
-            unitColumn.DefaultCellStyle.SelectionForeColor = _presetGrid.DefaultCellStyle.SelectionForeColor;
-            unitColumn.FlatStyle = FlatStyle.Popup;
+        foreach (var comboColumnName in new[] { "Unit", "AggregationUnit" }) {
+            if (_presetGrid.Columns[comboColumnName] is not DataGridViewComboBoxColumn comboColumn) {
+                continue;
+            }
+
+            comboColumn.DefaultCellStyle.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
+            comboColumn.DefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
+            comboColumn.DefaultCellStyle.SelectionBackColor = _presetGrid.DefaultCellStyle.SelectionBackColor;
+            comboColumn.DefaultCellStyle.SelectionForeColor = _presetGrid.DefaultCellStyle.SelectionForeColor;
+            comboColumn.FlatStyle = FlatStyle.Popup;
         }
         _presetGrid.EnableHeadersVisualStyles = false;
 
@@ -135,7 +141,7 @@ public class ChartPeriodPresetEditorForm : Form {
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 3: Save/Cancel
 
         var headerLabel = new Label {
-            Text = "Edit chart period presets (name, value, unit, order).",
+            Text = "Edit chart period presets (name, value, unit, aggregation, order).",
             Font = titleFont,
             AutoSize = true,
             Margin = new Padding(0, 0, 0, 10)
@@ -165,13 +171,24 @@ public class ChartPeriodPresetEditorForm : Form {
         _presetGrid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "Value",
             HeaderText = "Value",
-            FillWeight = 24
+            FillWeight = 16
         });
         _presetGrid.Columns.Add(new DataGridViewComboBoxColumn {
             Name = "Unit",
             HeaderText = "Unit",
-            FillWeight = 26,
+            FillWeight = 18,
             DataSource = _units
+        });
+        _presetGrid.Columns.Add(new DataGridViewTextBoxColumn {
+            Name = "AggregationValue",
+            HeaderText = "Agg. Value",
+            FillWeight = 16
+        });
+        _presetGrid.Columns.Add(new DataGridViewComboBoxColumn {
+            Name = "AggregationUnit",
+            HeaderText = "Agg. Unit",
+            FillWeight = 18,
+            DataSource = _aggregationUnits
         });
 
         foreach (DataGridViewColumn column in _presetGrid.Columns) {
@@ -243,7 +260,7 @@ public class ChartPeriodPresetEditorForm : Form {
         _presetGrid.Rows.Clear();
         foreach (var preset in _presets) {
             var unit = _units.Contains(preset.Unit) ? preset.Unit : ChartPeriodUnit.Hours;
-            _presetGrid.Rows.Add(preset.Uid, preset.Name, preset.Value, unit);
+            _presetGrid.Rows.Add(preset.Uid, preset.Name, preset.Value, unit, FormatAggregationValue(preset.AggregationInterval), GetAggregationUnitName(preset.AggregationInterval));
         }
     }
 
@@ -266,7 +283,8 @@ public class ChartPeriodPresetEditorForm : Form {
     }
 
     private void PresetGrid_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e) {
-        if (_presetGrid.CurrentCell?.OwningColumn?.Name != "Unit" || e.Control is not ComboBox comboBox) {
+        var columnName = _presetGrid.CurrentCell?.OwningColumn?.Name;
+        if (columnName is not ("Unit" or "AggregationUnit") || e.Control is not ComboBox comboBox) {
             return;
         }
 
@@ -297,6 +315,8 @@ public class ChartPeriodPresetEditorForm : Form {
             var name = row.Cells["Name"].Value?.ToString() ?? "";
             var valueText = row.Cells["Value"].Value?.ToString() ?? "";
             var unit = ParseChartPeriodUnit(row.Cells["Unit"].Value);
+            var aggregationValueText = row.Cells["AggregationValue"].Value?.ToString() ?? "";
+            var aggregationUnit = row.Cells["AggregationUnit"].Value?.ToString() ?? "Minutes";
 
             if (string.IsNullOrWhiteSpace(name)) {
                 ThemedMessageBox.Show(this, "Each preset must have a name.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -308,11 +328,23 @@ public class ChartPeriodPresetEditorForm : Form {
                 return;
             }
 
+            if (!double.TryParse(aggregationValueText, out var aggregationValue) || aggregationValue <= 0) {
+                ThemedMessageBox.Show(this, "Aggregation value must be a positive number.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var aggregationInterval = BuildAggregationInterval(aggregationValue, aggregationUnit);
+            if (aggregationInterval <= TimeSpan.Zero) {
+                ThemedMessageBox.Show(this, "Aggregation interval must be greater than 00:00:00.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             newPresets.Add(new ChartPeriodPresetDefinition {
                 Uid = string.IsNullOrWhiteSpace(uid) ? Guid.NewGuid().ToString("N") : uid,
                 Name = name.Trim(),
                 Value = value,
-                Unit = unit
+                Unit = unit,
+                AggregationInterval = aggregationInterval
             });
         }
 
@@ -340,6 +372,40 @@ public class ChartPeriodPresetEditorForm : Form {
         }
 
         return ChartPeriodUnit.Hours;
+    }
+
+
+    private static TimeSpan BuildAggregationInterval(double value, string unit) {
+        return unit switch {
+            "Seconds" => TimeSpan.FromSeconds(value),
+            "Minutes" => TimeSpan.FromMinutes(value),
+            "Hours" => TimeSpan.FromHours(value),
+            _ => TimeSpan.FromMinutes(value)
+        };
+    }
+
+    private static string FormatAggregationValue(TimeSpan interval) {
+        if (interval.TotalHours >= 1 && Math.Abs(interval.TotalHours - Math.Round(interval.TotalHours)) < 0.0001) {
+            return ((int)Math.Round(interval.TotalHours)).ToString();
+        }
+
+        if (interval.TotalMinutes >= 1 && Math.Abs(interval.TotalMinutes - Math.Round(interval.TotalMinutes)) < 0.0001) {
+            return ((int)Math.Round(interval.TotalMinutes)).ToString();
+        }
+
+        return Math.Max(1, (int)Math.Round(interval.TotalSeconds)).ToString();
+    }
+
+    private static string GetAggregationUnitName(TimeSpan interval) {
+        if (interval.TotalHours >= 1 && Math.Abs(interval.TotalHours - Math.Round(interval.TotalHours)) < 0.0001) {
+            return "Hours";
+        }
+
+        if (interval.TotalMinutes >= 1 && Math.Abs(interval.TotalMinutes - Math.Round(interval.TotalMinutes)) < 0.0001) {
+            return "Minutes";
+        }
+
+        return "Seconds";
     }
 
     private static Font CreateSafeFont(string familyName, float emSize, FontStyle style = FontStyle.Regular) {

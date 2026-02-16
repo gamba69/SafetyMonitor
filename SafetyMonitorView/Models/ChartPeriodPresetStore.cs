@@ -1,6 +1,11 @@
 namespace SafetyMonitorView.Models;
 
-public readonly record struct ChartPeriodPreset(string Uid, string Label, TimeSpan Duration, ChartPeriod Period);
+public readonly record struct ChartPeriodPreset(
+    string Uid,
+    string Label,
+    TimeSpan Duration,
+    ChartPeriod Period,
+    TimeSpan AggregationInterval);
 
 public static class ChartPeriodPresetStore {
 
@@ -11,12 +16,12 @@ public static class ChartPeriodPresetStore {
     public static IReadOnlyList<ChartPeriodPresetDefinition> PresetDefinitions => _presets;
 
     public static List<ChartPeriodPresetDefinition> CreateDefaultPresets() => [
-        new ChartPeriodPresetDefinition { Uid = "preset-15-minutes", Name = "15 Minutes", Value = 15, Unit = ChartPeriodUnit.Minutes },
-        new ChartPeriodPresetDefinition { Uid = "preset-1-hour", Name = "1 Hour", Value = 1, Unit = ChartPeriodUnit.Hours },
-        new ChartPeriodPresetDefinition { Uid = "preset-6-hours", Name = "6 Hours", Value = 6, Unit = ChartPeriodUnit.Hours },
-        new ChartPeriodPresetDefinition { Uid = "preset-24-hours", Name = "24 Hours", Value = 24, Unit = ChartPeriodUnit.Hours },
-        new ChartPeriodPresetDefinition { Uid = "preset-7-days", Name = "7 Days", Value = 7, Unit = ChartPeriodUnit.Days },
-        new ChartPeriodPresetDefinition { Uid = "preset-30-days", Name = "30 Days", Value = 30, Unit = ChartPeriodUnit.Days }
+        new ChartPeriodPresetDefinition { Uid = "preset-15-minutes", Name = "15 Minutes", Value = 15, Unit = ChartPeriodUnit.Minutes, AggregationInterval = TimeSpan.FromSeconds(30) },
+        new ChartPeriodPresetDefinition { Uid = "preset-1-hour", Name = "1 Hour", Value = 1, Unit = ChartPeriodUnit.Hours, AggregationInterval = TimeSpan.FromMinutes(1) },
+        new ChartPeriodPresetDefinition { Uid = "preset-6-hours", Name = "6 Hours", Value = 6, Unit = ChartPeriodUnit.Hours, AggregationInterval = TimeSpan.FromMinutes(5) },
+        new ChartPeriodPresetDefinition { Uid = "preset-24-hours", Name = "24 Hours", Value = 24, Unit = ChartPeriodUnit.Hours, AggregationInterval = TimeSpan.FromMinutes(15) },
+        new ChartPeriodPresetDefinition { Uid = "preset-7-days", Name = "7 Days", Value = 7, Unit = ChartPeriodUnit.Days, AggregationInterval = TimeSpan.FromHours(1) },
+        new ChartPeriodPresetDefinition { Uid = "preset-30-days", Name = "30 Days", Value = 30, Unit = ChartPeriodUnit.Days, AggregationInterval = TimeSpan.FromHours(6) }
     ];
 
     public static void SetPresets(IEnumerable<ChartPeriodPresetDefinition>? presets) {
@@ -29,7 +34,10 @@ public static class ChartPeriodPresetStore {
             .Select(def => {
                 var duration = def.ToTimeSpan();
                 var period = MapDurationToPeriod(duration);
-                return new ChartPeriodPreset(def.Uid, def.Name, duration, period);
+                var aggregationInterval = def.AggregationInterval > TimeSpan.Zero
+                    ? def.AggregationInterval
+                    : GetRecommendedAggregationInterval(duration);
+                return new ChartPeriodPreset(def.Uid, def.Name, duration, period, aggregationInterval);
             })
             .ToList();
     }
@@ -53,7 +61,7 @@ public static class ChartPeriodPresetStore {
             return presets[0];
         }
 
-        return new ChartPeriodPreset("preset-24-hours", "24 Hours", TimeSpan.FromHours(24), ChartPeriod.Last24Hours);
+        return new ChartPeriodPreset("preset-24-hours", "24 Hours", TimeSpan.FromHours(24), ChartPeriod.Last24Hours, TimeSpan.FromMinutes(15));
     }
 
     public static string FormatDuration(TimeSpan duration) {
@@ -130,7 +138,10 @@ public static class ChartPeriodPresetStore {
                     Uid = uid,
                     Name = preset.Name.Trim(),
                     Value = preset.Value,
-                    Unit = unit
+                    Unit = unit,
+                    AggregationInterval = preset.AggregationInterval > TimeSpan.Zero
+                        ? preset.AggregationInterval
+                        : GetRecommendedAggregationInterval(preset.ToTimeSpan())
                 });
             }
         }
@@ -140,5 +151,25 @@ public static class ChartPeriodPresetStore {
         }
 
         return list;
+    }
+
+    private static TimeSpan GetRecommendedAggregationInterval(TimeSpan duration) {
+        if (duration <= TimeSpan.FromMinutes(15)) {
+            return TimeSpan.FromSeconds(30);
+        }
+        if (duration <= TimeSpan.FromHours(1)) {
+            return TimeSpan.FromMinutes(1);
+        }
+        if (duration <= TimeSpan.FromHours(6)) {
+            return TimeSpan.FromMinutes(5);
+        }
+        if (duration <= TimeSpan.FromHours(24)) {
+            return TimeSpan.FromMinutes(15);
+        }
+        if (duration <= TimeSpan.FromDays(7)) {
+            return TimeSpan.FromHours(1);
+        }
+
+        return TimeSpan.FromHours(6);
     }
 }

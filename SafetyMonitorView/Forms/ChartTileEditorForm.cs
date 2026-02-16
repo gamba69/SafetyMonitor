@@ -27,8 +27,6 @@ public class ChartTileEditorForm : Form {
     private Color _inputBackColor;
     private Color _inputForeColor;
 
-    private ComboBox _aggregationUnitComboBox = null!;
-    private NumericUpDown _aggregationValueNumeric = null!;
     private Button _cancelButton = null!;
     private NumericUpDown _columnSpanNumeric = null!;
     private DataGridView _metricsGrid = null!;
@@ -164,7 +162,7 @@ public class ChartTileEditorForm : Form {
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 10,
+            RowCount = 8,
             AutoSize = true
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -173,10 +171,9 @@ public class ChartTileEditorForm : Form {
         mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 180)); // 2: Metrics grid
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 3: Add/Remove buttons
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Period row
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Aggregation row
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Size row
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 7: Spacer
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 8: Buttons
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Size row
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 6: Spacer
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 7: Buttons
 
         // Row 0: Title
         var titlePanel = CreateLabeledControl("Title:", _titleTextBox = new TextBox { Font = normalFont, Dock = DockStyle.Fill }, titleFont);
@@ -256,23 +253,12 @@ public class ChartTileEditorForm : Form {
         periodPanel.Controls.Add(_periodComboBox);
         mainLayout.Controls.Add(periodPanel, 0, 4);
 
-        // Row 5: Aggregation + Options
-        var aggPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = false, Margin = new Padding(0, 5, 0, 5) };
-        aggPanel.Controls.Add(new Label { Text = "Aggregation:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 5, 5, 0) });
-        _aggregationValueNumeric = new NumericUpDown { Width = 70, Minimum = 1, Maximum = 1440, Value = 5, Font = normalFont, Margin = new Padding(0, 0, 5, 0) };
-        aggPanel.Controls.Add(_aggregationValueNumeric);
-        _aggregationUnitComboBox = new ComboBox { Width = 90, Font = normalFont, Margin = new Padding(0, 0, 15, 0), DropDownStyle = ComboBoxStyle.DropDownList };
-        _aggregationUnitComboBox.Items.AddRange(["Seconds", "Minutes", "Hours"]);
-        _aggregationUnitComboBox.SelectedIndex = 1;
-        aggPanel.Controls.Add(_aggregationUnitComboBox);
-        _showLegendCheckBox = new CheckBox { Text = "Legend", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(10, 4, 10, 0) };
-        aggPanel.Controls.Add(_showLegendCheckBox);
-        _showGridCheckBox = new CheckBox { Text = "Grid", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 4, 0, 0) };
-        aggPanel.Controls.Add(_showGridCheckBox);
-        mainLayout.Controls.Add(aggPanel, 0, 5);
-
-        // Row 6: Size
+        // Row 5: Options + Size
         var sizePanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = false, Margin = new Padding(0, 5, 0, 10) };
+        _showLegendCheckBox = new CheckBox { Text = "Legend", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 4, 10, 0) };
+        sizePanel.Controls.Add(_showLegendCheckBox);
+        _showGridCheckBox = new CheckBox { Text = "Grid", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 4, 15, 0) };
+        sizePanel.Controls.Add(_showGridCheckBox);
         sizePanel.Controls.Add(new Label { Text = "Size:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 5, 10, 0) });
         sizePanel.Controls.Add(new Label { Text = "Rows:", Font = normalFont, AutoSize = true, Margin = new Padding(0, 5, 5, 0) });
         _rowSpanNumeric = new NumericUpDown { Width = 60, Minimum = 1, Maximum = 5, Value = 2, Font = normalFont, Margin = new Padding(0, 0, 15, 0) };
@@ -280,12 +266,12 @@ public class ChartTileEditorForm : Form {
         sizePanel.Controls.Add(new Label { Text = "Columns:", Font = normalFont, AutoSize = true, Margin = new Padding(0, 5, 5, 0) });
         _columnSpanNumeric = new NumericUpDown { Width = 60, Minimum = 1, Maximum = 5, Value = 2, Font = normalFont };
         sizePanel.Controls.Add(_columnSpanNumeric);
-        mainLayout.Controls.Add(sizePanel, 0, 6);
+        mainLayout.Controls.Add(sizePanel, 0, 5);
 
-        // Row 7: Spacer (empty)
-        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 7);
+        // Row 6: Spacer (empty)
+        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 6);
 
-        // Row 8: Buttons
+        // Row 7: Buttons
         var buttonPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Margin = new Padding(0, 10, 0, 0) };
         _cancelButton = new Button { Text = "Cancel", Width = 90, Height = 35, Font = normalFont, Margin = new Padding(0) };
         _cancelButton.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
@@ -293,7 +279,7 @@ public class ChartTileEditorForm : Form {
         _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
-        mainLayout.Controls.Add(buttonPanel, 0, 8);
+        mainLayout.Controls.Add(buttonPanel, 0, 7);
 
         Controls.Add(mainLayout);
 
@@ -304,20 +290,6 @@ public class ChartTileEditorForm : Form {
     private void LoadConfig() {
         _titleTextBox.Text = _config.Title;
         SetSelectedPeriodPreset();
-
-        if (_config.CustomAggregationInterval.HasValue) {
-            var interval = _config.CustomAggregationInterval.Value;
-            if (interval.TotalHours >= 1) {
-                _aggregationValueNumeric.Value = (decimal)interval.TotalHours;
-                _aggregationUnitComboBox.SelectedIndex = 2;
-            } else if (interval.TotalMinutes >= 1) {
-                _aggregationValueNumeric.Value = (decimal)interval.TotalMinutes;
-                _aggregationUnitComboBox.SelectedIndex = 1;
-            } else {
-                _aggregationValueNumeric.Value = (decimal)interval.TotalSeconds;
-                _aggregationUnitComboBox.SelectedIndex = 0;
-            }
-        }
 
         _showLegendCheckBox.Checked = _config.ShowLegend;
         _showGridCheckBox.Checked = _config.ShowGrid;
@@ -473,16 +445,9 @@ public class ChartTileEditorForm : Form {
         _config.PeriodPresetUid = selectedPreset.Uid;
         _config.Period = selectedPreset.Period;
         _config.CustomPeriodDuration = selectedPreset.Period == ChartPeriod.Custom ? selectedPreset.Duration : null;
+        _config.CustomAggregationInterval = selectedPreset.AggregationInterval;
 
         _config.CustomEndTime = null;
-
-        var value = (int)_aggregationValueNumeric.Value;
-        _config.CustomAggregationInterval = _aggregationUnitComboBox.SelectedIndex switch {
-            0 => TimeSpan.FromSeconds(value),
-            1 => TimeSpan.FromMinutes(value),
-            2 => TimeSpan.FromHours(value),
-            _ => TimeSpan.FromMinutes(value)
-        };
 
         _config.ShowLegend = _showLegendCheckBox.Checked;
         _config.ShowGrid = _showGridCheckBox.Checked;
@@ -536,6 +501,7 @@ public class ChartTileEditorForm : Form {
             _config.CustomPeriodDuration = selectedPreset.Period == ChartPeriod.Custom
                 ? selectedPreset.Duration
                 : null;
+            _config.CustomAggregationInterval = selectedPreset.AggregationInterval;
             _periodComboBox.SelectedIndex = index;
             return;
         }
@@ -546,6 +512,7 @@ public class ChartTileEditorForm : Form {
         _config.CustomPeriodDuration = fallbackPreset.Period == ChartPeriod.Custom
             ? fallbackPreset.Duration
             : null;
+        _config.CustomAggregationInterval = fallbackPreset.AggregationInterval;
 
         if (_periodComboBox.Items.Count > 0) {
             _periodComboBox.SelectedIndex = 0;
