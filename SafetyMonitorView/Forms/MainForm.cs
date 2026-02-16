@@ -610,6 +610,7 @@ public class MainForm : MaterialForm {
     }
     private void LoadDashboard(Dashboard dashboard) {
         var wasDashboardVisible = _dashboardContainer.Visible;
+        var previousDashboard = _currentDashboard;
         _currentDashboard = dashboard;
 
         // Save last dashboard ID
@@ -640,7 +641,12 @@ public class MainForm : MaterialForm {
             UpdateDashboardMenu(dashboardMenu);
         }
 
-        UpdateQuickDashboards();
+        var shouldRebuildQuickDashboards = ShouldRebuildQuickDashboards(previousDashboard, dashboard);
+        if (shouldRebuildQuickDashboards) {
+            UpdateQuickDashboards();
+        } else {
+            UpdateQuickDashboardSelection();
+        }
 
         QueueDashboardInitialRender(_dashboardPanel, previousPanel);
 
@@ -649,6 +655,15 @@ public class MainForm : MaterialForm {
             _refreshTimer.Stop();
             _refreshTimer.Start();
         }
+    }
+
+    private bool ShouldRebuildQuickDashboards(Dashboard? previousDashboard, Dashboard currentDashboard) {
+        var previousWasQuickAccess = previousDashboard != null && previousDashboard.IsQuickAccess;
+        var currentIsQuickAccess = currentDashboard.IsQuickAccess;
+
+        // Rebuild only when at least one dashboard is outside quick access.
+        // In that case, the temporary "selected from menu" badge must be added/removed or renamed.
+        return !(previousWasQuickAccess && currentIsQuickAccess);
     }
 
     private void LoadDashboards() {
