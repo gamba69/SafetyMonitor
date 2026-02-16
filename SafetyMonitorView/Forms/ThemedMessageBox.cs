@@ -76,14 +76,12 @@ public class ThemedMessageBox : Form {
     private void AddButton(string text, DialogResult result, bool isPrimary, Font font) {
         var button = new Button {
             Text = text,
-            Width = 70,
+            Width = 110,
             Height = 35,
             Font = isPrimary ? new Font(font, FontStyle.Bold) : font,
             Margin = new Padding(0, 0, 10, 0),
-            Tag = isPrimary ? "primary" : "secondary",
-            FlatStyle = FlatStyle.Flat
+            Tag = isPrimary ? "primary" : "secondary"
         };
-        button.FlatAppearance.BorderSize = 0;
         button.Click += (s, e) => {
             DialogResult = result;
             Close();
@@ -111,11 +109,7 @@ public class ThemedMessageBox : Form {
 
         foreach (Control control in _buttonPanel.Controls) {
             if (control is Button btn) {
-                var isPrimary = btn.Tag?.ToString() == "primary";
-                btn.BackColor = isPrimary
-                    ? Color.FromArgb(0, 121, 107)
-                    : (isLight ? Color.FromArgb(200, 200, 200) : Color.FromArgb(80, 80, 80));
-                btn.ForeColor = isPrimary ? Color.White : (isLight ? Color.Black : Color.White);
+                ThemedButtonStyler.Apply(btn, isLight);
             }
         }
     }

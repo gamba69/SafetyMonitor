@@ -91,13 +91,7 @@ public class ChartPeriodPresetEditorForm : Form {
                     lbl.ForeColor = isLight ? Color.Black : Color.White;
                     break;
                 case Button btn:
-                    var isPrimary = btn == _saveButton;
-                    var isCancel = btn == _cancelButton;
-                    btn.BackColor = isPrimary ? Color.FromArgb(0, 121, 107)
-                        : (isCancel ? Color.Gray : (isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(53, 70, 76)));
-                    btn.ForeColor = (isPrimary || isCancel) ? Color.White : (isLight ? Color.Black : Color.White);
-                    btn.FlatStyle = FlatStyle.Flat;
-                    btn.FlatAppearance.BorderSize = 0;
+                    ThemedButtonStyler.Apply(btn, isLight);
                     break;
                 case TextBox txt:
                     txt.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
@@ -212,18 +206,18 @@ public class ChartPeriodPresetEditorForm : Form {
         editButtonsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         editButtonsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-        _addButton = new Button { Text = "Add", Width = 90, Height = 30, Font = normalFont, Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Left }; _addButton.Click += AddPresetButton_Click;
+        _addButton = new Button { Text = "Add", Width = 110, Height = 32, Font = normalFont, Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Left }; _addButton.Click += AddPresetButton_Click;
         editButtonsPanel.Controls.Add(_addButton, 0, 0);
 
-        _removeButton = new Button { Text = "Remove", Width = 90, Height = 30, Font = normalFont, Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Left };
+        _removeButton = new Button { Text = "Delete", Width = 110, Height = 32, Font = normalFont, Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Left };
         _removeButton.Click += RemovePresetButton_Click;
         editButtonsPanel.Controls.Add(_removeButton, 1, 0);
 
-        _moveUpButton = new Button { Text = "▲ Up", Width = 90, Height = 30, Font = normalFont, Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Left };
+        _moveUpButton = new Button { Text = "Move Up", Width = 110, Height = 32, Font = normalFont, Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Left };
         _moveUpButton.Click += (s, e) => MoveSelectedRow(-1);
         editButtonsPanel.Controls.Add(_moveUpButton, 2, 0);
 
-        _moveDownButton = new Button { Text = "▼ Down", Width = 90, Height = 30, Font = normalFont, Anchor = AnchorStyles.Left };
+        _moveDownButton = new Button { Text = "Move Down", Width = 110, Height = 32, Font = normalFont, Anchor = AnchorStyles.Left };
         _moveDownButton.Click += (s, e) => MoveSelectedRow(1);
         editButtonsPanel.Controls.Add(_moveDownButton, 3, 0);
 
@@ -242,11 +236,11 @@ public class ChartPeriodPresetEditorForm : Form {
         buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Right };
+        _saveButton = new Button { Text = "Save", Width = 110, Height = 35, Font = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Right };
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton, 1, 0);
 
-        _cancelButton = new Button { Text = "Cancel", Width = 90, Height = 35, Font = normalFont, Margin = new Padding(0), Anchor = AnchorStyles.Right };
+        _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 35, Font = normalFont, Margin = new Padding(0), Anchor = AnchorStyles.Right };
         _cancelButton.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
         buttonPanel.Controls.Add(_cancelButton, 2, 0);
 

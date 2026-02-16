@@ -112,14 +112,7 @@ public class ChartTileEditorForm : Form {
                     break;
 
                 case Button btn:
-                    var isPrimary = btn == _saveButton;
-                    var isCancel = btn == _cancelButton;
-                    btn.BackColor = isPrimary ? Color.FromArgb(0, 121, 107)
-                        : (isCancel ? Color.Gray : (isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(53, 70, 76)));
-
-                    btn.ForeColor = (isPrimary || isCancel) ? Color.White : (isLight ? Color.Black : Color.White);
-                    btn.FlatStyle = FlatStyle.Flat;
-                    btn.FlatAppearance.BorderSize = 0;
+                    ThemedButtonStyler.Apply(btn, isLight);
                     break;
 
                 case TextBox txt:
@@ -237,10 +230,10 @@ public class ChartTileEditorForm : Form {
 
         // Row 3: Add/Remove buttons
         var gridButtonPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = false, Margin = new Padding(0, 5, 0, 10) };
-        var addMetricButton = new Button { Text = "Add Metric", Width = 110, Height = 30, Font = normalFont, Margin = new Padding(0, 0, 10, 0) };
+        var addMetricButton = new Button { Text = "Add Metric", Width = 130, Height = 32, Font = normalFont, Margin = new Padding(0, 0, 10, 0) };
         addMetricButton.Click += AddMetricButton_Click;
         gridButtonPanel.Controls.Add(addMetricButton);
-        var removeMetricButton = new Button { Text = "Remove", Width = 90, Height = 30, Font = normalFont, Margin = new Padding(0) };
+        var removeMetricButton = new Button { Text = "Delete", Width = 110, Height = 32, Font = normalFont, Margin = new Padding(0) };
         removeMetricButton.Click += RemoveMetricButton_Click;
         gridButtonPanel.Controls.Add(removeMetricButton);
         mainLayout.Controls.Add(gridButtonPanel, 0, 3);
@@ -273,10 +266,10 @@ public class ChartTileEditorForm : Form {
 
         // Row 7: Buttons
         var buttonPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Margin = new Padding(0, 10, 0, 0) };
-        _cancelButton = new Button { Text = "Cancel", Width = 90, Height = 35, Font = normalFont, Margin = new Padding(0) };
+        _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 35, Font = normalFont, Margin = new Padding(0) };
         _cancelButton.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
         buttonPanel.Controls.Add(_cancelButton);
-        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
+        _saveButton = new Button { Text = "Save", Width = 110, Height = 35, Font = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
         mainLayout.Controls.Add(buttonPanel, 0, 7);

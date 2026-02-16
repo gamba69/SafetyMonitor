@@ -82,13 +82,7 @@ public class DashboardManagementForm : Form {
         _grid.EnableHeadersVisualStyles = false;
 
         foreach (var button in new[] { _moveUpButton, _moveDownButton, _deleteButton, _cancelButton, _okButton }) {
-            bool isPrimary = button == _okButton;
-            button.FlatStyle = FlatStyle.Flat;
-            button.FlatAppearance.BorderSize = 0;
-            button.BackColor = isPrimary
-                ? Color.FromArgb(0, 121, 107)
-                : (isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(53, 70, 76));
-            button.ForeColor = isPrimary ? Color.White : (isLight ? Color.Black : Color.White);
+            ThemedButtonStyler.Apply(button, isLight);
         }
     }
 
@@ -191,7 +185,7 @@ public class DashboardManagementForm : Form {
 
         _moveUpButton = new Button { Text = "Move Up", Width = 110, Height = 34 };
         _moveDownButton = new Button { Text = "Move Down", Width = 110, Height = 34 };
-        _deleteButton = new Button { Text = "Delete Dashboard", Width = 140, Height = 34 };
+        _deleteButton = new Button { Text = "Delete", Width = 140, Height = 34 };
 
         _moveUpButton.Click += (s, e) => MoveSelectedItem(-1);
         _moveDownButton.Click += (s, e) => MoveSelectedItem(1);

@@ -11,7 +11,6 @@ public class ThemedColorPicker : Form {
     #region Private Fields
 
     private const int BarWidth = 24;
-    private readonly Color _accent = Color.FromArgb(0, 121, 107);
     private readonly Color _borderColor;
     private readonly Color _fg;
     private readonly Color _formBg;
@@ -194,30 +193,23 @@ public class ThemedColorPicker : Form {
         var btnCancel = new Button {
             Text = "Cancel",
             DialogResult = DialogResult.Cancel,
-            Width = 90,
+            Width = 110,
             Height = 35,
-            FlatStyle = FlatStyle.Flat,
-            BackColor = Color.Gray,
-            ForeColor = Color.White,
             Font = new Font("Segoe UI", 9.5f),
             Cursor = Cursors.Hand,
             Margin = new Padding(0)
         };
-        btnCancel.FlatAppearance.BorderSize = 0;
+        ThemedButtonStyler.Apply(btnCancel, _isLight);
 
         var btnOk = new Button {
             Text = "Save",
-            Width = 90,
+            Width = 110,
             Height = 35,
-            FlatStyle = FlatStyle.Flat,
-            BackColor = _accent,
-            ForeColor = Color.White,
             Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
             Cursor = Cursors.Hand,
             Margin = new Padding(0, 0, 10, 0)
         };
-        btnOk.FlatAppearance.BorderSize = 0;
-        btnOk.FlatAppearance.BorderColor = _accent;
+        ThemedButtonStyler.Apply(btnOk, _isLight);
         btnOk.Click += (s, e) => {
             SelectedColor = HSVToColor(_hue, _saturation, _brightness);
             DialogResult = DialogResult.OK;

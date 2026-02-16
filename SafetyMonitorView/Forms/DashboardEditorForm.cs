@@ -110,13 +110,7 @@ public class DashboardEditorForm : Form {
                     lbl.ForeColor = isLight ? Color.Black : Color.White;
                     break;
                 case Button btn:
-                    var isPrimary = btn == _saveButton;
-                    var isCancel = btn == _cancelButton;
-                    btn.BackColor = isPrimary ? Color.FromArgb(0, 121, 107)
-                        : (isCancel ? Color.Gray : (isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(53, 70, 76)));
-                    btn.ForeColor = (isPrimary || isCancel) ? Color.White : (isLight ? Color.Black : Color.White);
-                    btn.FlatStyle = FlatStyle.Flat;
-                    btn.FlatAppearance.BorderSize = 0;
+                    ThemedButtonStyler.Apply(btn, isLight);
                     break;
                 case TextBox txt:
                     txt.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
@@ -240,7 +234,7 @@ public class DashboardEditorForm : Form {
 
         _resizeButton = new Button {
             Text = "Resize",
-            Width = 80,
+            Width = 100,
             Height = 28,
             Font = normalFont,
             Margin = new Padding(0, 0, 20, 0)
@@ -317,7 +311,7 @@ public class DashboardEditorForm : Form {
 
         _cancelButton = new Button {
             Text = "Cancel",
-            Width = 90,
+            Width = 110,
             Height = 35,
             Font = normalFont,
             Margin = new Padding(0)
@@ -327,7 +321,7 @@ public class DashboardEditorForm : Form {
 
         _saveButton = new Button {
             Text = "Save",
-            Width = 100,
+            Width = 110,
             Height = 35,
             Font = new Font("Segoe UI", 10f, FontStyle.Bold),
             Margin = new Padding(0, 0, 10, 0)

@@ -62,12 +62,7 @@ public class ValueTileEditorForm : Form {
                     lbl.ForeColor = isLight ? Color.Black : Color.White;
                     break;
                 case Button btn:
-                    var isPrimary = btn == _saveButton;
-                    btn.BackColor = isPrimary ? Color.FromArgb(0, 121, 107) :
-                        (btn == _cancelButton ? Color.Gray : (isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(53, 70, 76)));
-                    btn.ForeColor = isPrimary || btn == _cancelButton ? Color.White : (isLight ? Color.Black : Color.White);
-                    btn.FlatStyle = FlatStyle.Flat;
-                    btn.FlatAppearance.BorderSize = 0;
+                    ThemedButtonStyler.Apply(btn, isLight);
                     break;
                 case TextBox txt:
                     txt.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
@@ -141,7 +136,7 @@ public class ValueTileEditorForm : Form {
         // Row 2: Color Scheme with Edit button
         _colorSchemeComboBox = new ComboBox { Font = normalFont, Width = 200, DropDownStyle = ComboBoxStyle.DropDownList };
         RefreshColorSchemeCombo();
-        var editSchemesButton = new Button { Text = "Edit Schemes...", Width = 110, Height = 27, Font = normalFont, Margin = new Padding(10, 0, 0, 0) };
+        var editSchemesButton = new Button { Text = "Edit Schemes...", Width = 140, Height = 30, Font = normalFont, Margin = new Padding(10, 0, 0, 0) };
         editSchemesButton.Click += EditSchemesButton_Click;
         var colorInnerPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Top, WrapContents = false, Margin = new Padding(0) };
         colorInnerPanel.Controls.Add(_colorSchemeComboBox);
@@ -177,10 +172,10 @@ public class ValueTileEditorForm : Form {
 
         // Row 7: Buttons
         var buttonPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Margin = new Padding(0, 10, 0, 0) };
-        _cancelButton = new Button { Text = "Cancel", Width = 90, Height = 35, Font = normalFont, Margin = new Padding(0) };
+        _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 35, Font = normalFont, Margin = new Padding(0) };
         _cancelButton.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
         buttonPanel.Controls.Add(_cancelButton);
-        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
+        _saveButton = new Button { Text = "Save", Width = 110, Height = 35, Font = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
         mainLayout.Controls.Add(buttonPanel, 0, 7);

@@ -85,13 +85,7 @@ public class ColorSchemeEditorForm : Form {
                     lbl.ForeColor = isLight ? Color.Black : Color.White;
                     break;
                 case Button btn:
-                    var isPrimary = btn == _saveButton;
-                    var isCancel = btn == _cancelButton;
-                    btn.BackColor = isPrimary ? Color.FromArgb(0, 121, 107) :
-                        (isCancel ? Color.Gray : (isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(53, 70, 76)));
-                    btn.ForeColor = (isPrimary || isCancel) ? Color.White : (isLight ? Color.Black : Color.White);
-                    btn.FlatStyle = FlatStyle.Flat;
-                    btn.FlatAppearance.BorderSize = 0;
+                    ThemedButtonStyler.Apply(btn, isLight);
                     break;
                 case TextBox txt:
                     txt.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
@@ -242,13 +236,13 @@ public class ColorSchemeEditorForm : Form {
         _stopsGrid.CellEndEdit += (s, e) => { UpdateDirtyState(); UpdatePreview(); };
 
         var gridButtons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 38, FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(0, 3, 0, 3) };
-        var addStopBtn = new Button { Text = "Add Stop", Width = 90, Height = 30, Font = normalFont };
+        var addStopBtn = new Button { Text = "Add Stop", Width = 120, Height = 32, Font = normalFont };
         addStopBtn.Click += AddStop_Click;
-        var removeStopBtn = new Button { Text = "Remove Stop", Width = 100, Height = 30, Font = normalFont };
+        var removeStopBtn = new Button { Text = "Delete Stop", Width = 120, Height = 32, Font = normalFont };
         removeStopBtn.Click += RemoveStop_Click;
-        var moveUpBtn = new Button { Text = "▲ Up", Width = 65, Height = 30, Font = normalFont };
+        var moveUpBtn = new Button { Text = "Move Up", Width = 110, Height = 32, Font = normalFont };
         moveUpBtn.Click += MoveUpStop_Click;
-        var moveDownBtn = new Button { Text = "▼ Down", Width = 75, Height = 30, Font = normalFont };
+        var moveDownBtn = new Button { Text = "Move Down", Width = 110, Height = 32, Font = normalFont };
         moveDownBtn.Click += MoveDownStop_Click;
         gridButtons.Controls.AddRange([addStopBtn, removeStopBtn, moveUpBtn, moveDownBtn]);
 
@@ -268,11 +262,11 @@ public class ColorSchemeEditorForm : Form {
         root.SetColumnSpan(bottomBar, 2);
 
         // Left-side buttons inside bottomBar
-        _newButton = new Button { Text = "New", Width = 58, Height = 35, Font = normalFont, Top = 5 };
+        _newButton = new Button { Text = "Add", Width = 110, Height = 35, Font = normalFont, Top = 5 };
         _newButton.Click += NewButton_Click;
-        _duplicateButton = new Button { Text = "Copy", Width = 58, Height = 35, Font = normalFont, Top = 5 };
+        _duplicateButton = new Button { Text = "Duplicate", Width = 110, Height = 35, Font = normalFont, Top = 5 };
         _duplicateButton.Click += DuplicateButton_Click;
-        _deleteButton = new Button { Text = "Delete", Width = 64, Height = 35, Font = normalFont, Top = 5 };
+        _deleteButton = new Button { Text = "Delete", Width = 110, Height = 35, Font = normalFont, Top = 5 };
         _deleteButton.Click += DeleteButton_Click;
 
         _newButton.Left = 0;
@@ -280,11 +274,11 @@ public class ColorSchemeEditorForm : Form {
         _deleteButton.Left = _duplicateButton.Right + 3;
 
         // Right-side buttons inside bottomBar (anchored to right)
-        _cancelButton = new Button { Text = "Cancel", Width = 90, Height = 35, Font = normalFont, Top = 5 };
+        _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 35, Font = normalFont, Top = 5 };
         _cancelButton.Click += (s, e) => Close();
         _cancelButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
 
-        _saveButton = new Button { Text = "Save", Width = 90, Height = 35, Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), Top = 5 };
+        _saveButton = new Button { Text = "Save", Width = 110, Height = 35, Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), Top = 5 };
         _saveButton.Click += SaveButton_Click;
         _saveButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
 
