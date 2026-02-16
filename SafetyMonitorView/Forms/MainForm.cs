@@ -508,6 +508,11 @@ public class MainForm : MaterialForm {
         }
 
         var copy = _dashboardService.DuplicateDashboard(_currentDashboard);
+
+        if (copy.IsQuickAccess && _dashboards.Count(d => d.IsQuickAccess) >= MaxQuickAccessDashboards) {
+            copy.IsQuickAccess = false;
+        }
+
         copy.SortOrder = _dashboards.Where(d => d.IsQuickAccess == copy.IsQuickAccess).Select(d => d.SortOrder).DefaultIfEmpty(-1).Max() + 1;
         _dashboardService.SaveDashboard(copy);
         _dashboards.Add(copy);
