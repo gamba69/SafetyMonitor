@@ -945,6 +945,7 @@ public class MainForm : MaterialForm {
 
             dashboard.IsQuickAccess = update.IsQuickAccess;
             dashboard.SortOrder = update.SortOrder;
+            dashboard.Name = update.Name;
             _dashboardService.SaveDashboard(dashboard);
         }
 

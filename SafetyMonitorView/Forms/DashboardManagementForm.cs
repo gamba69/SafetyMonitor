@@ -15,6 +15,7 @@ public class DashboardManagementForm : Form {
     private Button _moveDownButton = null!;
     private Button _moveUpButton = null!;
     private Button _deleteButton = null!;
+    private bool _isBindingGrid;
 
     #endregion Private Fields
 
@@ -52,6 +53,7 @@ public class DashboardManagementForm : Form {
             foreach (var item in _items) {
                 result.Add(new DashboardOrderUpdate(
                     item.Id,
+                    item.Name,
                     item.IsQuickAccess,
                     item.IsQuickAccess ? quickIndex++ : regularIndex++));
             }
@@ -91,18 +93,34 @@ public class DashboardManagementForm : Form {
     }
 
     private void BindGrid() {
-        _grid.Rows.Clear();
-        foreach (var item in _items) {
-            int rowIndex = _grid.Rows.Add(item.Name, item.IsQuickAccess);
-            _grid.Rows[rowIndex].Tag = item.Id;
-            if (_currentDashboardId.HasValue && _currentDashboardId.Value == item.Id) {
-                _grid.Rows[rowIndex].DefaultCellStyle.Font = new Font(_grid.Font, FontStyle.Bold);
+        _isBindingGrid = true;
+        try {
+            _grid.Rows.Clear();
+            foreach (var item in _items) {
+                int rowIndex = _grid.Rows.Add(item.Name, item.IsQuickAccess);
+                _grid.Rows[rowIndex].Tag = item.Id;
+                if (_currentDashboardId.HasValue && _currentDashboardId.Value == item.Id) {
+                    _grid.Rows[rowIndex].DefaultCellStyle.Font = new Font(_grid.Font, FontStyle.Bold);
+                }
+            }
+
+            if (_grid.Rows.Count > 0) {
+                _grid.CurrentCell ??= _grid.Rows[0].Cells[0];
             }
         }
-
-        if (_grid.Rows.Count > 0) {
-            _grid.CurrentCell ??= _grid.Rows[0].Cells[0];
+        finally {
+            _isBindingGrid = false;
         }
+    }
+
+    private void RebindGridAndSelect(Guid itemId) {
+        BeginInvoke(() => {
+            BindGrid();
+            int newIndex = _items.FindIndex(i => i.Id == itemId);
+            if (newIndex >= 0 && _grid.Rows.Count > newIndex) {
+                _grid.CurrentCell = _grid.Rows[newIndex].Cells[0];
+            }
+        });
     }
 
     private static bool CanMoveItem(IReadOnlyList<DashboardListItem> items, int index, int direction) {
@@ -148,7 +166,6 @@ public class DashboardManagementForm : Form {
         _grid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "Name",
             HeaderText = "Dashboard",
-            ReadOnly = true,
             FillWeight = 75
         });
         _grid.Columns.Add(new DataGridViewCheckBoxColumn {
@@ -157,6 +174,7 @@ public class DashboardManagementForm : Form {
             FillWeight = 25
         });
         _grid.CellValueChanged += OnGridCellValueChanged;
+        _grid.CellValidating += OnGridCellValidating;
         _grid.CurrentCellDirtyStateChanged += (s, e) => {
             if (_grid.IsCurrentCellDirty) {
                 _grid.CommitEdit(DataGridViewDataErrorContexts.Commit);
@@ -253,7 +271,20 @@ public class DashboardManagementForm : Form {
     }
 
     private void OnGridCellValueChanged(object? sender, DataGridViewCellEventArgs e) {
-        if (e.RowIndex < 0 || e.ColumnIndex < 0 || _grid.Columns[e.ColumnIndex].Name != "IsQuickAccess") {
+        if (_isBindingGrid || e.RowIndex < 0 || e.ColumnIndex < 0) {
+            return;
+        }
+
+        var columnName = _grid.Columns[e.ColumnIndex].Name;
+        if (columnName == "Name") {
+            var updatedName = Convert.ToString(_grid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value)?.Trim();
+            if (!string.IsNullOrWhiteSpace(updatedName)) {
+                _items[e.RowIndex].Name = updatedName;
+            }
+            return;
+        }
+
+        if (columnName != "IsQuickAccess") {
             return;
         }
 
@@ -262,7 +293,7 @@ public class DashboardManagementForm : Form {
         var target = _items[e.RowIndex];
 
         if (isChecked && !target.IsQuickAccess && selectedQuickCount >= 7) {
-            _grid.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = false;
+            RebindGridAndSelect(target.Id);
             ThemedMessageBox.Show(this, "You can select up to 7 favorite dashboards.", "Favorite dashboards", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
@@ -275,12 +306,21 @@ public class DashboardManagementForm : Form {
 
         _items.Clear();
         _items.AddRange(ordered);
+        RebindGridAndSelect(target.Id);
+    }
 
-        BindGrid();
-        int newIndex = _items.FindIndex(i => i.Id == target.Id);
-        if (newIndex >= 0) {
-            _grid.CurrentCell = _grid.Rows[newIndex].Cells[0];
+    private void OnGridCellValidating(object? sender, DataGridViewCellValidatingEventArgs e) {
+        if (e.RowIndex < 0 || e.ColumnIndex < 0 || _grid.Columns[e.ColumnIndex].Name != "Name") {
+            return;
         }
+
+        var proposedName = Convert.ToString(e.FormattedValue)?.Trim();
+        if (!string.IsNullOrWhiteSpace(proposedName)) {
+            return;
+        }
+
+        e.Cancel = true;
+        ThemedMessageBox.Show(this, "Dashboard name cannot be empty.", "Invalid name", MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
     #endregion Private Methods
@@ -289,11 +329,11 @@ public class DashboardManagementForm : Form {
 
     private sealed class DashboardListItem {
         public required Guid Id { get; init; }
-        public required string Name { get; init; }
+        public required string Name { get; set; }
         public required bool IsQuickAccess { get; set; }
     }
 
     #endregion Private Classes
 }
 
-public readonly record struct DashboardOrderUpdate(Guid DashboardId, bool IsQuickAccess, int SortOrder);
+public readonly record struct DashboardOrderUpdate(Guid DashboardId, string Name, bool IsQuickAccess, int SortOrder);
