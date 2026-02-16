@@ -206,14 +206,13 @@ public class ThemedMessageBox : Form {
 
         Controls.Add(mainLayout);
 
-        // Calculate form size
-        var preferredSize = mainLayout.GetPreferredSize(new Size(500, 300));
-        var baseWidth = Math.Max(320, preferredSize.Width + 40);
-        var baseHeight = Math.Max(150, preferredSize.Height + 40);
-        ClientSize = new Size(
-            (int)Math.Round(baseWidth * 0.7f),
-            (int)Math.Round(baseHeight * 0.55f)
-        );
+        // Calculate form size based on content so long messages are never clipped.
+        var preferredWidth = Math.Max(320, mainLayout.GetPreferredSize(new Size(500, 0)).Width + Padding.Horizontal);
+        var contentWidth = Math.Max(0, preferredWidth - Padding.Horizontal);
+        var preferredHeight = Math.Max(150, mainLayout.GetPreferredSize(new Size(contentWidth, 0)).Height + Padding.Vertical);
+
+        var maxClientHeight = (int)Math.Round(Screen.FromControl(this).WorkingArea.Height * 0.85f);
+        ClientSize = new Size(preferredWidth, Math.Min(preferredHeight, maxClientHeight));
     }
 
     protected override void Dispose(bool disposing) {
