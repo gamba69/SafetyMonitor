@@ -355,6 +355,7 @@ public class ThemedDateTimePicker : UserControl {
         private readonly Button _prevYearButton;
         private readonly Button _nextYearButton;
         private readonly BufferedPanel _dayHeaderPanel;
+        private readonly string? _materialIconFontFamily;
         private readonly Panel? _timePanel;
         private NumericUpDown? _hourSpin;
         private NumericUpDown? _minuteSpin;
@@ -398,6 +399,7 @@ public class ThemedDateTimePicker : UserControl {
             _hoverBg = _isLight ? Color.FromArgb(232, 240, 238) : Color.FromArgb(48, 65, 70);
             _dimFg = _isLight ? Color.FromArgb(170, 170, 170) : Color.FromArgb(90, 105, 110);
             _inputBg = _isLight ? Color.White : Color.FromArgb(46, 61, 66);
+            _materialIconFontFamily = ResolveMaterialFontFamily();
 
             // DPI-aware sizing
             var dpiScale = GetDpiScale();
@@ -420,8 +422,8 @@ public class ThemedDateTimePicker : UserControl {
             DoubleBuffered = true;
 
             var totalWidth = Cols * _cellSize + _pad * 2;
-            var totalHeight = _headerHeight + _dayHeaderHeight + MaxRows * _cellSize + _pad * 2
-                              + (_showTime ? _timeRowHeight : 0);
+            var bottomSectionHeight = _showTime ? _timeRowHeight : _pad;
+            var totalHeight = _headerHeight + _dayHeaderHeight + MaxRows * _cellSize + _pad + bottomSectionHeight;
             ClientSize = new Size(totalWidth, totalHeight);
 
             // ── Header: [◁][◀] Month Year [▶][▷] ──
@@ -432,19 +434,19 @@ public class ThemedDateTimePicker : UserControl {
             };
 
             var navBtnSize = Scale(24, dpiScale);
-            _prevYearButton = CreateYearNavButton("◁", -1, navBtnSize);
+            _prevYearButton = CreateYearNavButton("\uEAC3", "◁", -1, navBtnSize);
             _prevYearButton.Location = new Point(_pad, (_headerHeight - navBtnSize) / 2);
             _headerPanel.Controls.Add(_prevYearButton);
 
-            _prevButton = CreateNavButton("◀", -1, navBtnSize);
+            _prevButton = CreateNavButton("\uE314", "◀", -1, navBtnSize);
             _prevButton.Location = new Point(_pad + navBtnSize, (_headerHeight - navBtnSize) / 2);
             _headerPanel.Controls.Add(_prevButton);
 
-            _nextButton = CreateNavButton("▶", 1, navBtnSize);
+            _nextButton = CreateNavButton("\uE315", "▶", 1, navBtnSize);
             _nextButton.Location = new Point(totalWidth - navBtnSize * 2 - _pad, (_headerHeight - navBtnSize) / 2);
             _headerPanel.Controls.Add(_nextButton);
 
-            _nextYearButton = CreateYearNavButton("▷", 1, navBtnSize);
+            _nextYearButton = CreateYearNavButton("\uEAC9", "▷", 1, navBtnSize);
             _nextYearButton.Location = new Point(totalWidth - navBtnSize - _pad, (_headerHeight - navBtnSize) / 2);
             _headerPanel.Controls.Add(_nextYearButton);
 
@@ -583,12 +585,12 @@ public class ThemedDateTimePicker : UserControl {
 
         #region Header / Navigation
 
-        private Button CreateNavButton(string text, int monthDelta, int size) {
+        private Button CreateNavButton(string materialGlyph, string fallbackText, int monthDelta, int size) {
             var btn = new Button {
-                Text = text,
+                Text = GetNavigationButtonText(materialGlyph, fallbackText),
                 Size = new Size(size, size),
                 FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 10f, FontStyle.Bold),
+                Font = CreateNavigationButtonFont(size),
                 TextAlign = ContentAlignment.MiddleCenter,
                 ForeColor = _fg,
                 BackColor = _headerBg,
@@ -605,12 +607,12 @@ public class ThemedDateTimePicker : UserControl {
             return btn;
         }
 
-        private Button CreateYearNavButton(string text, int yearDelta, int size) {
+        private Button CreateYearNavButton(string materialGlyph, string fallbackText, int yearDelta, int size) {
             var btn = new Button {
-                Text = text,
+                Text = GetNavigationButtonText(materialGlyph, fallbackText),
                 Size = new Size(size, size),
                 FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 10f, FontStyle.Bold),
+                Font = CreateNavigationButtonFont(size),
                 TextAlign = ContentAlignment.MiddleCenter,
                 ForeColor = _fg,
                 BackColor = _headerBg,
@@ -625,6 +627,34 @@ public class ThemedDateTimePicker : UserControl {
                 _calendarPanel.Invalidate();
             };
             return btn;
+        }
+
+
+        private string GetNavigationButtonText(string materialGlyph, string fallbackText) {
+            return _materialIconFontFamily is null ? fallbackText : materialGlyph;
+        }
+
+        private Font CreateNavigationButtonFont(int buttonSize) {
+            if (_materialIconFontFamily is null) {
+                return new Font("Segoe UI", 10f, FontStyle.Bold);
+            }
+
+            var fontSize = Math.Max(10f, buttonSize * 0.6f);
+            return new Font(_materialIconFontFamily, fontSize, FontStyle.Regular, GraphicsUnit.Pixel);
+        }
+
+        private static string? ResolveMaterialFontFamily() {
+            var candidates = new[] { "Material Symbols Outlined", "Material Symbols Rounded", "Material Icons" };
+            using var installedFonts = new InstalledFontCollection();
+            var installed = installedFonts.Families.Select(f => f.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var candidate in candidates) {
+                if (installed.Contains(candidate)) {
+                    return candidate;
+                }
+            }
+
+            return null;
         }
 
         private void UpdateMonthLabel() {
@@ -804,18 +834,32 @@ public class ThemedDateTimePicker : UserControl {
 
             var normalFont = new Font("Segoe UI", 9f);
             var boldFont = new Font("Segoe UI", 9f, FontStyle.Bold);
-            var spinWidth = Scale(52, dpiScale);
             var spinHeight = Scale(24, dpiScale);
-            var btnHeight = Scale(26, dpiScale);
-            var vCenter = Math.Max(0, (_timeRowHeight - spinHeight) / 2);
+            var btnHeight = Scale(22, dpiScale);
+            var leftPadding = _pad;
+            var gapAfterLabel = Scale(4, dpiScale);
+            var gapAfterHour = Scale(2, dpiScale);
+            var gapAfterColon = Scale(2, dpiScale);
+            var gapAfterMinute = Scale(6, dpiScale);
+            var minSpinWidth = Scale(36, dpiScale);
+            var preferredSpinWidth = Scale(52, dpiScale);
+            var minNowWidth = Scale(34, dpiScale);
+
+            var labelWidth = TextRenderer.MeasureText("Time:", boldFont).Width;
+            var colonWidth = TextRenderer.MeasureText(":", boldFont).Width;
+            var availableWidth = _timePanel.Width - leftPadding;
+            var fixedWidth = labelWidth + gapAfterLabel + colonWidth + gapAfterColon + gapAfterHour + gapAfterMinute + minNowWidth;
+            var dynamicWidth = Math.Max(minSpinWidth * 2, availableWidth - fixedWidth);
+            var spinWidth = Math.Clamp(dynamicWidth / 2, minSpinWidth, preferredSpinWidth);
+            var nowBtnWidth = Math.Clamp(availableWidth - (labelWidth + gapAfterLabel + spinWidth + gapAfterHour + colonWidth + gapAfterColon + spinWidth + gapAfterMinute), minNowWidth, Scale(44, dpiScale));
 
             var flow = new FlowLayoutPanel {
-                Dock = DockStyle.Fill,
+                Dock = DockStyle.None,
                 WrapContents = false,
-                AutoSize = false,
+                AutoSize = true,
                 FlowDirection = FlowDirection.LeftToRight,
                 BackColor = _headerBg,
-                Padding = new System.Windows.Forms.Padding(_pad, vCenter, 0, 0)
+                Padding = System.Windows.Forms.Padding.Empty
             };
 
             flow.Controls.Add(new Label {
@@ -823,7 +867,7 @@ public class ThemedDateTimePicker : UserControl {
                 Font = boldFont,
                 ForeColor = _fg,
                 AutoSize = true,
-                Margin = new System.Windows.Forms.Padding(0, 2, Scale(4, dpiScale), 0)
+                Margin = new System.Windows.Forms.Padding(0, 2, gapAfterLabel, 0)
             });
 
             _hourSpin = new NumericUpDown {
@@ -835,7 +879,7 @@ public class ThemedDateTimePicker : UserControl {
                 Font = normalFont,
                 BackColor = _inputBg,
                 ForeColor = _fg,
-                Margin = new System.Windows.Forms.Padding(0, 0, Scale(2, dpiScale), 0)
+                Margin = new System.Windows.Forms.Padding(0, 0, gapAfterHour, 0)
             };
             _hourSpin.ValueChanged += (_, _) => EnsureLeadingZeros(_hourSpin);
             flow.Controls.Add(_hourSpin);
@@ -845,7 +889,7 @@ public class ThemedDateTimePicker : UserControl {
                 Font = boldFont,
                 ForeColor = _fg,
                 AutoSize = true,
-                Margin = new System.Windows.Forms.Padding(0, 2, Scale(2, dpiScale), 0)
+                Margin = new System.Windows.Forms.Padding(0, 2, gapAfterColon, 0)
             });
 
             _minuteSpin = new NumericUpDown {
@@ -857,17 +901,17 @@ public class ThemedDateTimePicker : UserControl {
                 Font = normalFont,
                 BackColor = _inputBg,
                 ForeColor = _fg,
-                Margin = new System.Windows.Forms.Padding(0, 0, Scale(6, dpiScale), 0)
+                Margin = new System.Windows.Forms.Padding(0, 0, gapAfterMinute, 0)
             };
             _minuteSpin.ValueChanged += (_, _) => EnsureLeadingZeros(_minuteSpin);
             flow.Controls.Add(_minuteSpin);
 
             var nowBtn = new Button {
                 Text = "Now",
-                AutoSize = true,
-                MinimumSize = new Size(Scale(42, dpiScale), btnHeight),
+                AutoSize = false,
+                Size = new Size(nowBtnWidth, btnHeight),
                 FlatStyle = FlatStyle.Flat,
-                Font = normalFont,
+                Font = new Font("Segoe UI", 8.5f),
                 ForeColor = Color.White,
                 BackColor = _accentColor,
                 Cursor = Cursors.Hand,
@@ -886,7 +930,16 @@ public class ThemedDateTimePicker : UserControl {
             };
             flow.Controls.Add(nowBtn);
 
+            void CenterTimeFlow() {
+                var preferred = flow.PreferredSize;
+                flow.Location = new Point(
+                    Math.Max(0, (_timePanel.Width - preferred.Width) / 2),
+                    Math.Max(0, (_timePanel.Height - preferred.Height) / 2));
+            }
+
             _timePanel.Controls.Add(flow);
+            CenterTimeFlow();
+            _timePanel.Resize += (_, _) => CenterTimeFlow();
 
             EnsureLeadingZeros(_hourSpin);
             EnsureLeadingZeros(_minuteSpin);
