@@ -43,7 +43,7 @@ public class ThemedMenuRenderer : ToolStripProfessionalRenderer {
         var rect = new Rectangle(e.ImageRectangle.X - 2, e.ImageRectangle.Y - 2,
             e.ImageRectangle.Width + 4, e.ImageRectangle.Height + 4);
 
-        var iconColor = _isLight ? Color.FromArgb(100, 100, 100) : Color.FromArgb(180, 180, 180);
+        var iconColor = _isLight ? Color.Black : Color.White;
 
         using var brush = new SolidBrush(Color.FromArgb(_isLight ? 28 : 42, iconColor));
         e.Graphics.FillRectangle(brush, rect);
