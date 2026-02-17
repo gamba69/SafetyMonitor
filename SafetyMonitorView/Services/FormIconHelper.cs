@@ -14,6 +14,7 @@ internal static class FormIconHelper {
     private const int SmCxSmIcon = 49;
     private const int SmCySmIcon = 50;
     private const int WmSetIcon = 0x0080;
+    private const float WindowIconGlyphScale = 1.08f;
 
     #endregion Private Constants
 
@@ -38,8 +39,8 @@ internal static class FormIconHelper {
         var smallSize = GetIconSizeForDpi(SmCxSmIcon, SmCySmIcon, dpi, 16);
         var largeSize = GetIconSizeForDpi(SmCxIcon, SmCyIcon, dpi, 32);
 
-        using var smallBitmap = MaterialIcons.GetIcon(iconName, color, smallSize);
-        using var largeBitmap = MaterialIcons.GetIcon(iconName, color, largeSize);
+        using var smallBitmap = MaterialIcons.GetIcon(iconName, color, smallSize, WindowIconGlyphScale);
+        using var largeBitmap = MaterialIcons.GetIcon(iconName, color, largeSize, WindowIconGlyphScale);
 
         if (smallBitmap is null || largeBitmap is null) {
             return;

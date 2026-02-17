@@ -162,9 +162,9 @@ public static class MaterialIcons {
 
     public static IEnumerable<string> GetAvailableIcons() => _fontGlyphs.Keys;
 
-    public static Bitmap? GetIcon(string name, Color color, int size = 16) {
+    public static Bitmap? GetIcon(string name, Color color, int size = 16, float glyphScale = 0.78f) {
         var normalizedName = name.ToLowerInvariant();
-        var key = $"{normalizedName}_{size}_{color.ToArgb()}";
+        var key = $"{normalizedName}_{size}_{glyphScale:F2}_{color.ToArgb()}";
 
         if (_cache.TryGetValue(key, out var cached)) {
             return (Bitmap)cached.Clone();
@@ -174,7 +174,7 @@ public static class MaterialIcons {
             return null;
         }
 
-        var bitmap = RenderFontIcon(glyph, color, size);
+        var bitmap = RenderFontIcon(glyph, color, size, glyphScale);
         _cache[key] = bitmap;
 
         return (Bitmap)bitmap.Clone();
@@ -222,7 +222,7 @@ public static class MaterialIcons {
 
     #region Private Methods
 
-    private static Bitmap RenderFontIcon(string glyph, Color color, int size) {
+    private static Bitmap RenderFontIcon(string glyph, Color color, int size, float glyphScale) {
         var bitmap = new Bitmap(size, size, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
         using var g = Graphics.FromImage(bitmap);
         using var brush = new SolidBrush(color);
@@ -236,7 +236,7 @@ public static class MaterialIcons {
         g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
         g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-        var fontSize = size * 0.78f;
+        var fontSize = size * Math.Clamp(glyphScale, 0.1f, 1.5f);
         using var font = new Font(_materialFontFamily!, fontSize, FontStyle.Regular, GraphicsUnit.Pixel);
         g.DrawString(glyph, font, brush, new RectangleF(0, 0, size, size), sf);
 
