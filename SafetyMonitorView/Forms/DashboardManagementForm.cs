@@ -127,9 +127,13 @@ public class DashboardManagementForm : Form {
     }
 
     private void InitializeComponent() {
+        var normalFont = new Font("Segoe UI", 10f, FontStyle.Regular);
+        var emphasizedFont = new Font("Segoe UI", 10f, FontStyle.Bold);
+
         Text = "Manage Dashboards";
         AutoScaleMode = AutoScaleMode.Dpi;
         AutoScaleDimensions = new SizeF(96F, 96F);
+        Font = normalFont;
         StartPosition = FormStartPosition.CenterParent;
         MinimizeBox = false;
         MaximizeBox = false;
@@ -149,6 +153,7 @@ public class DashboardManagementForm : Form {
 
         _grid = new DataGridView {
             Dock = DockStyle.Fill,
+            Font = normalFont,
             AllowUserToAddRows = false,
             AllowUserToDeleteRows = false,
             AllowUserToResizeRows = false,
@@ -183,9 +188,9 @@ public class DashboardManagementForm : Form {
             Margin = new Padding(12, 0, 0, 0)
         };
 
-        _moveUpButton = new Button { Text = "Up", Width = 90, Height = 34 };
-        _moveDownButton = new Button { Text = "Down", Width = 90, Height = 34 };
-        _deleteButton = new Button { Text = "Del", Width = 90, Height = 34 };
+        _moveUpButton = new Button { Text = "Up", Width = 100, Height = 34 };
+        _moveDownButton = new Button { Text = "Down", Width = 100, Height = 34 };
+        _deleteButton = new Button { Text = "Delete", Width = 100, Height = 34 };
 
         _moveUpButton.Click += (s, e) => MoveSelectedItem(-1);
         _moveDownButton.Click += (s, e) => MoveSelectedItem(1);
@@ -199,11 +204,12 @@ public class DashboardManagementForm : Form {
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.RightToLeft,
             AutoSize = true,
+            WrapContents = false,
             Margin = new Padding(0, 12, 0, 0)
         };
 
-        _cancelButton = new Button { Text = "Cancel", Width = 100, Height = 36 };
-        _okButton = new Button { Text = "Save", Width = 120, Height = 36, Margin = new Padding(0, 0, 8, 0) };
+        _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 36, Font = normalFont, Margin = new Padding(0) };
+        _okButton = new Button { Text = "Save", Width = 110, Height = 36, Font = emphasizedFont, Margin = new Padding(0, 0, 10, 0) };
 
         _cancelButton.Click += (s, e) => {
             DialogResult = DialogResult.Cancel;
