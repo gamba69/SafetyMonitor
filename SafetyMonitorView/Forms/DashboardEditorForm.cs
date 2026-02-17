@@ -424,6 +424,12 @@ public class DashboardEditorForm : Form {
     }
 
     private void OnTileEdited(object? sender, TileConfig config) {
+        if (sender is EditableTileControl control) {
+            UpdateTilePosition(control);
+            control.UpdateDisplay();
+        }
+
+        _gridPanel.Invalidate();
         Modified = true;
     }
 
