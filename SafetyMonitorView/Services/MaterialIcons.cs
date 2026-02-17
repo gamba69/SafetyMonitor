@@ -20,6 +20,7 @@ public static class MaterialIcons {
     public const string DashboardEditCurrent = "dashboard_edit_current";
     public const string DashboardDuplicateCurrent = "dashboard_duplicate_current";
     public const string DashboardDeleteCurrent = "dashboard_delete_current";
+    public const string DashboardManage = "dashboard_manage";
     public const string MenuViewAxisRules = "menu_view_axis_rules";
     public const string MenuViewChartPeriods = "menu_view_chart_periods";
     public const string MenuViewColorSchemes = "menu_view_color_schemes";
@@ -82,6 +83,7 @@ public static class MaterialIcons {
         [DashboardDuplicateCurrent] = "\uE14D",
         [PlotMenuCopyToClipboard] = "\uE14D",
         [DashboardDeleteCurrent] = "\uE872",
+        [DashboardManage] = "\U000FFFD7",
         [MenuViewTheme] = "\uE3A1",
         [MenuViewColorSchemes] = "\uE40A",
         [ThemeLightMode] = "\uE430",
