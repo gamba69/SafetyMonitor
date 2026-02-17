@@ -195,7 +195,8 @@ public class MainForm : MaterialForm {
 
     private static ToolStripMenuItem CreateMenuItem(string text, string iconName, Color iconColor, EventHandler? onClick) {
         var item = new ToolStripMenuItem(text) {
-            Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize)
+            Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize),
+            ImageScaling = ToolStripItemImageScaling.None
         };
         if (onClick != null) {
             item.Click += onClick;
