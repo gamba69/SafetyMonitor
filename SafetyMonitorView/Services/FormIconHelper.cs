@@ -1,4 +1,3 @@
-using MaterialSkin;
 using System.Runtime.InteropServices;
 
 namespace SafetyMonitorView.Services;
@@ -68,8 +67,7 @@ internal static class FormIconHelper {
     }
 
     private static Color ResolveThemeIconColor() {
-        var isLightTheme = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
-        return isLightTheme ? Color.FromArgb(33, 33, 33) : Color.White;
+        return Color.White;
     }
 
     [DllImport("user32.dll")]
