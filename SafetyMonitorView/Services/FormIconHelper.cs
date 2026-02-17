@@ -1,5 +1,4 @@
 using MaterialSkin;
-using MaterialSkin.Controls;
 using System.Runtime.InteropServices;
 
 namespace SafetyMonitorView.Services;
@@ -23,8 +22,6 @@ internal static class FormIconHelper {
     public static void Apply(Form form, string iconName, Color? color = null) {
         var resolvedColor = color ?? ResolveThemeIconColor();
 
-        TryIncreaseMaterialTitleFont(form);
-
         if (form.IsHandleCreated) {
             ApplyForCurrentDpi(form, iconName, resolvedColor);
         } else {
@@ -36,22 +33,7 @@ internal static class FormIconHelper {
 
     #region Private Methods
 
-    private static void TryIncreaseMaterialTitleFont(Form form) {
-        if (form is not MaterialForm) {
-            return;
-        }
-
-        var current = form.Font;
-        var targetSize = Math.Max(current.Size, 11f);
-        if (Math.Abs(current.Size - targetSize) < 0.01f) {
-            return;
-        }
-
-        form.Font = new Font(current.FontFamily, targetSize, current.Style, current.Unit);
-    }
-
     private static void ApplyForCurrentDpi(Form form, string iconName, Color color) {
-
         var dpi = (uint)(form.DeviceDpi > 0 ? form.DeviceDpi : 96);
         var smallSize = GetIconSizeForDpi(SmCxSmIcon, SmCySmIcon, dpi, 16);
         var largeSize = GetIconSizeForDpi(SmCxIcon, SmCyIcon, dpi, 32);
