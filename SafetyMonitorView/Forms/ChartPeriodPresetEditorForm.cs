@@ -213,11 +213,11 @@ public class ChartPeriodPresetEditorForm : Form {
         _removeButton.Click += RemovePresetButton_Click;
         editButtonsPanel.Controls.Add(_removeButton, 1, 0);
 
-        _moveUpButton = new Button { Text = "Move Up", Width = 110, Height = 32, Font = normalFont, Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Left };
+        _moveUpButton = new Button { Text = "Up", Width = 110, Height = 32, Font = normalFont, Margin = new Padding(0, 0, 10, 0), Anchor = AnchorStyles.Left };
         _moveUpButton.Click += (s, e) => MoveSelectedRow(-1);
         editButtonsPanel.Controls.Add(_moveUpButton, 2, 0);
 
-        _moveDownButton = new Button { Text = "Move Down", Width = 110, Height = 32, Font = normalFont, Anchor = AnchorStyles.Left };
+        _moveDownButton = new Button { Text = "Down", Width = 110, Height = 32, Font = normalFont, Anchor = AnchorStyles.Left };
         _moveDownButton.Click += (s, e) => MoveSelectedRow(1);
         editButtonsPanel.Controls.Add(_moveDownButton, 3, 0);
 

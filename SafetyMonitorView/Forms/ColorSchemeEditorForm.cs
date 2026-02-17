@@ -236,13 +236,13 @@ public class ColorSchemeEditorForm : Form {
         _stopsGrid.CellEndEdit += (s, e) => { UpdateDirtyState(); UpdatePreview(); };
 
         var gridButtons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 38, FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(0, 3, 0, 3) };
-        var addStopBtn = new Button { Text = "Add Stop", Width = 120, Height = 32, Font = normalFont };
+        var addStopBtn = new Button { Text = "Add Stop", Width = 110, Height = 32, Font = normalFont };
         addStopBtn.Click += AddStop_Click;
-        var removeStopBtn = new Button { Text = "Delete Stop", Width = 120, Height = 32, Font = normalFont };
+        var removeStopBtn = new Button { Text = "Del Stop", Width = 110, Height = 32, Font = normalFont };
         removeStopBtn.Click += RemoveStop_Click;
-        var moveUpBtn = new Button { Text = "Move Up", Width = 110, Height = 32, Font = normalFont };
+        var moveUpBtn = new Button { Text = "Up", Width = 80, Height = 32, Font = normalFont };
         moveUpBtn.Click += MoveUpStop_Click;
-        var moveDownBtn = new Button { Text = "Move Down", Width = 110, Height = 32, Font = normalFont };
+        var moveDownBtn = new Button { Text = "Down", Width = 80, Height = 32, Font = normalFont };
         moveDownBtn.Click += MoveDownStop_Click;
         gridButtons.Controls.AddRange([addStopBtn, removeStopBtn, moveUpBtn, moveDownBtn]);
 
@@ -262,16 +262,16 @@ public class ColorSchemeEditorForm : Form {
         root.SetColumnSpan(bottomBar, 2);
 
         // Left-side buttons inside bottomBar
-        _newButton = new Button { Text = "Add", Width = 110, Height = 35, Font = normalFont, Top = 5 };
+        _newButton = new Button { Text = "Add", Width = 80, Height = 35, Font = normalFont, Top = 5 };
         _newButton.Click += NewButton_Click;
-        _duplicateButton = new Button { Text = "Duplicate", Width = 110, Height = 35, Font = normalFont, Top = 5 };
+        _duplicateButton = new Button { Text = "Dup", Width = 80, Height = 35, Font = normalFont, Top = 5 };
         _duplicateButton.Click += DuplicateButton_Click;
-        _deleteButton = new Button { Text = "Delete", Width = 110, Height = 35, Font = normalFont, Top = 5 };
+        _deleteButton = new Button { Text = "Del", Width = 80, Height = 35, Font = normalFont, Top = 5 };
         _deleteButton.Click += DeleteButton_Click;
 
         _newButton.Left = 0;
-        _duplicateButton.Left = _newButton.Right + 3;
-        _deleteButton.Left = _duplicateButton.Right + 3;
+        _duplicateButton.Left = _newButton.Right + 10;
+        _deleteButton.Left = _duplicateButton.Right + 10;
 
         // Right-side buttons inside bottomBar (anchored to right)
         _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 35, Font = normalFont, Top = 5 };

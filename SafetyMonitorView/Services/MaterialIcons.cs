@@ -103,7 +103,7 @@ public static class MaterialIcons {
         [PlotMenuDisplayOption] = "\uE6E1",
         [CommonCheck] = "\uE5CA",
         [CommonClose] = "\uE5CD",
-        [CommonSave] = "\uE161",
+        [CommonSave] = "\uE5CA", // "\uE161",
         [CommonDelete] = "\uE872",
         [CommonAdd] = "\uE145",
         [CommonEdit] = "\uE3C9",

@@ -183,9 +183,9 @@ public class DashboardManagementForm : Form {
             Margin = new Padding(12, 0, 0, 0)
         };
 
-        _moveUpButton = new Button { Text = "Move Up", Width = 110, Height = 34 };
-        _moveDownButton = new Button { Text = "Move Down", Width = 110, Height = 34 };
-        _deleteButton = new Button { Text = "Delete", Width = 140, Height = 34 };
+        _moveUpButton = new Button { Text = "Up", Width = 90, Height = 34 };
+        _moveDownButton = new Button { Text = "Down", Width = 90, Height = 34 };
+        _deleteButton = new Button { Text = "Del", Width = 90, Height = 34 };
 
         _moveUpButton.Click += (s, e) => MoveSelectedItem(-1);
         _moveDownButton.Click += (s, e) => MoveSelectedItem(1);
