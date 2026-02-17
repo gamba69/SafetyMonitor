@@ -191,7 +191,7 @@ public static class MaterialIcons {
 
         var color = isLightTheme
             ? Color.FromArgb(48, 48, 48)
-            : Color.FromArgb(176, 176, 176);
+            : Color.White;
 
         return GetIcon(iconName, color, size);
     }
