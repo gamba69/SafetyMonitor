@@ -68,6 +68,8 @@ public static class MaterialIcons {
     public const string MetricWindDirection = "metric_wind_direction";
     public const string MetricStarFwhm = "metric_star_fwhm";
     public const string MetricIsSafe = "metric_is_safe";
+    public const string WindowTileValue = "window_tile_value";
+    public const string WindowTileChart = "window_tile_chart";
 
     #endregion Public Constants
 
@@ -134,6 +136,8 @@ public static class MaterialIcons {
         [MetricWindDirection] = "\uE87A",
         [MetricStarFwhm] = "\uF31C",
         [MetricIsSafe] = "\uEAA9",
+        [WindowTileValue] = "\uE400",
+        [WindowTileChart] = "\uE6E1",
     };
 
     private static readonly string[] _fontCandidates = [

@@ -1,4 +1,5 @@
 using SafetyMonitorView.Models;
+using SafetyMonitorView.Services;
 
 namespace SafetyMonitorView.Forms;
 
@@ -21,6 +22,7 @@ public class EditableTileControl : Panel {
     private int _resizeStartSpanRows;
 
     private Label _titleLabel = null!;
+    private PictureBox _tileTypeIcon = null!;
 
     #endregion Private Fields
 
@@ -65,6 +67,7 @@ public class EditableTileControl : Panel {
     protected override void Dispose(bool disposing) {
         if (disposing) {
             _titleFont?.Dispose();
+            _tileTypeIcon?.Image?.Dispose();
         }
         base.Dispose(disposing);
     }
@@ -99,6 +102,20 @@ public class EditableTileControl : Panel {
             BackColor = Color.FromArgb(0, 121, 107)
         };
 
+        var tileIconName = Config is ValueTileConfig
+            ? MaterialIcons.WindowTileValue
+            : Config is ChartTileConfig
+                ? MaterialIcons.WindowTileChart
+                : MaterialIcons.DashboardTab;
+
+        _tileTypeIcon = new PictureBox {
+            Dock = DockStyle.Left,
+            Width = 30,
+            SizeMode = PictureBoxSizeMode.CenterImage,
+            BackColor = Color.Transparent,
+            Image = MaterialIcons.GetIcon(tileIconName, Color.White, 20)
+        };
+
         _titleLabel = new Label {
             Dock = DockStyle.Fill,
             ForeColor = Color.White,
@@ -131,6 +148,7 @@ public class EditableTileControl : Panel {
         _deleteButton.Click += OnDelete;
 
         header.Controls.Add(_titleLabel);
+        header.Controls.Add(_tileTypeIcon);
         header.Controls.Add(_editButton);
         header.Controls.Add(_deleteButton);
 
@@ -148,8 +166,11 @@ public class EditableTileControl : Panel {
         MouseMove += OnMouseMove;
         MouseUp += OnMouseUp;
         _titleLabel.MouseDown += OnMouseDown;
+        _tileTypeIcon.MouseDown += OnMouseDown;
         _titleLabel.MouseMove += OnMouseMove;
+        _tileTypeIcon.MouseMove += OnMouseMove;
         _titleLabel.MouseUp += OnMouseUp;
+        _tileTypeIcon.MouseUp += OnMouseUp;
         _infoLabel.MouseDown += OnMouseDown;
         _infoLabel.MouseMove += OnMouseMove;
         _infoLabel.MouseUp += OnMouseUp;

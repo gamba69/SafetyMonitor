@@ -30,6 +30,7 @@ public class ValueTileEditorForm : Form {
         _colorSchemeService = new ColorSchemeService();
 
         InitializeComponent();
+        FormIconHelper.Apply(this, MaterialIcons.WindowTileValue);
         ApplyTheme();
         LoadConfig();
     }

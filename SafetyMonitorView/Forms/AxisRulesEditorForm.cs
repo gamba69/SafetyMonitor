@@ -1,4 +1,5 @@
 using MaterialSkin;
+using SafetyMonitorView.Services;
 using SafetyMonitorView.Models;
 
 namespace SafetyMonitorView.Forms;
@@ -29,6 +30,7 @@ public class AxisRulesEditorForm : Form {
         })];
 
         InitializeComponent();
+        FormIconHelper.Apply(this, MaterialIcons.MenuViewAxisRules);
         ApplyTheme();
         LoadRules();
     }

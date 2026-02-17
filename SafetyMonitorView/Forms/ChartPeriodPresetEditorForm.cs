@@ -1,4 +1,5 @@
 ﻿using MaterialSkin;
+using SafetyMonitorView.Services;
 using SafetyMonitorView.Controls;
 using SafetyMonitorView.Models;
 
@@ -33,6 +34,7 @@ public class ChartPeriodPresetEditorForm : Form {
         })];
 
         InitializeComponent();
+        FormIconHelper.Apply(this, MaterialIcons.MenuViewChartPeriods);
         ApplyTheme();
         LoadPresets();
     }

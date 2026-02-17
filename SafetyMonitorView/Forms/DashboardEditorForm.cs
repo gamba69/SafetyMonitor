@@ -1,4 +1,5 @@
 using MaterialSkin;
+using SafetyMonitorView.Services;
 using SafetyMonitorView.Models;
 
 namespace SafetyMonitorView.Forms;
@@ -27,6 +28,7 @@ public class DashboardEditorForm : Form {
         _dashboard = dashboard;
 
         InitializeComponent();
+        FormIconHelper.Apply(this, MaterialIcons.DashboardEditCurrent);
         ApplyTheme();
         LoadDashboard();
     }

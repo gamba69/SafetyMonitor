@@ -1,5 +1,6 @@
 using DataStorage.Models;
 using MaterialSkin;
+using SafetyMonitorView.Services;
 using SafetyMonitorView.Models;
 using System.Collections;
 
@@ -48,6 +49,7 @@ public class ChartTileEditorForm : Form {
         _dashboard = dashboard;
 
         InitializeComponent();
+        FormIconHelper.Apply(this, MaterialIcons.WindowTileChart);
         ApplyTheme();
         LoadConfig();
     }

@@ -1,4 +1,5 @@
 using MaterialSkin;
+using SafetyMonitorView.Services;
 using SafetyMonitorView.Models;
 
 namespace SafetyMonitorView.Forms;
@@ -35,6 +36,7 @@ public class DashboardManagementForm : Form {
             .ToList();
 
         InitializeComponent();
+        FormIconHelper.Apply(this, MaterialIcons.DashboardManage);
         ApplyTheme();
         BindGrid();
     }

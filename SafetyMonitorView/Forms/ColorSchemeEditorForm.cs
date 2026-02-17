@@ -32,6 +32,7 @@ public class ColorSchemeEditorForm : Form {
         _colorSchemeService = new ColorSchemeService();
         _schemes = _colorSchemeService.LoadSchemes();
         InitializeComponent();
+        FormIconHelper.Apply(this, MaterialIcons.MenuViewColorSchemes);
         ApplyTheme();
         PopulateSchemeList();
         if (_schemeList.Items.Count > 0) {
