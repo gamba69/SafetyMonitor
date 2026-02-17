@@ -19,6 +19,7 @@ public class ChartTile : Panel {
     private bool _initialized;
     private readonly ThemedMenuRenderer _contextMenuRenderer = new();
     private const int MenuIconSize = 22;
+    private const float PlotContextMenuFontSize = 10f;
     private ContextMenuStrip? _plotContextMenu;
     private List<ChartPeriodPreset> _periodPresets = [];
     private ThemedComboBox? _periodSelector;
@@ -599,9 +600,11 @@ public class ChartTile : Panel {
         contextMenu.ShowImageMargin = true;
         contextMenu.BackColor = menuBackground;
         contextMenu.ForeColor = menuText;
+        contextMenu.Font = CreateSafeFont("Segoe UI", PlotContextMenuFontSize, System.Drawing.FontStyle.Regular);
         contextMenu.ImageScalingSize = new Size(MenuIconSize, MenuIconSize);
 
         ApplyContextMenuItemColors(contextMenu.Items, menuBackground, menuText);
+        ApplyContextMenuItemFont(contextMenu.Items, contextMenu.Font);
         UpdateContextMenuIcons(contextMenu.Items, menuIconColor);
     }
 
@@ -886,6 +889,16 @@ public class ChartTile : Panel {
 
             if (item is ToolStripMenuItem menuItem && menuItem.DropDownItems.Count > 0) {
                 ApplyContextMenuItemColors(menuItem.DropDownItems, backColor, foreColor);
+            }
+        }
+    }
+
+    private static void ApplyContextMenuItemFont(ToolStripItemCollection items, Font menuFont) {
+        foreach (ToolStripItem item in items) {
+            item.Font = menuFont;
+
+            if (item is ToolStripMenuItem menuItem && menuItem.DropDownItems.Count > 0) {
+                ApplyContextMenuItemFont(menuItem.DropDownItems, menuFont);
             }
         }
     }

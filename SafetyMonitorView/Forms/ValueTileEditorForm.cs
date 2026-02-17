@@ -9,6 +9,7 @@ public class ValueTileEditorForm : Form {
 
     private readonly ColorSchemeService _colorSchemeService;
     private readonly ValueTileConfig _config;
+    private readonly Dashboard _dashboard;
     private Button _cancelButton = null!;
     private ComboBox _colorSchemeComboBox = null!;
     private NumericUpDown _columnSpanNumeric = null!;
@@ -23,11 +24,13 @@ public class ValueTileEditorForm : Form {
 
     #region Public Constructors
 
-    public ValueTileEditorForm(ValueTileConfig config) {
+    public ValueTileEditorForm(ValueTileConfig config, Dashboard dashboard) {
         _config = config;
+        _dashboard = dashboard;
         _colorSchemeService = new ColorSchemeService();
 
         InitializeComponent();
+        FormIconHelper.Apply(this, MaterialIcons.WindowTileValue);
         ApplyTheme();
         LoadConfig();
     }
@@ -218,14 +221,30 @@ public class ValueTileEditorForm : Form {
         }
     }
     private void SaveButton_Click(object? sender, EventArgs e) {
+        var newRowSpan = (int)_rowSpanNumeric.Value;
+        var newColumnSpan = (int)_columnSpanNumeric.Value;
+        var oldRowSpan = _config.RowSpan;
+        var oldColumnSpan = _config.ColumnSpan;
+
+        _config.RowSpan = newRowSpan;
+        _config.ColumnSpan = newColumnSpan;
+        if (!_dashboard.CanPlaceTile(_config)) {
+            _config.RowSpan = oldRowSpan;
+            _config.ColumnSpan = oldColumnSpan;
+            ThemedMessageBox.Show(this,
+                "Tile with selected size does not fit the dashboard at its current position.",
+                "Invalid Size",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            return;
+        }
+
         _config.Title = _titleTextBox.Text;
         _config.Metric = (MetricType)_metricComboBox.SelectedIndex;
         var selectedScheme = _colorSchemeComboBox.SelectedItem?.ToString();
         _config.ColorSchemeName = selectedScheme == "(None)" ? "" : (selectedScheme ?? "");
         _config.DecimalPlaces = (int)_decimalPlacesNumeric.Value;
         _config.ShowIcon = _showIconCheckBox.Checked;
-        _config.RowSpan = (int)_rowSpanNumeric.Value;
-        _config.ColumnSpan = (int)_columnSpanNumeric.Value;
 
         DialogResult = DialogResult.OK;
         Close();

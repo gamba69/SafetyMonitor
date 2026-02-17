@@ -1,4 +1,5 @@
 using MaterialSkin;
+using SafetyMonitorView.Services;
 using SafetyMonitorView.Models;
 
 namespace SafetyMonitorView.Forms;
@@ -27,6 +28,7 @@ public class DashboardEditorForm : Form {
         _dashboard = dashboard;
 
         InitializeComponent();
+        FormIconHelper.Apply(this, MaterialIcons.DashboardEditCurrent);
         ApplyTheme();
         LoadDashboard();
     }
@@ -424,6 +426,12 @@ public class DashboardEditorForm : Form {
     }
 
     private void OnTileEdited(object? sender, TileConfig config) {
+        if (sender is EditableTileControl control) {
+            UpdateTilePosition(control);
+            control.UpdateDisplay();
+        }
+
+        _gridPanel.Invalidate();
         Modified = true;
     }
 

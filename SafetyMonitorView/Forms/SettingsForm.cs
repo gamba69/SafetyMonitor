@@ -1,4 +1,5 @@
 using MaterialSkin;
+using SafetyMonitorView.Services;
 
 namespace SafetyMonitorView.Forms;
 
@@ -28,6 +29,7 @@ public class SettingsForm : Form {
         ChartStaticAggregationTargetPointCount = Math.Max(2, currentChartStaticAggregationTargetPointCount);
 
         InitializeComponent();
+        FormIconHelper.Apply(this, MaterialIcons.MenuFileSettings);
         ApplyTheme();
         LoadSettings();
     }

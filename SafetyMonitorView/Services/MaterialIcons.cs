@@ -20,6 +20,7 @@ public static class MaterialIcons {
     public const string DashboardEditCurrent = "dashboard_edit_current";
     public const string DashboardDuplicateCurrent = "dashboard_duplicate_current";
     public const string DashboardDeleteCurrent = "dashboard_delete_current";
+    public const string DashboardManage = "dashboard_manage";
     public const string MenuViewAxisRules = "menu_view_axis_rules";
     public const string MenuViewChartPeriods = "menu_view_chart_periods";
     public const string MenuViewColorSchemes = "menu_view_color_schemes";
@@ -67,6 +68,8 @@ public static class MaterialIcons {
     public const string MetricWindDirection = "metric_wind_direction";
     public const string MetricStarFwhm = "metric_star_fwhm";
     public const string MetricIsSafe = "metric_is_safe";
+    public const string WindowTileValue = "window_tile_value";
+    public const string WindowTileChart = "window_tile_chart";
 
     #endregion Public Constants
 
@@ -82,10 +85,11 @@ public static class MaterialIcons {
         [DashboardDuplicateCurrent] = "\uE14D",
         [PlotMenuCopyToClipboard] = "\uE14D",
         [DashboardDeleteCurrent] = "\uE872",
-        [MenuViewTheme] = "\uE3A1",
+        [DashboardManage] = "\uE871",
+        [MenuViewTheme] = "\uE6A2", // "\uE3A1",
         [MenuViewColorSchemes] = "\uE40A",
-        [ThemeLightMode] = "\uE430",
-        [ThemeDarkMode] = "\uE51C",
+        [ThemeLightMode] = "\uF157",
+        [ThemeDarkMode] = "\uF03D",
         [MenuHelpAbout] = "\uE88E",
         [MessageBoxInfoOutlined] = "\uE88F",
         [MessageBoxInfoFilled] = "\uE88E",
@@ -95,15 +99,15 @@ public static class MaterialIcons {
         [MessageBoxErrorFilled] = "\uE000",
         [MessageBoxQuestionOutlined] = "\uE8FD",
         [MessageBoxQuestionFilled] = "\uE887",
-        [MenuViewChartPeriods] = "\uE8B5",
-        [PlotMenuAutoscale] = "\uE5D5",
-        [PlotMenuSaveImage] = "\uE161",
-        [PlotMenuOpenInWindow] = "\uE2C7",
-        [MenuViewAxisRules] = "\uE6E1",
+        [MenuViewChartPeriods] = "\uF417",
+        [PlotMenuAutoscale] = "\uF417",
+        [PlotMenuSaveImage] = "\uF17F", //"\uE161",
+        [PlotMenuOpenInWindow] = "\uE89E", // "\uE2C7",
+        [MenuViewAxisRules] = "\uEA9A", // "\uE6E1",
         [PlotMenuDisplayOption] = "\uE6E1",
         [CommonCheck] = "\uE5CA",
         [CommonClose] = "\uE5CD",
-        [CommonSave] = "\uE161",
+        [CommonSave] = "\uE5CA", // "\uE161",
         [CommonDelete] = "\uE872",
         [CommonAdd] = "\uE145",
         [CommonEdit] = "\uE3C9",
@@ -116,22 +120,24 @@ public static class MaterialIcons {
         [DashboardTab] = "\uE871",
         [ToolbarChartsLink] = "\uE157",
         [ToolbarChartsUnlink] = "\uE16F",
-        [ChartModeStatic] = "\uE925",
-        [ChartModeAuto] = "\uE8B5",
-        [MetricTemperature] = "\uE1FF",
+        [ChartModeStatic] = "\uF71E",
+        [ChartModeAuto] = "\uF417",
+        [MetricTemperature] = "\uF076",
         [MetricHumidity] = "\uE798",
-        [MetricPressure] = "\uE9E4",
-        [MetricDewPoint] = "\uE818",
-        [MetricCloudCover] = "\uE2BD",
-        [MetricSkyTemperature] = "\uEB3B",
-        [MetricSkyBrightness] = "\uE430",
-        [MetricSkyQuality] = "\uE838",
-        [MetricRainRate] = "\uE3AA",
-        [MetricWindSpeed] = "\uE9C4",
-        [MetricWindGust] = "\uE9C4",
+        [MetricPressure] = "\uE69f",
+        [MetricDewPoint] = "\uF879",
+        [MetricCloudCover] = "\uF174",
+        [MetricSkyTemperature] = "\uEB5A",
+        [MetricSkyBrightness] = "\uE3A9",
+        [MetricSkyQuality] = "\uF34f",
+        [MetricRainRate] = "\uF176",
+        [MetricWindSpeed] = "\uEFD8",
+        [MetricWindGust] = "\uE915",
         [MetricWindDirection] = "\uE87A",
-        [MetricStarFwhm] = "\uE2DB",
-        [MetricIsSafe] = "\uE9E0",
+        [MetricStarFwhm] = "\uF31C",
+        [MetricIsSafe] = "\uEAA9",
+        [WindowTileValue] = "\uE400",
+        [WindowTileChart] = "\uE6E1",
     };
 
     private static readonly string[] _fontCandidates = [
@@ -156,9 +162,9 @@ public static class MaterialIcons {
 
     public static IEnumerable<string> GetAvailableIcons() => _fontGlyphs.Keys;
 
-    public static Bitmap? GetIcon(string name, Color color, int size = 16) {
+    public static Bitmap? GetIcon(string name, Color color, int size = 16, float glyphScale = 0.78f) {
         var normalizedName = name.ToLowerInvariant();
-        var key = $"{normalizedName}_{size}_{color.ToArgb()}";
+        var key = $"{normalizedName}_{size}_{glyphScale:F2}_{color.ToArgb()}";
 
         if (_cache.TryGetValue(key, out var cached)) {
             return (Bitmap)cached.Clone();
@@ -168,7 +174,7 @@ public static class MaterialIcons {
             return null;
         }
 
-        var bitmap = RenderFontIcon(glyph, color, size);
+        var bitmap = RenderFontIcon(glyph, color, size, glyphScale);
         _cache[key] = bitmap;
 
         return (Bitmap)bitmap.Clone();
@@ -189,7 +195,7 @@ public static class MaterialIcons {
 
         var color = isLightTheme
             ? Color.FromArgb(48, 48, 48)
-            : Color.FromArgb(176, 176, 176);
+            : Color.White;
 
         return GetIcon(iconName, color, size);
     }
@@ -216,7 +222,7 @@ public static class MaterialIcons {
 
     #region Private Methods
 
-    private static Bitmap RenderFontIcon(string glyph, Color color, int size) {
+    private static Bitmap RenderFontIcon(string glyph, Color color, int size, float glyphScale) {
         var bitmap = new Bitmap(size, size, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
         using var g = Graphics.FromImage(bitmap);
         using var brush = new SolidBrush(color);
@@ -230,7 +236,7 @@ public static class MaterialIcons {
         g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
         g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-        var fontSize = size * 0.78f;
+        var fontSize = size * Math.Clamp(glyphScale, 0.1f, 1.5f);
         using var font = new Font(_materialFontFamily!, fontSize, FontStyle.Regular, GraphicsUnit.Pixel);
         g.DrawString(glyph, font, brush, new RectangleF(0, 0, size, size), sf);
 

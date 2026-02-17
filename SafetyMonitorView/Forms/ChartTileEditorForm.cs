@@ -1,5 +1,6 @@
 using DataStorage.Models;
 using MaterialSkin;
+using SafetyMonitorView.Services;
 using SafetyMonitorView.Models;
 using System.Collections;
 
@@ -24,6 +25,7 @@ public class ChartTileEditorForm : Form {
     #region Private Fields
 
     private readonly ChartTileConfig _config;
+    private readonly Dashboard _dashboard;
     private Color _inputBackColor;
     private Color _inputForeColor;
 
@@ -42,10 +44,12 @@ public class ChartTileEditorForm : Form {
 
     #region Public Constructors
 
-    public ChartTileEditorForm(ChartTileConfig config) {
+    public ChartTileEditorForm(ChartTileConfig config, Dashboard dashboard) {
         _config = config;
+        _dashboard = dashboard;
 
         InitializeComponent();
+        FormIconHelper.Apply(this, MaterialIcons.WindowTileChart);
         ApplyTheme();
         LoadConfig();
     }
@@ -428,6 +432,24 @@ public class ChartTileEditorForm : Form {
         }
     }
     private void SaveButton_Click(object? sender, EventArgs e) {
+        var newRowSpan = (int)_rowSpanNumeric.Value;
+        var newColumnSpan = (int)_columnSpanNumeric.Value;
+        var oldRowSpan = _config.RowSpan;
+        var oldColumnSpan = _config.ColumnSpan;
+
+        _config.RowSpan = newRowSpan;
+        _config.ColumnSpan = newColumnSpan;
+        if (!_dashboard.CanPlaceTile(_config)) {
+            _config.RowSpan = oldRowSpan;
+            _config.ColumnSpan = oldColumnSpan;
+            ThemedMessageBox.Show(this,
+                "Tile with selected size does not fit the dashboard at its current position.",
+                "Invalid Size",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            return;
+        }
+
         _config.Title = _titleTextBox.Text;
         if (_periodComboBox.SelectedIndex < 0 || _periodComboBox.SelectedIndex >= _periodPresets.Count) {
             ThemedMessageBox.Show(this, "Please select a chart period preset.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -444,9 +466,6 @@ public class ChartTileEditorForm : Form {
 
         _config.ShowLegend = _showLegendCheckBox.Checked;
         _config.ShowGrid = _showGridCheckBox.Checked;
-        _config.RowSpan = (int)_rowSpanNumeric.Value;
-        _config.ColumnSpan = (int)_columnSpanNumeric.Value;
-
         _config.MetricAggregations.Clear();
         foreach (DataGridViewRow row in _metricsGrid.Rows) {
             if (row.Cells["Metric"].Value == null) {

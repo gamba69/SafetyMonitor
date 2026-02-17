@@ -1,9 +1,12 @@
 using SafetyMonitorView.Models;
+using SafetyMonitorView.Services;
 
 namespace SafetyMonitorView.Forms;
 
 public class EditableTileControl : Panel {
     #region Private Fields
+
+    private const int ResizeBorderThreshold = 8;
 
     private readonly Dashboard _dashboard;
     private readonly Font _titleFont;
@@ -13,8 +16,13 @@ public class EditableTileControl : Panel {
     private Button _editButton = null!;
     private Label _infoLabel = null!;
     private bool _isDragging;
+    private bool _isResizing;
+    private Point _resizeStartPoint;
+    private int _resizeStartSpanColumns;
+    private int _resizeStartSpanRows;
 
     private Label _titleLabel = null!;
+    private PictureBox _tileTypeIcon = null!;
 
     #endregion Private Fields
 
@@ -33,7 +41,6 @@ public class EditableTileControl : Panel {
 
     #region Public Events
 
-    // public event EventHandler? TileMoved;
     public event EventHandler<TileConfig>? TileDeleted;
 
     public event EventHandler<TileConfig>? TileEdited;
@@ -60,6 +67,7 @@ public class EditableTileControl : Panel {
     protected override void Dispose(bool disposing) {
         if (disposing) {
             _titleFont?.Dispose();
+            _tileTypeIcon?.Image?.Dispose();
         }
         base.Dispose(disposing);
     }
@@ -94,10 +102,24 @@ public class EditableTileControl : Panel {
             BackColor = Color.FromArgb(0, 121, 107)
         };
 
+        var tileIconName = Config is ValueTileConfig
+            ? MaterialIcons.WindowTileValue
+            : Config is ChartTileConfig
+                ? MaterialIcons.WindowTileChart
+                : MaterialIcons.DashboardTab;
+
+        _tileTypeIcon = new PictureBox {
+            Dock = DockStyle.Left,
+            Width = 30,
+            SizeMode = PictureBoxSizeMode.CenterImage,
+            BackColor = Color.Transparent,
+            Image = MaterialIcons.GetIcon(tileIconName, Color.White, 20)
+        };
+
         _titleLabel = new Label {
             Dock = DockStyle.Fill,
             ForeColor = Color.White,
-            Font = _titleFont,  // ИЗМЕНЕНО: используем сохраненный шрифт
+            Font = _titleFont,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(5, 0, 0, 0),
             Text = Config.Title
@@ -126,6 +148,7 @@ public class EditableTileControl : Panel {
         _deleteButton.Click += OnDelete;
 
         header.Controls.Add(_titleLabel);
+        header.Controls.Add(_tileTypeIcon);
         header.Controls.Add(_editButton);
         header.Controls.Add(_deleteButton);
 
@@ -139,16 +162,26 @@ public class EditableTileControl : Panel {
         Controls.Add(_infoLabel);
         Controls.Add(header);
 
-        // CRITICAL: Wire mouse events for drag
-        this.MouseDown += OnMouseDown;
-        this.MouseMove += OnMouseMove;
-        this.MouseUp += OnMouseUp;
+        MouseDown += OnMouseDown;
+        MouseMove += OnMouseMove;
+        MouseUp += OnMouseUp;
         _titleLabel.MouseDown += OnMouseDown;
+        _tileTypeIcon.MouseDown += OnMouseDown;
         _titleLabel.MouseMove += OnMouseMove;
+        _tileTypeIcon.MouseMove += OnMouseMove;
         _titleLabel.MouseUp += OnMouseUp;
+        _tileTypeIcon.MouseUp += OnMouseUp;
         _infoLabel.MouseDown += OnMouseDown;
         _infoLabel.MouseMove += OnMouseMove;
         _infoLabel.MouseUp += OnMouseUp;
+    }
+
+    private static bool IsNearBottomBorder(Point point, Size controlSize) {
+        return controlSize.Height - point.Y <= ResizeBorderThreshold;
+    }
+
+    private static bool IsNearRightBorder(Point point, Size controlSize) {
+        return controlSize.Width - point.X <= ResizeBorderThreshold;
     }
 
     private void OnDelete(object? sender, EventArgs e) {
@@ -160,13 +193,13 @@ public class EditableTileControl : Panel {
 
     private void OnEdit(object? sender, EventArgs e) {
         if (Config is ValueTileConfig vtc) {
-            using var editor = new ValueTileEditorForm(vtc);
+            using var editor = new ValueTileEditorForm(vtc, _dashboard);
             if (editor.ShowDialog() == DialogResult.OK) {
                 UpdateDisplay();
                 TileEdited?.Invoke(this, Config);
             }
         } else if (Config is ChartTileConfig ctc) {
-            using var editor = new ChartTileEditorForm(ctc);
+            using var editor = new ChartTileEditorForm(ctc, _dashboard);
             if (editor.ShowDialog() == DialogResult.OK) {
                 UpdateDisplay();
                 TileEdited?.Invoke(this, Config);
@@ -175,16 +208,83 @@ public class EditableTileControl : Panel {
     }
 
     private void OnMouseDown(object? sender, MouseEventArgs e) {
-        if (e.Button == MouseButtons.Left) {
-            _dragStartPoint = e.Location;
-            if (sender != this && sender is Control child) {
-                _dragStartPoint = new Point(e.X + child.Left, e.Y + child.Top);
-            }
-            _isDragging = false;
+        if (e.Button != MouseButtons.Left) {
+            return;
         }
+
+        var localPoint = PointToClient(MousePosition);
+        var nearRight = IsNearRightBorder(localPoint, Size);
+        var nearBottom = IsNearBottomBorder(localPoint, Size);
+
+        if (nearRight || nearBottom) {
+            if (Parent == null) {
+                return;
+            }
+
+            _isResizing = true;
+            _resizeStartPoint = Parent.PointToClient(MousePosition);
+            _resizeStartSpanRows = Config.RowSpan;
+            _resizeStartSpanColumns = Config.ColumnSpan;
+            return;
+        }
+
+        _dragStartPoint = e.Location;
+        if (sender != this && sender is Control child) {
+            _dragStartPoint = new Point(e.X + child.Left, e.Y + child.Top);
+        }
+        _isDragging = false;
     }
 
     private void OnMouseMove(object? sender, MouseEventArgs e) {
+        var localPoint = PointToClient(MousePosition);
+        var nearRight = IsNearRightBorder(localPoint, Size);
+        var nearBottom = IsNearBottomBorder(localPoint, Size);
+        Cursor = nearRight && nearBottom
+            ? Cursors.SizeNWSE
+            : nearRight
+                ? Cursors.SizeWE
+                : nearBottom
+                    ? Cursors.SizeNS
+                    : Cursors.SizeAll;
+
+        if (_isResizing) {
+            if (Parent == null) {
+                return;
+            }
+
+            var current = Parent.PointToClient(MousePosition);
+            var deltaX = current.X - _resizeStartPoint.X;
+            var deltaY = current.Y - _resizeStartPoint.Y;
+
+            var cellW = Parent.Width / _dashboard.Columns;
+            var cellH = Parent.Height / _dashboard.Rows;
+            if (cellW <= 0 || cellH <= 0) {
+                return;
+            }
+
+            var newColSpan = Math.Clamp(_resizeStartSpanColumns + (int)Math.Round(deltaX / (double)cellW), 1, _dashboard.Columns - Config.Column);
+            var newRowSpan = Math.Clamp(_resizeStartSpanRows + (int)Math.Round(deltaY / (double)cellH), 1, _dashboard.Rows - Config.Row);
+
+            if (newColSpan == Config.ColumnSpan && newRowSpan == Config.RowSpan) {
+                return;
+            }
+
+            var oldColSpan = Config.ColumnSpan;
+            var oldRowSpan = Config.RowSpan;
+            Config.ColumnSpan = newColSpan;
+            Config.RowSpan = newRowSpan;
+
+            if (_dashboard.CanPlaceTile(Config)) {
+                TileEdited?.Invoke(this, Config);
+                UpdateDisplay();
+            } else {
+                Config.ColumnSpan = oldColSpan;
+                Config.RowSpan = oldRowSpan;
+            }
+
+            return;
+        }
+
         if (e.Button == MouseButtons.Left && !_isDragging) {
             var currentPoint = e.Location;
             if (sender != this && sender is Control child) {
@@ -205,6 +305,7 @@ public class EditableTileControl : Panel {
 
     private void OnMouseUp(object? sender, MouseEventArgs e) {
         _isDragging = false;
+        _isResizing = false;
     }
 
     #endregion Private Methods

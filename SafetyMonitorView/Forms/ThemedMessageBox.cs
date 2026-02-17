@@ -28,6 +28,13 @@ public class ThemedMessageBox : Form {
         _icon = icon;
 
         InitializeComponent();
+        var iconName = _icon switch {
+            MessageBoxIcon.Warning => MaterialIcons.MessageBoxWarningOutlined,
+            MessageBoxIcon.Error => MaterialIcons.MessageBoxErrorOutlined,
+            MessageBoxIcon.Question => MaterialIcons.MessageBoxQuestionOutlined,
+            _ => MaterialIcons.MessageBoxInfoOutlined,
+        };
+        FormIconHelper.Apply(this, iconName);
         ApplyTheme();
     }
 

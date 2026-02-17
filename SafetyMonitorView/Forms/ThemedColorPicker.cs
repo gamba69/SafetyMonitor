@@ -1,4 +1,5 @@
 using MaterialSkin;
+using SafetyMonitorView.Services;
 
 namespace SafetyMonitorView.Forms;
 
@@ -64,6 +65,7 @@ public class ThemedColorPicker : Form {
         _borderColor = _isLight ? Color.FromArgb(200, 200, 200) : Color.FromArgb(60, 75, 80);
 
         InitializeComponent();
+        FormIconHelper.Apply(this, MaterialIcons.MenuViewColorSchemes);
         GenerateWheelBitmap();
         GenerateBrightnessBitmap();
         UpdateControlsFromHSV();
