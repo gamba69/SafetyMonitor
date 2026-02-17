@@ -84,6 +84,7 @@ public class MainForm : MaterialForm {
         Font = new Font("Segoe UI", 9f, FontStyle.Regular);
 
         InitializeComponent();
+        ApplyApplicationIcon();
         ApplyWindowSettings();
         LoadDashboards();
         UpdateStatusBar();
@@ -239,6 +240,14 @@ public class MainForm : MaterialForm {
                     UpdateMenuItemsIcons(menuItem.DropDownItems, iconColor);
                 }
             }
+        }
+    }
+
+    private void ApplyApplicationIcon() {
+        var appIcon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+        if (appIcon != null) {
+            Icon = (Icon)appIcon.Clone();
+            appIcon.Dispose();
         }
     }
 
