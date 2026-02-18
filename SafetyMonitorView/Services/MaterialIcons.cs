@@ -139,7 +139,7 @@ public static class MaterialIcons {
         [MetricRainRate] = "\uF176",
         [MetricWindSpeed] = "\uEFD8",
         [MetricWindGust] = "\uE915",
-        [MetricWindDirection] = "\uE87A",
+        [MetricWindDirection] = "\uE989", // "\uE87A",
         [MetricStarFwhm] = "\uF31C",
         [MetricIsSafe] = "\uEAA9",
         [WindowTileValue] = "\uE400",
