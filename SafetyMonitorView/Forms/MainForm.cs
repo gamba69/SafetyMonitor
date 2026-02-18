@@ -1,5 +1,6 @@
 using MaterialSkin;
 using MaterialSkin.Controls;
+using SafetyMonitorView.Properties;
 using SafetyMonitorView.Controls;
 using SafetyMonitorView.Models;
 using SafetyMonitorView.Services;
@@ -244,11 +245,8 @@ public class MainForm : MaterialForm {
     }
 
     private void ApplyApplicationIcon() {
-        var appIcon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-        if (appIcon != null) {
-            Icon = (Icon)appIcon.Clone();
-            appIcon.Dispose();
-        }
+        Icon = _skinManager.Theme == MaterialSkinManager.Themes.DARK
+            ? Resources.DarkThemeIcon : Resources.LightThemeIcon;
     }
 
     private void ApplyWindowSettings() {
@@ -822,6 +820,7 @@ public class MainForm : MaterialForm {
 
     private void SetTheme(MaterialSkinManager.Themes theme) {
         _skinManager.Theme = theme;
+        ApplyApplicationIcon();
         // MaterialSkinManager queues multiple deferred color updates.
         // A timer guarantees we reapply our colors AFTER MSM is fully done.
         ScheduleThemeReapply();
