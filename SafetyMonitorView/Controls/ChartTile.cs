@@ -57,6 +57,7 @@ public class ChartTile : Panel {
     private object? _hoverVerticalLine;
     private readonly List<SeriesHoverSnapshot> _hoverSeries = [];
     private bool _inspectorActive;
+    private const int HeaderControlHeight = 28;
 
     private sealed class SeriesHoverSnapshot {
         public string Label { get; init; } = string.Empty;
@@ -1073,7 +1074,7 @@ public class ChartTile : Panel {
                 MouseOverBackColor = Color.Transparent
             },
             AutoSize = false,
-            Size = new Size(34, 24),
+            Size = new Size(34, HeaderControlHeight),
             Checked = true,
             Cursor = Cursors.Hand
         };
@@ -1098,7 +1099,7 @@ public class ChartTile : Panel {
                 MouseOverBackColor = Color.Transparent
             },
             AutoSize = false,
-            Size = new Size(34, 24),
+            Size = new Size(34, HeaderControlHeight),
             Checked = false,
             Cursor = Cursors.Hand
         };
@@ -1140,8 +1141,8 @@ public class ChartTile : Panel {
         };
 
         _inspectorSegmentPanel = new Panel {
-            Size = new Size(36, 26),
-            Location = new Point(0, 2),
+            Size = new Size(36, HeaderControlHeight + 2),
+            Location = new Point(0, 0),
             Padding = new Padding(1)
         };
         _inspectorSegmentPanel.Controls.Add(_inspectorButton);
@@ -1154,7 +1155,7 @@ public class ChartTile : Panel {
         _inspectorHostPanel.Controls.Add(_inspectorSegmentPanel);
 
         _modeSegmentPanel = new Panel {
-            Size = new Size(70, 26),
+            Size = new Size(70, HeaderControlHeight + 2),
             Padding = new Padding(1)
         };
         _autoModeButton.Location = new Point(1, 1);
@@ -1165,7 +1166,7 @@ public class ChartTile : Panel {
         _countdownLabel = new Label {
             Text = "",
             AutoSize = false,
-            Size = new Size(36, 26),
+            Size = new Size(36, HeaderControlHeight + 2),
             TextAlign = ContentAlignment.MiddleCenter,
             Font = CreateSafeFont("Segoe UI", 8f, System.Drawing.FontStyle.Regular),
             ForeColor = fg,
@@ -1178,9 +1179,9 @@ public class ChartTile : Panel {
             BackColor = tileBg
         };
 
-        // Center vertically: (30 - 26) / 2 = 2
-        _countdownLabel.Location = new Point(2, 2);
-        _modeSegmentPanel.Location = new Point(38, 2);
+        // Center vertically: (30 - 30) / 2 = 0
+        _countdownLabel.Location = new Point(2, 0);
+        _modeSegmentPanel.Location = new Point(38, 0);
         _modeSwitchContainer.Controls.Add(_countdownLabel);
         _modeSwitchContainer.Controls.Add(_modeSegmentPanel);
 
