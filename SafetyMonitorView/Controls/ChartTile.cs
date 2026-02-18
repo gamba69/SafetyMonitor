@@ -1362,29 +1362,12 @@ public class ChartTile : Panel {
     }
 
     private TimeSpan ResolveStaticAggregationInterval(TimeSpan range) {
-        var rangeSeconds = range.TotalSeconds;
-        if (rangeSeconds <= 1) {
-            return TimeSpan.FromSeconds(1);
-        }
-
-        var toleranceRatio = _staticAggregationPresetMatchTolerancePercent / 100d;
-        var matchingPreset = _periodPresets
-            .Where(p => p.Duration > TimeSpan.Zero && p.AggregationInterval > TimeSpan.Zero)
-            .Select(p => new {
-                Preset = p,
-                RelativeDeviation = Math.Abs(range.TotalSeconds - p.Duration.TotalSeconds) / p.Duration.TotalSeconds
-            })
-            .Where(x => x.RelativeDeviation <= toleranceRatio)
-            .OrderBy(x => x.RelativeDeviation)
-            .Select(x => x.Preset)
-            .FirstOrDefault();
-
-        if (!string.IsNullOrWhiteSpace(matchingPreset.Uid) && matchingPreset.AggregationInterval > TimeSpan.Zero) {
-            return matchingPreset.AggregationInterval;
-        }
-
-        var intervalSeconds = Math.Max(1, (int)Math.Ceiling(rangeSeconds / _staticAggregationTargetPointCount));
-        return TimeSpan.FromSeconds(intervalSeconds);
+        return ChartAggregationHelper.CalculateAutomaticAggregationInterval(
+            range,
+            _staticAggregationPresetMatchTolerancePercent,
+            _staticAggregationTargetPointCount,
+            _periodPresets.Select(p => (p.Duration, p.AggregationInterval)),
+            applyPeriodMatching: true);
     }
 
     private void UpdateAggregationInfoLabel(TimeSpan? interval) {

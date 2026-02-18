@@ -58,6 +58,7 @@ public static class MaterialIcons {
     public const string CommonBrowse = "common_browse";
     public const string CommonResize = "common_resize";
     public const string CommonTest = "common_test";
+    public const string CommonCalculate = "common_calculate";
     public const string DashboardTab = "dashboard_tab";
     public const string MetricTemperature = "metric_temperature";
     public const string MetricHumidity = "metric_humidity";
@@ -122,6 +123,7 @@ public static class MaterialIcons {
         [CommonBrowse] = "\uE2C8",
         [CommonResize] = "\uE8CE",
         [CommonTest] = "\uE86C",
+        [CommonCalculate] = "\uEA5F",
         [DashboardTab] = "\uE871",
         [ToolbarChartsLink] = "\uE157",
         [ToolbarChartsUnlink] = "\uE16F",

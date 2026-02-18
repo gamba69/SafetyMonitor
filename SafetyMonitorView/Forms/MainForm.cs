@@ -894,7 +894,9 @@ public class MainForm : MaterialForm {
     }
 
     private void ShowChartPeriodPresetEditor() {
-        using var editor = new ChartPeriodPresetEditorForm(_appSettings.ChartPeriodPresets);
+        using var editor = new ChartPeriodsEditorForm(
+            _appSettings.ChartPeriodPresets,
+            _appSettings.ChartStaticAggregationTargetPointCount);
         if (editor.ShowDialog(this) == DialogResult.OK) {
             _appSettings.ChartPeriodPresets = editor.Presets;
             _appSettingsService.SaveSettings(_appSettings);
