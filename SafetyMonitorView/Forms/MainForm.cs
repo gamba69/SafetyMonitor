@@ -563,7 +563,7 @@ public class MainForm : MaterialForm {
     private void InitializeComponent() {
         SuspendLayout();
 
-        Text = "SafetyMonitorView - Safety Monitor Dashboard";
+        Text = "🌦    DreamSky Observatory    Safety Monitor";
         // УБРАНО: Size и StartPosition будут установлены в ApplyWindowSettings
 
         _mainMenu = new MenuStrip {
