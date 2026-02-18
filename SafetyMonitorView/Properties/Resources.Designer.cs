@@ -61,12 +61,12 @@ namespace SafetyMonitorView.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        internal static byte[] DarkThemeIcon {
+        internal static System.Drawing.Icon DarkThemeIcon {
             get {
                 object obj = ResourceManager.GetObject("DarkThemeIcon", resourceCulture);
-                return ((byte[])(obj));
+                return ((System.Drawing.Icon)(obj));
             }
         }
         
