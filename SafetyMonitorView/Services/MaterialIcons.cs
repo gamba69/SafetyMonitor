@@ -28,6 +28,7 @@ public static class MaterialIcons {
     public const string ToolbarChartsUnlink = "toolbar_charts_unlink";
     public const string ChartModeAuto = "chart_mode_auto";
     public const string ChartModeStatic = "chart_mode_static";
+    public const string ChartHoverInspector = "chart_hover_inspector";
     public const string PlotMenuSaveImage = "plot_menu_save_image";
     public const string PlotMenuCopyToClipboard = "plot_menu_copy_to_clipboard";
     public const string PlotMenuAutoscale = "plot_menu_autoscale";
@@ -122,6 +123,7 @@ public static class MaterialIcons {
         [ToolbarChartsUnlink] = "\uE16F",
         [ChartModeStatic] = "\uF71E",
         [ChartModeAuto] = "\uF417",
+        [ChartHoverInspector] = "\uF41B",
         [MetricTemperature] = "\uF076",
         [MetricHumidity] = "\uE798",
         [MetricPressure] = "\uE69f",

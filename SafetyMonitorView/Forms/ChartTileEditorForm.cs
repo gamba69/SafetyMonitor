@@ -37,6 +37,7 @@ public class ChartTileEditorForm : Form {
     private NumericUpDown _rowSpanNumeric = null!;
     private Button _saveButton = null!;
     private CheckBox _showGridCheckBox = null!;
+    private CheckBox _showHoverInspectorCheckBox = null!;
     private CheckBox _showLegendCheckBox = null!;
     private TextBox _titleTextBox = null!;
 
@@ -256,6 +257,8 @@ public class ChartTileEditorForm : Form {
         sizePanel.Controls.Add(_showLegendCheckBox);
         _showGridCheckBox = new CheckBox { Text = "Grid", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 4, 15, 0) };
         sizePanel.Controls.Add(_showGridCheckBox);
+        _showHoverInspectorCheckBox = new CheckBox { Text = "Hover Inspector", Font = normalFont, AutoSize = true, Checked = false, Margin = new Padding(0, 4, 15, 0) };
+        sizePanel.Controls.Add(_showHoverInspectorCheckBox);
         sizePanel.Controls.Add(new Label { Text = "Size:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 5, 10, 0) });
         sizePanel.Controls.Add(new Label { Text = "Rows:", Font = normalFont, AutoSize = true, Margin = new Padding(0, 5, 5, 0) });
         _rowSpanNumeric = new NumericUpDown { Width = 60, Minimum = 1, Maximum = 5, Value = 2, Font = normalFont, Margin = new Padding(0, 0, 15, 0) };
@@ -290,6 +293,7 @@ public class ChartTileEditorForm : Form {
 
         _showLegendCheckBox.Checked = _config.ShowLegend;
         _showGridCheckBox.Checked = _config.ShowGrid;
+        _showHoverInspectorCheckBox.Checked = _config.ShowHoverInspector;
         _rowSpanNumeric.Value = _config.RowSpan;
         _columnSpanNumeric.Value = _config.ColumnSpan;
 
@@ -466,6 +470,7 @@ public class ChartTileEditorForm : Form {
 
         _config.ShowLegend = _showLegendCheckBox.Checked;
         _config.ShowGrid = _showGridCheckBox.Checked;
+        _config.ShowHoverInspector = _showHoverInspectorCheckBox.Checked;
         _config.MetricAggregations.Clear();
         foreach (DataGridViewRow row in _metricsGrid.Rows) {
             if (row.Cells["Metric"].Value == null) {

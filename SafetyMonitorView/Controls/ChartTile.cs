@@ -2,6 +2,7 @@ using MaterialSkin;
 using SafetyMonitorView.Forms;
 using SafetyMonitorView.Models;
 using SafetyMonitorView.Services;
+using ScottPlot;
 using ScottPlot.WinForms;
 using System.Data;
 using Color = System.Drawing.Color;
@@ -44,10 +45,24 @@ public class ChartTile : Panel {
     private Panel? _topPanel;
     private Panel? _modeSwitchContainer;
     private Panel? _modeSegmentPanel;
+    private Panel? _hoverInspectorSegmentPanel;
     private RadioButton? _autoModeButton;
     private RadioButton? _staticModeButton;
     private Label? _countdownLabel;
     private Label? _aggregationInfoLabel;
+    private Label? _hoverInfoLabel;
+    private CheckBox? _hoverInspectorButton;
+    private object? _hoverVerticalLine;
+    private readonly List<SeriesHoverSnapshot> _hoverSeries = [];
+    private bool _hoverInspectorActive;
+
+    private sealed class SeriesHoverSnapshot {
+        public string Label { get; init; } = string.Empty;
+        public string Unit { get; init; } = string.Empty;
+        public string ValueFormat { get; init; } = "0.##";
+        public double[] Xs { get; init; } = [];
+        public double[] Ys { get; init; } = [];
+    }
 
     #endregion Private Fields
 
@@ -99,6 +114,8 @@ public class ChartTile : Panel {
 
         _plot.Plot.Clear();
         ClearExtraAxes();
+        _hoverSeries.Clear();
+        _hoverVerticalLine = null;
 
         // Reset the default left axis label
         _plot.Plot.Axes.Left.Label.Text = string.Empty;
@@ -201,6 +218,16 @@ public class ChartTile : Panel {
             if (useMultipleAxes && axisMap.TryGetValue(agg.Metric, out var yAxis)) {
                 scatter.Axes.YAxis = yAxis;
             }
+
+            _hoverSeries.Add(new SeriesHoverSnapshot {
+                Label = string.IsNullOrWhiteSpace(agg.Label)
+                    ? agg.Metric.GetDisplayName()
+                    : agg.Label,
+                Unit = agg.Metric.GetUnit() ?? string.Empty,
+                ValueFormat = agg.Metric == MetricType.IsSafe ? "0" : "0.##",
+                Xs = validTimes,
+                Ys = validValues
+            });
         }
 
         _plot.Plot.Axes.DateTimeTicksBottom();
@@ -238,6 +265,7 @@ public class ChartTile : Panel {
             _plot.Plot.HideGrid();
         }
         RememberCurrentXAxisLimits();
+        EnsureHoverInspectorState();
         _plot.Refresh();
     }
 
@@ -363,6 +391,8 @@ public class ChartTile : Panel {
             ChartPeriodPresetStore.PresetsChanged -= HandlePresetsChanged;
             MetricAxisRuleStore.RulesChanged -= HandleAxisRulesChanged;
             _plot?.MouseUp -= Plot_MouseUp;
+            _plot?.MouseMove -= Plot_MouseMove;
+            _plot?.MouseLeave -= Plot_MouseLeave;
             _plot?.MouseWheel -= Plot_MouseWheel;
             _plot?.MouseDoubleClick -= Plot_MouseDoubleClick;
             if (_staticModeTimer != null) {
@@ -563,6 +593,10 @@ public class ChartTile : Panel {
             _aggregationInfoLabel.BackColor = tileBg;
             _aggregationInfoLabel.ForeColor = isLight ? Color.FromArgb(110, 110, 110) : Color.FromArgb(160, 170, 175);
         }
+        if (_hoverInfoLabel != null) {
+            _hoverInfoLabel.BackColor = tileBg;
+            _hoverInfoLabel.ForeColor = isLight ? Color.FromArgb(110, 110, 110) : Color.FromArgb(160, 170, 175);
+        }
         if (_topPanel != null && _topPanel.BackColor != tileBg) {
             _topPanel.BackColor = tileBg;
         }
@@ -646,8 +680,15 @@ public class ChartTile : Panel {
             ApplyViewSettings();
         });
 
+        var hoverInspectorItem = CreateToggleMenuItem("Hover Inspector", MaterialIcons.ChartHoverInspector, _config.ShowHoverInspector, (_, _) => {
+            _config.ShowHoverInspector = !_config.ShowHoverInspector;
+            EnsureHoverInspectorState();
+            ViewSettingsChanged?.Invoke(this);
+        });
+
         contextMenu.Items.Add(legendItem);
         contextMenu.Items.Add(gridItem);
+        contextMenu.Items.Add(hoverInspectorItem);
 
         if (_config.MetricAggregations.Count == 0) {
             return;
@@ -1028,6 +1069,37 @@ public class ChartTile : Panel {
         UpdateAggregationInfoLabel(ResolveAggregationInterval());
         };
 
+        _hoverInspectorButton = new CheckBox {
+            Text = string.Empty,
+            Appearance = Appearance.Button,
+            ImageAlign = ContentAlignment.MiddleCenter,
+            TextAlign = ContentAlignment.MiddleCenter,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = {
+                BorderSize = 0,
+                CheckedBackColor = Color.Transparent,
+                MouseDownBackColor = Color.Transparent,
+                MouseOverBackColor = Color.Transparent
+            },
+            AutoSize = false,
+            Size = new Size(34, 24),
+            Checked = _config.ShowHoverInspector,
+            Cursor = Cursors.Hand
+        };
+        _hoverInspectorButton.CheckedChanged += (s, e) => {
+            _config.ShowHoverInspector = _hoverInspectorButton.Checked;
+            EnsureHoverInspectorState();
+            UpdateModeSwitchAppearance();
+            ViewSettingsChanged?.Invoke(this);
+        };
+
+        _hoverInspectorSegmentPanel = new Panel {
+            Size = new Size(36, 26),
+            Padding = new Padding(1)
+        };
+        _hoverInspectorButton.Location = new Point(1, 1);
+        _hoverInspectorSegmentPanel.Controls.Add(_hoverInspectorButton);
+
         _modeSegmentPanel = new Panel {
             Size = new Size(70, 26),
             Padding = new Padding(1)
@@ -1049,14 +1121,16 @@ public class ChartTile : Panel {
 
         _modeSwitchContainer = new Panel {
             Dock = DockStyle.Right,
-            Width = 112,
+            Width = 148,
             BackColor = tileBg
         };
 
         // Center vertically: (30 - 26) / 2 = 2
         _countdownLabel.Location = new Point(2, 2);
-        _modeSegmentPanel.Location = new Point(112 - 70 - 2, 2);
+        _hoverInspectorSegmentPanel.Location = new Point(40, 2);
+        _modeSegmentPanel.Location = new Point(148 - 70 - 2, 2);
         _modeSwitchContainer.Controls.Add(_countdownLabel);
+        _modeSwitchContainer.Controls.Add(_hoverInspectorSegmentPanel);
         _modeSwitchContainer.Controls.Add(_modeSegmentPanel);
         _topPanel.Controls.Add(_modeSwitchContainer);
         UpdateModeSwitchAppearance();
@@ -1089,15 +1163,34 @@ public class ChartTile : Panel {
         _staticModeTimer.Start();
 
 
-        _aggregationInfoLabel = new Label {
+        var bottomInfoPanel = new Panel {
             Dock = DockStyle.Bottom,
             Height = 18,
+            BackColor = tileBg
+        };
+
+        _aggregationInfoLabel = new Label {
+            Dock = DockStyle.Right,
+            Width = 260,
             Padding = new Padding(4, 0, 4, 2),
             TextAlign = ContentAlignment.BottomRight,
             Font = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular),
             ForeColor = isLight ? Color.FromArgb(110, 110, 110) : Color.FromArgb(160, 170, 175),
             BackColor = tileBg
         };
+
+        _hoverInfoLabel = new Label {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(4, 0, 4, 2),
+            TextAlign = ContentAlignment.BottomLeft,
+            Font = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular),
+            ForeColor = isLight ? Color.FromArgb(110, 110, 110) : Color.FromArgb(160, 170, 175),
+            BackColor = tileBg,
+            Text = string.Empty
+        };
+
+        bottomInfoPanel.Controls.Add(_hoverInfoLabel);
+        bottomInfoPanel.Controls.Add(_aggregationInfoLabel);
         UpdateAggregationInfoLabel(ResolveAggregationInterval());
 
         _plot = new FormsPlot {
@@ -1107,6 +1200,8 @@ public class ChartTile : Panel {
         _plotContextMenu = CreatePlotContextMenu();
         _plot.ContextMenuStrip = null;
         _plot.MouseUp += Plot_MouseUp;
+        _plot.MouseMove += Plot_MouseMove;
+        _plot.MouseLeave += Plot_MouseLeave;
         _plot.MouseWheel += Plot_MouseWheel;
         _plot.MouseDoubleClick += Plot_MouseDoubleClick;
         TryDisableScottPlotBuiltInContextMenu();
@@ -1114,7 +1209,7 @@ public class ChartTile : Panel {
 
         // Add header and info labels first
         Controls.Add(_topPanel);
-        Controls.Add(_aggregationInfoLabel);
+        Controls.Add(bottomInfoPanel);
 
         // Use BeginInvoke to defer adding FormsPlot until message loop is ready
         // This avoids GDI+ font errors during auto-scaling
@@ -1388,7 +1483,7 @@ public class ChartTile : Panel {
     }
 
     private void UpdateModeSwitchAppearance() {
-        if (_modeSegmentPanel == null || _autoModeButton == null
+        if (_modeSegmentPanel == null || _hoverInspectorSegmentPanel == null || _autoModeButton == null
             || _staticModeButton == null || _countdownLabel == null
             || _modeSwitchContainer == null) {
             return;
@@ -1404,6 +1499,7 @@ public class ChartTile : Panel {
         var tileBg = isLight ? Color.White : Color.FromArgb(35, 47, 52);
 
         _modeSwitchContainer.BackColor = tileBg;
+        _hoverInspectorSegmentPanel.BackColor = borderColor;
         _modeSegmentPanel.BackColor = borderColor;
         _autoModeButton.BackColor = _autoModeButton.Checked ? activeBg : segmentBg;
         _staticModeButton.BackColor = _staticModeButton.Checked ? activeBg : segmentBg;
@@ -1412,6 +1508,11 @@ public class ChartTile : Panel {
         _autoModeButton.ImageAlign = ContentAlignment.MiddleCenter;
         _staticModeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartModeStatic, iconColor, 22);
         _staticModeButton.ImageAlign = ContentAlignment.MiddleCenter;
+        if (_hoverInspectorButton != null) {
+            _hoverInspectorButton.BackColor = _hoverInspectorButton.Checked ? activeBg : segmentBg;
+            _hoverInspectorButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartHoverInspector, iconColor, 22);
+            _hoverInspectorButton.ImageAlign = ContentAlignment.MiddleCenter;
+        }
 
         _countdownLabel.ForeColor = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
         _countdownLabel.BackColor = tileBg;
@@ -1523,6 +1624,145 @@ public class ChartTile : Panel {
 
         if (DateTime.UtcNow - _lastChartInteractionUtc >= _staticModeTimeout) {
             ExitStaticMode();
+        }
+    }
+
+    private void EnsureHoverInspectorState() {
+        _hoverInspectorActive = _config.ShowHoverInspector;
+
+        if (_hoverInspectorButton != null && _hoverInspectorButton.Checked != _hoverInspectorActive) {
+            _hoverInspectorButton.Checked = _hoverInspectorActive;
+        }
+
+        if (!_hoverInspectorActive) {
+            HideHoverInspector();
+        }
+    }
+
+    private void Plot_MouseMove(object? sender, MouseEventArgs e) {
+        if (!_hoverInspectorActive || _plot == null || _hoverSeries.Count == 0) {
+            return;
+        }
+
+        var coordinates = _plot.Plot.GetCoordinates(new Pixel(e.X, e.Y));
+        var anchor = FindNearestAnchorX(coordinates.X);
+        if (!anchor.HasValue) {
+            return;
+        }
+
+        UpdateHoverVerticalLine(anchor.Value);
+        UpdateHoverInfo(anchor.Value);
+        _plot.Refresh();
+    }
+
+    private void Plot_MouseLeave(object? sender, EventArgs e) {
+        HideHoverInspector();
+    }
+
+    private double? FindNearestAnchorX(double x) {
+        double? bestX = null;
+        var bestDelta = double.PositiveInfinity;
+
+        foreach (var series in _hoverSeries) {
+            if (series.Xs.Length == 0) {
+                continue;
+            }
+
+            var index = FindNearestIndex(series.Xs, x);
+            if (index < 0) {
+                continue;
+            }
+
+            var delta = Math.Abs(series.Xs[index] - x);
+            if (delta < bestDelta) {
+                bestDelta = delta;
+                bestX = series.Xs[index];
+            }
+        }
+
+        return bestX;
+    }
+
+    private static int FindNearestIndex(double[] sortedValues, double value) {
+        if (sortedValues.Length == 0) {
+            return -1;
+        }
+
+        var index = Array.BinarySearch(sortedValues, value);
+        if (index >= 0) {
+            return index;
+        }
+
+        var next = ~index;
+        if (next <= 0) {
+            return 0;
+        }
+
+        if (next >= sortedValues.Length) {
+            return sortedValues.Length - 1;
+        }
+
+        var prev = next - 1;
+        return Math.Abs(sortedValues[prev] - value) <= Math.Abs(sortedValues[next] - value)
+            ? prev
+            : next;
+    }
+
+    private void UpdateHoverVerticalLine(double x) {
+        if (_plot == null) {
+            return;
+        }
+
+        if (_hoverVerticalLine == null) {
+            var line = _plot.Plot.Add.VerticalLine(x);
+            line.LinePattern = LinePattern.Dashed;
+            line.LineWidth = 1.5f;
+            line.IsVisible = true;
+            _hoverVerticalLine = line;
+        }
+
+        if (_hoverVerticalLine is ScottPlot.Plottables.VerticalLine verticalLine) {
+            verticalLine.X = x;
+            verticalLine.IsVisible = true;
+            var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+            verticalLine.Color = ScottPlot.Color.FromColor(isLight ? Color.FromArgb(80, 80, 80) : Color.FromArgb(185, 195, 200));
+        }
+    }
+
+    private void UpdateHoverInfo(double anchorX) {
+        if (_hoverInfoLabel == null) {
+            return;
+        }
+
+        var timestamp = DateTime.FromOADate(anchorX);
+        var values = new List<string>(_hoverSeries.Count + 1) { timestamp.ToString("yyyy-MM-dd HH:mm:ss") };
+
+        foreach (var series in _hoverSeries) {
+            var index = FindNearestIndex(series.Xs, anchorX);
+            if (index < 0 || index >= series.Ys.Length) {
+                continue;
+            }
+
+            var value = series.Ys[index];
+            if (double.IsNaN(value)) {
+                continue;
+            }
+
+            var unit = string.IsNullOrWhiteSpace(series.Unit) ? string.Empty : $" {series.Unit}";
+            values.Add($"{series.Label}: {value.ToString(series.ValueFormat)}{unit}");
+        }
+
+        _hoverInfoLabel.Text = string.Join("  |  ", values);
+    }
+
+    private void HideHoverInspector() {
+        if (_hoverVerticalLine is ScottPlot.Plottables.VerticalLine verticalLine) {
+            verticalLine.IsVisible = false;
+            _plot?.Refresh();
+        }
+
+        if (_hoverInfoLabel != null) {
+            _hoverInfoLabel.Text = string.Empty;
         }
     }
 
