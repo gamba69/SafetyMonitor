@@ -563,8 +563,7 @@ public class MainForm : MaterialForm {
     private void InitializeComponent() {
         SuspendLayout();
 
-        Text = "🌦    DreamSky Observatory    Safety Monitor";
-        // УБРАНО: Size и StartPosition будут установлены в ApplyWindowSettings
+        Text = "⛨  DreamSky Observatory | Safety Monitor";
 
         _mainMenu = new MenuStrip {
             Dock = DockStyle.Top
