@@ -72,6 +72,9 @@ public class ChartTile : Panel {
     public event Action<ChartTile, DateTime, DateTime>? StaticRangeChanged;
     public event Action<ChartTile>? AutoModeRestored;
     public event Action<ChartTile>? ViewSettingsChanged;
+    public event Action<ChartTile, bool>? HoverInspectorToggled;
+    public event Action<ChartTile, bool>? PlotHoverPresenceChanged;
+    public event Action<ChartTile, double>? HoverAnchorChanged;
 
     #endregion Public Events
 
@@ -357,6 +360,42 @@ public class ChartTile : Panel {
         }
     }
 
+    public void SetHoverInspectorEnabled(bool enabled, bool raiseEvents = true) {
+        if (_config.ShowHoverInspector == enabled && _hoverInspectorActive == enabled) {
+            return;
+        }
+
+        _config.ShowHoverInspector = enabled;
+        EnsureHoverInspectorState();
+        UpdateModeSwitchAppearance();
+
+        if (raiseEvents) {
+            HoverInspectorToggled?.Invoke(this, enabled);
+            ViewSettingsChanged?.Invoke(this);
+        }
+    }
+
+    public bool IsHoverInspectorEnabled => _config.ShowHoverInspector;
+
+    public void ShowHoverInspectorAt(double x) {
+        if (!_hoverInspectorActive || _plot == null || _hoverSeries.Count == 0) {
+            return;
+        }
+
+        var anchor = FindNearestAnchorX(x);
+        if (!anchor.HasValue) {
+            return;
+        }
+
+        UpdateHoverVerticalLine(anchor.Value);
+        UpdateHoverInfo(anchor.Value);
+        _plot.Refresh();
+    }
+
+    public void ClearHoverInspectorDisplay() {
+        HideHoverInspector();
+    }
+
     #endregion Public Methods
 
     #region Protected Methods
@@ -392,6 +431,7 @@ public class ChartTile : Panel {
             MetricAxisRuleStore.RulesChanged -= HandleAxisRulesChanged;
             _plot?.MouseUp -= Plot_MouseUp;
             _plot?.MouseMove -= Plot_MouseMove;
+            _plot?.MouseEnter -= Plot_MouseEnter;
             _plot?.MouseLeave -= Plot_MouseLeave;
             _plot?.MouseWheel -= Plot_MouseWheel;
             _plot?.MouseDoubleClick -= Plot_MouseDoubleClick;
@@ -681,9 +721,7 @@ public class ChartTile : Panel {
         });
 
         var hoverInspectorItem = CreateToggleMenuItem("Hover Inspector", MaterialIcons.ChartHoverInspector, _config.ShowHoverInspector, (_, _) => {
-            _config.ShowHoverInspector = !_config.ShowHoverInspector;
-            EnsureHoverInspectorState();
-            ViewSettingsChanged?.Invoke(this);
+            SetHoverInspectorEnabled(!_config.ShowHoverInspector);
         });
 
         contextMenu.Items.Add(legendItem);
@@ -1087,10 +1125,7 @@ public class ChartTile : Panel {
             Cursor = Cursors.Hand
         };
         _hoverInspectorButton.CheckedChanged += (s, e) => {
-            _config.ShowHoverInspector = _hoverInspectorButton.Checked;
-            EnsureHoverInspectorState();
-            UpdateModeSwitchAppearance();
-            ViewSettingsChanged?.Invoke(this);
+            SetHoverInspectorEnabled(_hoverInspectorButton.Checked);
         };
 
         _hoverInspectorSegmentPanel = new Panel {
@@ -1201,6 +1236,7 @@ public class ChartTile : Panel {
         _plot.ContextMenuStrip = null;
         _plot.MouseUp += Plot_MouseUp;
         _plot.MouseMove += Plot_MouseMove;
+        _plot.MouseEnter += Plot_MouseEnter;
         _plot.MouseLeave += Plot_MouseLeave;
         _plot.MouseWheel += Plot_MouseWheel;
         _plot.MouseDoubleClick += Plot_MouseDoubleClick;
@@ -1653,10 +1689,15 @@ public class ChartTile : Panel {
         UpdateHoverVerticalLine(anchor.Value);
         UpdateHoverInfo(anchor.Value);
         _plot.Refresh();
+        HoverAnchorChanged?.Invoke(this, anchor.Value);
+    }
+
+    private void Plot_MouseEnter(object? sender, EventArgs e) {
+        PlotHoverPresenceChanged?.Invoke(this, true);
     }
 
     private void Plot_MouseLeave(object? sender, EventArgs e) {
-        HideHoverInspector();
+        PlotHoverPresenceChanged?.Invoke(this, false);
     }
 
     private double? FindNearestAnchorX(double x) {

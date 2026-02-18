@@ -15,6 +15,7 @@ public class DashboardPanel : TableLayoutPanel {
     private double _chartStaticAggregationPresetMatchTolerancePercent;
     private int _chartStaticAggregationTargetPointCount;
     private bool _tilesCreated;
+    private readonly HashSet<ChartTile> _hoveredChartTiles = [];
 
     #endregion Private Fields
 
@@ -64,6 +65,13 @@ public class DashboardPanel : TableLayoutPanel {
     }
     public void SetLinkChartPeriods(bool linkChartPeriods) {
         _linkChartPeriods = linkChartPeriods;
+        _hoveredChartTiles.Clear();
+
+        if (!_linkChartPeriods) {
+            foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+                chartTile.ClearHoverInspectorDisplay();
+            }
+        }
     }
 
     public void SetChartStaticModeTimeoutSeconds(int seconds) {
@@ -144,6 +152,9 @@ public class DashboardPanel : TableLayoutPanel {
                     chartTile.StaticRangeChanged += OnChartStaticRangeChanged;
                     chartTile.AutoModeRestored += OnChartAutoModeRestored;
                     chartTile.ViewSettingsChanged += OnChartViewSettingsChanged;
+                    chartTile.HoverInspectorToggled += OnChartHoverInspectorToggled;
+                    chartTile.PlotHoverPresenceChanged += OnPlotHoverPresenceChanged;
+                    chartTile.HoverAnchorChanged += OnChartHoverAnchorChanged;
                     chartTile.SetStaticModeTimeout(TimeSpan.FromSeconds(_chartStaticModeTimeoutSeconds));
                     chartTile.SetStaticAggregationSettings(
                         _chartStaticAggregationPresetMatchTolerancePercent,
@@ -202,6 +213,72 @@ public class DashboardPanel : TableLayoutPanel {
 
     private void OnChartViewSettingsChanged(ChartTile source) {
         DashboardChanged?.Invoke();
+    }
+
+
+    private void OnChartHoverInspectorToggled(ChartTile source, bool enabled) {
+        if (!_linkChartPeriods) {
+            DashboardChanged?.Invoke();
+            return;
+        }
+
+        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+            if (ReferenceEquals(chartTile, source)) {
+                continue;
+            }
+
+            chartTile.SetHoverInspectorEnabled(enabled, raiseEvents: false);
+        }
+
+        if (!enabled) {
+            _hoveredChartTiles.Clear();
+            foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+                chartTile.ClearHoverInspectorDisplay();
+            }
+        }
+
+        DashboardChanged?.Invoke();
+    }
+
+    private void OnPlotHoverPresenceChanged(ChartTile source, bool isHovered) {
+        if (!_linkChartPeriods || !source.IsHoverInspectorEnabled) {
+            if (!isHovered) {
+                source.ClearHoverInspectorDisplay();
+            }
+            return;
+        }
+
+        if (isHovered) {
+            _hoveredChartTiles.Add(source);
+            return;
+        }
+
+        _hoveredChartTiles.Remove(source);
+        if (_hoveredChartTiles.Count > 0) {
+            return;
+        }
+
+        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+            chartTile.ClearHoverInspectorDisplay();
+        }
+    }
+
+    private void OnChartHoverAnchorChanged(ChartTile source, double x) {
+        if (!_linkChartPeriods || !source.IsHoverInspectorEnabled) {
+            return;
+        }
+
+        // MouseEnter is not guaranteed when the pointer is already over the plot
+        // after runtime state changes, so treat anchor updates as active hover.
+        _hoveredChartTiles.Add(source);
+
+        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+            if (!chartTile.IsHoverInspectorEnabled) {
+                continue;
+            }
+
+            chartTile.ShowHoverInspectorAt(x);
+        }
     }
 
     private void InitializeUI() {
