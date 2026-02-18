@@ -238,6 +238,7 @@ public class MainForm : MaterialForm {
 
                 // Recursively update submenu items
                 if (menuItem.HasDropDownItems) {
+                    InteractiveCursorStyler.Apply(menuItem.DropDownItems);
                     UpdateMenuItemsIcons(menuItem.DropDownItems, iconColor);
                 }
             }
@@ -362,7 +363,8 @@ public class MainForm : MaterialForm {
             Padding = Padding.Empty,
             AutoSize = false,
             Size = new Size(36, 30),
-            Checked = !_appSettings.IsDarkTheme
+            Checked = !_appSettings.IsDarkTheme,
+            Cursor = Cursors.Hand
         };
         _lightThemeButton.CheckedChanged += (s, e) => {
             if (_lightThemeButton.Checked) {
@@ -390,7 +392,8 @@ public class MainForm : MaterialForm {
             Padding = Padding.Empty,
             AutoSize = false,
             Size = new Size(36, 30),
-            Checked = _appSettings.IsDarkTheme
+            Checked = _appSettings.IsDarkTheme,
+            Cursor = Cursors.Hand
         };
         _darkThemeButton.CheckedChanged += (s, e) => {
             if (_darkThemeButton.Checked) {
@@ -422,7 +425,8 @@ public class MainForm : MaterialForm {
             },
             AutoSize = false,
             Size = new Size(36, 30),
-            Checked = _appSettings.LinkChartPeriods
+            Checked = _appSettings.LinkChartPeriods,
+            Cursor = Cursors.Hand
         };
         _linkedChartsButton.CheckedChanged += (s, e) => {
             if (_linkedChartsButton.Checked) {
@@ -443,7 +447,8 @@ public class MainForm : MaterialForm {
             },
             AutoSize = false,
             Size = new Size(36, 30),
-            Checked = !_appSettings.LinkChartPeriods
+            Checked = !_appSettings.LinkChartPeriods,
+            Cursor = Cursors.Hand
         };
         _unlinkedChartsButton.CheckedChanged += (s, e) => {
             if (_unlinkedChartsButton.Checked) {
@@ -469,7 +474,8 @@ public class MainForm : MaterialForm {
         _linkChartsCheckBox = new CheckBox {
             Visible = false,
             AutoSize = true,
-            Checked = _appSettings.LinkChartPeriods
+            Checked = _appSettings.LinkChartPeriods,
+            Cursor = Cursors.Hand
         };
         _linkChartsCheckBox.CheckedChanged += (s, e) => {
             _appSettings.LinkChartPeriods = _linkChartsCheckBox.Checked;
@@ -566,7 +572,8 @@ public class MainForm : MaterialForm {
         Text = "⛨  DreamSky Observatory | Safety Monitor";
 
         _mainMenu = new MenuStrip {
-            Dock = DockStyle.Top
+            Dock = DockStyle.Top,
+            Cursor = Cursors.Hand
         };
         _menuRenderer = new ThemedMenuRenderer();
         _menuRenderer.UpdateTheme();
@@ -1364,7 +1371,8 @@ public class MainForm : MaterialForm {
                 TextAlign = ContentAlignment.MiddleCenter,
                 Checked = dashboard.Id == _currentDashboard?.Id,
                 Tag = dashboard.Id,
-                Margin = Padding.Empty
+                Margin = Padding.Empty,
+                Cursor = Cursors.Hand
             };
 
             if (showSelectedFromMenuBadge && dashboard.Id == _currentDashboard?.Id) {

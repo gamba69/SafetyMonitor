@@ -331,6 +331,7 @@ public class AxisRulesEditorForm : Form {
 
     private static void ApplyThemeRecursive(Control parent, bool isLight) {
         foreach (Control control in parent.Controls) {
+            InteractiveCursorStyler.Apply(control);
             switch (control) {
                 case Label lbl:
                     lbl.ForeColor = isLight ? Color.Black : Color.White;

@@ -59,6 +59,7 @@ public class SettingsForm : Form {
 
     private void ApplyThemeRecursive(Control parent, bool isLight) {
         foreach (Control control in parent.Controls) {
+            InteractiveCursorStyler.Apply(control);
             // Skip connection status label - it has its own color logic
             if (control == _connectionStatusLabel) {
                 ApplyThemeRecursive(control, isLight);

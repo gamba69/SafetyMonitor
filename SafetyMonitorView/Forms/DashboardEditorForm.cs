@@ -102,6 +102,7 @@ public class DashboardEditorForm : Form {
 
     private void ApplyThemeRecursive(Control parent, bool isLight) {
         foreach (Control control in parent.Controls) {
+            InteractiveCursorStyler.Apply(control);
             // Don't modify tiles inside grid panel - they have their own styling
             if (control.Parent == _gridPanel) {
                 continue;

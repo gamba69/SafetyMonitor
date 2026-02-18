@@ -26,6 +26,7 @@ internal static class ThemedButtonStyler {
         button.FlatAppearance.BorderSize = 0;
         button.BackColor = colors.BackColor;
         button.ForeColor = colors.ForeColor;
+        button.Cursor = button.Enabled ? Cursors.Hand : Cursors.Default;
 
         if (button.Font is not null) {
             var targetStyle = role is ButtonRole.Save or ButtonRole.Confirm ? FontStyle.Bold : FontStyle.Regular;
