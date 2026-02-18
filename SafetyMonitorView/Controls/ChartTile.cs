@@ -45,17 +45,18 @@ public class ChartTile : Panel {
     private Panel? _topPanel;
     private Panel? _modeSwitchContainer;
     private Panel? _modeSegmentPanel;
-    private Panel? _hoverInspectorSegmentPanel;
+    private Panel? _inspectorHostPanel;
+    private Panel? _inspectorSegmentPanel;
     private RadioButton? _autoModeButton;
     private RadioButton? _staticModeButton;
     private Label? _countdownLabel;
     private RichTextBox? _aggregationInfoTextBox;
     private RichTextBox? _hoverInfoTextBox;
     private double? _lastHoverAnchorX;
-    private CheckBox? _hoverInspectorButton;
+    private CheckBox? _inspectorButton;
     private object? _hoverVerticalLine;
     private readonly List<SeriesHoverSnapshot> _hoverSeries = [];
-    private bool _hoverInspectorActive;
+    private bool _inspectorActive;
 
     private sealed class SeriesHoverSnapshot {
         public string Label { get; init; } = string.Empty;
@@ -74,7 +75,7 @@ public class ChartTile : Panel {
     public event Action<ChartTile, DateTime, DateTime>? StaticRangeChanged;
     public event Action<ChartTile>? AutoModeRestored;
     public event Action<ChartTile>? ViewSettingsChanged;
-    public event Action<ChartTile, bool>? HoverInspectorToggled;
+    public event Action<ChartTile, bool>? InspectorToggled;
     public event Action<ChartTile, bool>? PlotHoverPresenceChanged;
     public event Action<ChartTile, double>? HoverAnchorChanged;
 
@@ -271,9 +272,9 @@ public class ChartTile : Panel {
             _plot.Plot.HideGrid();
         }
         RememberCurrentXAxisLimits();
-        EnsureHoverInspectorState();
-        if (_hoverInspectorActive && _lastHoverAnchorX.HasValue) {
-            ShowHoverInspectorAt(_lastHoverAnchorX.Value);
+        EnsureInspectorState();
+        if (_inspectorActive && _lastHoverAnchorX.HasValue) {
+            ShowInspectorAt(_lastHoverAnchorX.Value);
         }
         _plot.Refresh();
     }
@@ -366,25 +367,25 @@ public class ChartTile : Panel {
         }
     }
 
-    public void SetHoverInspectorEnabled(bool enabled, bool raiseEvents = true) {
-        if (_config.ShowHoverInspector == enabled && _hoverInspectorActive == enabled) {
+    public void SetInspectorEnabled(bool enabled, bool raiseEvents = true) {
+        if (_config.ShowInspector == enabled && _inspectorActive == enabled) {
             return;
         }
 
-        _config.ShowHoverInspector = enabled;
-        EnsureHoverInspectorState();
+        _config.ShowInspector = enabled;
+        EnsureInspectorState();
         UpdateModeSwitchAppearance();
 
         if (raiseEvents) {
-            HoverInspectorToggled?.Invoke(this, enabled);
+            InspectorToggled?.Invoke(this, enabled);
             ViewSettingsChanged?.Invoke(this);
         }
     }
 
-    public bool IsHoverInspectorEnabled => _config.ShowHoverInspector;
+    public bool IsInspectorEnabled => _config.ShowInspector;
 
-    public void ShowHoverInspectorAt(double x) {
-        if (!_hoverInspectorActive || _plot == null || _hoverSeries.Count == 0) {
+    public void ShowInspectorAt(double x) {
+        if (!_inspectorActive || _plot == null || _hoverSeries.Count == 0) {
             return;
         }
 
@@ -398,8 +399,8 @@ public class ChartTile : Panel {
         _plot.Refresh();
     }
 
-    public void ClearHoverInspectorDisplay() {
-        HideHoverInspector();
+    public void ClearInspectorDisplay() {
+        HideInspector();
     }
 
     #endregion Public Methods
@@ -659,7 +660,7 @@ public class ChartTile : Panel {
         _staticStartPicker?.ApplyTheme();
         _staticEndPicker?.ApplyTheme();
 
-        if (_hoverInspectorActive && _lastHoverAnchorX.HasValue) {
+        if (_inspectorActive && _lastHoverAnchorX.HasValue) {
             UpdateHoverInfo(_lastHoverAnchorX.Value);
         }
     }
@@ -732,13 +733,13 @@ public class ChartTile : Panel {
             ApplyViewSettings();
         });
 
-        var hoverInspectorItem = CreateToggleMenuItem("Hover Inspector", MaterialIcons.ChartHoverInspector, _config.ShowHoverInspector, (_, _) => {
-            SetHoverInspectorEnabled(!_config.ShowHoverInspector);
+        var inspectorItem = CreateToggleMenuItem("Inspector", MaterialIcons.ChartInspector, _config.ShowInspector, (_, _) => {
+            SetInspectorEnabled(!_config.ShowInspector);
         });
 
         contextMenu.Items.Add(legendItem);
         contextMenu.Items.Add(gridItem);
-        contextMenu.Items.Add(hoverInspectorItem);
+        contextMenu.Items.Add(inspectorItem);
 
         if (_config.MetricAggregations.Count == 0) {
             return;
@@ -1043,7 +1044,6 @@ public class ChartTile : Panel {
         MetricAxisRuleStore.RulesChanged += HandleAxisRulesChanged;
 
         _topPanel.Controls.Add(_titleLabel);
-        _topPanel.Controls.Add(_periodSelector);
 
         _staticRangePanel = new FlowLayoutPanel {
             Dock = DockStyle.Right,
@@ -1058,7 +1058,6 @@ public class ChartTile : Panel {
         _staticEndPicker = CreateStaticDatePicker();
         _staticRangePanel.Controls.Add(_staticStartPicker);
         _staticRangePanel.Controls.Add(_staticEndPicker);
-        _topPanel.Controls.Add(_staticRangePanel);
 
         // ── Auto / Static mode switcher (rightmost in header) ──
         _autoModeButton = new RadioButton {
@@ -1119,7 +1118,7 @@ public class ChartTile : Panel {
         UpdateAggregationInfoLabel(ResolveAggregationInterval());
         };
 
-        _hoverInspectorButton = new CheckBox {
+        _inspectorButton = new CheckBox {
             Text = string.Empty,
             Appearance = Appearance.Button,
             ImageAlign = ContentAlignment.MiddleCenter,
@@ -1132,20 +1131,27 @@ public class ChartTile : Panel {
                 MouseOverBackColor = Color.Transparent
             },
             AutoSize = false,
-            Size = new Size(34, 24),
-            Checked = _config.ShowHoverInspector,
+            Dock = DockStyle.Fill,
+            Checked = _config.ShowInspector,
             Cursor = Cursors.Hand
         };
-        _hoverInspectorButton.CheckedChanged += (s, e) => {
-            SetHoverInspectorEnabled(_hoverInspectorButton.Checked);
+        _inspectorButton.CheckedChanged += (s, e) => {
+            SetInspectorEnabled(_inspectorButton.Checked);
         };
 
-        _hoverInspectorSegmentPanel = new Panel {
+        _inspectorSegmentPanel = new Panel {
             Size = new Size(36, 26),
+            Location = new Point(0, 2),
             Padding = new Padding(1)
         };
-        _hoverInspectorButton.Location = new Point(1, 1);
-        _hoverInspectorSegmentPanel.Controls.Add(_hoverInspectorButton);
+        _inspectorSegmentPanel.Controls.Add(_inspectorButton);
+
+        _inspectorHostPanel = new Panel {
+            Dock = DockStyle.Right,
+            Width = 44,
+            BackColor = tileBg
+        };
+        _inspectorHostPanel.Controls.Add(_inspectorSegmentPanel);
 
         _modeSegmentPanel = new Panel {
             Size = new Size(70, 26),
@@ -1168,17 +1174,19 @@ public class ChartTile : Panel {
 
         _modeSwitchContainer = new Panel {
             Dock = DockStyle.Right,
-            Width = 148,
+            Width = 110,
             BackColor = tileBg
         };
 
         // Center vertically: (30 - 26) / 2 = 2
         _countdownLabel.Location = new Point(2, 2);
-        _hoverInspectorSegmentPanel.Location = new Point(40, 2);
-        _modeSegmentPanel.Location = new Point(148 - 70 - 2, 2);
+        _modeSegmentPanel.Location = new Point(38, 2);
         _modeSwitchContainer.Controls.Add(_countdownLabel);
-        _modeSwitchContainer.Controls.Add(_hoverInspectorSegmentPanel);
         _modeSwitchContainer.Controls.Add(_modeSegmentPanel);
+
+        _topPanel.Controls.Add(_inspectorHostPanel);
+        _topPanel.Controls.Add(_periodSelector);
+        _topPanel.Controls.Add(_staticRangePanel);
         _topPanel.Controls.Add(_modeSwitchContainer);
         UpdateModeSwitchAppearance();
         UpdateAggregationInfoLabel(ResolveAggregationInterval());
@@ -1562,7 +1570,7 @@ public class ChartTile : Panel {
     }
 
     private void UpdateModeSwitchAppearance() {
-        if (_modeSegmentPanel == null || _hoverInspectorSegmentPanel == null || _autoModeButton == null
+        if (_modeSegmentPanel == null || _inspectorHostPanel == null || _inspectorSegmentPanel == null || _autoModeButton == null
             || _staticModeButton == null || _countdownLabel == null
             || _modeSwitchContainer == null) {
             return;
@@ -1578,7 +1586,8 @@ public class ChartTile : Panel {
         var tileBg = isLight ? Color.White : Color.FromArgb(35, 47, 52);
 
         _modeSwitchContainer.BackColor = tileBg;
-        _hoverInspectorSegmentPanel.BackColor = borderColor;
+        _inspectorHostPanel.BackColor = tileBg;
+        _inspectorSegmentPanel.BackColor = borderColor;
         _modeSegmentPanel.BackColor = borderColor;
         _autoModeButton.BackColor = _autoModeButton.Checked ? activeBg : segmentBg;
         _staticModeButton.BackColor = _staticModeButton.Checked ? activeBg : segmentBg;
@@ -1587,10 +1596,10 @@ public class ChartTile : Panel {
         _autoModeButton.ImageAlign = ContentAlignment.MiddleCenter;
         _staticModeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartModeStatic, iconColor, 22);
         _staticModeButton.ImageAlign = ContentAlignment.MiddleCenter;
-        if (_hoverInspectorButton != null) {
-            _hoverInspectorButton.BackColor = _hoverInspectorButton.Checked ? activeBg : segmentBg;
-            _hoverInspectorButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartHoverInspector, iconColor, 22);
-            _hoverInspectorButton.ImageAlign = ContentAlignment.MiddleCenter;
+        if (_inspectorButton != null) {
+            _inspectorButton.BackColor = _inspectorButton.Checked ? activeBg : segmentBg;
+            _inspectorButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartInspector, iconColor, 22);
+            _inspectorButton.ImageAlign = ContentAlignment.MiddleCenter;
         }
 
         _countdownLabel.ForeColor = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
@@ -1706,20 +1715,20 @@ public class ChartTile : Panel {
         }
     }
 
-    private void EnsureHoverInspectorState() {
-        _hoverInspectorActive = _config.ShowHoverInspector;
+    private void EnsureInspectorState() {
+        _inspectorActive = _config.ShowInspector;
 
-        if (_hoverInspectorButton != null && _hoverInspectorButton.Checked != _hoverInspectorActive) {
-            _hoverInspectorButton.Checked = _hoverInspectorActive;
+        if (_inspectorButton != null && _inspectorButton.Checked != _inspectorActive) {
+            _inspectorButton.Checked = _inspectorActive;
         }
 
-        if (!_hoverInspectorActive) {
-            HideHoverInspector();
+        if (!_inspectorActive) {
+            HideInspector();
         }
     }
 
     private void Plot_MouseMove(object? sender, MouseEventArgs e) {
-        if (!_hoverInspectorActive || _plot == null || _hoverSeries.Count == 0) {
+        if (!_inspectorActive || _plot == null || _hoverSeries.Count == 0) {
             return;
         }
 
@@ -1880,7 +1889,7 @@ public class ChartTile : Panel {
         _hoverInfoTextBox.AppendText("  |  ");
     }
 
-    private void HideHoverInspector() {
+    private void HideInspector() {
         if (_hoverVerticalLine is ScottPlot.Plottables.VerticalLine verticalLine) {
             verticalLine.IsVisible = false;
             _plot?.Refresh();

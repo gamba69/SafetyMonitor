@@ -69,7 +69,7 @@ public class DashboardPanel : TableLayoutPanel {
 
         if (!_linkChartPeriods) {
             foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
-                chartTile.ClearHoverInspectorDisplay();
+                chartTile.ClearInspectorDisplay();
             }
         }
     }
@@ -152,7 +152,7 @@ public class DashboardPanel : TableLayoutPanel {
                     chartTile.StaticRangeChanged += OnChartStaticRangeChanged;
                     chartTile.AutoModeRestored += OnChartAutoModeRestored;
                     chartTile.ViewSettingsChanged += OnChartViewSettingsChanged;
-                    chartTile.HoverInspectorToggled += OnChartHoverInspectorToggled;
+                    chartTile.InspectorToggled += OnChartInspectorToggled;
                     chartTile.PlotHoverPresenceChanged += OnPlotHoverPresenceChanged;
                     chartTile.HoverAnchorChanged += OnChartHoverAnchorChanged;
                     chartTile.SetStaticModeTimeout(TimeSpan.FromSeconds(_chartStaticModeTimeoutSeconds));
@@ -216,7 +216,7 @@ public class DashboardPanel : TableLayoutPanel {
     }
 
 
-    private void OnChartHoverInspectorToggled(ChartTile source, bool enabled) {
+    private void OnChartInspectorToggled(ChartTile source, bool enabled) {
         if (!_linkChartPeriods) {
             DashboardChanged?.Invoke();
             return;
@@ -227,13 +227,13 @@ public class DashboardPanel : TableLayoutPanel {
                 continue;
             }
 
-            chartTile.SetHoverInspectorEnabled(enabled, raiseEvents: false);
+            chartTile.SetInspectorEnabled(enabled, raiseEvents: false);
         }
 
         if (!enabled) {
             _hoveredChartTiles.Clear();
             foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
-                chartTile.ClearHoverInspectorDisplay();
+                chartTile.ClearInspectorDisplay();
             }
         }
 
@@ -241,9 +241,9 @@ public class DashboardPanel : TableLayoutPanel {
     }
 
     private void OnPlotHoverPresenceChanged(ChartTile source, bool isHovered) {
-        if (!_linkChartPeriods || !source.IsHoverInspectorEnabled) {
+        if (!_linkChartPeriods || !source.IsInspectorEnabled) {
             if (!isHovered) {
-                source.ClearHoverInspectorDisplay();
+                source.ClearInspectorDisplay();
             }
             return;
         }
@@ -259,12 +259,12 @@ public class DashboardPanel : TableLayoutPanel {
         }
 
         foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
-            chartTile.ClearHoverInspectorDisplay();
+            chartTile.ClearInspectorDisplay();
         }
     }
 
     private void OnChartHoverAnchorChanged(ChartTile source, double x) {
-        if (!_linkChartPeriods || !source.IsHoverInspectorEnabled) {
+        if (!_linkChartPeriods || !source.IsInspectorEnabled) {
             return;
         }
 
@@ -273,11 +273,11 @@ public class DashboardPanel : TableLayoutPanel {
         _hoveredChartTiles.Add(source);
 
         foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
-            if (!chartTile.IsHoverInspectorEnabled) {
+            if (!chartTile.IsInspectorEnabled) {
                 continue;
             }
 
-            chartTile.ShowHoverInspectorAt(x);
+            chartTile.ShowInspectorAt(x);
         }
     }
 

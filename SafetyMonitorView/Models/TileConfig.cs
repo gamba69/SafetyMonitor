@@ -45,7 +45,7 @@ public class ChartTileConfig : TileConfig {
     public ChartPeriod Period { get; set; } = ChartPeriod.Last24Hours;
     public string PeriodPresetUid { get; set; } = "";
     public bool ShowGrid { get; set; } = true;
-    public bool ShowHoverInspector { get; set; }
+    public bool ShowInspector { get; set; }
     public bool ShowLegend { get; set; } = true;
     public override TileType Type => TileType.Chart;
 
