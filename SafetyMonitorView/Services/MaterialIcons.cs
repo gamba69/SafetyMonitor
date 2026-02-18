@@ -34,6 +34,10 @@ public static class MaterialIcons {
     public const string PlotMenuAutoscale = "plot_menu_autoscale";
     public const string PlotMenuOpenInWindow = "plot_menu_open_in_window";
     public const string PlotMenuDisplayOption = "plot_menu_display_option";
+    public const string PlotMenuConversionPath = "conversion_path";
+    public const string PlotMenuGrid4x4 = "grid_4x4";
+    public const string PlotMenuLegendToggle = "legend_toggle";
+    public const string PlotMenuStat0 = "stat_0";
     public const string MessageBoxInfoOutlined = "msg_info_outlined";
     public const string MessageBoxInfoFilled = "msg_info_filled";
     public const string MessageBoxWarningOutlined = "msg_warning_outlined";
@@ -172,9 +176,13 @@ public static class MaterialIcons {
             return (Bitmap)cached.Clone();
         }
 
-        if (_materialFontFamily is null || !_fontGlyphs.TryGetValue(normalizedName, out var glyph)) {
+        if (_materialFontFamily is null) {
             return null;
         }
+
+        var glyph = _fontGlyphs.TryGetValue(normalizedName, out var mappedGlyph)
+            ? mappedGlyph
+            : normalizedName;
 
         var bitmap = RenderFontIcon(glyph, color, size, glyphScale);
         _cache[key] = bitmap;

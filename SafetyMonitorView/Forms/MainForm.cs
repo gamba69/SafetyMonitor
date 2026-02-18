@@ -1023,10 +1023,13 @@ public class MainForm : MaterialForm {
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var iconColor = isLight ? Color.Black : Color.White;
 
-        // Dashboard list items - without icons
+        // Dashboard list items: selected dashboard uses check icon (no checked background state)
         foreach (var dashboard in _dashboards) {
+            var isSelected = dashboard.Id == _currentDashboard?.Id;
             var item = new ToolStripMenuItem(dashboard.Name) {
-                Checked = dashboard.Id == _currentDashboard?.Id
+                Checked = false,
+                Image = isSelected ? MaterialIcons.GetIcon(MaterialIcons.CommonCheck, iconColor, MenuIconSize) : null,
+                ImageScaling = ToolStripItemImageScaling.None
             };
             item.Click += (s, e) => LoadDashboard(dashboard);
             dashboardMenu.DropDownItems.Add(item);
@@ -1057,6 +1060,11 @@ public class MainForm : MaterialForm {
 
         // Update all menu items icons
         UpdateMenuItemsIcons(_mainMenu.Items, iconColor);
+
+        if (_mainMenu.Items.Count > 1) {
+            var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1];
+            UpdateDashboardMenu(dashboardMenu);
+        }
 
         // Refresh menu
         _mainMenu.Refresh();

@@ -724,12 +724,12 @@ public class ChartTile : Panel {
     }
 
     private void AddToggleMenuItems(ContextMenuStrip contextMenu) {
-        var legendItem = CreateToggleMenuItem("Legend", MaterialIcons.PlotMenuDisplayOption, _config.ShowLegend, (_, _) => {
+        var legendItem = CreateToggleMenuItem("Legend", MaterialIcons.PlotMenuLegendToggle, _config.ShowLegend, (_, _) => {
             _config.ShowLegend = !_config.ShowLegend;
             ApplyViewSettings();
         });
 
-        var gridItem = CreateToggleMenuItem("Grid", MaterialIcons.PlotMenuDisplayOption, _config.ShowGrid, (_, _) => {
+        var gridItem = CreateToggleMenuItem("Grid", MaterialIcons.PlotMenuGrid4x4, _config.ShowGrid, (_, _) => {
             _config.ShowGrid = !_config.ShowGrid;
             ApplyViewSettings();
         });
@@ -748,14 +748,14 @@ public class ChartTile : Panel {
 
         if (_config.MetricAggregations.Count == 1) {
             var aggregation = _config.MetricAggregations[0];
-            contextMenu.Items.Add(CreateToggleMenuItem("Smoothing", MaterialIcons.PlotMenuDisplayOption, aggregation.Smooth, (_, _) => {
+            contextMenu.Items.Add(CreateToggleMenuItem("Smoothing", MaterialIcons.PlotMenuConversionPath, aggregation.Smooth, (_, _) => {
                 aggregation.Smooth = !aggregation.Smooth;
                 ApplyViewSettings();
             }));
         } else {
-            var smoothItem = new ToolStripMenuItem("Smoothing") { Tag = MaterialIcons.PlotMenuDisplayOption };
+            var smoothItem = new ToolStripMenuItem("Smoothing") { Tag = MaterialIcons.PlotMenuConversionPath };
             foreach (var aggregation in _config.MetricAggregations) {
-                smoothItem.DropDownItems.Add(CreateToggleMenuItem(GetAggregationDisplayName(aggregation), MaterialIcons.PlotMenuDisplayOption, aggregation.Smooth, (_, _) => {
+                smoothItem.DropDownItems.Add(CreateToggleMenuItem(GetAggregationDisplayName(aggregation), MaterialIcons.PlotMenuConversionPath, aggregation.Smooth, (_, _) => {
                     aggregation.Smooth = !aggregation.Smooth;
                     ApplyViewSettings();
                 }));
@@ -763,7 +763,7 @@ public class ChartTile : Panel {
             contextMenu.Items.Add(smoothItem);
         }
 
-        contextMenu.Items.Add(CreateToggleMenuItem("Markers", MaterialIcons.PlotMenuDisplayOption, _config.MetricAggregations.Any(x => x.ShowMarkers), (_, _) => {
+        contextMenu.Items.Add(CreateToggleMenuItem("Markers", MaterialIcons.PlotMenuStat0, _config.MetricAggregations.Any(x => x.ShowMarkers), (_, _) => {
             var enableMarkers = !_config.MetricAggregations.All(x => x.ShowMarkers);
             foreach (var aggregation in _config.MetricAggregations) {
                 aggregation.ShowMarkers = enableMarkers;
@@ -786,8 +786,7 @@ public class ChartTile : Panel {
     }
 
     private static ToolStripMenuItem CreateToggleMenuItem(string text, string iconName, bool isChecked, EventHandler onClick) {
-        var iconForState = isChecked ? MaterialIcons.CommonCheck : iconName;
-        var item = CreatePlotMenuItem(text, iconForState, onClick);
+        var item = CreatePlotMenuItem(text, iconName, onClick);
         item.Checked = isChecked;
         return item;
     }
