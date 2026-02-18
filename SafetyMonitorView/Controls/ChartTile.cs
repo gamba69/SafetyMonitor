@@ -49,8 +49,9 @@ public class ChartTile : Panel {
     private RadioButton? _autoModeButton;
     private RadioButton? _staticModeButton;
     private Label? _countdownLabel;
-    private Label? _aggregationInfoLabel;
-    private Label? _hoverInfoLabel;
+    private RichTextBox? _aggregationInfoTextBox;
+    private RichTextBox? _hoverInfoTextBox;
+    private double? _lastHoverAnchorX;
     private CheckBox? _hoverInspectorButton;
     private object? _hoverVerticalLine;
     private readonly List<SeriesHoverSnapshot> _hoverSeries = [];
@@ -60,6 +61,7 @@ public class ChartTile : Panel {
         public string Label { get; init; } = string.Empty;
         public string Unit { get; init; } = string.Empty;
         public string ValueFormat { get; init; } = "0.##";
+        public Color SeriesColor { get; init; } = Color.White;
         public double[] Xs { get; init; } = [];
         public double[] Ys { get; init; } = [];
     }
@@ -228,6 +230,7 @@ public class ChartTile : Panel {
                     : agg.Label,
                 Unit = agg.Metric.GetUnit() ?? string.Empty,
                 ValueFormat = agg.Metric == MetricType.IsSafe ? "0" : "0.##",
+                SeriesColor = agg.GetColorForTheme(isLightTheme),
                 Xs = validTimes,
                 Ys = validValues
             });
@@ -269,6 +272,9 @@ public class ChartTile : Panel {
         }
         RememberCurrentXAxisLimits();
         EnsureHoverInspectorState();
+        if (_hoverInspectorActive && _lastHoverAnchorX.HasValue) {
+            ShowHoverInspectorAt(_lastHoverAnchorX.Value);
+        }
         _plot.Refresh();
     }
 
@@ -629,13 +635,15 @@ public class ChartTile : Panel {
         }
 
         _titleLabel.ForeColor = fg;
-        if (_aggregationInfoLabel != null) {
-            _aggregationInfoLabel.BackColor = tileBg;
-            _aggregationInfoLabel.ForeColor = isLight ? Color.FromArgb(110, 110, 110) : Color.FromArgb(160, 170, 175);
+        if (_aggregationInfoTextBox != null) {
+            _aggregationInfoTextBox.BackColor = tileBg;
+            _aggregationInfoTextBox.ForeColor = fg;
+            _aggregationInfoTextBox.Font = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular);
         }
-        if (_hoverInfoLabel != null) {
-            _hoverInfoLabel.BackColor = tileBg;
-            _hoverInfoLabel.ForeColor = isLight ? Color.FromArgb(110, 110, 110) : Color.FromArgb(160, 170, 175);
+        if (_hoverInfoTextBox != null) {
+            _hoverInfoTextBox.BackColor = tileBg;
+            _hoverInfoTextBox.ForeColor = fg;
+            _hoverInfoTextBox.Font = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular);
         }
         if (_topPanel != null && _topPanel.BackColor != tileBg) {
             _topPanel.BackColor = tileBg;
@@ -650,6 +658,10 @@ public class ChartTile : Panel {
 
         _staticStartPicker?.ApplyTheme();
         _staticEndPicker?.ApplyTheme();
+
+        if (_hoverInspectorActive && _lastHoverAnchorX.HasValue) {
+            UpdateHoverInfo(_lastHoverAnchorX.Value);
+        }
     }
 
     private void ApplyPlotContextMenuTheme() {
@@ -1201,31 +1213,47 @@ public class ChartTile : Panel {
         var bottomInfoPanel = new Panel {
             Dock = DockStyle.Bottom,
             Height = 18,
-            BackColor = tileBg
+            BackColor = tileBg,
+            Padding = new Padding(4, 0, 4, 2)
         };
 
-        _aggregationInfoLabel = new Label {
+        _aggregationInfoTextBox = new RichTextBox {
             Dock = DockStyle.Right,
             Width = 260,
-            Padding = new Padding(4, 0, 4, 2),
-            TextAlign = ContentAlignment.BottomRight,
-            Font = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular),
-            ForeColor = isLight ? Color.FromArgb(110, 110, 110) : Color.FromArgb(160, 170, 175),
-            BackColor = tileBg
-        };
-
-        _hoverInfoLabel = new Label {
-            Dock = DockStyle.Fill,
-            Padding = new Padding(4, 0, 4, 2),
-            TextAlign = ContentAlignment.BottomLeft,
-            Font = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular),
-            ForeColor = isLight ? Color.FromArgb(110, 110, 110) : Color.FromArgb(160, 170, 175),
+            Margin = Padding.Empty,
+            BorderStyle = BorderStyle.None,
+            ReadOnly = true,
+            Multiline = false,
+            ScrollBars = RichTextBoxScrollBars.None,
+            WordWrap = false,
+            DetectUrls = false,
+            TabStop = false,
+            ShortcutsEnabled = false,
             BackColor = tileBg,
+            ForeColor = isLight ? Color.Black : Color.White,
+            Font = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular),
             Text = string.Empty
         };
 
-        bottomInfoPanel.Controls.Add(_hoverInfoLabel);
-        bottomInfoPanel.Controls.Add(_aggregationInfoLabel);
+        _hoverInfoTextBox = new RichTextBox {
+            Dock = DockStyle.Fill,
+            Margin = Padding.Empty,
+            BorderStyle = BorderStyle.None,
+            ReadOnly = true,
+            Multiline = false,
+            ScrollBars = RichTextBoxScrollBars.None,
+            WordWrap = false,
+            DetectUrls = false,
+            TabStop = false,
+            ShortcutsEnabled = false,
+            BackColor = tileBg,
+            ForeColor = isLight ? Color.Black : Color.White,
+            Font = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular),
+            Text = string.Empty
+        };
+
+        bottomInfoPanel.Controls.Add(_hoverInfoTextBox);
+        bottomInfoPanel.Controls.Add(_aggregationInfoTextBox);
         UpdateAggregationInfoLabel(ResolveAggregationInterval());
 
         _plot = new FormsPlot {
@@ -1352,13 +1380,28 @@ public class ChartTile : Panel {
     }
 
     private void UpdateAggregationInfoLabel(TimeSpan? interval) {
-        if (_aggregationInfoLabel == null) {
+        if (_aggregationInfoTextBox == null) {
             return;
         }
 
-        _aggregationInfoLabel.Text = interval.HasValue
-            ? $"Aggregation: {interval.Value:hh\\:mm\\:ss}"
-            : "Aggregation: raw";
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        var color = isLight ? Color.Black : Color.White;
+        var valueText = interval.HasValue
+            ? interval.Value.ToString(@"hh\:mm\:ss")
+            : "raw";
+
+        _aggregationInfoTextBox.Clear();
+        _aggregationInfoTextBox.SelectionStart = 0;
+        _aggregationInfoTextBox.SelectionLength = 0;
+        _aggregationInfoTextBox.SelectionAlignment = System.Windows.Forms.HorizontalAlignment.Right;
+        _aggregationInfoTextBox.SelectionColor = color;
+        _aggregationInfoTextBox.SelectionFont = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Bold);
+        _aggregationInfoTextBox.AppendText("A:");
+        _aggregationInfoTextBox.SelectionColor = color;
+        _aggregationInfoTextBox.SelectionFont = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular);
+        _aggregationInfoTextBox.AppendText($" {valueText}");
+        _aggregationInfoTextBox.SelectionStart = 0;
+        _aggregationInfoTextBox.SelectionLength = 0;
     }
 
     private void HandleAxisRulesChanged() {
@@ -1771,13 +1814,19 @@ public class ChartTile : Panel {
     }
 
     private void UpdateHoverInfo(double anchorX) {
-        if (_hoverInfoLabel == null) {
+        if (_hoverInfoTextBox == null) {
             return;
         }
 
-        var timestamp = DateTime.FromOADate(anchorX);
-        var values = new List<string>(_hoverSeries.Count + 1) { timestamp.ToString("yyyy-MM-dd HH:mm:ss") };
+        _lastHoverAnchorX = anchorX;
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        var baseTextColor = isLight ? Color.Black : Color.White;
+        var timestamp = DateTime.FromOADate(anchorX).ToString("yyyy-MM-dd HH:mm:ss");
 
+        _hoverInfoTextBox.SuspendLayout();
+        _hoverInfoTextBox.Clear();
+
+        var visibleSeries = new List<(SeriesHoverSnapshot Series, double Value)>();
         foreach (var series in _hoverSeries) {
             var index = FindNearestIndex(series.Xs, anchorX);
             if (index < 0 || index >= series.Ys.Length) {
@@ -1789,11 +1838,46 @@ public class ChartTile : Panel {
                 continue;
             }
 
-            var unit = string.IsNullOrWhiteSpace(series.Unit) ? string.Empty : $" {series.Unit}";
-            values.Add($"{series.Label}: {value.ToString(series.ValueFormat)}{unit}");
+            visibleSeries.Add((series, value));
         }
 
-        _hoverInfoLabel.Text = string.Join("  |  ", values);
+        AppendHoverInfoChunk(timestamp, isBold: false, baseTextColor, addSeparator: visibleSeries.Count > 0);
+
+        for (var i = 0; i < visibleSeries.Count; i++) {
+            var (series, value) = visibleSeries[i];
+            var unit = string.IsNullOrWhiteSpace(series.Unit) ? string.Empty : $" {series.Unit}";
+
+            AppendHoverInfoChunk(series.Label, isBold: true, series.SeriesColor, addSeparator: false);
+            AppendHoverInfoChunk($": {value.ToString(series.ValueFormat)}{unit}", isBold: false, series.SeriesColor,
+                addSeparator: i < visibleSeries.Count - 1);
+        }
+
+        _hoverInfoTextBox.SelectionStart = 0;
+        _hoverInfoTextBox.SelectionLength = 0;
+        _hoverInfoTextBox.ResumeLayout();
+    }
+
+    private void AppendHoverInfoChunk(string text, bool isBold, Color color, bool addSeparator) {
+        if (_hoverInfoTextBox == null || string.IsNullOrEmpty(text)) {
+            return;
+        }
+
+        _hoverInfoTextBox.SelectionStart = _hoverInfoTextBox.TextLength;
+        _hoverInfoTextBox.SelectionLength = 0;
+        _hoverInfoTextBox.SelectionColor = color;
+        _hoverInfoTextBox.SelectionFont = CreateSafeFont(
+            "Segoe UI", 7.5f, isBold ? System.Drawing.FontStyle.Bold : System.Drawing.FontStyle.Regular);
+        _hoverInfoTextBox.AppendText(text);
+
+        if (!addSeparator) {
+            return;
+        }
+
+        _hoverInfoTextBox.SelectionStart = _hoverInfoTextBox.TextLength;
+        _hoverInfoTextBox.SelectionLength = 0;
+        _hoverInfoTextBox.SelectionColor = color;
+        _hoverInfoTextBox.SelectionFont = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular);
+        _hoverInfoTextBox.AppendText("  |  ");
     }
 
     private void HideHoverInspector() {
@@ -1802,9 +1886,8 @@ public class ChartTile : Panel {
             _plot?.Refresh();
         }
 
-        if (_hoverInfoLabel != null) {
-            _hoverInfoLabel.Text = string.Empty;
-        }
+        _hoverInfoTextBox?.Clear();
+        _lastHoverAnchorX = null;
     }
 
     private void Plot_MouseWheel(object? sender, MouseEventArgs e) {
