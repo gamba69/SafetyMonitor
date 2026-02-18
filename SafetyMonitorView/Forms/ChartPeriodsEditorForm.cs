@@ -54,7 +54,10 @@ public class ChartPeriodsEditorForm : Form {
     #region Private Methods
 
     private void AddPresetButton_Click(object? sender, EventArgs e) {
-        _presetGrid.Rows.Add(Guid.NewGuid().ToString("N"), "Custom", 1, ChartPeriodUnit.Hours, 1, "Minutes");
+        var rowIndex = _presetGrid.Rows.Add(Guid.NewGuid().ToString("N"), "Custom", 1, ChartPeriodUnit.Hours, 1, "Minutes");
+        if (rowIndex >= 0) {
+            UpdateAggregationTooltipForRow(_presetGrid.Rows[rowIndex]);
+        }
     }
 
     private void ApplyTheme() {
@@ -250,6 +253,9 @@ public class ChartPeriodsEditorForm : Form {
         }
         _presetGrid.DataError += (_, e) => { e.ThrowException = false; };
         _presetGrid.EditingControlShowing += PresetGrid_EditingControlShowing;
+        _presetGrid.CellToolTipTextNeeded += PresetGrid_CellToolTipTextNeeded;
+        _presetGrid.CellValueChanged += PresetGrid_CellValueChanged;
+        _presetGrid.CurrentCellDirtyStateChanged += PresetGrid_CurrentCellDirtyStateChanged;
 
         mainLayout.Controls.Add(_presetGrid, 0, 2);
 
@@ -321,6 +327,8 @@ public class ChartPeriodsEditorForm : Form {
             var unit = _units.Contains(preset.Unit) ? preset.Unit : ChartPeriodUnit.Hours;
             _presetGrid.Rows.Add(preset.Uid, preset.Name, preset.Value, unit, FormatAggregationValue(preset.AggregationInterval), GetAggregationUnitName(preset.AggregationInterval));
         }
+
+        UpdateAggregationTooltips();
     }
 
     private void MoveSelectedRow(int direction) {
@@ -351,6 +359,64 @@ public class ChartPeriodsEditorForm : Form {
         comboBox.Font = CreateSafeFont(comboBox.Font.FontFamily.Name, comboBox.Font.Size, comboBox.Font.Style);
         comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
         ThemedComboBoxStyler.Apply(comboBox, isLight);
+    }
+
+    private void PresetGrid_CellToolTipTextNeeded(object? sender, DataGridViewCellToolTipTextNeededEventArgs e) {
+        if (e.RowIndex < 0 || e.ColumnIndex < 0) {
+            return;
+        }
+
+        var column = _presetGrid.Columns[e.ColumnIndex];
+        if (column.Name != "AggregationValue") {
+            return;
+        }
+
+        var row = _presetGrid.Rows[e.RowIndex];
+        if (!TryGetNormalizedAggregation(row, out var normalizedAggregation)) {
+            return;
+        }
+
+        e.ToolTipText = $"{normalizedAggregation}";
+    }
+
+
+    private void PresetGrid_CurrentCellDirtyStateChanged(object? sender, EventArgs e) {
+        if (_presetGrid.IsCurrentCellDirty) {
+            _presetGrid.CommitEdit(DataGridViewDataErrorContexts.Commit);
+        }
+    }
+
+    private void PresetGrid_CellValueChanged(object? sender, DataGridViewCellEventArgs e) {
+        if (e.RowIndex < 0 || e.ColumnIndex < 0) {
+            return;
+        }
+
+        var columnName = _presetGrid.Columns[e.ColumnIndex].Name;
+        if (columnName is not ("AggregationValue" or "AggregationUnit")) {
+            return;
+        }
+
+        UpdateAggregationTooltipForRow(_presetGrid.Rows[e.RowIndex]);
+    }
+
+    private void UpdateAggregationTooltips() {
+        foreach (DataGridViewRow row in _presetGrid.Rows) {
+            if (row.IsNewRow) {
+                continue;
+            }
+
+            UpdateAggregationTooltipForRow(row);
+        }
+    }
+
+    private void UpdateAggregationTooltipForRow(DataGridViewRow row) {
+        if (row.Cells["AggregationValue"] is not DataGridViewCell aggregationCell) {
+            return;
+        }
+
+        aggregationCell.ToolTipText = TryGetNormalizedAggregation(row, out var normalizedAggregation)
+            ? $"{normalizedAggregation}"
+            : string.Empty;
     }
 
 
@@ -390,6 +456,7 @@ public class ChartPeriodsEditorForm : Form {
             var aggregationInterval = CalculateAutomaticAggregationInterval(duration, row.Index);
             row.Cells["AggregationValue"].Value = FormatAggregationValue(aggregationInterval);
             row.Cells["AggregationUnit"].Value = GetAggregationUnitName(aggregationInterval);
+            UpdateAggregationTooltipForRow(row);
         }
     }
 
@@ -521,6 +588,35 @@ public class ChartPeriodsEditorForm : Form {
             "Hours" => TimeSpan.FromHours(value),
             _ => TimeSpan.FromMinutes(value)
         };
+    }
+
+    private static bool TryGetNormalizedAggregation(DataGridViewRow row, out string normalizedAggregation) {
+        normalizedAggregation = string.Empty;
+
+        if (!double.TryParse(row.Cells["AggregationValue"].Value?.ToString(), out var aggregationValue) || aggregationValue <= 0) {
+            return false;
+        }
+
+        var aggregationUnit = row.Cells["AggregationUnit"].Value?.ToString() ?? "Minutes";
+        var shouldShowHint = (aggregationUnit == "Seconds" && aggregationValue > 60)
+            || (aggregationUnit == "Minutes" && aggregationValue > 60);
+        if (!shouldShowHint) {
+            return false;
+        }
+
+        var aggregationInterval = BuildAggregationInterval(aggregationValue, aggregationUnit);
+        if (aggregationInterval <= TimeSpan.Zero) {
+            return false;
+        }
+
+        normalizedAggregation = FormatNormalizedDuration(aggregationInterval);
+        return true;
+    }
+
+    private static string FormatNormalizedDuration(TimeSpan duration) {
+        var roundedDuration = TimeSpan.FromSeconds(Math.Round(duration.TotalSeconds));
+        var totalHours = (int)Math.Floor(roundedDuration.TotalHours);
+        return $"{totalHours:00}:{roundedDuration.Minutes:00}:{roundedDuration.Seconds:00}";
     }
 
     private static string FormatAggregationValue(TimeSpan interval) {
