@@ -56,6 +56,7 @@ public class AxisRulesEditorForm : Form {
         FormBorderStyle = FormBorderStyle.FixedDialog;
         Padding = new Padding(15);
 
+        var titleFont = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold);
         var normalFont = CreateSafeFont("Segoe UI", 9.5f);
 
         var mainLayout = new TableLayoutPanel {
@@ -86,10 +87,10 @@ public class AxisRulesEditorForm : Form {
 
         _headerLabel = new Label {
             Text = "Configure Y-axis limits applied during chart zoom/pan. Leave numeric cells empty to disable a specific limit.",
-            Font = normalFont,
+            Font = titleFont,
             AutoSize = true,
             MaximumSize = new Size(810, 0),
-            Margin = new Padding(0, 0, 0, 4)
+            Margin = new Padding(0, 0, 0, 8)
         };
         headerPanel.Controls.Add(_headerLabel, 0, 0);
         headerPanel.SetColumnSpan(_headerLabel, 2);
