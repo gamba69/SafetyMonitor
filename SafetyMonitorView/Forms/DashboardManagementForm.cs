@@ -82,6 +82,8 @@ public class DashboardManagementForm : Form {
         _grid.DefaultCellStyle.SelectionForeColor = ForeColor;
         _grid.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(238, 238, 238) : Color.FromArgb(55, 71, 79);
         _grid.ColumnHeadersDefaultCellStyle.ForeColor = ForeColor;
+        _grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = _grid.ColumnHeadersDefaultCellStyle.BackColor;
+        _grid.ColumnHeadersDefaultCellStyle.SelectionForeColor = _grid.ColumnHeadersDefaultCellStyle.ForeColor;
         _grid.EnableHeadersVisualStyles = false;
 
         foreach (var button in new[] { _moveUpButton, _moveDownButton, _deleteButton, _cancelButton, _okButton }) {

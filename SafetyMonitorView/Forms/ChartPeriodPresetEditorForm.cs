@@ -68,7 +68,7 @@ public class ChartPeriodPresetEditorForm : Form {
         _presetGrid.DefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
         _presetGrid.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(53, 70, 76);
         _presetGrid.ColumnHeadersDefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
-        _presetGrid.ColumnHeadersDefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(240, 240, 240) : darkSelectionColor;
+        _presetGrid.ColumnHeadersDefaultCellStyle.SelectionBackColor = _presetGrid.ColumnHeadersDefaultCellStyle.BackColor;
         _presetGrid.ColumnHeadersDefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
         foreach (var comboColumnName in new[] { "Unit", "AggregationUnit" }) {
             if (_presetGrid.Columns[comboColumnName] is not DataGridViewComboBoxColumn comboColumn) {
@@ -148,6 +148,7 @@ public class ChartPeriodPresetEditorForm : Form {
         _presetGrid = new DataGridView {
             Dock = DockStyle.Fill,
             AllowUserToAddRows = false,
+            AllowUserToResizeRows = false,
             AutoGenerateColumns = false,
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,

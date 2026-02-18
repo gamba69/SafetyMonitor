@@ -92,7 +92,7 @@ public class ChartTileEditorForm : Form {
         _metricsGrid.DefaultCellStyle.SelectionForeColor = Color.White;
         _metricsGrid.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(53, 70, 76);
         _metricsGrid.ColumnHeadersDefaultCellStyle.ForeColor = _inputForeColor;
-        _metricsGrid.ColumnHeadersDefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(240, 240, 240) : darkSelectionColor;
+        _metricsGrid.ColumnHeadersDefaultCellStyle.SelectionBackColor = _metricsGrid.ColumnHeadersDefaultCellStyle.BackColor;
         _metricsGrid.ColumnHeadersDefaultCellStyle.SelectionForeColor = _inputForeColor;
         _metricsGrid.EnableHeadersVisualStyles = false;
         _metricsGrid.GridColor = isLight ? Color.LightGray : Color.FromArgb(70, 90, 98);
@@ -188,6 +188,7 @@ public class ChartTileEditorForm : Form {
             AllowUserToAddRows = false,
             AutoGenerateColumns = false,
             RowHeadersVisible = false,
+            AllowUserToResizeRows = false,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             Font = normalFont,

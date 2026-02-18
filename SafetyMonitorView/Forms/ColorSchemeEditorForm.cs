@@ -109,7 +109,7 @@ public class ColorSchemeEditorForm : Form {
                     dgv.DefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
                     dgv.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(235, 235, 235) : Color.FromArgb(38, 52, 57);
                     dgv.ColumnHeadersDefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
-                    dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(235, 235, 235) : darkSelectionColor;
+                    dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = dgv.ColumnHeadersDefaultCellStyle.BackColor;
                     dgv.ColumnHeadersDefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
                     dgv.EnableHeadersVisualStyles = false;
                     dgv.GridColor = isLight ? Color.FromArgb(210, 210, 210) : Color.FromArgb(80, 80, 80);

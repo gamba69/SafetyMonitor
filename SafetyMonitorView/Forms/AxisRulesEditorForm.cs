@@ -84,6 +84,7 @@ public class AxisRulesEditorForm : Form {
             Dock = DockStyle.Fill,
             AllowUserToAddRows = false,
             AllowUserToDeleteRows = false,
+            AllowUserToResizeRows = false,
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
             MultiSelect = false,
@@ -313,7 +314,7 @@ public class AxisRulesEditorForm : Form {
         _rulesGrid.DefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
         _rulesGrid.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(53, 70, 76);
         _rulesGrid.ColumnHeadersDefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
-        _rulesGrid.ColumnHeadersDefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(240, 240, 240) : darkSelectionColor;
+        _rulesGrid.ColumnHeadersDefaultCellStyle.SelectionBackColor = _rulesGrid.ColumnHeadersDefaultCellStyle.BackColor;
         _rulesGrid.ColumnHeadersDefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
 
         _rulesGrid.GridColor = isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(60, 75, 80);
