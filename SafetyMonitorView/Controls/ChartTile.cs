@@ -1818,7 +1818,7 @@ public class ChartTile : Panel {
             verticalLine.X = x;
             verticalLine.IsVisible = true;
             var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
-            verticalLine.Color = ScottPlot.Color.FromColor(isLight ? Color.FromArgb(80, 80, 80) : Color.FromArgb(185, 195, 200));
+            verticalLine.Color = ScottPlot.Color.FromColor(isLight ? Color.FromArgb(50, 80, 80, 80) : Color.FromArgb(60, 195, 200, 205));
         }
     }
 
