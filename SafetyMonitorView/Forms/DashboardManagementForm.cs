@@ -16,6 +16,7 @@ public class DashboardManagementForm : Form {
     private Button _moveDownButton = null!;
     private Button _moveUpButton = null!;
     private Button _deleteButton = null!;
+    private Label _descriptionLabel = null!;
     private bool _isBindingGrid;
 
     #endregion Private Fields
@@ -86,6 +87,8 @@ public class DashboardManagementForm : Form {
         foreach (var button in new[] { _moveUpButton, _moveDownButton, _deleteButton, _cancelButton, _okButton }) {
             ThemedButtonStyler.Apply(button, isLight);
         }
+
+        NormalizeActionButtonWidths();
     }
 
     private void BindGrid() {
@@ -146,12 +149,21 @@ public class DashboardManagementForm : Form {
         var root = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 2
+            RowCount = 3
         };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         root.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        _descriptionLabel = new Label {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, 0, 0, 12),
+            MaximumSize = new Size(640, 0),
+            Text = "Use this form to rename dashboards, mark favorites for quick access (up to 7), reorder items within each group, and remove dashboards you no longer need (at least one dashboard must remain)."
+        };
 
         _grid = new DataGridView {
             Dock = DockStyle.Fill,
@@ -182,13 +194,17 @@ public class DashboardManagementForm : Form {
             }
         };
 
-        var controlsPanel = new FlowLayoutPanel {
+        var controlsPanel = new TableLayoutPanel {
             AutoSize = true,
-            FlowDirection = FlowDirection.TopDown,
-            WrapContents = false,
+            ColumnCount = 1,
+            RowCount = 3,
             Dock = DockStyle.Top,
             Margin = new Padding(12, 0, 0, 0)
         };
+        controlsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        controlsPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        controlsPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        controlsPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         _moveUpButton = new Button { Text = "Up", Width = 100, Height = 34 };
         _moveDownButton = new Button { Text = "Down", Width = 100, Height = 34 };
@@ -198,9 +214,11 @@ public class DashboardManagementForm : Form {
         _moveDownButton.Click += (s, e) => MoveSelectedItem(1);
         _deleteButton.Click += (s, e) => DeleteSelectedItem();
 
-        controlsPanel.Controls.Add(_moveUpButton);
-        controlsPanel.Controls.Add(_moveDownButton);
-        controlsPanel.Controls.Add(_deleteButton);
+        NormalizeActionButtonWidths();
+
+        controlsPanel.Controls.Add(_moveUpButton, 0, 0);
+        controlsPanel.Controls.Add(_moveDownButton, 0, 1);
+        controlsPanel.Controls.Add(_deleteButton, 0, 2);
 
         var bottomPanel = new FlowLayoutPanel {
             Dock = DockStyle.Fill,
@@ -225,9 +243,11 @@ public class DashboardManagementForm : Form {
         bottomPanel.Controls.Add(_cancelButton);
         bottomPanel.Controls.Add(_okButton);
 
-        root.Controls.Add(_grid, 0, 0);
-        root.Controls.Add(controlsPanel, 1, 0);
-        root.Controls.Add(bottomPanel, 0, 1);
+        root.Controls.Add(_descriptionLabel, 0, 0);
+        root.SetColumnSpan(_descriptionLabel, 2);
+        root.Controls.Add(_grid, 0, 1);
+        root.Controls.Add(controlsPanel, 1, 1);
+        root.Controls.Add(bottomPanel, 0, 2);
         root.SetColumnSpan(bottomPanel, 2);
 
         Controls.Add(root);
@@ -248,6 +268,16 @@ public class DashboardManagementForm : Form {
         _items.Insert(index + direction, item);
         BindGrid();
         _grid.CurrentCell = _grid.Rows[index + direction].Cells[0];
+    }
+
+    private void NormalizeActionButtonWidths() {
+        var actionButtons = new[] { _moveUpButton, _moveDownButton, _deleteButton };
+        var maxWidth = actionButtons.Max(button => button.Width);
+
+        foreach (var button in actionButtons) {
+            button.Width = maxWidth;
+            button.MinimumSize = new Size(maxWidth, button.Height);
+        }
     }
 
     private void DeleteSelectedItem() {
