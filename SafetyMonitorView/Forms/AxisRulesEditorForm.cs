@@ -13,6 +13,7 @@ public class AxisRulesEditorForm : Form {
     private DataGridView _rulesGrid = null!;
     private Button _removeButton = null!;
     private Button _saveButton = null!;
+    private Label _headerLabel = null!;
     private readonly List<MetricAxisRuleSetting> _rules;
 
     #endregion Private Fields
@@ -55,29 +56,75 @@ public class AxisRulesEditorForm : Form {
         FormBorderStyle = FormBorderStyle.FixedDialog;
         Padding = new Padding(15);
 
-        var titleFont = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold);
         var normalFont = CreateSafeFont("Segoe UI", 9.5f);
 
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
             RowCount = 4,
-            AutoSize = true
+            AutoSize = false
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));     // 0: Header
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 280)); // 1: Grid
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));     // 2: Add/Remove
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));     // 3: Save/Cancel
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));      // 0: Header
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // 1: Grid
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));      // 2: Add/Remove
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));      // 3: Save/Cancel
 
         // Row 0: Header
-        var headerLabel = new Label {
-            Text = "Configure Y-axis rules per metric. Leave a value empty to skip that rule.",
+        var headerPanel = new TableLayoutPanel {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 3,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 6)
+        };
+        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        _headerLabel = new Label {
+            Text = "Configure Y-axis limits applied during chart zoom/pan. Leave numeric cells empty to disable a specific limit.",
             Font = normalFont,
             AutoSize = true,
-            Margin = new Padding(0, 0, 0, 8)
+            MaximumSize = new Size(810, 0),
+            Margin = new Padding(0, 0, 0, 4)
         };
-        mainLayout.Controls.Add(headerLabel, 0, 0);
+        headerPanel.Controls.Add(_headerLabel, 0, 0);
+        headerPanel.SetColumnSpan(_headerLabel, 2);
+
+        var minBoundaryLabel = new Label {
+            Text = "• Min Boundary: chart cannot go below this Y value.",
+            Font = normalFont,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 12, 2)
+        };
+        var minSpanLabel = new Label {
+            Text = "• Min Span: prevents too much zoom-in (minimum Y range).",
+            Font = normalFont,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 2)
+        };
+        var maxBoundaryLabel = new Label {
+            Text = "• Max Boundary: chart cannot go above this Y value.",
+            Font = normalFont,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 12, 0)
+        };
+        var maxSpanLabel = new Label {
+            Text = "• Max Span: prevents too much zoom-out (maximum Y range).",
+            Font = normalFont,
+            AutoSize = true,
+            Margin = new Padding(0)
+        };
+
+        headerPanel.Controls.Add(minBoundaryLabel, 0, 1);
+        headerPanel.Controls.Add(minSpanLabel, 1, 1);
+        headerPanel.Controls.Add(maxBoundaryLabel, 0, 2);
+        headerPanel.Controls.Add(maxSpanLabel, 1, 2);
+
+        mainLayout.Controls.Add(headerPanel, 0, 0);
 
         // Row 1: DataGridView
         _rulesGrid = new DataGridView {
@@ -90,14 +137,16 @@ public class AxisRulesEditorForm : Form {
             MultiSelect = false,
             RowHeadersVisible = false,
             Font = normalFont,
-            EnableHeadersVisualStyles = false
+            EnableHeadersVisualStyles = false,
+            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize
         };
 
         // Metric column (ComboBox)
         var metricColumn = new DataGridViewComboBoxColumn {
             Name = "Metric",
             HeaderText = "Metric",
-            FillWeight = 30
+            FillWeight = 30,
+            MinimumWidth = 180
         };
         foreach (MetricType mt in Enum.GetValues<MetricType>()) {
             metricColumn.Items.Add(mt.GetDisplayName());
@@ -108,39 +157,45 @@ public class AxisRulesEditorForm : Form {
         _rulesGrid.Columns.Add(new DataGridViewCheckBoxColumn {
             Name = "Enabled",
             HeaderText = "Enabled",
-            FillWeight = 12
+            FillWeight = 14,
+            MinimumWidth = 90
         });
 
         // MinBoundary
         _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "MinBoundary",
             HeaderText = "Min Boundary",
-            FillWeight = 16
+            FillWeight = 17,
+            MinimumWidth = 120
         });
 
         // MaxBoundary
         _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "MaxBoundary",
             HeaderText = "Max Boundary",
-            FillWeight = 16
+            FillWeight = 17,
+            MinimumWidth = 120
         });
 
         // MinSpan
         _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "MinSpan",
             HeaderText = "Min Span",
-            FillWeight = 13
+            FillWeight = 14,
+            MinimumWidth = 100
         });
 
         // MaxSpan
         _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "MaxSpan",
             HeaderText = "Max Span",
-            FillWeight = 13
+            FillWeight = 14,
+            MinimumWidth = 100
         });
 
         foreach (DataGridViewColumn column in _rulesGrid.Columns) {
             column.SortMode = DataGridViewColumnSortMode.NotSortable;
+            column.HeaderCell.Style.WrapMode = DataGridViewTriState.False;
         }
 
         _rulesGrid.CellValidating += RulesGrid_CellValidating;
@@ -152,7 +207,7 @@ public class AxisRulesEditorForm : Form {
             AutoSize = true,
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.LeftToRight,
-            Margin = new Padding(0, 8, 0, 8)
+            Margin = new Padding(0, 6, 0, 6)
         };
 
         _addButton = new Button {
@@ -208,7 +263,7 @@ public class AxisRulesEditorForm : Form {
         mainLayout.Controls.Add(buttonPanel, 0, 3);
 
         Controls.Add(mainLayout);
-        ClientSize = new Size(680, 440);
+        ClientSize = new Size(860, 500);
     }
 
     private void LoadRules() {
@@ -306,22 +361,23 @@ public class AxisRulesEditorForm : Form {
         BackColor = isLight ? Color.FromArgb(250, 250, 250) : Color.FromArgb(38, 52, 57);
         ForeColor = isLight ? Color.Black : Color.White;
 
-        _rulesGrid.BackgroundColor = isLight ? Color.White : Color.FromArgb(35, 47, 52);
-        _rulesGrid.DefaultCellStyle.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
-        _rulesGrid.DefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
-        var darkSelectionColor = Color.FromArgb(0, 121, 107);
-        _rulesGrid.DefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(195, 225, 220) : darkSelectionColor;
-        _rulesGrid.DefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
-        _rulesGrid.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(53, 70, 76);
-        _rulesGrid.ColumnHeadersDefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
+        _rulesGrid.BackgroundColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
+        _rulesGrid.DefaultCellStyle.BackColor = _rulesGrid.BackgroundColor;
+        _rulesGrid.DefaultCellStyle.ForeColor = ForeColor;
+        _rulesGrid.DefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(225, 245, 254) : Color.FromArgb(56, 78, 84);
+        _rulesGrid.DefaultCellStyle.SelectionForeColor = ForeColor;
+        _rulesGrid.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(238, 238, 238) : Color.FromArgb(55, 71, 79);
+        _rulesGrid.ColumnHeadersDefaultCellStyle.ForeColor = ForeColor;
         _rulesGrid.ColumnHeadersDefaultCellStyle.SelectionBackColor = _rulesGrid.ColumnHeadersDefaultCellStyle.BackColor;
-        _rulesGrid.ColumnHeadersDefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
+        _rulesGrid.ColumnHeadersDefaultCellStyle.SelectionForeColor = _rulesGrid.ColumnHeadersDefaultCellStyle.ForeColor;
+
+        _rulesGrid.EnableHeadersVisualStyles = false;
 
         _rulesGrid.GridColor = isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(60, 75, 80);
 
         if (_rulesGrid.Columns["Metric"] is DataGridViewComboBoxColumn metricCol) {
-            metricCol.DefaultCellStyle.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
-            metricCol.DefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
+            metricCol.DefaultCellStyle.BackColor = _rulesGrid.DefaultCellStyle.BackColor;
+            metricCol.DefaultCellStyle.ForeColor = _rulesGrid.DefaultCellStyle.ForeColor;
             metricCol.DefaultCellStyle.SelectionBackColor = _rulesGrid.DefaultCellStyle.SelectionBackColor;
             metricCol.DefaultCellStyle.SelectionForeColor = _rulesGrid.DefaultCellStyle.SelectionForeColor;
             metricCol.FlatStyle = FlatStyle.Popup;
