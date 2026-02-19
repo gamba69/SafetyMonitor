@@ -101,18 +101,17 @@ public class ColorSchemeEditorForm : Form {
                     lb.ForeColor = isLight ? Color.Black : Color.White;
                     break;
                 case DataGridView dgv:
-                    var darkSelectionColor = Color.FromArgb(0, 121, 107);
-                    dgv.BackgroundColor = isLight ? Color.White : Color.FromArgb(42, 56, 61);
-                    dgv.DefaultCellStyle.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
+                    dgv.BackgroundColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
+                    dgv.DefaultCellStyle.BackColor = dgv.BackgroundColor;
                     dgv.DefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
-                    dgv.DefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(200, 210, 240) : darkSelectionColor;
-                    dgv.DefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
-                    dgv.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(235, 235, 235) : Color.FromArgb(38, 52, 57);
-                    dgv.ColumnHeadersDefaultCellStyle.ForeColor = isLight ? Color.Black : Color.White;
+                    dgv.DefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(225, 245, 254) : Color.FromArgb(56, 78, 84);
+                    dgv.DefaultCellStyle.SelectionForeColor = dgv.DefaultCellStyle.ForeColor;
+                    dgv.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(238, 238, 238) : Color.FromArgb(55, 71, 79);
+                    dgv.ColumnHeadersDefaultCellStyle.ForeColor = dgv.DefaultCellStyle.ForeColor;
                     dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = dgv.ColumnHeadersDefaultCellStyle.BackColor;
-                    dgv.ColumnHeadersDefaultCellStyle.SelectionForeColor = isLight ? Color.Black : Color.White;
+                    dgv.ColumnHeadersDefaultCellStyle.SelectionForeColor = dgv.ColumnHeadersDefaultCellStyle.ForeColor;
                     dgv.EnableHeadersVisualStyles = false;
-                    dgv.GridColor = isLight ? Color.FromArgb(210, 210, 210) : Color.FromArgb(80, 80, 80);
+                    dgv.GridColor = isLight ? Color.FromArgb(224, 224, 224) : Color.FromArgb(78, 96, 103);
                     break;
             }
             ApplyThemeRecursive(control, isLight);
@@ -167,7 +166,7 @@ public class ColorSchemeEditorForm : Form {
     }
 
     private void InitializeComponent() {
-        Text = "Color Scheme Editor";
+        Text = "Color Schemes";
         AutoScaleMode = AutoScaleMode.Dpi;
         AutoScaleDimensions = new SizeF(96F, 96F);
         StartPosition = FormStartPosition.CenterParent;
@@ -208,6 +207,59 @@ public class ColorSchemeEditorForm : Form {
         // ── Row 0, Col 1: editor area ───────────────────────
         var rightPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(5, 0, 0, 0) };
 
+        var headerPanel = new TableLayoutPanel {
+            Dock = DockStyle.Top,
+            ColumnCount = 2,
+            RowCount = 3,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 6)
+        };
+        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        var headerLabel = new Label {
+            Text = "Configure color schemes used by value tiles to visualize metric ranges, thresholds, and state severity in dashboards.",
+            Font = titleFont,
+            AutoSize = true,
+            MaximumSize = new Size(810, 0),
+            Margin = new Padding(0, 0, 0, 8)
+        };
+        headerPanel.Controls.Add(headerLabel, 0, 0);
+        headerPanel.SetColumnSpan(headerLabel, 2);
+
+        var rangesLabel = new Label {
+            Text = "• Stops define Min/Max bounds for each color segment.",
+            Font = normalFont,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 12, 2)
+        };
+        var gradientLabel = new Label {
+            Text = "• Gradient interpolation blends between stop colors.",
+            Font = normalFont,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 2)
+        };
+        var descriptionLabel = new Label {
+            Text = "• Description is shown in legends/tooltips for readability.",
+            Font = normalFont,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 8)
+        };
+        var previewLabel = new Label {
+            Text = "• Preview shows how the scheme will look in tiles.",
+            Font = normalFont,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 8)
+        };
+
+        headerPanel.Controls.Add(rangesLabel, 0, 1);
+        headerPanel.Controls.Add(gradientLabel, 1, 1);
+        headerPanel.Controls.Add(descriptionLabel, 0, 2);
+        headerPanel.Controls.Add(previewLabel, 1, 2);
+
         var namePanel = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 35, WrapContents = false, AutoSize = false };
         namePanel.Controls.Add(new Label { Text = "Name:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 6, 5, 0) });
         _nameTextBox = new TextBox { Width = 250, Font = normalFont, Margin = new Padding(0, 2, 15, 0) };
@@ -224,12 +276,12 @@ public class ColorSchemeEditorForm : Form {
             Font = normalFont,
             AutoGenerateColumns = false,
             AllowUserToResizeRows = false,
+            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             RowHeadersVisible = false,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
             MultiSelect = false,
             AllowUserToAddRows = false,
             AllowUserToDeleteRows = false,
-            EditMode = DataGridViewEditMode.EditOnEnter,
             BorderStyle = BorderStyle.FixedSingle
         };
         SetupGridColumns();
@@ -251,48 +303,68 @@ public class ColorSchemeEditorForm : Form {
         _previewPanel = new Panel { Dock = DockStyle.Bottom, Height = 40, Padding = new Padding(0, 5, 0, 0) };
         _previewPanel.Paint += PreviewPanel_Paint;
 
+
+        // ── Row 1: SINGLE bottom bar spanning both columns ──
+        var bottomBar = new TableLayoutPanel {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(0),
+            Margin = new Padding(0),
+            ColumnCount = 2,
+            RowCount = 1
+        };
+        bottomBar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        bottomBar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        root.Controls.Add(bottomBar, 0, 1);
+        root.SetColumnSpan(bottomBar, 2);
+
+        var leftButtonsPanel = new FlowLayoutPanel {
+            Dock = DockStyle.Fill,
+            AutoSize = true,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            Margin = new Padding(0)
+        };
+
+        // Left-side buttons inside bottomBar
+        _newButton = new Button { Text = "Add", Width = 80, Height = 35, Font = normalFont, Margin = new Padding(0, 5, 10, 0) };
+        _newButton.Click += NewButton_Click;
+        _duplicateButton = new Button { Text = "Dup", Width = 80, Height = 35, Font = normalFont, Margin = new Padding(0, 5, 10, 0) };
+        _duplicateButton.Click += DuplicateButton_Click;
+        _deleteButton = new Button { Text = "Del", Width = 80, Height = 35, Font = normalFont, Margin = new Padding(0, 5, 0, 0) };
+        _deleteButton.Click += DeleteButton_Click;
+
+        leftButtonsPanel.Controls.AddRange([_newButton, _duplicateButton, _deleteButton]);
+
+        // Right-side buttons inside bottomBar (anchored to right)
+        var rightButtonsPanel = new FlowLayoutPanel {
+            AutoSize = true,
+            FlowDirection = FlowDirection.RightToLeft,
+            WrapContents = false,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0)
+        };
+
+        _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 35, Font = normalFont, Margin = new Padding(0, 5, 0, 0) };
+        _cancelButton.Click += (s, e) => Close();
+
+        _saveButton = new Button { Text = "Save", Width = 110, Height = 35, Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(0, 5, 10, 0) };
+        _saveButton.Click += SaveButton_Click;
+
+        rightButtonsPanel.Controls.Add(_cancelButton);
+        rightButtonsPanel.Controls.Add(_saveButton);
+
+        bottomBar.Controls.Add(leftButtonsPanel, 0, 0);
+        bottomBar.Controls.Add(rightButtonsPanel, 1, 0);
+
+        Controls.Add(root);
+
         rightPanel.Controls.Add(_stopsGrid);
         rightPanel.Controls.Add(gridButtons);
         rightPanel.Controls.Add(_previewPanel);
         rightPanel.Controls.Add(stopsLabel);
         rightPanel.Controls.Add(namePanel);
+        rightPanel.Controls.Add(headerPanel);
         root.Controls.Add(rightPanel, 1, 0);
-
-        // ── Row 1: SINGLE bottom bar spanning both columns ──
-        var bottomBar = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0) };
-        root.Controls.Add(bottomBar, 0, 1);
-        root.SetColumnSpan(bottomBar, 2);
-
-        // Left-side buttons inside bottomBar
-        _newButton = new Button { Text = "Add", Width = 80, Height = 35, Font = normalFont, Top = 5 };
-        _newButton.Click += NewButton_Click;
-        _duplicateButton = new Button { Text = "Dup", Width = 80, Height = 35, Font = normalFont, Top = 5 };
-        _duplicateButton.Click += DuplicateButton_Click;
-        _deleteButton = new Button { Text = "Del", Width = 80, Height = 35, Font = normalFont, Top = 5 };
-        _deleteButton.Click += DeleteButton_Click;
-
-        _newButton.Left = 0;
-        _duplicateButton.Left = _newButton.Right + 10;
-        _deleteButton.Left = _duplicateButton.Right + 10;
-
-        // Right-side buttons inside bottomBar (anchored to right)
-        _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 35, Font = normalFont, Top = 5 };
-        _cancelButton.Click += (s, e) => Close();
-        _cancelButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-
-        _saveButton = new Button { Text = "Save", Width = 110, Height = 35, Font = new Font("Segoe UI", 9.5f, FontStyle.Bold), Top = 5 };
-        _saveButton.Click += SaveButton_Click;
-        _saveButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-
-        // Position right-aligned buttons relative to bottomBar width
-        bottomBar.SizeChanged += (s, e) => {
-            _cancelButton.Left = bottomBar.ClientSize.Width - _cancelButton.Width;
-            _saveButton.Left = _cancelButton.Left - _saveButton.Width - 10;
-        };
-
-        bottomBar.Controls.AddRange([_newButton, _duplicateButton, _deleteButton, _saveButton, _cancelButton]);
-
-        Controls.Add(root);
     }
 
     private void LoadSchemeToEditor(ColorScheme scheme) {
@@ -513,19 +585,22 @@ public class ColorSchemeEditorForm : Form {
         _stopsGrid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "MinValue",
             HeaderText = "Min",
-            Width = 85,
+            FillWeight = 16,
+            MinimumWidth = 80,
             ValueType = typeof(string)
         });
         _stopsGrid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "MaxValue",
             HeaderText = "Max",
-            Width = 85,
+            FillWeight = 16,
+            MinimumWidth = 80,
             ValueType = typeof(string)
         });
         _stopsGrid.Columns.Add(new DataGridViewButtonColumn {
             Name = "Color",
             HeaderText = "Color",
-            Width = 80,
+            FillWeight = 16,
+            MinimumWidth = 80,
             FlatStyle = FlatStyle.Flat,
             Text = "",
             UseColumnTextForButtonValue = false
@@ -533,12 +608,14 @@ public class ColorSchemeEditorForm : Form {
         _stopsGrid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "Description",
             HeaderText = "Description",
-            AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
+            FillWeight = 52,
+            MinimumWidth = 180,
             ValueType = typeof(string)
         });
 
         foreach (DataGridViewColumn column in _stopsGrid.Columns) {
             column.SortMode = DataGridViewColumnSortMode.NotSortable;
+            column.HeaderCell.Style.WrapMode = DataGridViewTriState.False;
         }
 
         _stopsGrid.CellFormatting += StopsGrid_CellFormatting;
