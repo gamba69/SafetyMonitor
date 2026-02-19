@@ -195,9 +195,7 @@ public class SettingsForm : Form {
 
         // ── Row 0: Form header description ──
         var headerLabel = new Label {
-            Text = "Configure application behavior: data refresh timing, storage connection, "
-                 + "value tile lookback windows, chart interaction timeouts, and aggregation calculation parameters. "
-                 + "Changes take effect after clicking Save.",
+            Text = "Adjust refresh, storage, and chart behavior settings; changes apply after you click Save.",
             Font = normalFont,
             AutoSize = true,
             MaximumSize = new Size(580, 0),
@@ -335,21 +333,13 @@ public class SettingsForm : Form {
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        layout.Controls.Add(new Label {
-            Text = "How often the application polls the data storage for new values. "
-                 + "All dashboard tiles (both value tiles and charts) are refreshed at this interval. "
-                 + "Lower values provide more responsive updates but increase disk I/O. "
-                 + "Recommended range: 3–10 seconds for live monitoring, 30–60 seconds for review.",
-            Font = descriptionFont,
-            AutoSize = true,
-            MaximumSize = new Size(575, 0),
-            Margin = new Padding(0, 0, 0, 16)
-        }, 0, 0);
-
         _refreshIntervalNumeric = CreateNumeric(1, 60, 5, normalFont);
         layout.Controls.Add(CreateSettingRow(
             "Refresh Interval",
-            "How often the app reloads data from storage.",
+            "How often the application polls the data storage for new values. "
+                + "All dashboard tiles (both value tiles and charts) are refreshed at this interval. "
+                + "Lower values provide more responsive updates but increase disk I/O. "
+                + "Recommended range: 3–10 seconds for live monitoring, 30–60 seconds for review.",
             "seconds",
             _refreshIntervalNumeric,
             titleFont,
@@ -374,17 +364,6 @@ public class SettingsForm : Form {
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-
-        layout.Controls.Add(new Label {
-            Text = "Data storage location where the collector writes Firebird databases. "
-                 + "Each month of data is stored in a separate .fdb file inside this folder. "
-                 + "Firebird Embedded must be installed separately (fbclient.dll and plugins). "
-                 + "Use the Test Connection button to verify the path is valid and Firebird is available.",
-            Font = descriptionFont,
-            AutoSize = true,
-            MaximumSize = new Size(575, 0),
-            Margin = new Padding(0, 0, 0, 16)
-        }, 0, 0);
 
         var pathPanel = new TableLayoutPanel {
             AutoSize = true,
@@ -420,20 +399,17 @@ public class SettingsForm : Form {
         _browseButton.Click += BrowseButton_Click;
         pathPanel.Controls.Add(_browseButton, 2, 0);
 
-        pathPanel.Controls.Add(new Label {
-            Text = "Root folder for monthly Firebird files.",
+        Label description = new Label {
+            Text = "Data storage location where the collector writes Firebird databases. "
+                 + "Each month of data is stored in a separate .fdb file inside this folder. "
+                 + "Firebird Embedded must be installed separately (fbclient.dll and plugins). "
+                 + "Use the Test Connection button to verify the path is valid and Firebird is available.",
             Font = descriptionFont,
             AutoSize = true,
-            Margin = new Padding(0, 4, 14, 0)
-        }, 0, 1);
-
-        pathPanel.Controls.Add(new Label {
-            Text = "Choose folder with *.fdb files for data reading and writing.",
-            Font = descriptionFont,
-            AutoSize = true,
-            MaximumSize = new Size(390, 0),
             Margin = new Padding(0, 4, 0, 0)
-        }, 1, 1);
+        };
+        pathPanel.Controls.Add(description, 0, 1);
+        pathPanel.SetColumnSpan(description, 2);
 
         layout.Controls.Add(pathPanel, 0, 1);
 
@@ -476,22 +452,14 @@ public class SettingsForm : Form {
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        layout.Controls.Add(new Label {
-            Text = "Value tiles display the most recent reading for a metric. "
+        _valueTileLookbackMinutesNumeric = CreateNumeric(1, 43200, 60, normalFont);
+        layout.Controls.Add(CreateSettingRow(
+            "Value Tile Lookback Window",
+            "Value tiles display the most recent reading for a metric. "
                  + "The lookback window controls how far back (in minutes) the tile searches for the latest data point. "
                  + "If no data is found within this window, the tile shows a \"?\" placeholder instead of a value. "
                  + "Increase this value if your data collector writes infrequently or if tiles show \"?\" unexpectedly. "
                  + "Decrease it if you only want to see very recent readings and prefer a clear \"no data\" indicator for stale values.",
-            Font = descriptionFont,
-            AutoSize = true,
-            MaximumSize = new Size(575, 0),
-            Margin = new Padding(0, 0, 0, 16)
-        }, 0, 0);
-
-        _valueTileLookbackMinutesNumeric = CreateNumeric(1, 43200, 60, normalFont);
-        layout.Controls.Add(CreateSettingRow(
-            "Value Tile Lookback Window",
-            "Time range for searching the last known metric value.",
             "minutes",
             _valueTileLookbackMinutesNumeric,
             titleFont,
@@ -515,22 +483,14 @@ public class SettingsForm : Form {
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        layout.Controls.Add(new Label {
-            Text = "When you pan or zoom a chart, it enters static mode: auto-refresh is paused and the chart "
+        _chartStaticTimeoutNumeric = CreateNumeric(10, 3600, 120, normalFont);
+        layout.Controls.Add(CreateSettingRow(
+            "Chart Static Mode Timeout",
+            "When you pan or zoom a chart, it enters static mode: auto-refresh is paused and the chart "
                  + "freezes at the range you selected, showing a countdown timer in the corner. "
                  + "This timeout defines how many seconds the chart stays in static mode after your last interaction. "
                  + "Once the timeout expires, the chart automatically returns to auto mode and resumes live updates. "
                  + "Set a longer timeout if you need more time to study historical ranges; set a shorter one to get back to live data quickly.",
-            Font = descriptionFont,
-            AutoSize = true,
-            MaximumSize = new Size(575, 0),
-            Margin = new Padding(0, 0, 0, 16)
-        }, 0, 0);
-
-        _chartStaticTimeoutNumeric = CreateNumeric(10, 3600, 120, normalFont);
-        layout.Controls.Add(CreateSettingRow(
-            "Chart Static Mode Timeout",
-            "How long chart remains in static mode after pan/zoom interaction.",
             "seconds",
             _chartStaticTimeoutNumeric,
             titleFont,
@@ -556,15 +516,6 @@ public class SettingsForm : Form {
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        layout.Controls.Add(new Label {
-            Text = "These parameters control how chart data is aggregated when the chart enters static mode "
-                 + "(pan/zoom). They affect the resolution and alignment of data points on static charts.",
-            Font = descriptionFont,
-            AutoSize = true,
-            MaximumSize = new Size(575, 0),
-            Margin = new Padding(0, 0, 0, 16)
-        }, 0, 0);
-
         _chartStaticAggregationPresetMatchToleranceNumeric = new NumericUpDown {
             Width = 100,
             Minimum = 0,
@@ -584,7 +535,6 @@ public class SettingsForm : Form {
             descriptionFont), 0, 1);
 
         _chartStaticAggregationTargetPointsNumeric = CreateNumeric(2, 5000, 300, normalFont);
-        _chartStaticAggregationTargetPointsNumeric.Margin = new Padding(0, 0, 10, 10);
         layout.Controls.Add(CreateSettingRow(
             "Target Chart Points",
             "Desired amount of points after automatic static aggregation.",
@@ -594,7 +544,6 @@ public class SettingsForm : Form {
             descriptionFont), 0, 2);
 
         _chartAggregationRoundingSecondsNumeric = CreateNumeric(1, 3600, 1, normalFont);
-        _chartAggregationRoundingSecondsNumeric.Margin = new Padding(0, 0, 10, 10);
         layout.Controls.Add(CreateSettingRow(
             "Aggregation Rounding Step",
             "Round computed interval to a multiple of this value.",
@@ -660,10 +609,11 @@ public class SettingsForm : Form {
         row.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         var label = CreateLabel(title, titleFont);
-        label.Margin = new Padding(0, 0, 14, 3);
+        label.Margin = new Padding(0, 0, 14, 0);
         row.Controls.Add(label, 0, 0);
 
-        valueControl.Anchor = AnchorStyles.Right;
+        valueControl.Anchor = AnchorStyles.Left;
+        valueControl.Margin = new Padding(0, 0, 10, 0);
         row.Controls.Add(valueControl, 1, 0);
 
         var unitLabel = new Label {
@@ -671,7 +621,7 @@ public class SettingsForm : Form {
             Font = titleFont,
             AutoSize = true,
             Anchor = AnchorStyles.Left,
-            Margin = new Padding(0, 3, 0, 0)
+            Margin = new Padding(0, 0, 0, 0)
         };
         row.Controls.Add(unitLabel, 2, 0);
 
@@ -680,7 +630,7 @@ public class SettingsForm : Form {
             Font = descriptionFont,
             AutoSize = true,
             MaximumSize = new Size(360, 0),
-            Margin = new Padding(0, 0, 14, 0)
+            Margin = new Padding(0, 6, 14, 0)
         }, 0, 1);
 
         return row;
