@@ -34,7 +34,7 @@ public static class MaterialIcons {
     public const string PlotMenuAutoscale = "plot_menu_autoscale";
     public const string PlotMenuOpenInWindow = "plot_menu_open_in_window";
     public const string PlotMenuDisplayOption = "plot_menu_display_option";
-    public const string PlotMenuConversionPath = "conversion_path";
+    public const string PlotMenuConversionPath = "gesture";
     public const string PlotMenuGrid4x4 = "grid_4x4";
     public const string PlotMenuLegendToggle = "legend_toggle";
     public const string PlotMenuStat0 = "stat_0";
@@ -129,7 +129,7 @@ public static class MaterialIcons {
         [ToolbarChartsUnlink] = "\uE16F",
         [ChartModeStatic] = "\uF71E",
         [ChartModeAuto] = "\uF417",
-        [ChartInspector] = "\uE4FC",
+        [ChartInspector] = "\uE1D2",
         [MetricTemperature] = "\uF076",
         [MetricHumidity] = "\uE798",
         [MetricPressure] = "\uE69f",

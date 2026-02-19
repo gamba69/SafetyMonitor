@@ -317,9 +317,9 @@ public class MainForm : MaterialForm {
         var dashboard = new Dashboard {
             Name = $"New Dashboard {_dashboards.Count + 1}",
             Rows = 4,
-            Columns = 4
+            Columns = 4,
+            SortOrder = _dashboards.Where(d => !d.IsQuickAccess).Select(d => d.SortOrder).DefaultIfEmpty(-1).Max() + 1
         };
-        dashboard.SortOrder = _dashboards.Where(d => !d.IsQuickAccess).Select(d => d.SortOrder).DefaultIfEmpty(-1).Max() + 1;
         _dashboardService.SaveDashboard(dashboard);
         _dashboards.Add(dashboard);
         SortDashboardsForDisplay();
@@ -671,7 +671,7 @@ public class MainForm : MaterialForm {
         }
     }
 
-    private bool ShouldRebuildQuickDashboards(Dashboard? previousDashboard, Dashboard currentDashboard) {
+    private static bool ShouldRebuildQuickDashboards(Dashboard? previousDashboard, Dashboard currentDashboard) {
         var previousWasQuickAccess = previousDashboard != null && previousDashboard.IsQuickAccess;
         var currentIsQuickAccess = currentDashboard.IsQuickAccess;
 
@@ -1013,11 +1013,10 @@ public class MainForm : MaterialForm {
     }
 
     private void SortDashboardsForDisplay() {
-        _dashboards = _dashboards
+        _dashboards = [.. _dashboards
             .OrderByDescending(d => d.IsQuickAccess)
             .ThenBy(d => d.SortOrder)
-            .ThenBy(d => d.Name)
-            .ToList();
+            .ThenBy(d => d.Name)];
     }
 
     private void UpdateDashboardContainerTheme() {
@@ -1246,14 +1245,14 @@ public class MainForm : MaterialForm {
         return Math.Max(80, textWidth + 24);
     }
 
-    private static List<int> ScaleSegmentWidths(IReadOnlyList<int> preferredWidths, int targetWidth) {
+    private static List<int> ScaleSegmentWidths(List<int> preferredWidths, int targetWidth) {
         if (preferredWidths.Count == 0 || targetWidth <= 0) {
             return [];
         }
 
         var sumPreferred = preferredWidths.Sum();
         if (sumPreferred <= targetWidth) {
-            return preferredWidths.ToList();
+            return [.. preferredWidths];
         }
 
         var scaled = preferredWidths

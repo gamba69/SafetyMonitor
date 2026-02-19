@@ -650,9 +650,7 @@ public class ChartTile : Panel {
         if (_topPanel != null && _topPanel.BackColor != tileBg) {
             _topPanel.BackColor = tileBg;
         }
-        if (_periodSelector != null) {
-            _periodSelector.ApplyTheme();
-        }
+        _periodSelector?.ApplyTheme();
 
         if (_staticRangePanel != null && _staticRangePanel.BackColor != tileBg) {
             _staticRangePanel.BackColor = tileBg;
@@ -1627,9 +1625,7 @@ public class ChartTile : Panel {
             }
         }
 
-        if (_countdownLabel != null) {
-            _countdownLabel.Visible = enabled;
-        }
+        _countdownLabel?.Visible = enabled;
         UpdateModeSwitchAppearance();
         UpdateAggregationInfoLabel(ResolveAggregationInterval());
         if (enabled) {
