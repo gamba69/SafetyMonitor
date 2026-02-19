@@ -29,10 +29,10 @@ public class ThemedMessageBox : Form {
 
         InitializeComponent();
         var iconName = _icon switch {
-            MessageBoxIcon.Warning => MaterialIcons.MessageBoxWarningOutlined,
-            MessageBoxIcon.Error => MaterialIcons.MessageBoxErrorOutlined,
-            MessageBoxIcon.Question => MaterialIcons.MessageBoxQuestionOutlined,
-            _ => MaterialIcons.MessageBoxInfoOutlined,
+            MessageBoxIcon.Warning => MaterialIcons.MessageBoxWarningFilled,
+            MessageBoxIcon.Error => MaterialIcons.MessageBoxErrorFilled,
+            MessageBoxIcon.Question => MaterialIcons.MessageBoxQuestionFilled,
+            _ => MaterialIcons.MessageBoxInfoFilled,
         };
         FormIconHelper.Apply(this, iconName);
         ApplyTheme();
