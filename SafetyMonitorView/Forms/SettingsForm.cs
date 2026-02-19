@@ -528,7 +528,11 @@ public class SettingsForm : Form {
         };
         layout.Controls.Add(CreateSettingRow(
             "Preset Match Tolerance",
-            "Allowed range difference when matching static view to a preset.",
+            "When you open a historical range, the chart first tries to match it to one of the period presets "
+                 + "(for example 1 hour, 24 hours, 7 days) and reuse that preset's recommended aggregation interval. "
+                 + "This tolerance defines how much difference between your selected range and the preset range is still considered a match. "
+                 + "Higher values make matching more permissive (more preset reuse, more consistent point density). "
+                 + "Lower values make matching stricter and force custom interval calculation more often.",
             "%",
             _chartStaticAggregationPresetMatchToleranceNumeric,
             titleFont,
@@ -537,7 +541,10 @@ public class SettingsForm : Form {
         _chartStaticAggregationTargetPointsNumeric = CreateNumeric(2, 5000, 300, normalFont);
         layout.Controls.Add(CreateSettingRow(
             "Target Chart Points",
-            "Desired amount of points after automatic static aggregation.",
+            "If no preset match is found, the app computes a custom aggregation interval from the selected time span. "
+                 + "This value is the target number of points on the chart after aggregation. "
+                 + "Smaller numbers reduce rendering load and improve readability for very long periods, but may hide short spikes. "
+                 + "Larger numbers preserve more detail but can make dense charts harder to read and slower to draw.",
             "points",
             _chartStaticAggregationTargetPointsNumeric,
             titleFont,
@@ -546,7 +553,10 @@ public class SettingsForm : Form {
         _chartAggregationRoundingSecondsNumeric = CreateNumeric(1, 3600, 1, normalFont);
         layout.Controls.Add(CreateSettingRow(
             "Aggregation Rounding Step",
-            "Round computed interval to a multiple of this value.",
+            "After calculating a custom interval, the app rounds it to a clean multiple of this step (in seconds). "
+                 + "Rounding stabilizes interval selection and avoids tiny differences between similar ranges (for example 59s vs 61s). "
+                 + "Use smaller steps for finer control and maximum accuracy. "
+                 + "Use larger steps for more predictable, stable intervals and easier cross-chart comparison.",
             "seconds",
             _chartAggregationRoundingSecondsNumeric,
             titleFont,
