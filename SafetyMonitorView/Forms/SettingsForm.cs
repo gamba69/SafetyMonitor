@@ -27,11 +27,11 @@ public class SettingsForm : Form {
 
     private static readonly string[] TabNames = { "General", "Storage", "Value Tiles", "Chart Tiles", "Aggregation" };
     private static readonly string[] TabIcons = {
-        MaterialIcons.MenuFileSettings,
-        MaterialIcons.CommonBrowse,
+        MaterialIcons.CommonBuild,
+        MaterialIcons.CommonDatabase,
         MaterialIcons.WindowTileValue,
         MaterialIcons.WindowTileChart,
-        MaterialIcons.CommonCalculate
+        MaterialIcons.CommonAvgTime
     };
 
     #endregion Private Fields
