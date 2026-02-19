@@ -404,18 +404,18 @@ public class ThemedColorPicker : Form {
         SuspendLayout();
 
         Text = "Color Picker";
-        AutoScaleMode = AutoScaleMode.Dpi;
-        AutoScaleDimensions = new SizeF(96F, 96F);
+        AutoScaleMode = AutoScaleMode.Font;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterParent;
         ShowInTaskbar = false;
+        AutoSize = true;
+        AutoSizeMode = AutoSizeMode.GrowAndShrink;
         BackColor = _formBg;
         ForeColor = _fg;
         Font = new Font("Segoe UI", 9.5f);
         Padding = new Padding(15);
-        ClientSize = new Size(460, 440);
 
         _wheelSize = 220;
         _barHeight = 220;
@@ -427,9 +427,11 @@ public class ThemedColorPicker : Form {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
             RowCount = 2,
-            Margin = Padding.Empty
+            Margin = Padding.Empty,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink
         };
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
@@ -437,7 +439,8 @@ public class ThemedColorPicker : Form {
         //  Content: 3 columns — [wheel] [brightness bar] [controls]
         // ============================================================
         var content = new TableLayoutPanel {
-            Dock = DockStyle.Fill,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             ColumnCount = 3,
             RowCount = 1,
             Margin = Padding.Empty
