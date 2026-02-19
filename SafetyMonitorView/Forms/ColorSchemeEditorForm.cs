@@ -522,24 +522,31 @@ public class ColorSchemeEditorForm : Form {
 
     // ── CRUD operations ──
     private void SaveButton_Click(object? sender, EventArgs e) {
-        SaveCurrentScheme();
-    }
-
-    private void SaveCurrentScheme() {
-        if (_currentScheme == null) {
+        if (!SaveCurrentScheme()) {
             return;
         }
+
+        DialogResult = DialogResult.OK;
+        Close();
+    }
+
+    private bool SaveCurrentScheme() {
+        if (_currentScheme == null) {
+            return false;
+        }
+
+        _stopsGrid.EndEdit();
 
         var scheme = ReadSchemeFromEditor();
 
         if (string.IsNullOrWhiteSpace(scheme.Name)) {
             ThemedMessageBox.Show(this, "Scheme name cannot be empty.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
+            return false;
         }
 
         if (scheme.Stops.Count == 0) {
             ThemedMessageBox.Show(this, "At least one color stop is required.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
+            return false;
         }
 
         // If renaming, delete old file
@@ -555,6 +562,8 @@ public class ColorSchemeEditorForm : Form {
         PopulateSchemeList();
         var idx = _schemes.FindIndex(s => s.Name == selectedName);
         _schemeList.SelectedIndex = idx >= 0 ? idx : 0;
+
+        return true;
     }
 
     // ── List management ──
