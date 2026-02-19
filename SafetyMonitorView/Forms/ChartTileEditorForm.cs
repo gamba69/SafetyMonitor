@@ -167,7 +167,7 @@ public class ChartTileEditorForm : Form {
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 2: Metrics label
         mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 3: Metrics grid (shrinks first on small heights)
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Add/Remove buttons
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Period row
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F)); // 5: Period row (fixed height to prevent ComboBox clipping)
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Options row
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 7: Buttons
 
@@ -254,24 +254,29 @@ public class ChartTileEditorForm : Form {
         mainLayout.Controls.Add(gridButtonPanel, 0, 4);
 
         // Row 5: Period
-        var periodPanel = new TableLayoutPanel {
+        var periodPanel = new FlowLayoutPanel {
             AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            Margin = new Padding(0, 8, 0, 10)
+            WrapContents = false,
+            FlowDirection = FlowDirection.LeftToRight,
+            Margin = new Padding(0, 6, 0, 8)
         };
-        periodPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        periodPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        periodPanel.Controls.Add(new Label { Text = "Period:", Font = titleFont, AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(0, 6, 8, 0) }, 0, 0);
+        var periodLabel = new Label {
+            Text = "Period:",
+            Font = titleFont,
+            AutoSize = true,
+            Margin = new Padding(0, 6, 8, 0)
+        };
         _periodComboBox = new ComboBox {
             Width = 160,
             Font = normalFont,
-            Anchor = AnchorStyles.Left,
-            Margin = new Padding(0, 0, 0, 0),
-            DropDownStyle = ComboBoxStyle.DropDownList
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            Margin = new Padding(0)
         };
         LoadPeriodPresets();
-        periodPanel.Controls.Add(_periodComboBox, 1, 0);
+        periodPanel.Controls.Add(periodLabel);
+        periodPanel.Controls.Add(_periodComboBox);
         mainLayout.Controls.Add(periodPanel, 0, 5);
 
         // Row 6: Options
