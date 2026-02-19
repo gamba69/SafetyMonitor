@@ -19,11 +19,6 @@ internal static class InteractiveCursorStyler {
     }
 
     public static void Apply(ToolStripItemCollection items) {
-        //var owner = items.Owner;
-        //if (owner != null) {
-        //    owner.Cursor = Cursors.Hand;
-        //}
-
         foreach (ToolStripItem item in items) {
             if (item is ToolStripSeparator) {
                 continue;

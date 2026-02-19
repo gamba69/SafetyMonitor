@@ -10,7 +10,9 @@ internal static class ThemedButtonStyler {
     private static readonly Color CancelButtonColorLight = Color.FromArgb(189, 189, 189);
     private static readonly Color CancelButtonColorDark = Color.FromArgb(96, 105, 109);
     private static readonly Color DeleteButtonColorLight = Color.FromArgb(198, 64, 58);
-    private static readonly Color DeleteButtonColorDark = Color.FromArgb(171, 74, 70);
+    private static readonly Color DeleteButtonColorDark = Color.FromArgb(124, 34, 38);
+    private static readonly Color CalculateButtonColorLight = Color.FromArgb(52, 118, 216);
+    private static readonly Color CalculateButtonColorDark = Color.FromArgb(24, 56, 112);
     private static readonly Color SecondaryButtonColorLight = Color.FromArgb(220, 220, 220);
     private static readonly Color SecondaryButtonColorDark = Color.FromArgb(53, 70, 76);
 
@@ -87,6 +89,7 @@ internal static class ThemedButtonStyler {
         ButtonRole.Confirm => (PrimaryButtonColor, Color.White),
         ButtonRole.Cancel => (isLight ? CancelButtonColorLight : CancelButtonColorDark, Color.White),
         ButtonRole.Delete => (isLight ? DeleteButtonColorLight : DeleteButtonColorDark, Color.White),
+        ButtonRole.Calculate => (isLight ? CalculateButtonColorLight : CalculateButtonColorDark, Color.White),
         _ => (isLight ? SecondaryButtonColorLight : SecondaryButtonColorDark, isLight ? Color.Black : Color.White),
     };
 
@@ -103,6 +106,7 @@ internal static class ThemedButtonStyler {
         ButtonRole.Browse => MaterialIcons.CommonBrowse,
         ButtonRole.Resize => MaterialIcons.CommonResize,
         ButtonRole.Test => MaterialIcons.CommonTest,
+        ButtonRole.Calculate => MaterialIcons.CommonCalculate,
         _ => MaterialIcons.CommonCheck,
     };
 
@@ -160,6 +164,10 @@ internal static class ThemedButtonStyler {
             return ButtonRole.Test;
         }
 
+        if (normalized.StartsWith("calc")) {
+            return ButtonRole.Calculate;
+        }
+
         return ButtonRole.Secondary;
     }
 
@@ -181,6 +189,7 @@ internal static class ThemedButtonStyler {
         Browse,
         Resize,
         Test,
+        Calculate,
     }
 
     #endregion Private Enums
