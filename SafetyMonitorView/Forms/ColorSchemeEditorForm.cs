@@ -8,6 +8,8 @@ namespace SafetyMonitorView.Forms;
 public class ColorSchemeEditorForm : Form {
     #region Private Fields
 
+    private const int PreviewUpdateDelayMs = 300;
+
     private readonly ColorSchemeService _colorSchemeService;
     private Button _cancelButton = null!;
     private ColorScheme? _currentScheme;
@@ -19,6 +21,8 @@ public class ColorSchemeEditorForm : Form {
     private TextBox _nameTextBox = null!;
     private Button _newButton = null!;
     private Panel _previewPanel = null!;
+    private readonly System.Windows.Forms.Timer _previewUpdateTimer;
+    private bool _isPreviewPrimed;
     private Button _saveButton = null!;
     private ListBox _schemeList = null!;
     private List<ColorScheme> _schemes;
@@ -31,6 +35,8 @@ public class ColorSchemeEditorForm : Form {
     public ColorSchemeEditorForm() {
         _colorSchemeService = new ColorSchemeService();
         _schemes = _colorSchemeService.LoadSchemes();
+        _previewUpdateTimer = new System.Windows.Forms.Timer { Interval = PreviewUpdateDelayMs };
+        _previewUpdateTimer.Tick += PreviewUpdateTimer_Tick;
         InitializeComponent();
         FormIconHelper.Apply(this, MaterialIcons.MenuViewColorSchemes);
         ApplyTheme();
@@ -38,6 +44,8 @@ public class ColorSchemeEditorForm : Form {
         if (_schemeList.Items.Count > 0) {
             _schemeList.SelectedIndex = 0;
         }
+
+        Shown += ColorSchemeEditorForm_Shown;
     }
 
     #endregion Public Constructors
@@ -56,6 +64,12 @@ public class ColorSchemeEditorForm : Form {
             }
         }
         base.OnFormClosing(e);
+    }
+
+    protected override void OnFormClosed(FormClosedEventArgs e) {
+        _previewUpdateTimer.Stop();
+        _previewUpdateTimer.Dispose();
+        base.OnFormClosed(e);
     }
 
     #endregion Protected Methods
@@ -99,6 +113,9 @@ public class ColorSchemeEditorForm : Form {
                 case ListBox lb:
                     lb.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
                     lb.ForeColor = isLight ? Color.Black : Color.White;
+                    break;
+                case Panel panel:
+                    panel.BackColor = isLight ? Color.FromArgb(250, 250, 250) : Color.FromArgb(38, 52, 57);
                     break;
                 case DataGridView dgv:
                     dgv.BackgroundColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
@@ -300,7 +317,7 @@ public class ColorSchemeEditorForm : Form {
         moveDownBtn.Click += MoveDownStop_Click;
         gridButtons.Controls.AddRange([addStopBtn, removeStopBtn, moveUpBtn, moveDownBtn]);
 
-        _previewPanel = new Panel { Dock = DockStyle.Bottom, Height = 40, Padding = new Padding(0, 5, 0, 0) };
+        _previewPanel = new PreviewPanel { Dock = DockStyle.Bottom, Height = 40, Padding = new Padding(0, 5, 0, 0) };
         _previewPanel.Paint += PreviewPanel_Paint;
 
 
@@ -365,6 +382,11 @@ public class ColorSchemeEditorForm : Form {
         rightPanel.Controls.Add(namePanel);
         rightPanel.Controls.Add(headerPanel);
         root.Controls.Add(rightPanel, 1, 0);
+    }
+
+    private void ColorSchemeEditorForm_Shown(object? sender, EventArgs e) {
+        _isPreviewPrimed = true;
+        UpdatePreview(forceDelay: true);
     }
 
     private void LoadSchemeToEditor(ColorScheme scheme) {
@@ -451,6 +473,12 @@ public class ColorSchemeEditorForm : Form {
 
     private void PreviewPanel_Paint(object? sender, PaintEventArgs e) {
         var g = e.Graphics;
+        g.Clear(_previewPanel.BackColor);
+
+        if (!_isPreviewPrimed) {
+            return;
+        }
+
         var rect = _previewPanel.ClientRectangle;
         rect.Inflate(-2, -5);
 
@@ -657,8 +685,36 @@ public class ColorSchemeEditorForm : Form {
     }
     // ── Preview ──
 
-    private void UpdatePreview() {
-        _previewPanel.Invalidate();
+    private void PreviewUpdateTimer_Tick(object? sender, EventArgs e) {
+        _previewUpdateTimer.Stop();
+        if (!_previewPanel.IsDisposed) {
+            _previewPanel.Invalidate();
+        }
+    }
+
+    private void UpdatePreview(bool forceDelay = false) {
+        if (!_isPreviewPrimed && !forceDelay) {
+            return;
+        }
+
+        if (_previewPanel.IsDisposed) {
+            return;
+        }
+
+        if (_previewPanel.IsHandleCreated) {
+            _previewPanel.BeginInvoke(new MethodInvoker(() => {
+                if (_previewPanel.IsDisposed) {
+                    return;
+                }
+
+                _previewUpdateTimer.Stop();
+                _previewUpdateTimer.Start();
+            }));
+            return;
+        }
+
+        _previewUpdateTimer.Stop();
+        _previewUpdateTimer.Start();
     }
 
     private void UpdateDirtyState() {
@@ -709,6 +765,13 @@ public class ColorSchemeEditorForm : Form {
         }
 
         return true;
+    }
+
+    private sealed class PreviewPanel : Panel {
+        public PreviewPanel() {
+            DoubleBuffered = true;
+            ResizeRedraw = true;
+        }
     }
 
     #endregion Private Methods
