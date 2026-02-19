@@ -187,6 +187,8 @@ public class ColorSchemeEditorForm : Form {
         AutoScaleMode = AutoScaleMode.Dpi;
         AutoScaleDimensions = new SizeF(96F, 96F);
         StartPosition = FormStartPosition.CenterParent;
+        FormBorderStyle = FormBorderStyle.FixedDialog;
+        MaximizeBox = false;
         MinimizeBox = false;
         MinimumSize = new Size(700, 520);
         ClientSize = new Size(780, 560);
