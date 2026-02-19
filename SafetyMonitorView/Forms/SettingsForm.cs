@@ -26,6 +26,13 @@ public class SettingsForm : Form {
     private int _selectedTabIndex;
 
     private static readonly string[] TabNames = { "General", "Storage", "Value Tiles", "Chart Tiles", "Aggregation" };
+    private static readonly string[] TabIcons = {
+        MaterialIcons.MenuFileSettings,
+        MaterialIcons.CommonBrowse,
+        MaterialIcons.WindowTileValue,
+        MaterialIcons.WindowTileChart,
+        MaterialIcons.CommonCalculate
+    };
 
     #endregion Private Fields
 
@@ -82,12 +89,16 @@ public class SettingsForm : Form {
 
         _tabSegmentPanel.BackColor = borderColor;
 
-        foreach (var button in _tabButtons) {
+        for (int i = 0; i < _tabButtons.Count; i++) {
+            var button = _tabButtons[i];
             button.BackColor = button.Checked ? activeBg : segmentBg;
             button.ForeColor = button.Checked ? activeFg : inactiveFg;
             button.FlatAppearance.CheckedBackColor = activeBg;
             button.FlatAppearance.MouseOverBackColor = isLight ? Color.FromArgb(235, 240, 243) : Color.FromArgb(55, 70, 76);
             button.FlatAppearance.MouseDownBackColor = activeBg;
+
+            button.Image?.Dispose();
+            button.Image = MaterialIcons.GetIcon(TabIcons[i], button.ForeColor, 22);
         }
 
         // Tab page backgrounds
@@ -167,7 +178,7 @@ public class SettingsForm : Form {
 
         var titleFont = new Font("Segoe UI", 10f, FontStyle.Bold);
         var normalFont = new Font("Segoe UI", 10f);
-        var descriptionFont = new Font("Segoe UI", 9f, FontStyle.Italic);
+        var descriptionFont = new Font("Segoe UI", 9f, FontStyle.Regular);
 
         // ── Outer layout: header, tabs, tab content, buttons ──
         var mainLayout = new TableLayoutPanel {
@@ -222,6 +233,8 @@ public class SettingsForm : Form {
                 },
                 Font = new Font("Segoe UI", 9f, FontStyle.Bold),
                 TextAlign = ContentAlignment.MiddleCenter,
+                ImageAlign = ContentAlignment.MiddleLeft,
+                TextImageRelation = TextImageRelation.ImageBeforeText,
                 AutoSize = false,
                 Size = new Size(tabButtonWidth, 32),
                 Location = new Point(1 + i * tabButtonWidth, 1),
@@ -235,6 +248,12 @@ public class SettingsForm : Form {
                     SelectTab(tabIndex);
                 }
             };
+
+            var icon = MaterialIcons.GetIcon(TabIcons[i], Color.White, 22);
+            if (icon is not null) {
+                btn.Image = icon;
+            }
+
             _tabButtons.Add(btn);
             _tabSegmentPanel.Controls.Add(btn);
         }
@@ -308,14 +327,13 @@ public class SettingsForm : Form {
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 4,
+            RowCount = 3,
             AutoSize = false
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // description
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // label
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // numeric
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // spacer
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         layout.Controls.Add(new Label {
             Text = "How often the application polls the data storage for new values. "
@@ -328,9 +346,14 @@ public class SettingsForm : Form {
             Margin = new Padding(0, 0, 0, 16)
         }, 0, 0);
 
-        layout.Controls.Add(CreateLabel("Refresh Interval (seconds):", titleFont), 0, 1);
         _refreshIntervalNumeric = CreateNumeric(1, 60, 5, normalFont);
-        layout.Controls.Add(_refreshIntervalNumeric, 0, 2);
+        layout.Controls.Add(CreateSettingRow(
+            "Refresh Interval",
+            "How often the app reloads data from storage.",
+            "seconds",
+            _refreshIntervalNumeric,
+            titleFont,
+            descriptionFont), 0, 1);
 
         page.Controls.Add(layout);
         return page;
@@ -342,16 +365,15 @@ public class SettingsForm : Form {
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 6,
+            RowCount = 5,
             AutoSize = false
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // description
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // label
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // path + browse
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // test connection
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // spacer
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // extra spacer
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         layout.Controls.Add(new Label {
             Text = "Data storage location where the collector writes Firebird databases. "
@@ -364,18 +386,20 @@ public class SettingsForm : Form {
             Margin = new Padding(0, 0, 0, 16)
         }, 0, 0);
 
-        layout.Controls.Add(CreateLabel("Data Storage Path:", titleFont), 0, 1);
-
-        // Path + Browse on the same row, vertically aligned
         var pathPanel = new TableLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            RowCount = 1,
-            Margin = new Padding(0, 0, 0, 10)
+            ColumnCount = 3,
+            RowCount = 2,
+            Margin = new Padding(0, 0, 0, 8)
         };
+        pathPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         pathPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         pathPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+
+        var nameLabel = CreateLabel("Data Storage Path", titleFont);
+        nameLabel.Margin = new Padding(0, 4, 14, 0);
+        pathPanel.Controls.Add(nameLabel, 0, 0);
 
         _storagePathTextBox = new TextBox {
             Font = normalFont,
@@ -383,7 +407,7 @@ public class SettingsForm : Form {
             Margin = new Padding(0, 0, 10, 0),
             Anchor = AnchorStyles.Left | AnchorStyles.Right
         };
-        pathPanel.Controls.Add(_storagePathTextBox, 0, 0);
+        pathPanel.Controls.Add(_storagePathTextBox, 1, 0);
 
         _browseButton = new Button {
             Text = "Browse...",
@@ -394,37 +418,45 @@ public class SettingsForm : Form {
             Anchor = AnchorStyles.None
         };
         _browseButton.Click += BrowseButton_Click;
-        pathPanel.Controls.Add(_browseButton, 1, 0);
+        pathPanel.Controls.Add(_browseButton, 2, 0);
 
-        layout.Controls.Add(pathPanel, 0, 2);
-
-        // Test connection row
-        var testPanel = new FlowLayoutPanel {
+        pathPanel.Controls.Add(new Label {
+            Text = "Root folder for monthly Firebird files.",
+            Font = descriptionFont,
             AutoSize = true,
-            Dock = DockStyle.Fill,
-            WrapContents = false,
-            Margin = new Padding(0, 0, 0, 10)
-        };
+            Margin = new Padding(0, 4, 14, 0)
+        }, 0, 1);
+
+        pathPanel.Controls.Add(new Label {
+            Text = "Choose folder with *.fdb files for data reading and writing.",
+            Font = descriptionFont,
+            AutoSize = true,
+            MaximumSize = new Size(390, 0),
+            Margin = new Padding(0, 4, 0, 0)
+        }, 1, 1);
+
+        layout.Controls.Add(pathPanel, 0, 1);
 
         _testConnectionButton = new Button {
             Text = "Test Connection",
             Width = 150,
             Height = 30,
             Font = normalFont,
-            Margin = new Padding(0, 0, 10, 0)
+            Margin = new Padding(0, 18, 0, 0),
+            Anchor = AnchorStyles.None
         };
         _testConnectionButton.Click += TestConnectionButton_Click;
-        testPanel.Controls.Add(_testConnectionButton);
+        layout.Controls.Add(_testConnectionButton, 0, 2);
 
         _connectionStatusLabel = new Label {
             Text = "",
             Font = normalFont,
             AutoSize = true,
-            Margin = new Padding(0, 7, 0, 0)
+            Margin = new Padding(0, 14, 0, 0),
+            Anchor = AnchorStyles.None,
+            TextAlign = ContentAlignment.MiddleCenter
         };
-        testPanel.Controls.Add(_connectionStatusLabel);
-
-        layout.Controls.Add(testPanel, 0, 3);
+        layout.Controls.Add(_connectionStatusLabel, 0, 3);
 
         page.Controls.Add(layout);
         return page;
@@ -436,14 +468,13 @@ public class SettingsForm : Form {
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 4,
+            RowCount = 3,
             AutoSize = false
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // description
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // label
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // numeric
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // spacer
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         layout.Controls.Add(new Label {
             Text = "Value tiles display the most recent reading for a metric. "
@@ -457,9 +488,14 @@ public class SettingsForm : Form {
             Margin = new Padding(0, 0, 0, 16)
         }, 0, 0);
 
-        layout.Controls.Add(CreateLabel("Value Tile Lookback Window (minutes):", titleFont), 0, 1);
         _valueTileLookbackMinutesNumeric = CreateNumeric(1, 43200, 60, normalFont);
-        layout.Controls.Add(_valueTileLookbackMinutesNumeric, 0, 2);
+        layout.Controls.Add(CreateSettingRow(
+            "Value Tile Lookback Window",
+            "Time range for searching the last known metric value.",
+            "minutes",
+            _valueTileLookbackMinutesNumeric,
+            titleFont,
+            descriptionFont), 0, 1);
 
         page.Controls.Add(layout);
         return page;
@@ -471,14 +507,13 @@ public class SettingsForm : Form {
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 4,
+            RowCount = 3,
             AutoSize = false
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // description
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // label
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // numeric
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // spacer
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         layout.Controls.Add(new Label {
             Text = "When you pan or zoom a chart, it enters static mode: auto-refresh is paused and the chart "
@@ -492,9 +527,14 @@ public class SettingsForm : Form {
             Margin = new Padding(0, 0, 0, 16)
         }, 0, 0);
 
-        layout.Controls.Add(CreateLabel("Chart Static Mode Timeout (seconds):", titleFont), 0, 1);
         _chartStaticTimeoutNumeric = CreateNumeric(10, 3600, 120, normalFont);
-        layout.Controls.Add(_chartStaticTimeoutNumeric, 0, 2);
+        layout.Controls.Add(CreateSettingRow(
+            "Chart Static Mode Timeout",
+            "How long chart remains in static mode after pan/zoom interaction.",
+            "seconds",
+            _chartStaticTimeoutNumeric,
+            titleFont,
+            descriptionFont), 0, 1);
 
         page.Controls.Add(layout);
         return page;
@@ -506,21 +546,15 @@ public class SettingsForm : Form {
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 11,
+            RowCount = 5,
             AutoSize = false
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 0: tab description
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 1: tolerance label
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 2: tolerance desc
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 3: tolerance numeric
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: target label
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: target desc
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: target numeric
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 7: rounding label
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 8: rounding desc
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 9: rounding numeric
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 10: spacer
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         layout.Controls.Add(new Label {
             Text = "These parameters control how chart data is aggregated when the chart enters static mode "
@@ -531,19 +565,6 @@ public class SettingsForm : Form {
             Margin = new Padding(0, 0, 0, 16)
         }, 0, 0);
 
-        // ── Preset match tolerance ──
-        layout.Controls.Add(CreateLabel("Preset Match Tolerance (%):", titleFont), 0, 1);
-        layout.Controls.Add(new Label {
-            Text = "When the visible range in static mode closely matches a period preset, "
-                 + "the chart reuses that preset's aggregation instead of computing one. "
-                 + "This tolerance defines how close the match must be. "
-                 + "Lower = stricter matching, higher = more lenient. Set to 0 to always compute.",
-            Font = descriptionFont,
-            AutoSize = true,
-            MaximumSize = new Size(575, 0),
-            Margin = new Padding(0, 0, 0, 4)
-        }, 0, 2);
-
         _chartStaticAggregationPresetMatchToleranceNumeric = new NumericUpDown {
             Width = 100,
             Minimum = 0,
@@ -552,42 +573,35 @@ public class SettingsForm : Form {
             Increment = 0.5m,
             Value = 10,
             Font = normalFont,
-            Margin = new Padding(0, 0, 0, 14)
+            Margin = new Padding(0, 0, 10, 10)
         };
-        layout.Controls.Add(_chartStaticAggregationPresetMatchToleranceNumeric, 0, 3);
-
-        // ── Target chart points ──
-        layout.Controls.Add(CreateLabel("Target Chart Points:", titleFont), 0, 4);
-        layout.Controls.Add(new Label {
-            Text = "When no preset matches the static range, the aggregation interval is calculated "
-                 + "by dividing the visible time span by this target point count. "
-                 + "More points yield higher resolution but slower rendering; fewer points render faster "
-                 + "but may hide short-duration events. Typical values: 200–500.",
-            Font = descriptionFont,
-            AutoSize = true,
-            MaximumSize = new Size(575, 0),
-            Margin = new Padding(0, 0, 0, 4)
-        }, 0, 5);
+        layout.Controls.Add(CreateSettingRow(
+            "Preset Match Tolerance",
+            "Allowed range difference when matching static view to a preset.",
+            "%",
+            _chartStaticAggregationPresetMatchToleranceNumeric,
+            titleFont,
+            descriptionFont), 0, 1);
 
         _chartStaticAggregationTargetPointsNumeric = CreateNumeric(2, 5000, 300, normalFont);
-        _chartStaticAggregationTargetPointsNumeric.Margin = new Padding(0, 0, 0, 14);
-        layout.Controls.Add(_chartStaticAggregationTargetPointsNumeric, 0, 6);
-
-        // ── Rounding step ──
-        layout.Controls.Add(CreateLabel("Aggregation Rounding Step (seconds):", titleFont), 0, 7);
-        layout.Controls.Add(new Label {
-            Text = "After computing the raw aggregation interval, it is rounded up to the nearest "
-                 + "multiple of this value to produce clean bucket boundaries. "
-                 + "For example, a rounding step of 10 means intervals snap to 10, 20, 30 seconds, etc. "
-                 + "Set to 1 for no rounding (use the computed interval exactly).",
-            Font = descriptionFont,
-            AutoSize = true,
-            MaximumSize = new Size(575, 0),
-            Margin = new Padding(0, 0, 0, 4)
-        }, 0, 8);
+        _chartStaticAggregationTargetPointsNumeric.Margin = new Padding(0, 0, 10, 10);
+        layout.Controls.Add(CreateSettingRow(
+            "Target Chart Points",
+            "Desired amount of points after automatic static aggregation.",
+            "points",
+            _chartStaticAggregationTargetPointsNumeric,
+            titleFont,
+            descriptionFont), 0, 2);
 
         _chartAggregationRoundingSecondsNumeric = CreateNumeric(1, 3600, 1, normalFont);
-        layout.Controls.Add(_chartAggregationRoundingSecondsNumeric, 0, 9);
+        _chartAggregationRoundingSecondsNumeric.Margin = new Padding(0, 0, 10, 10);
+        layout.Controls.Add(CreateSettingRow(
+            "Aggregation Rounding Step",
+            "Round computed interval to a multiple of this value.",
+            "seconds",
+            _chartAggregationRoundingSecondsNumeric,
+            titleFont,
+            descriptionFont), 0, 3);
 
         page.Controls.Add(layout);
         return page;
@@ -629,6 +643,48 @@ public class SettingsForm : Form {
         Font = font,
         Margin = new Padding(0, 0, 0, 20)
     };
+
+
+    private static TableLayoutPanel CreateSettingRow(string title, string description, string units, Control valueControl, Font titleFont, Font descriptionFont) {
+        var row = new TableLayoutPanel {
+            AutoSize = true,
+            Dock = DockStyle.Top,
+            ColumnCount = 3,
+            RowCount = 2,
+            Margin = new Padding(0, 0, 0, 16)
+        };
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        row.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        row.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        var label = CreateLabel(title, titleFont);
+        label.Margin = new Padding(0, 0, 14, 3);
+        row.Controls.Add(label, 0, 0);
+
+        valueControl.Anchor = AnchorStyles.Right;
+        row.Controls.Add(valueControl, 1, 0);
+
+        var unitLabel = new Label {
+            Text = units,
+            Font = titleFont,
+            AutoSize = true,
+            Anchor = AnchorStyles.Left,
+            Margin = new Padding(0, 3, 0, 0)
+        };
+        row.Controls.Add(unitLabel, 2, 0);
+
+        row.Controls.Add(new Label {
+            Text = description,
+            Font = descriptionFont,
+            AutoSize = true,
+            MaximumSize = new Size(360, 0),
+            Margin = new Padding(0, 0, 14, 0)
+        }, 0, 1);
+
+        return row;
+    }
 
     private void LoadSettings() {
         _storagePathTextBox.Text = StoragePath;
