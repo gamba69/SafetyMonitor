@@ -649,13 +649,15 @@ public class SettingsForm : Form {
         };
         row.Controls.Add(unitLabel, 2, 0);
 
-        row.Controls.Add(new Label {
+        var descriptionLabel = new Label {
             Text = description,
             Font = descriptionFont,
             AutoSize = true,
-            MaximumSize = new Size(360, 0),
+            MaximumSize = new Size(0, 0),
             Margin = new Padding(0, 6, 14, 0)
-        }, 0, 1);
+        };
+        row.Controls.Add(descriptionLabel, 0, 1);
+        row.SetColumnSpan(descriptionLabel, 3);
 
         return row;
     }
