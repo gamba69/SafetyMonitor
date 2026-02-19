@@ -1,6 +1,5 @@
 using MaterialSkin;
 using MaterialSkin.Controls;
-using SafetyMonitorView.Properties;
 using SafetyMonitorView.Controls;
 using SafetyMonitorView.Models;
 using SafetyMonitorView.Services;
@@ -44,6 +43,7 @@ public class MainForm : MaterialForm {
     private StatusStrip _statusStrip = null!;
 
     private System.Windows.Forms.Timer? _themeTimer;
+    private Icon? _themeApplicationIcon;
     private bool _isExitConfirmed;
     private bool _restoreToMaximizedAfterMinimize;
     private bool _shouldStartMaximized;
@@ -123,6 +123,10 @@ public class MainForm : MaterialForm {
         _refreshTimer?.Dispose();
         _themeTimer?.Stop();
         _themeTimer?.Dispose();
+
+        _themeApplicationIcon?.Dispose();
+        _themeApplicationIcon = null;
+
         base.OnFormClosing(e);
     }
 
@@ -246,8 +250,13 @@ public class MainForm : MaterialForm {
     }
 
     private void ApplyApplicationIcon() {
-        Icon = _skinManager.Theme == MaterialSkinManager.Themes.DARK
-            ? Resources.DarkThemeIcon : Resources.LightThemeIcon;
+        var newIcon = ApplicationIconService.GetThemeIcon(_skinManager.Theme);
+        var previousOwnedIcon = _themeApplicationIcon;
+
+        Icon = newIcon;
+        _themeApplicationIcon = newIcon;
+
+        previousOwnedIcon?.Dispose();
     }
 
     private void ApplyWindowSettings() {
