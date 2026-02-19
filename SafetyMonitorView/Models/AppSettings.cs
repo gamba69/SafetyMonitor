@@ -10,6 +10,7 @@ public class AppSettings {
     public int ChartStaticModeTimeoutSeconds { get; set; } = 120;
     public double ChartStaticAggregationPresetMatchTolerancePercent { get; set; } = 10;
     public int ChartStaticAggregationTargetPointCount { get; set; } = 300;
+    public int ChartAggregationRoundingSeconds { get; set; } = 1;
 
     // Dashboard settings
     public Guid? LastDashboardId { get; set; }

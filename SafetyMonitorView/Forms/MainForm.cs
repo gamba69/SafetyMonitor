@@ -641,7 +641,8 @@ public class MainForm : MaterialForm {
             _dataService,
             _appSettings.ChartStaticModeTimeoutSeconds,
             _appSettings.ChartStaticAggregationPresetMatchTolerancePercent,
-            _appSettings.ChartStaticAggregationTargetPointCount) {
+            _appSettings.ChartStaticAggregationTargetPointCount,
+            _appSettings.ChartAggregationRoundingSeconds) {
             Dock = DockStyle.Fill,
             Visible = false
         };
@@ -897,7 +898,8 @@ public class MainForm : MaterialForm {
     private void ShowChartPeriodPresetEditor() {
         using var editor = new ChartPeriodsEditorForm(
             _appSettings.ChartPeriodPresets,
-            _appSettings.ChartStaticAggregationTargetPointCount);
+            _appSettings.ChartStaticAggregationTargetPointCount,
+            _appSettings.ChartAggregationRoundingSeconds);
         if (editor.ShowDialog(this) == DialogResult.OK) {
             _appSettings.ChartPeriodPresets = editor.Presets;
             _appSettingsService.SaveSettings(_appSettings);
@@ -915,13 +917,15 @@ public class MainForm : MaterialForm {
             _appSettings.RefreshInterval,
             _appSettings.ChartStaticModeTimeoutSeconds,
             _appSettings.ChartStaticAggregationPresetMatchTolerancePercent,
-            _appSettings.ChartStaticAggregationTargetPointCount);
+            _appSettings.ChartStaticAggregationTargetPointCount,
+            _appSettings.ChartAggregationRoundingSeconds);
         if (settingsForm.ShowDialog() == DialogResult.OK) {
             _appSettings.StoragePath = settingsForm.StoragePath;
             _appSettings.RefreshInterval = settingsForm.RefreshInterval;
             _appSettings.ChartStaticModeTimeoutSeconds = settingsForm.ChartStaticTimeoutSeconds;
             _appSettings.ChartStaticAggregationPresetMatchTolerancePercent = settingsForm.ChartStaticAggregationPresetMatchTolerancePercent;
             _appSettings.ChartStaticAggregationTargetPointCount = settingsForm.ChartStaticAggregationTargetPointCount;
+            _appSettings.ChartAggregationRoundingSeconds = settingsForm.ChartAggregationRoundingSeconds;
             _appSettingsService.SaveSettings(_appSettings);
 
             _dataService = new DataService(_appSettings.StoragePath);
@@ -932,7 +936,8 @@ public class MainForm : MaterialForm {
             _dashboardPanel?.SetChartStaticModeTimeoutSeconds(_appSettings.ChartStaticModeTimeoutSeconds);
             _dashboardPanel?.SetChartStaticAggregationOptions(
                 _appSettings.ChartStaticAggregationPresetMatchTolerancePercent,
-                _appSettings.ChartStaticAggregationTargetPointCount);
+                _appSettings.ChartStaticAggregationTargetPointCount,
+                _appSettings.ChartAggregationRoundingSeconds);
             RefreshQuickAccessLayout();
 
             if (_currentDashboard != null) {

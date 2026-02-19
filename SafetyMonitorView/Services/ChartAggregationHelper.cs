@@ -9,7 +9,10 @@ public static class ChartAggregationHelper {
         double presetMatchTolerancePercent,
         int targetPointCount,
         IEnumerable<(TimeSpan Duration, TimeSpan AggregationInterval)> presetCandidates,
-        bool applyPeriodMatching = true) {
+        bool applyPeriodMatching = true,
+        int roundingStepSeconds = 1) {
+
+        var safeRoundingStepSeconds = Math.Max(1, roundingStepSeconds);
 
         var rangeSeconds = range.TotalSeconds;
         if (rangeSeconds <= 1) {
@@ -35,7 +38,21 @@ public static class ChartAggregationHelper {
 
         var safeTargetPointCount = Math.Max(2, targetPointCount);
         var intervalSeconds = Math.Max(1, (int)Math.Ceiling(rangeSeconds / safeTargetPointCount));
+        intervalSeconds = RoundUpToStep(intervalSeconds, safeRoundingStepSeconds);
         return TimeSpan.FromSeconds(intervalSeconds);
+    }
+
+    private static int RoundUpToStep(int value, int step) {
+        if (value <= 1 || step <= 1) {
+            return Math.Max(1, value);
+        }
+
+        var remainder = value % step;
+        if (remainder == 0) {
+            return value;
+        }
+
+        return value + (step - remainder);
     }
 
     public static TimeSpan BuildPeriodDuration(double value, ChartPeriodUnit unit) {

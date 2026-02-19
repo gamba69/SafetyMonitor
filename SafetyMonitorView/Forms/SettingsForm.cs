@@ -12,6 +12,7 @@ public class SettingsForm : Form {
     private NumericUpDown _chartStaticTimeoutNumeric = null!;
     private NumericUpDown _chartStaticAggregationPresetMatchToleranceNumeric = null!;
     private NumericUpDown _chartStaticAggregationTargetPointsNumeric = null!;
+    private NumericUpDown _chartAggregationRoundingSecondsNumeric = null!;
     private NumericUpDown _refreshIntervalNumeric = null!;
     private Button _saveButton = null!;
     private TextBox _storagePathTextBox = null!;
@@ -21,12 +22,13 @@ public class SettingsForm : Form {
 
     #region Public Constructors
 
-    public SettingsForm(string currentStoragePath, int currentRefreshInterval, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount) {
+    public SettingsForm(string currentStoragePath, int currentRefreshInterval, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartAggregationRoundingSeconds) {
         StoragePath = currentStoragePath;
         RefreshInterval = currentRefreshInterval;
         ChartStaticTimeoutSeconds = currentChartStaticTimeoutSeconds;
         ChartStaticAggregationPresetMatchTolerancePercent = Math.Clamp(currentChartStaticAggregationPresetMatchTolerancePercent, 0, 100);
         ChartStaticAggregationTargetPointCount = Math.Max(2, currentChartStaticAggregationTargetPointCount);
+        ChartAggregationRoundingSeconds = Math.Max(1, currentChartAggregationRoundingSeconds);
 
         InitializeComponent();
         FormIconHelper.Apply(this, MaterialIcons.MenuFileSettings);
@@ -42,6 +44,7 @@ public class SettingsForm : Form {
     public int ChartStaticTimeoutSeconds { get; private set; } = 120;
     public double ChartStaticAggregationPresetMatchTolerancePercent { get; private set; } = 10;
     public int ChartStaticAggregationTargetPointCount { get; private set; } = 300;
+    public int ChartAggregationRoundingSeconds { get; private set; } = 1;
     public string StoragePath { get; private set; } = "";
     #endregion Public Properties
 
@@ -127,7 +130,7 @@ public class SettingsForm : Form {
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 13,
+            RowCount = 15,
             AutoSize = true
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -142,8 +145,10 @@ public class SettingsForm : Form {
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 8: Preset tolerance value
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 9: Target points label
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 10: Target points value
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 11: Spacer
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 12: Buttons
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 11: Rounding label
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 12: Rounding value
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 13: Spacer
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 14: Buttons
 
         // Row 0: Storage Path label
         var storagePathLabel = new Label {
@@ -287,8 +292,27 @@ public class SettingsForm : Form {
         };
         mainLayout.Controls.Add(_chartStaticAggregationTargetPointsNumeric, 0, 10);
 
+
+        var aggregationRoundingLabel = new Label {
+            Text = "Aggregation rounding step (seconds):",
+            Font = titleFont,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 5)
+        };
+        mainLayout.Controls.Add(aggregationRoundingLabel, 0, 11);
+
+        _chartAggregationRoundingSecondsNumeric = new NumericUpDown {
+            Width = 100,
+            Minimum = 1,
+            Maximum = 3600,
+            Value = 1,
+            Font = normalFont,
+            Margin = new Padding(0, 0, 0, 20)
+        };
+        mainLayout.Controls.Add(_chartAggregationRoundingSecondsNumeric, 0, 12);
+
         // Spacer
-        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 11);
+        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 13);
 
 
         // Buttons
@@ -319,7 +343,7 @@ public class SettingsForm : Form {
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
 
-        mainLayout.Controls.Add(buttonPanel, 0, 12);
+        mainLayout.Controls.Add(buttonPanel, 0, 14);
 
         Controls.Add(mainLayout);
 
@@ -332,6 +356,7 @@ public class SettingsForm : Form {
         _chartStaticTimeoutNumeric.Value = ChartStaticTimeoutSeconds;
         _chartStaticAggregationPresetMatchToleranceNumeric.Value = Math.Clamp((decimal)ChartStaticAggregationPresetMatchTolerancePercent, 0m, 100m);
         _chartStaticAggregationTargetPointsNumeric.Value = Math.Clamp(ChartStaticAggregationTargetPointCount, 2, 5000);
+        _chartAggregationRoundingSecondsNumeric.Value = Math.Clamp(ChartAggregationRoundingSeconds, 1, 3600);
     }
     private void SaveButton_Click(object? sender, EventArgs e) {
         StoragePath = _storagePathTextBox.Text;
@@ -339,6 +364,7 @@ public class SettingsForm : Form {
         ChartStaticTimeoutSeconds = (int)_chartStaticTimeoutNumeric.Value;
         ChartStaticAggregationPresetMatchTolerancePercent = (double)_chartStaticAggregationPresetMatchToleranceNumeric.Value;
         ChartStaticAggregationTargetPointCount = (int)_chartStaticAggregationTargetPointsNumeric.Value;
+        ChartAggregationRoundingSeconds = (int)_chartAggregationRoundingSecondsNumeric.Value;
 
         DialogResult = DialogResult.OK;
         Close();

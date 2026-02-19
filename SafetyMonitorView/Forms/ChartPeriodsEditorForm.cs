@@ -21,12 +21,13 @@ public class ChartPeriodsEditorForm : Form {
     private readonly List<ChartPeriodUnit> _units = [.. Enum.GetValues<ChartPeriodUnit>()];
     private readonly List<string> _aggregationUnits = ["Seconds", "Minutes", "Hours"];
     private readonly int _autoAggregationTargetPointCount;
+    private readonly int _aggregationRoundingSeconds;
 
     #endregion Private Fields
 
     #region Public Constructors
 
-    public ChartPeriodsEditorForm(IEnumerable<ChartPeriodPresetDefinition> presets, int autoAggregationTargetPointCount) {
+    public ChartPeriodsEditorForm(IEnumerable<ChartPeriodPresetDefinition> presets, int autoAggregationTargetPointCount, int aggregationRoundingSeconds) {
         _presets = [.. presets.Select(p => new ChartPeriodPresetDefinition {
             Uid = p.Uid,
             Name = p.Name,
@@ -36,6 +37,7 @@ public class ChartPeriodsEditorForm : Form {
         })];
 
         _autoAggregationTargetPointCount = Math.Max(2, autoAggregationTargetPointCount);
+        _aggregationRoundingSeconds = Math.Max(1, aggregationRoundingSeconds);
 
         InitializeComponent();
         FormIconHelper.Apply(this, MaterialIcons.MenuViewChartPeriods);
@@ -425,7 +427,9 @@ public class ChartPeriodsEditorForm : Form {
             this,
             "Aggregation periods will be automatically recalculated for all presets according to auto-calculation settings (target points: "
             + _autoAggregationTargetPointCount
-            + "). Continue?",
+            + ", rounding step: "
+            + _aggregationRoundingSeconds
+            + " sec). Continue?",
             "Recalculate Aggregation",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Question);
@@ -467,7 +471,8 @@ public class ChartPeriodsEditorForm : Form {
             0,
             _autoAggregationTargetPointCount,
             candidates,
-            applyPeriodMatching: false);
+            applyPeriodMatching: false,
+            roundingStepSeconds: _aggregationRoundingSeconds);
     }
 
     private IEnumerable<(TimeSpan Duration, TimeSpan AggregationInterval)> BuildAggregationCandidates(int skipRowIndex) {
