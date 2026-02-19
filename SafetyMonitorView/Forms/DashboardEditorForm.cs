@@ -168,17 +168,28 @@ public class DashboardEditorForm : Form {
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 5,
+            RowCount = 6,
             AutoSize = false
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 0: Settings row
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 1: Grid panel
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 2: Add buttons
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 3: Spacer
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Save/Cancel buttons
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 0: Description
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 1: Settings row
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 2: Grid panel
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 3: Add buttons
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Spacer
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Save/Cancel buttons
 
-        // Row 0: Settings row (Name, Grid Size, Quick Access)
+        var descriptionLabel = new Label {
+            Text = "Use this editor to configure the dashboard name, grid, and tile set.\n" +
+                   "Move tiles by dragging them on the grid, and resize them by dragging their right or bottom edge directly in this editor.",
+            Font = normalFont,
+            AutoSize = true,
+            MaximumSize = new Size(1080, 0),
+            Margin = new Padding(0, 0, 0, 12)
+        };
+        mainLayout.Controls.Add(descriptionLabel, 0, 0);
+
+        // Row 1: Settings row (Name, Grid Size, Quick Access)
         var settingsPanel = new FlowLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -255,9 +266,9 @@ public class DashboardEditorForm : Form {
         _quickAccessCheckBox.CheckedChanged += (s, e) => Modified = true;
         settingsPanel.Controls.Add(_quickAccessCheckBox);
 
-        mainLayout.Controls.Add(settingsPanel, 0, 0);
+        mainLayout.Controls.Add(settingsPanel, 0, 1);
 
-        // Row 1: Grid Panel
+        // Row 2: Grid Panel
         _gridPanel = new Panel {
             Dock = DockStyle.Fill,
             BorderStyle = BorderStyle.FixedSingle,
@@ -269,9 +280,9 @@ public class DashboardEditorForm : Form {
         _gridPanel.DragEnter += OnGridDragEnter;
         _gridPanel.DragOver += OnGridDragOver;
         _gridPanel.DragDrop += OnGridDragDrop;
-        mainLayout.Controls.Add(_gridPanel, 0, 1);
+        mainLayout.Controls.Add(_gridPanel, 0, 2);
 
-        // Row 2: Add tile buttons
+        // Row 3: Add tile buttons
         var addButtonPanel = new FlowLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -299,12 +310,12 @@ public class DashboardEditorForm : Form {
         _addChartButton.Click += (s, e) => AddTile(TileType.Chart);
         addButtonPanel.Controls.Add(_addChartButton);
 
-        mainLayout.Controls.Add(addButtonPanel, 0, 2);
+        mainLayout.Controls.Add(addButtonPanel, 0, 3);
 
-        // Row 3: Spacer
-        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 3);
+        // Row 4: Spacer
+        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 4);
 
-        // Row 4: Save/Cancel buttons
+        // Row 5: Save/Cancel buttons
         var buttonPanel = new FlowLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -332,7 +343,7 @@ public class DashboardEditorForm : Form {
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
 
-        mainLayout.Controls.Add(buttonPanel, 0, 4);
+        mainLayout.Controls.Add(buttonPanel, 0, 5);
 
         Controls.Add(mainLayout);
 

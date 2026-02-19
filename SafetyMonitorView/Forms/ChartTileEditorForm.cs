@@ -25,16 +25,13 @@ public class ChartTileEditorForm : Form {
     #region Private Fields
 
     private readonly ChartTileConfig _config;
-    private readonly Dashboard _dashboard;
     private Color _inputBackColor;
     private Color _inputForeColor;
 
     private Button _cancelButton = null!;
-    private NumericUpDown _columnSpanNumeric = null!;
     private DataGridView _metricsGrid = null!;
     private ComboBox _periodComboBox = null!;
     private List<ChartPeriodPreset> _periodPresets = [];
-    private NumericUpDown _rowSpanNumeric = null!;
     private Button _saveButton = null!;
     private CheckBox _showGridCheckBox = null!;
     private CheckBox _showInspectorCheckBox = null!;
@@ -47,7 +44,6 @@ public class ChartTileEditorForm : Form {
 
     public ChartTileEditorForm(ChartTileConfig config, Dashboard dashboard) {
         _config = config;
-        _dashboard = dashboard;
 
         InitializeComponent();
         FormIconHelper.Apply(this, MaterialIcons.WindowTileChart);
@@ -151,8 +147,9 @@ public class ChartTileEditorForm : Form {
         StartPosition = FormStartPosition.CenterParent;
         MaximizeBox = false;
         MinimizeBox = false;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
+        FormBorderStyle = FormBorderStyle.Sizable;
         Padding = new Padding(15);
+        AutoScroll = true;
 
         var titleFont = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold);
         var normalFont = CreateSafeFont("Segoe UI", 9.5f);
@@ -162,25 +159,35 @@ public class ChartTileEditorForm : Form {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
             RowCount = 8,
-            AutoSize = true
+            AutoSize = false
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 0: Title
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 1: Metrics label
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 180)); // 2: Metrics grid
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 3: Add/Remove buttons
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Period row
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Size row
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 6: Spacer
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 0: Description
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 1: Title
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 2: Metrics label
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 3: Metrics grid (shrinks first on small heights)
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Add/Remove buttons
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Period row
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Options row
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 7: Buttons
 
-        // Row 0: Title
+        var descriptionLabel = new Label {
+            Text = "Use this form to configure chart tile content: title, metrics, period, and display options.\n" +
+                   "Tile size is edited in the Dashboard Editor by dragging tile borders on the grid.",
+            Font = normalFont,
+            AutoSize = true,
+            MaximumSize = new Size(710, 0),
+            Margin = new Padding(0, 0, 0, 10)
+        };
+        mainLayout.Controls.Add(descriptionLabel, 0, 0);
+
+        // Row 1: Title
         var titlePanel = CreateLabeledControl("Title:", _titleTextBox = new TextBox { Font = normalFont, Dock = DockStyle.Fill }, titleFont);
-        mainLayout.Controls.Add(titlePanel, 0, 0);
+        mainLayout.Controls.Add(titlePanel, 0, 1);
 
         // Row 1: Metrics label
         var metricsLabel = new Label { Text = "Metrics and Aggregations:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 10, 0, 5) };
-        mainLayout.Controls.Add(metricsLabel, 0, 1);
+        mainLayout.Controls.Add(metricsLabel, 0, 2);
 
         // Row 2: Metrics grid
         _metricsGrid = new DataGridView {
@@ -234,7 +241,7 @@ public class ChartTileEditorForm : Form {
         _metricsGrid.CellFormatting += MetricsGrid_CellFormatting;
         _metricsGrid.DataError += MetricsGrid_DataError;
         _metricsGrid.EditingControlShowing += MetricsGrid_EditingControlShowing;
-        mainLayout.Controls.Add(_metricsGrid, 0, 2);
+        mainLayout.Controls.Add(_metricsGrid, 0, 3);
 
         // Row 3: Add/Remove buttons
         var gridButtonPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = false, Margin = new Padding(0, 5, 0, 10) };
@@ -244,35 +251,38 @@ public class ChartTileEditorForm : Form {
         var removeMetricButton = new Button { Text = "Delete", Width = 110, Height = 32, Font = normalFont, Margin = new Padding(0) };
         removeMetricButton.Click += RemoveMetricButton_Click;
         gridButtonPanel.Controls.Add(removeMetricButton);
-        mainLayout.Controls.Add(gridButtonPanel, 0, 3);
+        mainLayout.Controls.Add(gridButtonPanel, 0, 4);
 
-        // Row 4: Period
-        var periodPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = false, Margin = new Padding(0, 5, 0, 5) };
-        periodPanel.Controls.Add(new Label { Text = "Period:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 5, 5, 0) });
-        _periodComboBox = new ComboBox { Width = 140, Font = normalFont, Margin = new Padding(0, 0, 15, 0), DropDownStyle = ComboBoxStyle.DropDownList };
+        // Row 5: Period
+        var periodPanel = new TableLayoutPanel {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            Margin = new Padding(0, 8, 0, 10)
+        };
+        periodPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        periodPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        periodPanel.Controls.Add(new Label { Text = "Period:", Font = titleFont, AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(0, 6, 8, 0) }, 0, 0);
+        _periodComboBox = new ComboBox {
+            Width = 160,
+            Font = normalFont,
+            Anchor = AnchorStyles.Left,
+            Margin = new Padding(0, 0, 0, 0),
+            DropDownStyle = ComboBoxStyle.DropDownList
+        };
         LoadPeriodPresets();
-        periodPanel.Controls.Add(_periodComboBox);
-        mainLayout.Controls.Add(periodPanel, 0, 4);
+        periodPanel.Controls.Add(_periodComboBox, 1, 0);
+        mainLayout.Controls.Add(periodPanel, 0, 5);
 
-        // Row 5: Options + Size
-        var sizePanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = false, Margin = new Padding(0, 5, 0, 10) };
-        _showLegendCheckBox = new CheckBox { Text = "Legend", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 4, 10, 0) };
-        sizePanel.Controls.Add(_showLegendCheckBox);
-        _showGridCheckBox = new CheckBox { Text = "Grid", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 4, 15, 0) };
-        sizePanel.Controls.Add(_showGridCheckBox);
-        _showInspectorCheckBox = new CheckBox { Text = "Inspector", Font = normalFont, AutoSize = true, Checked = false, Margin = new Padding(0, 4, 15, 0) };
-        sizePanel.Controls.Add(_showInspectorCheckBox);
-        sizePanel.Controls.Add(new Label { Text = "Size:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 5, 10, 0) });
-        sizePanel.Controls.Add(new Label { Text = "Rows:", Font = normalFont, AutoSize = true, Margin = new Padding(0, 5, 5, 0) });
-        _rowSpanNumeric = new NumericUpDown { Width = 60, Minimum = 1, Maximum = 5, Value = 2, Font = normalFont, Margin = new Padding(0, 0, 15, 0) };
-        sizePanel.Controls.Add(_rowSpanNumeric);
-        sizePanel.Controls.Add(new Label { Text = "Columns:", Font = normalFont, AutoSize = true, Margin = new Padding(0, 5, 5, 0) });
-        _columnSpanNumeric = new NumericUpDown { Width = 60, Minimum = 1, Maximum = 5, Value = 2, Font = normalFont };
-        sizePanel.Controls.Add(_columnSpanNumeric);
-        mainLayout.Controls.Add(sizePanel, 0, 5);
-
-        // Row 6: Spacer (empty)
-        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 6);
+        // Row 6: Options
+        var optionsPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 0, 0, 10) };
+        _showLegendCheckBox = new CheckBox { Text = "Legend", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 2, 14, 0) };
+        optionsPanel.Controls.Add(_showLegendCheckBox);
+        _showGridCheckBox = new CheckBox { Text = "Grid", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 2, 14, 0) };
+        optionsPanel.Controls.Add(_showGridCheckBox);
+        _showInspectorCheckBox = new CheckBox { Text = "Inspector", Font = normalFont, AutoSize = true, Checked = false, Margin = new Padding(0, 2, 0, 0) };
+        optionsPanel.Controls.Add(_showInspectorCheckBox);
+        mainLayout.Controls.Add(optionsPanel, 0, 6);
 
         // Row 7: Buttons
         var buttonPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Margin = new Padding(0, 10, 0, 0) };
@@ -287,8 +297,8 @@ public class ChartTileEditorForm : Form {
         Controls.Add(mainLayout);
 
         // Set form size
-        MinimumSize = new Size(760, 590);
-        ClientSize = new Size(760, 550);
+        MinimumSize = new Size(780, 620);
+        ClientSize = new Size(820, 680);
     }
     private void LoadConfig() {
         _titleTextBox.Text = _config.Title;
@@ -297,8 +307,6 @@ public class ChartTileEditorForm : Form {
         _showLegendCheckBox.Checked = _config.ShowLegend;
         _showGridCheckBox.Checked = _config.ShowGrid;
         _showInspectorCheckBox.Checked = _config.ShowInspector;
-        _rowSpanNumeric.Value = _config.RowSpan;
-        _columnSpanNumeric.Value = _config.ColumnSpan;
 
         foreach (var agg in _config.MetricAggregations) {
             var rowIndex = _metricsGrid.Rows.Add(agg.Metric, agg.Function, agg.Label, null!, null!, agg.LineWidth, agg.Smooth, agg.Tension, agg.ShowMarkers);
@@ -439,24 +447,6 @@ public class ChartTileEditorForm : Form {
         }
     }
     private void SaveButton_Click(object? sender, EventArgs e) {
-        var newRowSpan = (int)_rowSpanNumeric.Value;
-        var newColumnSpan = (int)_columnSpanNumeric.Value;
-        var oldRowSpan = _config.RowSpan;
-        var oldColumnSpan = _config.ColumnSpan;
-
-        _config.RowSpan = newRowSpan;
-        _config.ColumnSpan = newColumnSpan;
-        if (!_dashboard.CanPlaceTile(_config)) {
-            _config.RowSpan = oldRowSpan;
-            _config.ColumnSpan = oldColumnSpan;
-            ThemedMessageBox.Show(this,
-                "Tile with selected size does not fit the dashboard at its current position.",
-                "Invalid Size",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning);
-            return;
-        }
-
         _config.Title = _titleTextBox.Text;
         if (_periodComboBox.SelectedIndex < 0 || _periodComboBox.SelectedIndex >= _periodPresets.Count) {
             ThemedMessageBox.Show(this, "Please select a chart period preset.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
