@@ -8,7 +8,7 @@ namespace SafetyMonitorView.Forms;
 public class ColorSchemeEditorForm : Form {
     #region Private Fields
 
-    private const int PreviewUpdateDelayMs = 300;
+    private const int PreviewUpdateDelayMs = 1;
 
     private readonly ColorSchemeService _colorSchemeService;
     private Button _cancelButton = null!;
@@ -38,8 +38,8 @@ public class ColorSchemeEditorForm : Form {
         _previewUpdateTimer = new System.Windows.Forms.Timer { Interval = PreviewUpdateDelayMs };
         _previewUpdateTimer.Tick += PreviewUpdateTimer_Tick;
         InitializeComponent();
-        FormIconHelper.Apply(this, MaterialIcons.MenuViewColorSchemes);
         ApplyTheme();
+        FormIconHelper.Apply(this, MaterialIcons.MenuViewColorSchemes);
         PopulateSchemeList();
         if (_schemeList.Items.Count > 0) {
             _schemeList.SelectedIndex = 0;
