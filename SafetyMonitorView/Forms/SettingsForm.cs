@@ -14,6 +14,7 @@ public class SettingsForm : Form {
     private NumericUpDown _chartStaticAggregationTargetPointsNumeric = null!;
     private NumericUpDown _chartAggregationRoundingSecondsNumeric = null!;
     private NumericUpDown _refreshIntervalNumeric = null!;
+    private NumericUpDown _valueTileLookbackMinutesNumeric = null!;
     private Button _saveButton = null!;
     private TextBox _storagePathTextBox = null!;
     private Button _testConnectionButton = null!;
@@ -22,9 +23,10 @@ public class SettingsForm : Form {
 
     #region Public Constructors
 
-    public SettingsForm(string currentStoragePath, int currentRefreshInterval, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartAggregationRoundingSeconds) {
+    public SettingsForm(string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartAggregationRoundingSeconds) {
         StoragePath = currentStoragePath;
         RefreshInterval = currentRefreshInterval;
+        ValueTileLookbackMinutes = Math.Max(1, currentValueTileLookbackMinutes);
         ChartStaticTimeoutSeconds = currentChartStaticTimeoutSeconds;
         ChartStaticAggregationPresetMatchTolerancePercent = Math.Clamp(currentChartStaticAggregationPresetMatchTolerancePercent, 0, 100);
         ChartStaticAggregationTargetPointCount = Math.Max(2, currentChartStaticAggregationTargetPointCount);
@@ -41,11 +43,13 @@ public class SettingsForm : Form {
     #region Public Properties
 
     public int RefreshInterval { get; private set; } = 5;
+    public int ValueTileLookbackMinutes { get; private set; } = 60;
     public int ChartStaticTimeoutSeconds { get; private set; } = 120;
     public double ChartStaticAggregationPresetMatchTolerancePercent { get; private set; } = 10;
     public int ChartStaticAggregationTargetPointCount { get; private set; } = 300;
     public int ChartAggregationRoundingSeconds { get; private set; } = 1;
     public string StoragePath { get; private set; } = "";
+
     #endregion Public Properties
 
     #region Private Methods
@@ -63,7 +67,6 @@ public class SettingsForm : Form {
     private void ApplyThemeRecursive(Control parent, bool isLight) {
         foreach (Control control in parent.Controls) {
             InteractiveCursorStyler.Apply(control);
-            // Skip connection status label - it has its own color logic
             if (control == _connectionStatusLabel) {
                 ApplyThemeRecursive(control, isLight);
                 continue;
@@ -126,31 +129,19 @@ public class SettingsForm : Form {
         var titleFont = new Font("Segoe UI", 10f, FontStyle.Bold);
         var normalFont = new Font("Segoe UI", 10f);
 
-        // Main layout
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 15,
+            RowCount = 17,
             AutoSize = true
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 0: Storage Path label
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 1: Storage Path + Browse
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 2: Test Connection + Status
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 3: Refresh Interval label
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Refresh Interval
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Static timeout label
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Static timeout value
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 7: Preset tolerance label
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 8: Preset tolerance value
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 9: Target points label
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 10: Target points value
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 11: Rounding label
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 12: Rounding value
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 13: Spacer
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 14: Buttons
+        for (int i = 0; i < 15; i++) {
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        }
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        // Row 0: Storage Path label
         var storagePathLabel = new Label {
             Text = "Data Storage Path:",
             Font = titleFont,
@@ -159,7 +150,6 @@ public class SettingsForm : Form {
         };
         mainLayout.Controls.Add(storagePathLabel, 0, 0);
 
-        // Row 1: Storage Path + Browse button
         var pathPanel = new TableLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -185,10 +175,8 @@ public class SettingsForm : Form {
         };
         _browseButton.Click += BrowseButton_Click;
         pathPanel.Controls.Add(_browseButton, 1, 0);
-
         mainLayout.Controls.Add(pathPanel, 0, 1);
 
-        // Row 2: Test Connection + Status
         var testPanel = new FlowLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -213,55 +201,21 @@ public class SettingsForm : Form {
             Margin = new Padding(0, 7, 0, 0)
         };
         testPanel.Controls.Add(_connectionStatusLabel);
-
         mainLayout.Controls.Add(testPanel, 0, 2);
 
-        // Row 3: Refresh Interval label
-        var refreshIntervalLabel = new Label {
-            Text = "Refresh Interval (seconds):",
-            Font = titleFont,
-            AutoSize = true,
-            Margin = new Padding(0, 0, 0, 5)
-        };
-        mainLayout.Controls.Add(refreshIntervalLabel, 0, 3);
-
-        // Row 4: Refresh Interval
-        _refreshIntervalNumeric = new NumericUpDown {
-            Width = 100,
-            Minimum = 1,
-            Maximum = 60,
-            Value = 5,
-            Font = normalFont,
-            Margin = new Padding(0, 0, 0, 20)
-        };
+        mainLayout.Controls.Add(CreateLabel("Refresh Interval (seconds):", titleFont), 0, 3);
+        _refreshIntervalNumeric = CreateNumeric(1, 60, 5, normalFont);
         mainLayout.Controls.Add(_refreshIntervalNumeric, 0, 4);
 
-        var chartStaticTimeoutLabel = new Label {
-            Text = "Chart static mode timeout (seconds):",
-            Font = titleFont,
-            AutoSize = true,
-            Margin = new Padding(0, 0, 0, 5)
-        };
-        mainLayout.Controls.Add(chartStaticTimeoutLabel, 0, 5);
+        mainLayout.Controls.Add(CreateLabel("Value tile lookback window (minutes):", titleFont), 0, 5);
+        _valueTileLookbackMinutesNumeric = CreateNumeric(1, 43200, 60, normalFont);
+        mainLayout.Controls.Add(_valueTileLookbackMinutesNumeric, 0, 6);
 
-        _chartStaticTimeoutNumeric = new NumericUpDown {
-            Width = 100,
-            Minimum = 10,
-            Maximum = 3600,
-            Value = 120,
-            Font = normalFont,
-            Margin = new Padding(0, 0, 0, 20)
-        };
-        mainLayout.Controls.Add(_chartStaticTimeoutNumeric, 0, 6);
+        mainLayout.Controls.Add(CreateLabel("Chart static mode timeout (seconds):", titleFont), 0, 7);
+        _chartStaticTimeoutNumeric = CreateNumeric(10, 3600, 120, normalFont);
+        mainLayout.Controls.Add(_chartStaticTimeoutNumeric, 0, 8);
 
-        var staticAggregationPresetToleranceLabel = new Label {
-            Text = "Static mode preset match tolerance (%):",
-            Font = titleFont,
-            AutoSize = true,
-            Margin = new Padding(0, 0, 0, 5)
-        };
-        mainLayout.Controls.Add(staticAggregationPresetToleranceLabel, 0, 7);
-
+        mainLayout.Controls.Add(CreateLabel("Static mode preset match tolerance (%):", titleFont), 0, 9);
         _chartStaticAggregationPresetMatchToleranceNumeric = new NumericUpDown {
             Width = 100,
             Minimum = 0,
@@ -272,50 +226,18 @@ public class SettingsForm : Form {
             Font = normalFont,
             Margin = new Padding(0, 0, 0, 20)
         };
-        mainLayout.Controls.Add(_chartStaticAggregationPresetMatchToleranceNumeric, 0, 8);
+        mainLayout.Controls.Add(_chartStaticAggregationPresetMatchToleranceNumeric, 0, 10);
 
-        var staticAggregationTargetPointsLabel = new Label {
-            Text = "Static mode target chart points:",
-            Font = titleFont,
-            AutoSize = true,
-            Margin = new Padding(0, 0, 0, 5)
-        };
-        mainLayout.Controls.Add(staticAggregationTargetPointsLabel, 0, 9);
+        mainLayout.Controls.Add(CreateLabel("Static mode target chart points:", titleFont), 0, 11);
+        _chartStaticAggregationTargetPointsNumeric = CreateNumeric(2, 5000, 300, normalFont);
+        mainLayout.Controls.Add(_chartStaticAggregationTargetPointsNumeric, 0, 12);
 
-        _chartStaticAggregationTargetPointsNumeric = new NumericUpDown {
-            Width = 100,
-            Minimum = 2,
-            Maximum = 5000,
-            Value = 300,
-            Font = normalFont,
-            Margin = new Padding(0, 0, 0, 20)
-        };
-        mainLayout.Controls.Add(_chartStaticAggregationTargetPointsNumeric, 0, 10);
+        mainLayout.Controls.Add(CreateLabel("Aggregation rounding step (seconds):", titleFont), 0, 13);
+        _chartAggregationRoundingSecondsNumeric = CreateNumeric(1, 3600, 1, normalFont);
+        mainLayout.Controls.Add(_chartAggregationRoundingSecondsNumeric, 0, 14);
 
+        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 15);
 
-        var aggregationRoundingLabel = new Label {
-            Text = "Aggregation rounding step (seconds):",
-            Font = titleFont,
-            AutoSize = true,
-            Margin = new Padding(0, 0, 0, 5)
-        };
-        mainLayout.Controls.Add(aggregationRoundingLabel, 0, 11);
-
-        _chartAggregationRoundingSecondsNumeric = new NumericUpDown {
-            Width = 100,
-            Minimum = 1,
-            Maximum = 3600,
-            Value = 1,
-            Font = normalFont,
-            Margin = new Padding(0, 0, 0, 20)
-        };
-        mainLayout.Controls.Add(_chartAggregationRoundingSecondsNumeric, 0, 12);
-
-        // Spacer
-        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 13);
-
-
-        // Buttons
         var buttonPanel = new FlowLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -343,24 +265,42 @@ public class SettingsForm : Form {
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
 
-        mainLayout.Controls.Add(buttonPanel, 0, 14);
+        mainLayout.Controls.Add(buttonPanel, 0, 16);
 
         Controls.Add(mainLayout);
-
-        // Set form size
-        ClientSize = new Size(550, 500);
+        ClientSize = new Size(550, 540);
     }
+
+    private static Label CreateLabel(string text, Font font) => new() {
+        Text = text,
+        Font = font,
+        AutoSize = true,
+        Margin = new Padding(0, 0, 0, 5)
+    };
+
+    private static NumericUpDown CreateNumeric(int min, int max, int value, Font font) => new() {
+        Width = 100,
+        Minimum = min,
+        Maximum = max,
+        Value = value,
+        Font = font,
+        Margin = new Padding(0, 0, 0, 20)
+    };
+
     private void LoadSettings() {
         _storagePathTextBox.Text = StoragePath;
         _refreshIntervalNumeric.Value = RefreshInterval;
+        _valueTileLookbackMinutesNumeric.Value = Math.Clamp(ValueTileLookbackMinutes, 1, 43200);
         _chartStaticTimeoutNumeric.Value = ChartStaticTimeoutSeconds;
         _chartStaticAggregationPresetMatchToleranceNumeric.Value = Math.Clamp((decimal)ChartStaticAggregationPresetMatchTolerancePercent, 0m, 100m);
         _chartStaticAggregationTargetPointsNumeric.Value = Math.Clamp(ChartStaticAggregationTargetPointCount, 2, 5000);
         _chartAggregationRoundingSecondsNumeric.Value = Math.Clamp(ChartAggregationRoundingSeconds, 1, 3600);
     }
+
     private void SaveButton_Click(object? sender, EventArgs e) {
         StoragePath = _storagePathTextBox.Text;
         RefreshInterval = (int)_refreshIntervalNumeric.Value;
+        ValueTileLookbackMinutes = (int)_valueTileLookbackMinutesNumeric.Value;
         ChartStaticTimeoutSeconds = (int)_chartStaticTimeoutNumeric.Value;
         ChartStaticAggregationPresetMatchTolerancePercent = (double)_chartStaticAggregationPresetMatchToleranceNumeric.Value;
         ChartStaticAggregationTargetPointCount = (int)_chartStaticAggregationTargetPointsNumeric.Value;
@@ -370,10 +310,8 @@ public class SettingsForm : Form {
         Close();
     }
 
-
     private static Color GetConnectionStatusColor(bool isSuccess) {
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
-
         if (isSuccess) {
             return isLight ? Color.FromArgb(0, 121, 107) : Color.FromArgb(77, 208, 182);
         }

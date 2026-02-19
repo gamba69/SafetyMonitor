@@ -9,13 +9,15 @@ public class DataService {
     #region Private Fields
 
     private readonly DataStorage.DataStorage? _storage;
+    private readonly int _valueTileLookbackMinutes;
     private bool _isConnectionFailed;
 
     #endregion Private Fields
 
     #region Public Constructors
 
-    public DataService(string? storagePath = null) {
+    public DataService(string? storagePath = null, int valueTileLookbackMinutes = 60) {
+        _valueTileLookbackMinutes = Math.Max(1, valueTileLookbackMinutes);
         if (!string.IsNullOrEmpty(storagePath) && Directory.Exists(storagePath)) {
             try {
                 _storage = new DataStorage.DataStorage(storagePath);
@@ -91,7 +93,7 @@ public class DataService {
 
         try {
             var endTime = DateTime.UtcNow;
-            var startTime = endTime.AddMinutes(-500);
+            var startTime = endTime.AddMinutes(-_valueTileLookbackMinutes);
             var data = _storage.GetData(startTime, endTime);
             return data.OrderByDescending(d => d.Timestamp).FirstOrDefault();
         } catch (FbException ex) {

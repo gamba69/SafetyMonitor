@@ -15,6 +15,7 @@ public class AppSettings {
     // Dashboard settings
     public Guid? LastDashboardId { get; set; }
     public int RefreshInterval { get; set; } = 5;
+    public int ValueTileLookbackMinutes { get; set; } = 60;
 
     // Data settings
     public List<ChartPeriodPresetDefinition> ChartPeriodPresets { get; set; } = ChartPeriodPresetStore.CreateDefaultPresets();

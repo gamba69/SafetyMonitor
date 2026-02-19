@@ -78,7 +78,7 @@ public class MainForm : MaterialForm {
             Accent.Teal200, TextShade.WHITE
         );
 
-        _dataService = new DataService(_appSettings.StoragePath);
+        _dataService = new DataService(_appSettings.StoragePath, _appSettings.ValueTileLookbackMinutes);
         AttachDataServiceHandlers();
 
         // Set default font for the form
@@ -915,6 +915,7 @@ public class MainForm : MaterialForm {
         using var settingsForm = new SettingsForm(
             _appSettings.StoragePath,
             _appSettings.RefreshInterval,
+            _appSettings.ValueTileLookbackMinutes,
             _appSettings.ChartStaticModeTimeoutSeconds,
             _appSettings.ChartStaticAggregationPresetMatchTolerancePercent,
             _appSettings.ChartStaticAggregationTargetPointCount,
@@ -922,13 +923,14 @@ public class MainForm : MaterialForm {
         if (settingsForm.ShowDialog() == DialogResult.OK) {
             _appSettings.StoragePath = settingsForm.StoragePath;
             _appSettings.RefreshInterval = settingsForm.RefreshInterval;
+            _appSettings.ValueTileLookbackMinutes = settingsForm.ValueTileLookbackMinutes;
             _appSettings.ChartStaticModeTimeoutSeconds = settingsForm.ChartStaticTimeoutSeconds;
             _appSettings.ChartStaticAggregationPresetMatchTolerancePercent = settingsForm.ChartStaticAggregationPresetMatchTolerancePercent;
             _appSettings.ChartStaticAggregationTargetPointCount = settingsForm.ChartStaticAggregationTargetPointCount;
             _appSettings.ChartAggregationRoundingSeconds = settingsForm.ChartAggregationRoundingSeconds;
             _appSettingsService.SaveSettings(_appSettings);
 
-            _dataService = new DataService(_appSettings.StoragePath);
+            _dataService = new DataService(_appSettings.StoragePath, _appSettings.ValueTileLookbackMinutes);
             AttachDataServiceHandlers();
             UpdateStatusBar();
 
