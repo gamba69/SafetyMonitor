@@ -178,7 +178,7 @@ public class SettingsForm : Form {
 
         var titleFont = new Font("Segoe UI", 10f, FontStyle.Bold);
         var normalFont = new Font("Segoe UI", 10f);
-        var descriptionFont = new Font("Segoe UI", 9f, FontStyle.Regular);
+        var descriptionFont = new Font("Segoe UI", 8.5f, FontStyle.Regular);
 
         // ── Outer layout: header, tabs, tab content, buttons ──
         var mainLayout = new TableLayoutPanel {
@@ -195,7 +195,7 @@ public class SettingsForm : Form {
 
         // ── Row 0: Form header description ──
         var headerLabel = new Label {
-            Text = "Adjust refresh, storage, and chart behavior settings; changes apply after you click Save.",
+            Text = "Adjust refresh, storage, and chart behavior settings; changes apply after you click Save. Use these options to balance performance, readability, and trend analysis.",
             Font = normalFont,
             AutoSize = true,
             MaximumSize = new Size(580, 0),
@@ -312,7 +312,7 @@ public class SettingsForm : Form {
         mainLayout.Controls.Add(buttonPanel, 0, 3);
 
         Controls.Add(mainLayout);
-        ClientSize = new Size(620, 540);
+        ClientSize = new Size(682, 594);
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -320,7 +320,10 @@ public class SettingsForm : Form {
     // ════════════════════════════════════════════════════════════════
 
     private Panel CreateGeneralTab(Font titleFont, Font normalFont, Font descriptionFont) {
-        var page = new Panel { Padding = new Padding(0, 4, 0, 0) };
+        var page = new Panel {
+            Padding = new Padding(0, 4, 0, 0),
+            AutoScroll = true
+        };
 
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
@@ -501,23 +504,26 @@ public class SettingsForm : Form {
     }
 
     private Panel CreateAggregationTab(Font titleFont, Font normalFont, Font descriptionFont) {
-        var page = new Panel { Padding = new Padding(0, 4, 0, 0) };
+        var page = new Panel {
+            Padding = new Padding(0, 4, 0, 0),
+            AutoScroll = true
+        };
 
         var layout = new TableLayoutPanel {
-            Dock = DockStyle.Fill,
+            Dock = DockStyle.Top,
             ColumnCount = 1,
-            RowCount = 5,
-            AutoSize = false
+            RowCount = 4,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         _chartStaticAggregationPresetMatchToleranceNumeric = new NumericUpDown {
-            Width = 100,
+            Width = 60,
             Minimum = 0,
             Maximum = 100,
             DecimalPlaces = 1,
@@ -595,7 +601,7 @@ public class SettingsForm : Form {
     };
 
     private static NumericUpDown CreateNumeric(int min, int max, int value, Font font) => new() {
-        Width = 100,
+        Width = 60,
         Minimum = min,
         Maximum = max,
         Value = value,
