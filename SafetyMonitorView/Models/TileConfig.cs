@@ -47,6 +47,7 @@ public class ChartTileConfig : TileConfig {
     public bool ShowGrid { get; set; } = true;
     public bool ShowInspector { get; set; }
     public bool ShowLegend { get; set; } = true;
+    public bool StaticModePaused { get; set; }
     public override TileType Type => TileType.Chart;
 
     #endregion Public Properties

@@ -48,6 +48,7 @@ public class ChartTile : Panel {
     private Panel? _modeSegmentPanel;
     private Panel? _inspectorHostPanel;
     private Panel? _inspectorSegmentPanel;
+    private CheckBox? _pauseModeButton;
     private RadioButton? _autoModeButton;
     private RadioButton? _staticModeButton;
     private Label? _countdownLabel;
@@ -58,6 +59,7 @@ public class ChartTile : Panel {
     private object? _hoverVerticalLine;
     private readonly List<SeriesHoverSnapshot> _hoverSeries = [];
     private bool _inspectorActive;
+    private bool _staticModePaused;
     private const int HeaderControlHeight = 28;
 
     private sealed class SeriesHoverSnapshot {
@@ -102,6 +104,7 @@ public class ChartTile : Panel {
         _autoPeriod = _config.Period;
         _autoCustomDuration = _config.CustomPeriodDuration;
         _autoPeriodPresetUid = _config.PeriodPresetUid;
+        _staticModePaused = _config.StaticModePaused;
 
         // Legacy configs may persist a Custom period from static mode.
         // Auto mode must never keep ad-hoc custom windows.
@@ -358,6 +361,8 @@ public class ChartTile : Panel {
         }
 
         SetStaticMode(false);
+        _staticModePaused = false;
+        _config.StaticModePaused = false;
         _config.Period = _autoPeriod;
         _config.CustomPeriodDuration = _autoCustomDuration;
         _config.PeriodPresetUid = _autoPeriodPresetUid;
@@ -1108,9 +1113,11 @@ public class ChartTile : Panel {
         _staticModeButton.CheckedChanged += (s, e) => {
             if (_staticModeButton!.Checked) {
                 if (_isStaticMode) {
-                    // Already in static — reset countdown timer
-                    _lastChartInteractionUtc = DateTime.UtcNow;
-                    UpdateCountdownLabel();
+                    if (!_staticModePaused) {
+                        // Already in static — reset countdown timer
+                        _lastChartInteractionUtc = DateTime.UtcNow;
+                        UpdateCountdownLabel();
+                    }
                 } else {
                     // Enter static mode: freeze current auto period range
                     var (start, end) = GetConfiguredPeriodRange();
@@ -1119,6 +1126,37 @@ public class ChartTile : Panel {
             }
             UpdateModeSwitchAppearance();
         UpdateAggregationInfoLabel(ResolveAggregationInterval());
+        };
+
+        _pauseModeButton = new CheckBox {
+            Text = string.Empty,
+            Appearance = Appearance.Button,
+            ImageAlign = ContentAlignment.MiddleCenter,
+            TextAlign = ContentAlignment.MiddleCenter,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = {
+                BorderSize = 0,
+                CheckedBackColor = Color.Transparent,
+                MouseDownBackColor = Color.Transparent,
+                MouseOverBackColor = Color.Transparent
+            },
+            AutoSize = false,
+            Size = new Size(34, HeaderControlHeight),
+            Checked = _staticModePaused,
+            Visible = false,
+            Cursor = Cursors.Hand
+        };
+        _pauseModeButton.CheckedChanged += (s, e) => {
+            _staticModePaused = _pauseModeButton.Checked;
+            _config.StaticModePaused = _staticModePaused;
+
+            if (!_staticModePaused) {
+                _lastChartInteractionUtc = DateTime.UtcNow;
+            }
+
+            UpdateCountdownLabel();
+            UpdateModeSwitchAppearance();
+            ViewSettingsChanged?.Invoke(this);
         };
 
         _inspectorButton = new CheckBox {
@@ -1157,11 +1195,13 @@ public class ChartTile : Panel {
         _inspectorHostPanel.Controls.Add(_inspectorSegmentPanel);
 
         _modeSegmentPanel = new Panel {
-            Size = new Size(70, HeaderControlHeight + 2),
+            Size = new Size(104, HeaderControlHeight + 2),
             Padding = new Padding(1)
         };
-        _autoModeButton.Location = new Point(1, 1);
-        _staticModeButton.Location = new Point(35, 1);
+        _pauseModeButton.Location = new Point(1, 1);
+        _autoModeButton.Location = new Point(35, 1);
+        _staticModeButton.Location = new Point(69, 1);
+        _modeSegmentPanel.Controls.Add(_pauseModeButton);
         _modeSegmentPanel.Controls.Add(_autoModeButton);
         _modeSegmentPanel.Controls.Add(_staticModeButton);
 
@@ -1177,7 +1217,7 @@ public class ChartTile : Panel {
 
         _modeSwitchContainer = new Panel {
             Dock = DockStyle.Right,
-            Width = 110,
+            Width = 144,
             BackColor = tileBg
         };
 
@@ -1215,6 +1255,8 @@ public class ChartTile : Panel {
         };
         _staticStartPicker?.ValueChanged += StaticPicker_ValueChanged;
         _staticEndPicker?.ValueChanged += StaticPicker_ValueChanged;
+
+        RestorePersistedStaticState();
 
         _staticModeTimer = new System.Windows.Forms.Timer { Interval = 1000 };
         _staticModeTimer.Tick += StaticModeTimer_Tick;
@@ -1443,6 +1485,8 @@ public class ChartTile : Panel {
             return;
         }
 
+        var preservePersistedStaticState = !_isStaticMode && HasPersistedStaticRange();
+
         var targetPresetUid = _isStaticMode ? _autoPeriodPresetUid : _config.PeriodPresetUid;
 
         var index = ChartPeriodPresetStore.FindMatchingPresetIndex(targetPresetUid, _periodPresets);
@@ -1452,7 +1496,7 @@ public class ChartTile : Panel {
             _autoPeriod = preset.Period;
             _autoCustomDuration = preset.Period == ChartPeriod.Custom ? preset.Duration : null;
 
-            if (!_isStaticMode) {
+            if (!_isStaticMode && !preservePersistedStaticState) {
                 _config.PeriodPresetUid = preset.Uid;
                 _config.Period = preset.Period;
                 _config.CustomPeriodDuration = _autoCustomDuration;
@@ -1472,7 +1516,7 @@ public class ChartTile : Panel {
             ? fallbackPreset.Duration
             : null;
 
-        if (!_isStaticMode) {
+        if (!_isStaticMode && !preservePersistedStaticState) {
             _config.PeriodPresetUid = _autoPeriodPresetUid;
             _config.Period = _autoPeriod;
             _config.CustomPeriodDuration = _autoCustomDuration;
@@ -1556,9 +1600,41 @@ public class ChartTile : Panel {
         };
     }
 
+    private bool HasPersistedStaticRange() {
+        if (_config.Period != ChartPeriod.Custom
+            || !_config.CustomStartTime.HasValue
+            || !_config.CustomEndTime.HasValue) {
+            return false;
+        }
+
+        var startLocal = ToLocalChartTime(_config.CustomStartTime.Value);
+        var endLocal = ToLocalChartTime(_config.CustomEndTime.Value);
+        return endLocal > startLocal;
+    }
+
+    private void RestorePersistedStaticState() {
+        if (!HasPersistedStaticRange()) {
+            _staticModePaused = false;
+            _config.StaticModePaused = false;
+            return;
+        }
+
+        var startLocal = ToLocalChartTime(_config.CustomStartTime.Value);
+        var endLocal = ToLocalChartTime(_config.CustomEndTime.Value);
+        if (endLocal <= startLocal) {
+            _staticModePaused = false;
+            _config.StaticModePaused = false;
+            return;
+        }
+
+        SetStaticMode(true);
+        SyncStaticPickers(startLocal, endLocal);
+        _lastChartInteractionUtc = _staticModePaused ? DateTime.MinValue : DateTime.UtcNow;
+    }
+
     private void UpdateModeSwitchAppearance() {
         if (_modeSegmentPanel == null || _inspectorHostPanel == null || _inspectorSegmentPanel == null || _autoModeButton == null
-            || _staticModeButton == null || _countdownLabel == null
+            || _staticModeButton == null || _pauseModeButton == null || _countdownLabel == null
             || _modeSwitchContainer == null) {
             return;
         }
@@ -1575,10 +1651,28 @@ public class ChartTile : Panel {
         _modeSwitchContainer.BackColor = tileBg;
         _inspectorHostPanel.BackColor = tileBg;
         _inspectorSegmentPanel.BackColor = borderColor;
+
+        if (_isStaticMode) {
+            _modeSwitchContainer.Width = 144;
+            _modeSegmentPanel.Size = new Size(104, HeaderControlHeight + 2);
+            _pauseModeButton.Location = new Point(1, 1);
+            _autoModeButton.Location = new Point(35, 1);
+            _staticModeButton.Location = new Point(69, 1);
+        } else {
+            _modeSwitchContainer.Width = 110;
+            _modeSegmentPanel.Size = new Size(70, HeaderControlHeight + 2);
+            _autoModeButton.Location = new Point(1, 1);
+            _staticModeButton.Location = new Point(35, 1);
+        }
+
         _modeSegmentPanel.BackColor = borderColor;
+        _pauseModeButton.BackColor = _pauseModeButton.Checked ? activeBg : segmentBg;
         _autoModeButton.BackColor = _autoModeButton.Checked ? activeBg : segmentBg;
         _staticModeButton.BackColor = _staticModeButton.Checked ? activeBg : segmentBg;
+        _pauseModeButton.Visible = _isStaticMode;
 
+        _pauseModeButton.Image = MaterialIcons.GetIcon("pause", iconColor, 22);
+        _pauseModeButton.ImageAlign = ContentAlignment.MiddleCenter;
         _autoModeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartModeAuto, iconColor, 22);
         _autoModeButton.ImageAlign = ContentAlignment.MiddleCenter;
         _staticModeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartModeStatic, iconColor, 22);
@@ -1591,7 +1685,7 @@ public class ChartTile : Panel {
 
         _countdownLabel.ForeColor = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
         _countdownLabel.BackColor = tileBg;
-        _countdownLabel.Visible = _isStaticMode;
+        _countdownLabel.Visible = _isStaticMode && !_staticModePaused;
     }
 
     private void UpdateCountdownLabel() {
@@ -1599,7 +1693,7 @@ public class ChartTile : Panel {
             return;
         }
 
-        if (!_isStaticMode || _lastChartInteractionUtc == DateTime.MinValue) {
+        if (!_isStaticMode || _staticModePaused || _lastChartInteractionUtc == DateTime.MinValue) {
             _countdownLabel.Visible = false;
             return;
         }
@@ -1631,10 +1725,14 @@ public class ChartTile : Panel {
             }
         }
 
-        _countdownLabel?.Visible = enabled;
+        if (_pauseModeButton != null && _pauseModeButton.Checked != _staticModePaused) {
+            _pauseModeButton.Checked = _staticModePaused;
+        }
+
+        _countdownLabel?.Visible = enabled && !_staticModePaused;
         UpdateModeSwitchAppearance();
         UpdateAggregationInfoLabel(ResolveAggregationInterval());
-        if (enabled) {
+        if (enabled && !_staticModePaused) {
             UpdateCountdownLabel();
         }
     }
@@ -1689,7 +1787,7 @@ public class ChartTile : Panel {
     }
 
     private void StaticModeTimer_Tick(object? sender, EventArgs e) {
-        if (!_isStaticMode || _lastChartInteractionUtc == DateTime.MinValue) {
+        if (!_isStaticMode || _staticModePaused || _lastChartInteractionUtc == DateTime.MinValue) {
             return;
         }
 

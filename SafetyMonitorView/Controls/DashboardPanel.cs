@@ -191,6 +191,7 @@ public class DashboardPanel : TableLayoutPanel {
 
     private void OnChartStaticRangeChanged(ChartTile source, DateTime start, DateTime end) {
         if (!_linkChartPeriods) {
+            DashboardChanged?.Invoke();
             return;
         }
 
@@ -201,10 +202,13 @@ public class DashboardPanel : TableLayoutPanel {
 
             chartTile.SetStaticRange(start, end, raiseEvents: false);
         }
+
+        DashboardChanged?.Invoke();
     }
 
     private void OnChartAutoModeRestored(ChartTile source) {
         if (!_linkChartPeriods) {
+            DashboardChanged?.Invoke();
             return;
         }
 
@@ -215,6 +219,8 @@ public class DashboardPanel : TableLayoutPanel {
 
             chartTile.ExitStaticMode(raiseEvents: false);
         }
+
+        DashboardChanged?.Invoke();
     }
 
     private void OnChartViewSettingsChanged(ChartTile source) {
