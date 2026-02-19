@@ -206,16 +206,23 @@ public class SettingsForm : Form {
         // ── Row 1: Segmented tab strip (same style as quick-access dashboard switcher) ──
         _tabSegmentPanel = new Panel {
             Height = 34,
-            Dock = DockStyle.Top,
+            Dock = DockStyle.Fill,
             Margin = new Padding(0, 0, 0, 12),
             Padding = new Padding(1)
         };
 
-        var tabButtonWidth = 110;
-        var totalTabWidth = tabButtonWidth * TabNames.Length;
-        _tabSegmentPanel.Width = totalTabWidth + 2;
-        _tabSegmentPanel.MinimumSize = new Size(totalTabWidth + 2, 34);
-        _tabSegmentPanel.MaximumSize = new Size(totalTabWidth + 2, 34);
+        var tabButtonsLayout = new TableLayoutPanel {
+            Dock = DockStyle.Fill,
+            ColumnCount = TabNames.Length,
+            RowCount = 1,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        tabButtonsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        for (int i = 0; i < TabNames.Length; i++) {
+            tabButtonsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / TabNames.Length));
+        }
 
         for (int i = 0; i < TabNames.Length; i++) {
             var tabIndex = i;
@@ -234,8 +241,7 @@ public class SettingsForm : Form {
                 ImageAlign = ContentAlignment.MiddleLeft,
                 TextImageRelation = TextImageRelation.ImageBeforeText,
                 AutoSize = false,
-                Size = new Size(tabButtonWidth, 32),
-                Location = new Point(1 + i * tabButtonWidth, 1),
+                Dock = DockStyle.Fill,
                 Checked = i == 0,
                 Cursor = Cursors.Hand,
                 Margin = Padding.Empty,
@@ -253,8 +259,10 @@ public class SettingsForm : Form {
             }
 
             _tabButtons.Add(btn);
-            _tabSegmentPanel.Controls.Add(btn);
+            tabButtonsLayout.Controls.Add(btn, i, 0);
         }
+
+        _tabSegmentPanel.Controls.Add(tabButtonsLayout);
 
         mainLayout.Controls.Add(_tabSegmentPanel, 0, 1);
 
