@@ -311,6 +311,7 @@ public class MainForm : MaterialForm {
         helpMenu.DropDownItems.Add(CreateMenuItem("About", MaterialIcons.MenuHelpAbout, iconColor, (s, e) => ShowAbout()));
 
         _mainMenu.Items.AddRange([fileMenu, dashboardMenu, viewMenu, helpMenu]);
+        InteractiveCursorStyler.Apply(_mainMenu.Items);
     }
 
     private void CreateNewDashboard() {
@@ -1052,6 +1053,8 @@ public class MainForm : MaterialForm {
         dashboardMenu.DropDownItems.Add(CreateMenuItem("Manage Dashboards...", MaterialIcons.DashboardManage, iconColor, (s, e) => ShowDashboardManager()));
         dashboardMenu.DropDownItems.Add(new ToolStripSeparator());
         dashboardMenu.DropDownItems.Add(CreateMenuItem("Delete Current", MaterialIcons.DashboardDeleteCurrent, iconColor, (s, e) => DeleteCurrentDashboard()));
+
+        InteractiveCursorStyler.Apply(dashboardMenu.DropDownItems);
     }
 
     private void UpdateMenuTheme() {

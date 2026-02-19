@@ -474,7 +474,8 @@ public class ThemedDateTimePicker : UserControl {
             _calendarPanel = new BufferedPanel {
                 Location = new Point(0, _headerHeight + _dayHeaderHeight),
                 Size = new Size(totalWidth, MaxRows * _cellSize + _pad),
-                BackColor = _bg
+                BackColor = _bg,
+                Cursor = Cursors.Hand
             };
             _calendarPanel.Paint += CalendarPanel_Paint;
             _calendarPanel.MouseMove += CalendarPanel_MouseMove;

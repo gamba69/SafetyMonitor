@@ -697,7 +697,8 @@ public class ChartTile : Panel {
     private ContextMenuStrip CreatePlotContextMenu() {
         var contextMenu = new ContextMenuStrip {
             ShowImageMargin = true,
-            ImageScalingSize = new Size(MenuIconSize, MenuIconSize)
+            ImageScalingSize = new Size(MenuIconSize, MenuIconSize),
+            Cursor = Cursors.Hand
         };
 
         contextMenu.Opening += (_, _) => {
@@ -706,6 +707,7 @@ public class ChartTile : Panel {
         };
 
         RebuildPlotContextMenu(contextMenu);
+        InteractiveCursorStyler.Apply(contextMenu.Items);
         return contextMenu;
     }
 
@@ -719,6 +721,7 @@ public class ChartTile : Panel {
         contextMenu.Items.Add(new ToolStripSeparator());
 
         AddToggleMenuItems(contextMenu);
+        InteractiveCursorStyler.Apply(contextMenu.Items);
     }
 
     private void AddToggleMenuItems(ContextMenuStrip contextMenu) {

@@ -476,7 +476,8 @@ public class ThemedComboBox : UserControl {
 
             _listPanel = new BufferedPanel {
                 Dock = DockStyle.Fill,
-                BackColor = _bg
+                BackColor = _bg,
+                Cursor = Cursors.Hand
             };
             _listPanel.Paint += ListPanel_Paint;
             _listPanel.MouseMove += ListPanel_MouseMove;

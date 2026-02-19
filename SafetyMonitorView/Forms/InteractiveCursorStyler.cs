@@ -19,14 +19,21 @@ internal static class InteractiveCursorStyler {
     }
 
     public static void Apply(ToolStripItemCollection items) {
+        //var owner = items.Owner;
+        //if (owner != null) {
+        //    owner.Cursor = Cursors.Hand;
+        //}
+
         foreach (ToolStripItem item in items) {
             if (item is ToolStripSeparator) {
                 continue;
             }
 
-            if (item is ToolStripDropDownItem { HasDropDownItems: true } dropDownItem) {
+            if (item is ToolStripDropDownItem dropDownItem) {
                 dropDownItem.DropDown.Cursor = Cursors.Hand;
-                Apply(dropDownItem.DropDownItems);
+                if (dropDownItem.HasDropDownItems) {
+                    Apply(dropDownItem.DropDownItems);
+                }
             }
         }
     }
