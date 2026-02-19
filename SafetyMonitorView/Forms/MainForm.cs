@@ -676,10 +676,7 @@ public class MainForm : MaterialForm {
         QueueDashboardInitialRender(_dashboardPanel, previousPanel);
 
         // Reset timer so next tick is a full interval from now
-        if (_refreshTimer != null) {
-            _refreshTimer.Stop();
-            _refreshTimer.Start();
-        }
+        RestartRefreshTimerInterval();
     }
 
     private static bool ShouldRebuildQuickDashboards(Dashboard? previousDashboard, Dashboard currentDashboard) {
@@ -727,7 +724,7 @@ public class MainForm : MaterialForm {
             _dashboardPanel.Visible = true;
         }
 
-        _dashboardPanel.RefreshData();
+        RefreshDashboardDataNow();
         _dashboardContainer.Visible = true;
         _dashboardPanel.BringToFront();
     }
@@ -758,7 +755,7 @@ public class MainForm : MaterialForm {
                         return;
                     }
 
-                    panel.RefreshData();
+                    RefreshDashboardDataNow(panel);
                     _dashboardContainer.Visible = true;
                     RemoveOldDashboardPanel(previousPanel, panel);
                 });
@@ -775,7 +772,7 @@ public class MainForm : MaterialForm {
             return;
         }
 
-        panel.RefreshData();
+        RefreshDashboardDataNow(panel);
         panel.Visible = true;
         panel.BringToFront();
         _dashboardContainer.Visible = true;
@@ -831,8 +828,24 @@ public class MainForm : MaterialForm {
             UpdateQuickAccessPanelTheme();
             UpdateMenuTheme();
             _dashboardPanel?.UpdateTheme();
+            RefreshDashboardDataNow();
         };
         _themeTimer.Start();
+    }
+
+    private void RefreshDashboardDataNow(DashboardPanel? targetPanel = null) {
+        var panel = targetPanel ?? _dashboardPanel;
+        panel?.RefreshData();
+        RestartRefreshTimerInterval();
+    }
+
+    private void RestartRefreshTimerInterval() {
+        if (_refreshTimer == null) {
+            return;
+        }
+
+        _refreshTimer.Stop();
+        _refreshTimer.Start();
     }
 
     private void SetTheme(MaterialSkinManager.Themes theme) {
@@ -916,6 +929,8 @@ public class MainForm : MaterialForm {
 
             if (_currentDashboard != null) {
                 LoadDashboard(_currentDashboard);
+            } else {
+                RefreshDashboardDataNow();
             }
         }
     }
@@ -953,6 +968,8 @@ public class MainForm : MaterialForm {
 
             if (_currentDashboard != null) {
                 LoadDashboard(_currentDashboard);
+            } else {
+                RefreshDashboardDataNow();
             }
         }
     }
