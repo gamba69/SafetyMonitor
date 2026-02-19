@@ -204,6 +204,7 @@ public class ChartPeriodsEditorForm : Form {
             Dock = DockStyle.Fill,
             AllowUserToAddRows = false,
             AllowUserToResizeRows = false,
+            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
             AutoGenerateColumns = false,
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,

@@ -139,7 +139,7 @@ public class AxisRulesEditorForm : Form {
             RowHeadersVisible = false,
             Font = normalFont,
             EnableHeadersVisualStyles = false,
-            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize
+            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing
         };
 
         // Metric column (ComboBox)

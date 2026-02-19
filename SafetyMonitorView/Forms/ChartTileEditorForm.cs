@@ -189,6 +189,7 @@ public class ChartTileEditorForm : Form {
             AutoGenerateColumns = false,
             RowHeadersVisible = false,
             AllowUserToResizeRows = false,
+            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             Font = normalFont,
