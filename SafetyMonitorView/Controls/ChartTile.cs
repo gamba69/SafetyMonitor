@@ -1170,7 +1170,7 @@ public class ChartTile : Panel {
             AutoSize = false,
             Size = new Size(36, HeaderControlHeight + 2),
             TextAlign = ContentAlignment.MiddleCenter,
-            Font = CreateSafeFont("Segoe UI", 8f, System.Drawing.FontStyle.Regular),
+            Font = CreateSafeFont("Segoe UI", 9f, System.Drawing.FontStyle.Regular),
             ForeColor = fg,
             Visible = false
         };
