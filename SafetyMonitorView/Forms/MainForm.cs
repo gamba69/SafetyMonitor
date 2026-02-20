@@ -49,6 +49,30 @@ public class MainForm : MaterialForm {
     private bool _shouldStartMaximized;
     private FormWindowState _windowStateBeforeMinimize = FormWindowState.Normal;
 
+    // ── Visor (забрало) fields ──
+    // The visor is a borderless overlay Form with real Opacity support.
+    // It covers the dashboard area to hide layout/scaling artifacts during
+    // initial startup, dashboard switching and theme changes.
+    private Form? _visorForm;
+    private System.Windows.Forms.Timer? _visorFadeTimer;
+
+    // True once the initial dashboard reveal has completed.
+    // While false, LoadDashboard does NOT call QueueDashboardInitialRender —
+    // the dashboard panel is created invisible and revealed only by
+    // BeginInitialDashboardReveal called from OnShown.
+    private bool _initialRevealCompleted;
+
+    // ── Visor timing constants (configurable) ──
+    // Delay in OnShown before visor appears and dashboard starts building.
+    // Gives the window time to fully stabilize (maximize, DPI, theme).
+    private const int VisorStartupStabilizeMs = 120;
+    // Delay after dashboard is fully built before starting the fade-out.
+    private const int VisorPreRevealDelayMs = 100;
+    // Total duration of the visor fade-out animation.
+    private const int VisorFadeDurationMs = 250;
+    // Timer interval between individual fade-out opacity steps.
+    private const int VisorFadeStepMs = 20;
+
     #endregion Private Fields
 
     #region Public Constructors
@@ -88,6 +112,8 @@ public class MainForm : MaterialForm {
         InitializeComponent();
         ApplyApplicationIcon();
         ApplyWindowSettings();
+        // LoadDashboards creates the panel invisible; it will NOT be shown
+        // until BeginInitialDashboardReveal runs (triggered from OnShown).
         LoadDashboards();
         UpdateStatusBar();
         SetupRefreshTimer();
@@ -120,6 +146,9 @@ public class MainForm : MaterialForm {
         // Save window settings before closing
         SaveWindowSettings();
 
+        // Clean up visor
+        HideVisorImmediate();
+
         _refreshTimer?.Stop();
         _refreshTimer?.Dispose();
         _themeTimer?.Stop();
@@ -144,6 +173,7 @@ public class MainForm : MaterialForm {
         base.OnResize(e);
 
         if (!_isLoading) {
+
             if (WindowState == FormWindowState.Minimized) {
                 _restoreToMaximizedAfterMinimize = _windowStateBeforeMinimize == FormWindowState.Maximized;
             } else {
@@ -176,15 +206,197 @@ public class MainForm : MaterialForm {
             WindowState = FormWindowState.Maximized;
         }
 
-        // Re-apply theme after MaterialSkinManager has finished its initialization
-        ScheduleThemeReapply();
+        // DO NOT call ScheduleThemeReapply() or EnsureInitialDashboardVisible here.
+        // Everything is deferred to BeginInitialDashboardReveal which first raises
+        // the visor and only then makes the dashboard visible behind it.
 
-        BeginInvoke(EnsureInitialDashboardVisible);
+        // A short delay lets the window fully stabilize (maximize, DPI, theme init).
+        // During this time the dashboard container is empty — the user sees a clean window.
+        var stabilizeTimer = new System.Windows.Forms.Timer { Interval = VisorStartupStabilizeMs };
+        stabilizeTimer.Tick += (s, e2) => {
+            stabilizeTimer.Stop();
+            stabilizeTimer.Dispose();
+            BeginInitialDashboardReveal();
+        };
+        stabilizeTimer.Start();
     }
 
     #endregion Protected Methods
 
     #region Private Methods
+
+    // ════════════════════════════════════════════════════════════════
+    //  Visor (забрало) — hides layout artifacts during transitions
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Returns the visor background color matching the current theme.
+    /// </summary>
+    private Color GetVisorColor() {
+        return _skinManager.Theme == MaterialSkinManager.Themes.LIGHT
+            ? Color.FromArgb(250, 250, 250)
+            : Color.FromArgb(25, 36, 40);
+    }
+
+    /// <summary>
+    /// Shows an opaque visor overlay covering the dashboard area.
+    /// The visor is a borderless Form with real Opacity support, positioned
+    /// exactly over _dashboardContainer in screen coordinates.
+    /// </summary>
+    private void ShowVisor() {
+        HideVisorImmediate();
+
+        if (!IsHandleCreated || IsDisposed) {
+            return;
+        }
+
+        var visorColor = GetVisorColor();
+
+        // Calculate screen-space bounds of the dashboard container
+        Rectangle screenRect;
+        try {
+            // ИЗМЕНЕНО: Так как _dashboardContainer изначально Visible = false, 
+            // его собственный RectangleToScreen может вернуть кривые координаты.
+            // Конвертируем его Bounds (которые уже рассчитаны Dock=Fill) 
+            // в экранные координаты через родительскую форму (this).
+            screenRect = this.RectangleToScreen(_dashboardContainer.Bounds);
+        } catch {
+            return;
+        }
+
+        _visorForm = new Form {
+            FormBorderStyle = FormBorderStyle.None,
+            ShowInTaskbar = false,
+            ControlBox = false,
+            BackColor = visorColor,
+            Opacity = 1.0,
+            StartPosition = FormStartPosition.Manual,
+            Bounds = screenRect,
+            TopMost = false
+        };
+
+        _visorForm.Show(this);
+    }
+
+    /// <summary>
+    /// Starts a fade-out animation on the visor, reducing its Opacity
+    /// from 1.0 to 0.0 over VisorFadeDurationMs, then disposes it.
+    /// </summary>
+    private void FadeOutVisor(Action? onComplete = null) {
+        if (_visorForm == null || _visorForm.IsDisposed) {
+            onComplete?.Invoke();
+            return;
+        }
+
+        var totalSteps = Math.Max(1, VisorFadeDurationMs / VisorFadeStepMs);
+        var currentStep = 0;
+        var opacityDecrement = 1.0 / totalSteps;
+
+        _visorFadeTimer?.Stop();
+        _visorFadeTimer?.Dispose();
+        _visorFadeTimer = new System.Windows.Forms.Timer { Interval = VisorFadeStepMs };
+        _visorFadeTimer.Tick += (s, e) => {
+            currentStep++;
+            if (_visorForm == null || _visorForm.IsDisposed || currentStep >= totalSteps) {
+                _visorFadeTimer?.Stop();
+                _visorFadeTimer?.Dispose();
+                _visorFadeTimer = null;
+                HideVisorImmediate();
+                onComplete?.Invoke();
+                return;
+            }
+
+            try {
+                _visorForm.Opacity = Math.Max(0, 1.0 - currentStep * opacityDecrement);
+            } catch {
+                _visorFadeTimer?.Stop();
+                _visorFadeTimer?.Dispose();
+                _visorFadeTimer = null;
+                HideVisorImmediate();
+                onComplete?.Invoke();
+            }
+        };
+        _visorFadeTimer.Start();
+    }
+
+    /// <summary>
+    /// Immediately hides and disposes the visor without animation.
+    /// Safe to call even when no visor is active.
+    /// </summary>
+    private void HideVisorImmediate() {
+        _visorFadeTimer?.Stop();
+        _visorFadeTimer?.Dispose();
+        _visorFadeTimer = null;
+
+        if (_visorForm != null && !_visorForm.IsDisposed) {
+            _visorForm.Close();
+            _visorForm.Dispose();
+        }
+        _visorForm = null;
+    }
+
+    /// <summary>
+    /// Schedules the visor fade-out after a configurable delay.
+    /// Called when the dashboard is fully built and ready.
+    /// If no visor is currently displayed, does nothing.
+    /// </summary>
+    private void ScheduleVisorReveal() {
+        if (_visorForm == null || _visorForm.IsDisposed) {
+            return;
+        }
+
+        var delay = new System.Windows.Forms.Timer { Interval = VisorPreRevealDelayMs };
+        delay.Tick += (s, e) => {
+            delay.Stop();
+            delay.Dispose();
+            FadeOutVisor();
+        };
+        delay.Start();
+    }
+
+    /// <summary>
+    /// Initial dashboard reveal sequence on first launch.
+    /// 1. Show visor (opaque, theme-colored) — BEFORE anything becomes visible
+    /// 2. Apply theme fixup, make dashboard visible, refresh data — all behind visor
+    /// 3. Schedule visor fade-out
+    /// </summary>
+    private void BeginInitialDashboardReveal() {
+        // 1. Show visor FIRST — before any dashboard UI becomes visible
+        ShowVisor();
+
+        // 2. Defer all heavy work to AFTER the message loop has painted the visor.
+        //    Without this BeginInvoke, the synchronous layout triggered by
+        //    panel.Visible = true would block the visor's WM_PAINT, making the
+        //    dashboard construction visible before the visor appears on screen.
+        BeginInvoke(() => {
+            // Re-apply theme behind visor (MaterialSkinManager post-init fixup)
+            UpdateDashboardContainerTheme();
+            UpdateQuickAccessPanelTheme();
+            UpdateMenuTheme();
+
+            // Make dashboard visible and refresh behind visor
+            if (_dashboardPanel != null) {
+                _dashboardContainer.Visible = true;
+                _dashboardPanel.Visible = true;
+                _dashboardPanel.BringToFront();
+                _dashboardPanel.UpdateTheme();
+                RefreshDashboardDataNow();
+            } else {
+                _dashboardContainer.Visible = true;
+            }
+
+            // Mark initial reveal as completed — subsequent LoadDashboard calls
+            // will use the normal visor-based switching path.
+            _initialRevealCompleted = true;
+
+            // Schedule visor fade-out
+            ScheduleVisorReveal();
+        });
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  Quick access helpers
+    // ════════════════════════════════════════════════════════════════
 
     private static void ApplyQuickAccessColors(Control parent, Color bg, Color fg) {
         foreach (Control control in parent.Controls) {
@@ -235,14 +447,12 @@ public class MainForm : MaterialForm {
     private static void UpdateMenuItemsIcons(ToolStripItemCollection items, Color iconColor) {
         foreach (ToolStripItem item in items) {
             if (item is ToolStripMenuItem menuItem) {
-                // Update icon color based on item text
                 var iconName = GetIconNameForMenuItem(menuItem.Text!);
                 if (!string.IsNullOrEmpty(iconName)) {
                     menuItem.Image?.Dispose();
                     menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize);
                 }
 
-                // Recursively update submenu items
                 if (menuItem.HasDropDownItems) {
                     InteractiveCursorStyler.Apply(menuItem.DropDownItems);
                     UpdateMenuItemsIcons(menuItem.DropDownItems, iconColor);
@@ -262,19 +472,16 @@ public class MainForm : MaterialForm {
     }
 
     private void ApplyWindowSettings() {
-        // Apply window size
         if (_appSettings.WindowWidth > 0 && _appSettings.WindowHeight > 0) {
             Size = new Size(_appSettings.WindowWidth, _appSettings.WindowHeight);
         } else {
-            Size = new Size(1400, 900);  // Default size
+            Size = new Size(1400, 900);
         }
 
-        // Apply window position
         if (_appSettings.WindowX >= 0 && _appSettings.WindowY >= 0) {
             StartPosition = FormStartPosition.Manual;
             Location = new Point(_appSettings.WindowX, _appSettings.WindowY);
 
-            // Ensure window is visible on at least one screen
             var bounds = new Rectangle(Location, Size);
             var isVisible = false;
             foreach (var screen in Screen.AllScreens) {
@@ -291,8 +498,6 @@ public class MainForm : MaterialForm {
             StartPosition = FormStartPosition.CenterScreen;
         }
 
-        // Apply maximized state after the form is shown.
-        // Restoring maximized state before the first show can produce incorrect work area bounds.
         _shouldStartMaximized = _appSettings.IsMaximized;
     }
 
@@ -366,12 +571,7 @@ public class MainForm : MaterialForm {
             ImageAlign = ContentAlignment.MiddleCenter,
             TextAlign = ContentAlignment.MiddleCenter,
             FlatStyle = FlatStyle.Flat,
-            FlatAppearance = {
-                BorderSize = 0,
-                CheckedBackColor = Color.Transparent,
-                MouseDownBackColor = Color.Transparent,
-                MouseOverBackColor = Color.Transparent
-            },
+            FlatAppearance = { BorderSize = 0, CheckedBackColor = Color.Transparent, MouseDownBackColor = Color.Transparent, MouseOverBackColor = Color.Transparent },
             Font = new Font("Segoe UI", 9f, FontStyle.Bold),
             Padding = Padding.Empty,
             AutoSize = false,
@@ -395,12 +595,7 @@ public class MainForm : MaterialForm {
             ImageAlign = ContentAlignment.MiddleCenter,
             TextAlign = ContentAlignment.MiddleCenter,
             FlatStyle = FlatStyle.Flat,
-            FlatAppearance = {
-                BorderSize = 0,
-                CheckedBackColor = Color.Transparent,
-                MouseDownBackColor = Color.Transparent,
-                MouseOverBackColor = Color.Transparent
-            },
+            FlatAppearance = { BorderSize = 0, CheckedBackColor = Color.Transparent, MouseDownBackColor = Color.Transparent, MouseOverBackColor = Color.Transparent },
             Font = new Font("Segoe UI", 9f, FontStyle.Bold),
             Padding = Padding.Empty,
             AutoSize = false,
@@ -417,11 +612,7 @@ public class MainForm : MaterialForm {
             }
         };
 
-        _themeSegmentPanel = new Panel {
-            Location = new Point(10, 10),
-            Size = new Size(74, 32),
-            Padding = new Padding(1)
-        };
+        _themeSegmentPanel = new Panel { Location = new Point(10, 10), Size = new Size(74, 32), Padding = new Padding(1) };
         _themeSegmentPanel.Controls.Add(_lightThemeButton);
         _themeSegmentPanel.Controls.Add(_darkThemeButton);
 
@@ -430,66 +621,34 @@ public class MainForm : MaterialForm {
             Appearance = Appearance.Button,
             TextAlign = ContentAlignment.MiddleCenter,
             FlatStyle = FlatStyle.Flat,
-            FlatAppearance = {
-                BorderSize = 0,
-                CheckedBackColor = Color.Transparent,
-                MouseDownBackColor = Color.Transparent,
-                MouseOverBackColor = Color.Transparent
-            },
+            FlatAppearance = { BorderSize = 0, CheckedBackColor = Color.Transparent, MouseDownBackColor = Color.Transparent, MouseOverBackColor = Color.Transparent },
             AutoSize = false,
             Size = new Size(36, 30),
             Checked = _appSettings.LinkChartPeriods,
             Cursor = Cursors.Hand
         };
-        _linkedChartsButton.CheckedChanged += (s, e) => {
-            if (_linkedChartsButton.Checked) {
-                _linkChartsCheckBox.Checked = true;
-            }
-        };
+        _linkedChartsButton.CheckedChanged += (s, e) => { if (_linkedChartsButton.Checked) { _linkChartsCheckBox.Checked = true; } };
 
         _unlinkedChartsButton = new RadioButton {
             Text = string.Empty,
             Appearance = Appearance.Button,
             TextAlign = ContentAlignment.MiddleCenter,
             FlatStyle = FlatStyle.Flat,
-            FlatAppearance = {
-                BorderSize = 0,
-                CheckedBackColor = Color.Transparent,
-                MouseDownBackColor = Color.Transparent,
-                MouseOverBackColor = Color.Transparent
-            },
+            FlatAppearance = { BorderSize = 0, CheckedBackColor = Color.Transparent, MouseDownBackColor = Color.Transparent, MouseOverBackColor = Color.Transparent },
             AutoSize = false,
             Size = new Size(36, 30),
             Checked = !_appSettings.LinkChartPeriods,
             Cursor = Cursors.Hand
         };
-        _unlinkedChartsButton.CheckedChanged += (s, e) => {
-            if (_unlinkedChartsButton.Checked) {
-                _linkChartsCheckBox.Checked = false;
-            }
-        };
+        _unlinkedChartsButton.CheckedChanged += (s, e) => { if (_unlinkedChartsButton.Checked) { _linkChartsCheckBox.Checked = false; } };
 
-        _linkSegmentPanel = new Panel {
-            Location = new Point(10, 10),
-            Size = new Size(74, 32),
-            Padding = new Padding(1)
-        };
+        _linkSegmentPanel = new Panel { Location = new Point(10, 10), Size = new Size(74, 32), Padding = new Padding(1) };
         _linkSegmentPanel.Controls.Add(_linkedChartsButton);
         _linkSegmentPanel.Controls.Add(_unlinkedChartsButton);
 
-        _quickDashboardsPanel = new Panel {
-            Location = new Point(240, 10),
-            Size = new Size(0, 32),
-            Padding = new Padding(1),
-            Font = new Font("Segoe UI", 9f, FontStyle.Bold)
-        };
+        _quickDashboardsPanel = new Panel { Location = new Point(240, 10), Size = new Size(0, 32), Padding = new Padding(1), Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
 
-        _linkChartsCheckBox = new CheckBox {
-            Visible = false,
-            AutoSize = true,
-            Checked = _appSettings.LinkChartPeriods,
-            Cursor = Cursors.Hand
-        };
+        _linkChartsCheckBox = new CheckBox { Visible = false, AutoSize = true, Checked = _appSettings.LinkChartPeriods, Cursor = Cursors.Hand };
         _linkChartsCheckBox.CheckedChanged += (s, e) => {
             _appSettings.LinkChartPeriods = _linkChartsCheckBox.Checked;
             _appSettingsService.SaveSettings(_appSettings);
@@ -497,49 +656,21 @@ public class MainForm : MaterialForm {
             UpdateLinkSwitchAppearance();
         };
 
-        _quickAccessPanel.Controls.AddRange([
-            _dashboardLabel,
-            _quickDashboardsPanel,
-            _chartsLabel,
-            _linkSegmentPanel,
-            _themeLabel,
-            _themeSegmentPanel,
-            _linkChartsCheckBox
-        ]);
-
+        _quickAccessPanel.Controls.AddRange([_dashboardLabel, _quickDashboardsPanel, _chartsLabel, _linkSegmentPanel, _themeLabel, _themeSegmentPanel, _linkChartsCheckBox]);
         RefreshQuickAccessLayout();
         _quickAccessPanel.SizeChanged += (s, e) => RefreshQuickAccessLayout();
     }
 
     private void DeleteCurrentDashboard() {
-        if (_currentDashboard == null || _dashboards.Count <= 1) {
-            ThemedMessageBox.Show(this, "Cannot delete the last dashboard", "Error",
-                MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
-        }
-
-        var result = ThemedMessageBox.Show(this, $"Delete dashboard '{_currentDashboard.Name}'?", "Confirm",
-            MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-
-        if (result == DialogResult.Yes) {
-            _dashboardService.DeleteDashboard(_currentDashboard);
-            _dashboards.Remove(_currentDashboard);
-            LoadDashboard(_dashboards[0]);
-            UpdateQuickDashboards();
-        }
+        if (_currentDashboard == null || _dashboards.Count <= 1) { ThemedMessageBox.Show(this, "Cannot delete the last dashboard", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+        var result = ThemedMessageBox.Show(this, $"Delete dashboard '{_currentDashboard.Name}'?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        if (result == DialogResult.Yes) { _dashboardService.DeleteDashboard(_currentDashboard); _dashboards.Remove(_currentDashboard); LoadDashboard(_dashboards[0]); UpdateQuickDashboards(); }
     }
 
     private void DuplicateCurrentDashboard() {
-        if (_currentDashboard == null) {
-            return;
-        }
-
+        if (_currentDashboard == null) { return; }
         var copy = _dashboardService.DuplicateDashboard(_currentDashboard);
-
-        if (copy.IsQuickAccess && _dashboards.Count(d => d.IsQuickAccess) >= MaxQuickAccessDashboards) {
-            copy.IsQuickAccess = false;
-        }
-
+        if (copy.IsQuickAccess && _dashboards.Count(d => d.IsQuickAccess) >= MaxQuickAccessDashboards) { copy.IsQuickAccess = false; }
         copy.SortOrder = _dashboards.Where(d => d.IsQuickAccess == copy.IsQuickAccess).Select(d => d.SortOrder).DefaultIfEmpty(-1).Max() + 1;
         _dashboardService.SaveDashboard(copy);
         _dashboards.Add(copy);
@@ -549,79 +680,47 @@ public class MainForm : MaterialForm {
     }
 
     private void EditCurrentDashboard() {
-        if (_currentDashboard == null) {
-            return;
-        }
-
+        if (_currentDashboard == null) { return; }
         using var editor = new DashboardEditorForm(_currentDashboard);
         if (editor.ShowDialog() == DialogResult.OK && editor.Modified) {
             if (_currentDashboard.IsQuickAccess && _dashboards.Count(d => d.IsQuickAccess && d.Id != _currentDashboard.Id) >= MaxQuickAccessDashboards) {
                 _currentDashboard.IsQuickAccess = false;
                 ThemedMessageBox.Show(this, $"Only {MaxQuickAccessDashboards} dashboards can be marked as favorite.", "Favorite dashboards", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
-
             _dashboardService.SaveDashboard(_currentDashboard);
             _dashboards = _dashboardService.LoadDashboards();
             SortDashboardsForDisplay();
             PersistDashboardOrdering();
-
             var updatedDashboard = _dashboards.FirstOrDefault(d => d.Id == _currentDashboard.Id);
-            if (updatedDashboard != null) {
-                LoadDashboard(updatedDashboard);
-            }
-
-            if (_mainMenu.Items.Count > 1) {
-                var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1];
-                UpdateDashboardMenu(dashboardMenu);
-            }
-
+            if (updatedDashboard != null) { LoadDashboard(updatedDashboard); }
+            if (_mainMenu.Items.Count > 1) { var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1]; UpdateDashboardMenu(dashboardMenu); }
             UpdateQuickDashboards();
         }
     }
 
     private void InitializeComponent() {
         SuspendLayout();
-
         Text = "⛨  DreamSky Observatory | Safety Monitor";
 
-        _mainMenu = new MenuStrip {
-            Dock = DockStyle.Top,
-            Cursor = Cursors.Hand
-        };
+        _mainMenu = new MenuStrip { Dock = DockStyle.Top, Cursor = Cursors.Hand };
         _menuRenderer = new ThemedMenuRenderer();
         _menuRenderer.UpdateTheme();
         _mainMenu.Renderer = _menuRenderer;
         ToolStripManager.Renderer = _menuRenderer;
         ToolStripManager.VisualStylesEnabled = false;
-        _mainMenu.BackColor = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT
-            ? Color.FromArgb(250, 250, 250)
-            : Color.FromArgb(35, 47, 52);
+        _mainMenu.BackColor = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT ? Color.FromArgb(250, 250, 250) : Color.FromArgb(35, 47, 52);
         CreateMenuItems();
 
-        _quickAccessPanel = new Panel {
-            Dock = DockStyle.Top,
-            Height = 50,
-            Padding = new Padding(10, 5, 10, 5)
-        };
+        _quickAccessPanel = new Panel { Dock = DockStyle.Top, Height = 50, Padding = new Padding(10, 5, 10, 5) };
         CreateQuickAccessControls();
         UpdateQuickAccessPanelTheme();
 
-        _dashboardContainer = new Panel {
-            Dock = DockStyle.Fill,
-            AutoScroll = true
-        };
+        _dashboardContainer = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Visible = false };
         UpdateDashboardContainerTheme();
 
-        _statusStrip = new StatusStrip {
-            Dock = DockStyle.Bottom
-        };
-        _statusLabel = new ToolStripStatusLabel("Ready") {
-            Spring = true,
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-        _dataPathLabel = new ToolStripStatusLabel("Storage: not configured") {
-            BorderSides = ToolStripStatusLabelBorderSides.Left
-        };
+        _statusStrip = new StatusStrip { Dock = DockStyle.Bottom };
+        _statusLabel = new ToolStripStatusLabel("Ready") { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
+        _dataPathLabel = new ToolStripStatusLabel("Storage: not configured") { BorderSides = ToolStripStatusLabelBorderSides.Left };
         _statusStrip.Items.AddRange([_statusLabel, _dataPathLabel]);
 
         Controls.Add(_dashboardContainer);
@@ -635,22 +734,33 @@ public class MainForm : MaterialForm {
         ResumeLayout(false);
         PerformLayout();
     }
+
+    /// <summary>
+    /// Loads a dashboard. During initial load (_initialRevealCompleted == false),
+    /// the panel is created invisible and NOT shown — BeginInitialDashboardReveal
+    /// handles the first reveal behind a visor.
+    /// After the initial reveal, every LoadDashboard call immediately shows a visor,
+    /// builds the new dashboard behind it, then fades the visor out.
+    /// </summary>
     private void LoadDashboard(Dashboard dashboard) {
-        var wasDashboardVisible = _dashboardContainer.Visible;
+        // Show visor BEFORE building the new panel — but only when the initial
+        // reveal is already completed (not during the very first load from constructor).
+        var isDashboardSwitch = _initialRevealCompleted;
+        if (isDashboardSwitch) {
+            ShowVisor();
+        }
+
         var previousDashboard = _currentDashboard;
         _currentDashboard = dashboard;
 
-        // Save last dashboard ID
         _appSettings.LastDashboardId = dashboard.Id;
         _appSettingsService.SaveSettings(_appSettings);
 
         var previousPanel = _dashboardPanel;
 
         _dashboardContainer.SuspendLayout();
-        _dashboardContainer.Visible = wasDashboardVisible;
         _dashboardPanel = new DashboardPanel(
-            dashboard,
-            _dataService,
+            dashboard, _dataService,
             _appSettings.ChartStaticModeTimeoutSeconds,
             _appSettings.ChartStaticAggregationPresetMatchTolerancePercent,
             _appSettings.ChartStaticAggregationTargetPointCount,
@@ -664,30 +774,26 @@ public class MainForm : MaterialForm {
         _dashboardContainer.ResumeLayout(true);
         _statusLabel.Text = $"Dashboard: {dashboard.Name}";
 
-        if (_mainMenu.Items.Count > 1) {
-            var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1];
-            UpdateDashboardMenu(dashboardMenu);
-        }
+        if (_mainMenu.Items.Count > 1) { var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1]; UpdateDashboardMenu(dashboardMenu); }
 
         var shouldRebuildQuickDashboards = ShouldRebuildQuickDashboards(previousDashboard, dashboard);
-        if (shouldRebuildQuickDashboards) {
-            UpdateQuickDashboards();
+        if (shouldRebuildQuickDashboards) { UpdateQuickDashboards(); } else { UpdateQuickDashboardSelection(); }
+
+        if (isDashboardSwitch) {
+            // Normal path: visor is up, build and show dashboard behind it
+            QueueDashboardInitialRender(_dashboardPanel, previousPanel);
         } else {
-            UpdateQuickDashboardSelection();
+            // Initial load path: just remove old panel, keep new one invisible.
+            // BeginInitialDashboardReveal will make it visible behind the visor.
+            RemoveOldDashboardPanel(previousPanel, _dashboardPanel);
         }
 
-        QueueDashboardInitialRender(_dashboardPanel, previousPanel);
-
-        // Reset timer so next tick is a full interval from now
         RestartRefreshTimerInterval();
     }
 
     private static bool ShouldRebuildQuickDashboards(Dashboard? previousDashboard, Dashboard currentDashboard) {
         var previousWasQuickAccess = previousDashboard != null && previousDashboard.IsQuickAccess;
         var currentIsQuickAccess = currentDashboard.IsQuickAccess;
-
-        // Rebuild only when at least one dashboard is outside quick access.
-        // In that case, the temporary "selected from menu" badge must be added/removed or renamed.
         return !(previousWasQuickAccess && currentIsQuickAccess);
     }
 
@@ -697,39 +803,14 @@ public class MainForm : MaterialForm {
         PersistDashboardOrdering();
 
         if (_dashboards.Count > 0) {
-            // Try to load last dashboard from settings
             Dashboard? dashboardToLoad = null;
-
-            if (_appSettings.LastDashboardId.HasValue) {
-                dashboardToLoad = _dashboards.FirstOrDefault(d => d.Id == _appSettings.LastDashboardId.Value);
-            }
-
-            // Fall back to first dashboard if last one not found
+            if (_appSettings.LastDashboardId.HasValue) { dashboardToLoad = _dashboards.FirstOrDefault(d => d.Id == _appSettings.LastDashboardId.Value); }
             dashboardToLoad ??= _dashboards[0];
-
             LoadDashboard(dashboardToLoad);
         }
 
-        if (_mainMenu.Items.Count > 1) {
-            var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1];
-            UpdateDashboardMenu(dashboardMenu);
-        }
-
+        if (_mainMenu.Items.Count > 1) { var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1]; UpdateDashboardMenu(dashboardMenu); }
         UpdateQuickDashboards();
-    }
-
-    private void EnsureInitialDashboardVisible() {
-        if (_dashboardPanel == null) {
-            return;
-        }
-
-        if (!_dashboardPanel.Visible) {
-            _dashboardPanel.Visible = true;
-        }
-
-        RefreshDashboardDataNow();
-        _dashboardContainer.Visible = true;
-        _dashboardPanel.BringToFront();
     }
 
     private void OnFirstHandleCreated(object? sender, EventArgs e) {
@@ -748,65 +829,48 @@ public class MainForm : MaterialForm {
 
         if (!panel.IsHandleCreated) {
             panel.CreateControl();
-
-            // Invisible controls may postpone handle creation until first show.
-            // Fallback to immediate visible state so the dashboard never remains blank.
             if (!panel.IsHandleCreated) {
                 panel.Visible = true;
                 BeginInvoke(() => {
-                    if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) {
-                        return;
-                    }
-
+                    if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) { HideVisorImmediate(); return; }
                     RefreshDashboardDataNow(panel);
                     _dashboardContainer.Visible = true;
                     RemoveOldDashboardPanel(previousPanel, panel);
+                    ScheduleVisorReveal();
                 });
                 return;
             }
-
         }
 
         BeginInvoke(() => RefreshAndShowDashboard(panel, previousPanel));
     }
 
     private void RefreshAndShowDashboard(DashboardPanel panel, DashboardPanel? previousPanel) {
-        if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) {
-            return;
-        }
+        if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) { HideVisorImmediate(); return; }
 
         RefreshDashboardDataNow(panel);
         panel.Visible = true;
         panel.BringToFront();
         _dashboardContainer.Visible = true;
         RemoveOldDashboardPanel(previousPanel, panel);
+
+        // Dashboard is fully built. Schedule visor fade-out.
+        ScheduleVisorReveal();
     }
 
     private void RemoveOldDashboardPanel(DashboardPanel? previousPanel, DashboardPanel newPanel) {
-        if (previousPanel == null || ReferenceEquals(previousPanel, newPanel) || previousPanel.IsDisposed) {
-            return;
-        }
-
-        if (_dashboardContainer.Controls.Contains(previousPanel)) {
-            _dashboardContainer.Controls.Remove(previousPanel);
-        }
-
+        if (previousPanel == null || ReferenceEquals(previousPanel, newPanel) || previousPanel.IsDisposed) { return; }
+        if (_dashboardContainer.Controls.Contains(previousPanel)) { _dashboardContainer.Controls.Remove(previousPanel); }
         previousPanel.Dispose();
     }
 
     private void OnDashboardChanged() {
-        if (_currentDashboard == null) {
-            return;
-        }
-
+        if (_currentDashboard == null) { return; }
         _dashboardService.SaveDashboard(_currentDashboard);
     }
 
     private void SaveWindowSettings() {
         _appSettings.IsMaximized = WindowState == FormWindowState.Maximized;
-
-        // Persist normal bounds even when the window is maximized.
-        // This avoids stale geometry that can cause incorrect maximize behavior on next startup.
         var normalBounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
         if (normalBounds.Width > 0 && normalBounds.Height > 0) {
             _appSettings.WindowWidth = normalBounds.Width;
@@ -814,14 +878,15 @@ public class MainForm : MaterialForm {
             _appSettings.WindowX = normalBounds.Left;
             _appSettings.WindowY = normalBounds.Top;
         }
-
         _appSettingsService.SaveSettings(_appSettings);
     }
+
+    /// <summary>
+    /// Schedules a deferred theme reapply. When a visor is active (theme switch),
+    /// the callback calls ScheduleVisorReveal after all colors are set.
+    /// </summary>
     private void ScheduleThemeReapply() {
-        if (_themeTimer != null) {
-            _themeTimer.Stop();
-            _themeTimer.Dispose();
-        }
+        if (_themeTimer != null) { _themeTimer.Stop(); _themeTimer.Dispose(); }
         _themeTimer = new System.Windows.Forms.Timer { Interval = 50 };
         _themeTimer.Tick += (s, e) => {
             _themeTimer!.Stop();
@@ -832,6 +897,9 @@ public class MainForm : MaterialForm {
             UpdateMenuTheme();
             _dashboardPanel?.UpdateTheme();
             RefreshDashboardDataNow();
+
+            // If a visor is active (theme switch), reveal it now that colors are applied.
+            ScheduleVisorReveal();
         };
         _themeTimer.Start();
     }
@@ -843,19 +911,36 @@ public class MainForm : MaterialForm {
     }
 
     private void RestartRefreshTimerInterval() {
-        if (_refreshTimer == null) {
-            return;
-        }
-
+        if (_refreshTimer == null) { return; }
         _refreshTimer.Stop();
         _refreshTimer.Start();
     }
 
+    /// <summary>
+    /// Switches theme with visor protection: visor appears immediately before
+    /// any theme colors start changing, then fades out after reapply completes.
+    /// </summary>
     private void SetTheme(MaterialSkinManager.Themes theme) {
+        // Show visor BEFORE changing the theme to hide all repaint artifacts.
+        // На этом этапе забрало поднимется в старом цвете.
+        if (_initialRevealCompleted) {
+            ShowVisor();
+        }
+
         _skinManager.Theme = theme;
         ApplyApplicationIcon();
+
+        // ИЗМЕНЕНО: Сразу после переключения темы обновляем цвет забрала на новый
+        // и форсируем отрисовку (Refresh), чтобы перекрытие перекрасилось ДО того, 
+        // как контролы снизу начнут тяжелый рендеринг.
+        if (_visorForm != null && !_visorForm.IsDisposed) {
+            _visorForm.BackColor = GetVisorColor();
+            _visorForm.Refresh();
+        }
+
         // MaterialSkinManager queues multiple deferred color updates.
-        // A timer guarantees we reapply our colors AFTER MSM is fully done.
+        // ScheduleThemeReapply reapplies our colors AFTER MSM is done,
+        // then calls ScheduleVisorReveal to fade out the visor.
         ScheduleThemeReapply();
     }
 
@@ -870,92 +955,44 @@ public class MainForm : MaterialForm {
     }
 
     private void OnDataServiceConnectionFailed(string details) {
-        if (InvokeRequired) {
-            BeginInvoke(() => OnDataServiceConnectionFailed(details));
-            return;
-        }
-
+        if (InvokeRequired) { BeginInvoke(() => OnDataServiceConnectionFailed(details)); return; }
         _refreshTimer?.Stop();
         _statusLabel.Text = "SQL connection failed";
-
-        var message = "Unable to connect to SQL Server. Application terminated."
-            + Environment.NewLine
-            + details;
-
-        ThemedMessageBox.Show(
-            this,
-            message,
-            "Connection error",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Error
-        );
-
+        var message = "Unable to connect to SQL Server. Application terminated." + Environment.NewLine + details;
+        ThemedMessageBox.Show(this, message, "Connection error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         _isExitConfirmed = true;
         Close();
     }
 
     private void ShowAbout() {
-        var message = "SafetyMonitorView v1.0"
-            + Environment.NewLine
-            + "ASCOM Alpaca"
-            + Environment.NewLine
-            + "Safety Monitor Dashboard"
-            + Environment.NewLine
-            + "©2026 DreamSky Observatory";
-        ThemedMessageBox.Show(this, message,
-            "About SafetyMonitorView", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        var message = "SafetyMonitorView v1.0" + Environment.NewLine + "ASCOM Alpaca" + Environment.NewLine + "Safety Monitor Dashboard" + Environment.NewLine + "©2026 DreamSky Observatory";
+        ThemedMessageBox.Show(this, message, "About SafetyMonitorView", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void ShowAxisRulesEditor() {
         using var editor = new AxisRulesEditorForm(_appSettings.MetricAxisRules);
-        if (editor.ShowDialog(this) == DialogResult.OK) {
-            _appSettings.MetricAxisRules = editor.Rules;
-            _appSettingsService.SaveSettings(_appSettings);
-            MetricAxisRuleStore.SetRules(_appSettings.MetricAxisRules);
-        }
+        if (editor.ShowDialog(this) == DialogResult.OK) { _appSettings.MetricAxisRules = editor.Rules; _appSettingsService.SaveSettings(_appSettings); MetricAxisRuleStore.SetRules(_appSettings.MetricAxisRules); }
     }
 
     private void ShowMetricSettingsEditor() {
         using var editor = new MetricSettingsEditorForm(_appSettings.MetricDisplaySettings);
-        if (editor.ShowDialog(this) == DialogResult.OK) {
-            _appSettings.MetricDisplaySettings = editor.Settings;
-            _appSettingsService.SaveSettings(_appSettings);
-            MetricDisplaySettingsStore.SetSettings(_appSettings.MetricDisplaySettings);
-        }
+        if (editor.ShowDialog(this) == DialogResult.OK) { _appSettings.MetricDisplaySettings = editor.Settings; _appSettingsService.SaveSettings(_appSettings); MetricDisplaySettingsStore.SetSettings(_appSettings.MetricDisplaySettings); }
     }
 
-    private void ShowColorSchemeEditor() {
-        using var editor = new ColorSchemeEditorForm();
-        editor.ShowDialog(this);
-    }
+    private void ShowColorSchemeEditor() { using var editor = new ColorSchemeEditorForm(); editor.ShowDialog(this); }
 
     private void ShowChartPeriodPresetEditor() {
-        using var editor = new ChartPeriodsEditorForm(
-            _appSettings.ChartPeriodPresets,
-            _appSettings.ChartStaticAggregationTargetPointCount,
-            _appSettings.ChartAggregationRoundingSeconds);
+        using var editor = new ChartPeriodsEditorForm(_appSettings.ChartPeriodPresets, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds);
         if (editor.ShowDialog(this) == DialogResult.OK) {
             _appSettings.ChartPeriodPresets = editor.Presets;
             _appSettingsService.SaveSettings(_appSettings);
             ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
-
-            if (_currentDashboard != null) {
-                LoadDashboard(_currentDashboard);
-            } else {
-                RefreshDashboardDataNow();
-            }
+            if (_currentDashboard != null) { LoadDashboard(_currentDashboard); } else { RefreshDashboardDataNow(); }
         }
     }
 
     private void ShowSettings() {
-        using var settingsForm = new SettingsForm(
-            _appSettings.StoragePath,
-            _appSettings.RefreshInterval,
-            _appSettings.ValueTileLookbackMinutes,
-            _appSettings.ChartStaticModeTimeoutSeconds,
-            _appSettings.ChartStaticAggregationPresetMatchTolerancePercent,
-            _appSettings.ChartStaticAggregationTargetPointCount,
-            _appSettings.ChartAggregationRoundingSeconds);
+        using var settingsForm = new SettingsForm(_appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds);
         if (settingsForm.ShowDialog() == DialogResult.OK) {
             _appSettings.StoragePath = settingsForm.StoragePath;
             _appSettings.RefreshInterval = settingsForm.RefreshInterval;
@@ -972,63 +1009,36 @@ public class MainForm : MaterialForm {
 
             _refreshTimer?.Interval = _appSettings.RefreshInterval * 1000;
             _dashboardPanel?.SetChartStaticModeTimeoutSeconds(_appSettings.ChartStaticModeTimeoutSeconds);
-            _dashboardPanel?.SetChartStaticAggregationOptions(
-                _appSettings.ChartStaticAggregationPresetMatchTolerancePercent,
-                _appSettings.ChartStaticAggregationTargetPointCount,
-                _appSettings.ChartAggregationRoundingSeconds);
+            _dashboardPanel?.SetChartStaticAggregationOptions(_appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds);
             RefreshQuickAccessLayout();
 
-            if (_currentDashboard != null) {
-                LoadDashboard(_currentDashboard);
-            } else {
-                RefreshDashboardDataNow();
-            }
+            if (_currentDashboard != null) { LoadDashboard(_currentDashboard); } else { RefreshDashboardDataNow(); }
         }
     }
 
-
     private void PersistDashboardOrdering() {
         var changed = false;
-
-        int quickOrder = 0;
-        int regularOrder = 0;
+        int quickOrder = 0, regularOrder = 0;
         foreach (var dashboard in _dashboards) {
             int targetOrder = dashboard.IsQuickAccess ? quickOrder++ : regularOrder++;
-            if (dashboard.SortOrder != targetOrder) {
-                dashboard.SortOrder = targetOrder;
-                _dashboardService.SaveDashboard(dashboard);
-                changed = true;
-            }
+            if (dashboard.SortOrder != targetOrder) { dashboard.SortOrder = targetOrder; _dashboardService.SaveDashboard(dashboard); changed = true; }
         }
-
-        if (changed) {
-            SortDashboardsForDisplay();
-        }
+        if (changed) { SortDashboardsForDisplay(); }
     }
 
     private void ShowDashboardManager() {
         using var manager = new DashboardManagementForm(_dashboards, _currentDashboard?.Id);
-        if (manager.ShowDialog(this) != DialogResult.OK) {
-            return;
-        }
+        if (manager.ShowDialog(this) != DialogResult.OK) { return; }
 
         foreach (var deletedId in manager.DeletedDashboardIds) {
             var dashboard = _dashboards.FirstOrDefault(d => d.Id == deletedId);
-            if (dashboard != null) {
-                _dashboardService.DeleteDashboard(dashboard);
-                _dashboards.Remove(dashboard);
-            }
+            if (dashboard != null) { _dashboardService.DeleteDashboard(dashboard); _dashboards.Remove(dashboard); }
         }
 
         var updatesById = manager.Updates.ToDictionary(u => u.DashboardId);
         foreach (var dashboard in _dashboards) {
-            if (!updatesById.TryGetValue(dashboard.Id, out var update)) {
-                continue;
-            }
-
-            dashboard.IsQuickAccess = update.IsQuickAccess;
-            dashboard.SortOrder = update.SortOrder;
-            dashboard.Name = update.Name;
+            if (!updatesById.TryGetValue(dashboard.Id, out var update)) { continue; }
+            dashboard.IsQuickAccess = update.IsQuickAccess; dashboard.SortOrder = update.SortOrder; dashboard.Name = update.Name;
             _dashboardService.SaveDashboard(dashboard);
         }
 
@@ -1036,93 +1046,53 @@ public class MainForm : MaterialForm {
         SortDashboardsForDisplay();
         PersistDashboardOrdering();
 
-        if (_dashboards.Count == 0) {
-            var fallback = Dashboard.CreateDefault();
-            fallback.SortOrder = 0;
-            _dashboardService.SaveDashboard(fallback);
-            _dashboards = [fallback];
-        }
-
-        var nextDashboard = _currentDashboard != null
-            ? _dashboards.FirstOrDefault(d => d.Id == _currentDashboard.Id)
-            : null;
+        if (_dashboards.Count == 0) { var fallback = Dashboard.CreateDefault(); fallback.SortOrder = 0; _dashboardService.SaveDashboard(fallback); _dashboards = [fallback]; }
+        var nextDashboard = _currentDashboard != null ? _dashboards.FirstOrDefault(d => d.Id == _currentDashboard.Id) : null;
         nextDashboard ??= _dashboards.First();
-
         LoadDashboard(nextDashboard);
 
-        if (_mainMenu.Items.Count > 1) {
-            var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1];
-            UpdateDashboardMenu(dashboardMenu);
-        }
-
+        if (_mainMenu.Items.Count > 1) { var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1]; UpdateDashboardMenu(dashboardMenu); }
         UpdateQuickDashboards();
     }
 
     private void SortDashboardsForDisplay() {
-        _dashboards = [.. _dashboards
-            .OrderByDescending(d => d.IsQuickAccess)
-            .ThenBy(d => d.SortOrder)
-            .ThenBy(d => d.Name)];
+        _dashboards = [.. _dashboards.OrderByDescending(d => d.IsQuickAccess).ThenBy(d => d.SortOrder).ThenBy(d => d.Name)];
     }
 
     private void UpdateDashboardContainerTheme() {
-        _dashboardContainer.BackColor = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT
-            ? Color.FromArgb(250, 250, 250)
-            : Color.FromArgb(25, 36, 40);
+        _dashboardContainer.BackColor = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT ? Color.FromArgb(250, 250, 250) : Color.FromArgb(25, 36, 40);
     }
 
     private void UpdateDashboardMenu(ToolStripMenuItem dashboardMenu) {
         dashboardMenu.DropDownItems.Clear();
-
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var iconColor = isLight ? Color.Black : Color.White;
 
-        // Dashboard list items: selected dashboard uses check icon (no checked background state)
         foreach (var dashboard in _dashboards) {
             var isSelected = dashboard.Id == _currentDashboard?.Id;
-            var item = new ToolStripMenuItem(dashboard.Name) {
-                Checked = false,
-                Image = isSelected ? MaterialIcons.GetIcon(MaterialIcons.CommonCheck, iconColor, MenuIconSize) : null,
-                ImageScaling = ToolStripItemImageScaling.None
-            };
+            var item = new ToolStripMenuItem(dashboard.Name) { Checked = false, Image = isSelected ? MaterialIcons.GetIcon(MaterialIcons.CommonCheck, iconColor, MenuIconSize) : null, ImageScaling = ToolStripItemImageScaling.None };
             item.Click += (s, e) => LoadDashboard(dashboard);
             dashboardMenu.DropDownItems.Add(item);
         }
 
         dashboardMenu.DropDownItems.Add(new ToolStripSeparator());
-
-        // Management items - with icons
         dashboardMenu.DropDownItems.Add(CreateMenuItem("New Dashboard", MaterialIcons.DashboardCreateNew, iconColor, (s, e) => CreateNewDashboard()));
         dashboardMenu.DropDownItems.Add(CreateMenuItem("Edit Current", MaterialIcons.DashboardEditCurrent, iconColor, (s, e) => EditCurrentDashboard()));
         dashboardMenu.DropDownItems.Add(CreateMenuItem("Duplicate Current", MaterialIcons.DashboardDuplicateCurrent, iconColor, (s, e) => DuplicateCurrentDashboard()));
         dashboardMenu.DropDownItems.Add(CreateMenuItem("Manage Dashboards...", MaterialIcons.DashboardManage, iconColor, (s, e) => ShowDashboardManager()));
         dashboardMenu.DropDownItems.Add(new ToolStripSeparator());
         dashboardMenu.DropDownItems.Add(CreateMenuItem("Delete Current", MaterialIcons.DashboardDeleteCurrent, iconColor, (s, e) => DeleteCurrentDashboard()));
-
         InteractiveCursorStyler.Apply(dashboardMenu.DropDownItems);
     }
 
     private void UpdateMenuTheme() {
         _menuRenderer.UpdateTheme();
         ToolStripManager.Renderer = _menuRenderer;
-
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var iconColor = isLight ? Color.Black : Color.White;
-
-        // Update menu background
-        _mainMenu.BackColor = isLight
-            ? Color.FromArgb(250, 250, 250)
-            : Color.FromArgb(35, 47, 52);
-
-        // Update all menu items icons
+        _mainMenu.BackColor = isLight ? Color.FromArgb(250, 250, 250) : Color.FromArgb(35, 47, 52);
         UpdateMenuItemsIcons(_mainMenu.Items, iconColor);
-
-        if (_mainMenu.Items.Count > 1) {
-            var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1];
-            UpdateDashboardMenu(dashboardMenu);
-        }
-
-        // Refresh menu
+        if (_mainMenu.Items.Count > 1) { var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1]; UpdateDashboardMenu(dashboardMenu); }
         _mainMenu.Refresh();
     }
 
@@ -1130,7 +1100,6 @@ public class MainForm : MaterialForm {
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var panelBg = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(25, 36, 40);
         var fg = isLight ? Color.Black : Color.White;
-
         _quickAccessPanel.BackColor = panelBg;
         ApplyQuickAccessColors(_quickAccessPanel, panelBg, fg);
         UpdateThemeSwitchAppearance();
@@ -1139,10 +1108,7 @@ public class MainForm : MaterialForm {
     }
 
     private void UpdateThemeSwitchAppearance() {
-        if (_themeSegmentPanel == null || _lightThemeButton == null || _darkThemeButton == null) {
-            return;
-        }
-
+        if (_themeSegmentPanel == null || _lightThemeButton == null || _darkThemeButton == null) { return; }
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var segmentBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
         var activeBg = isLight ? Color.White : Color.FromArgb(62, 77, 84);
@@ -1159,16 +1125,12 @@ public class MainForm : MaterialForm {
         var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
         _lightThemeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ThemeLightMode, iconColor, 22);
         _darkThemeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ThemeDarkMode, iconColor, 22);
-
         _lightThemeButton.ImageAlign = ContentAlignment.MiddleCenter;
         _darkThemeButton.ImageAlign = ContentAlignment.MiddleCenter;
     }
 
     private void UpdateLinkSwitchAppearance() {
-        if (_linkSegmentPanel == null || _linkedChartsButton == null || _unlinkedChartsButton == null) {
-            return;
-        }
-
+        if (_linkSegmentPanel == null || _linkedChartsButton == null || _unlinkedChartsButton == null) { return; }
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var segmentBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
         var activeBg = isLight ? Color.White : Color.FromArgb(62, 77, 84);
@@ -1190,14 +1152,9 @@ public class MainForm : MaterialForm {
     }
 
     private void UpdateDashboardSwitchAppearance() {
-        if (_quickDashboardsPanel == null) {
-            return;
-        }
-
+        if (_quickDashboardsPanel == null) { return; }
         var buttons = _quickDashboardsPanel.Controls.OfType<RadioButton>().ToList();
-        if (buttons.Count == 0) {
-            return;
-        }
+        if (buttons.Count == 0) { return; }
 
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var segmentBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
@@ -1211,29 +1168,18 @@ public class MainForm : MaterialForm {
             var isMenuSelectedBadge = button.Tag is string tag && tag == "menu-selected-badge";
             if (isMenuSelectedBadge) {
                 var badgeBg = isLight ? Color.FromArgb(222, 222, 222) : Color.FromArgb(124, 132, 140);
-                button.BackColor = badgeBg;
-                button.FlatAppearance.CheckedBackColor = badgeBg;
-                button.FlatAppearance.MouseDownBackColor = badgeBg;
-                button.FlatAppearance.MouseOverBackColor = badgeBg;
+                button.BackColor = badgeBg; button.FlatAppearance.CheckedBackColor = badgeBg; button.FlatAppearance.MouseDownBackColor = badgeBg; button.FlatAppearance.MouseOverBackColor = badgeBg;
                 button.ForeColor = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(206, 215, 220);
                 continue;
             }
-
             button.BackColor = button.Checked ? activeBg : segmentBg;
             button.ForeColor = button.Checked ? activeFg : inactiveFg;
         }
     }
 
+    private void RefreshQuickAccessLayout() { PositionLinkControls(); UpdateThemeSwitchLayout(); UpdateQuickDashboards(); }
 
-    private void RefreshQuickAccessLayout() {
-        PositionLinkControls();
-        UpdateThemeSwitchLayout();
-        UpdateQuickDashboards();
-    }
-
-    private int GetQuickDashboardsLeft() {
-        return _dashboardLabel.Right + 8;
-    }
+    private int GetQuickDashboardsLeft() { return _dashboardLabel.Right + 8; }
 
     private int GetQuickDashboardPanelMaxWidth() {
         var left = GetQuickDashboardsLeft();
@@ -1242,49 +1188,25 @@ public class MainForm : MaterialForm {
     }
 
     private void UpdateThemeSwitchLayout() {
-        if (_themeSegmentPanel == null || _lightThemeButton == null || _darkThemeButton == null) {
-            return;
-        }
-
-        const int leftMargin = 10;
-        const int rightMargin = 10;
-        const int top = 10;
-        const int textGap = 8;
-        const int sectionGap = 16;
-        const int segmentGap = 0;
-        const int segmentHeight = 30;
-        const int segmentWidth = 36;
+        if (_themeSegmentPanel == null || _lightThemeButton == null || _darkThemeButton == null) { return; }
+        const int leftMargin = 10, rightMargin = 10, top = 10, textGap = 8, sectionGap = 16, segmentGap = 0, segmentHeight = 30, segmentWidth = 36;
 
         _dashboardLabel.Location = new Point(leftMargin, 17);
-
         var panelWidth = segmentWidth * 2 + 2 + segmentGap;
-
         _themeSegmentPanel.Location = new Point(_quickAccessPanel.Width - rightMargin - panelWidth, top);
         _themeSegmentPanel.Size = new Size(panelWidth, 32);
-
         _themeLabel.Location = new Point(_themeSegmentPanel.Left - textGap - _themeLabel.PreferredWidth, 17);
-
         _linkSegmentPanel.Location = new Point(_themeLabel.Left - sectionGap - panelWidth, top);
         _linkSegmentPanel.Size = new Size(panelWidth, 32);
         _chartsLabel.Location = new Point(_linkSegmentPanel.Left - textGap - _chartsLabel.PreferredWidth, 17);
 
-        _lightThemeButton.Text = string.Empty;
-        _darkThemeButton.Text = string.Empty;
-        _lightThemeButton.Padding = Padding.Empty;
-        _darkThemeButton.Padding = Padding.Empty;
-
-        _lightThemeButton.Size = new Size(segmentWidth, segmentHeight);
-        _lightThemeButton.Location = new Point(1, 1);
-        _darkThemeButton.Size = new Size(segmentWidth, segmentHeight);
-        _darkThemeButton.Location = new Point(1 + segmentWidth + segmentGap, 1);
-
-        _linkedChartsButton.Size = new Size(segmentWidth, segmentHeight);
-        _linkedChartsButton.Location = new Point(1, 1);
-        _unlinkedChartsButton.Size = new Size(segmentWidth, segmentHeight);
-        _unlinkedChartsButton.Location = new Point(1 + segmentWidth + segmentGap, 1);
-
-        UpdateThemeSwitchAppearance();
-        UpdateLinkSwitchAppearance();
+        _lightThemeButton.Text = string.Empty; _darkThemeButton.Text = string.Empty;
+        _lightThemeButton.Padding = Padding.Empty; _darkThemeButton.Padding = Padding.Empty;
+        _lightThemeButton.Size = new Size(segmentWidth, segmentHeight); _lightThemeButton.Location = new Point(1, 1);
+        _darkThemeButton.Size = new Size(segmentWidth, segmentHeight); _darkThemeButton.Location = new Point(1 + segmentWidth + segmentGap, 1);
+        _linkedChartsButton.Size = new Size(segmentWidth, segmentHeight); _linkedChartsButton.Location = new Point(1, 1);
+        _unlinkedChartsButton.Size = new Size(segmentWidth, segmentHeight); _unlinkedChartsButton.Location = new Point(1 + segmentWidth + segmentGap, 1);
+        UpdateThemeSwitchAppearance(); UpdateLinkSwitchAppearance();
     }
 
     private static int MeasureDashboardSegmentPreferredWidth(string text, Font font) {
@@ -1294,102 +1216,55 @@ public class MainForm : MaterialForm {
     }
 
     private static List<int> ScaleSegmentWidths(List<int> preferredWidths, int targetWidth) {
-        if (preferredWidths.Count == 0 || targetWidth <= 0) {
-            return [];
-        }
-
+        if (preferredWidths.Count == 0 || targetWidth <= 0) { return []; }
         var sumPreferred = preferredWidths.Sum();
-        if (sumPreferred <= targetWidth) {
-            return [.. preferredWidths];
-        }
-
-        var scaled = preferredWidths
-            .Select(w => Math.Max(1, (int)Math.Floor(w * (double)targetWidth / sumPreferred)))
-            .ToList();
-
+        if (sumPreferred <= targetWidth) { return [.. preferredWidths]; }
+        var scaled = preferredWidths.Select(w => Math.Max(1, (int)Math.Floor(w * (double)targetWidth / sumPreferred))).ToList();
         var remainder = targetWidth - scaled.Sum();
-        for (int i = 0; i < scaled.Count && remainder > 0; i++) {
-            scaled[i]++;
-            remainder--;
-        }
-
+        for (int i = 0; i < scaled.Count && remainder > 0; i++) { scaled[i]++; remainder--; }
         return scaled;
     }
 
     private static string TruncateWithEllipsis(string text, Font font, int maxWidth) {
-        if (string.IsNullOrEmpty(text) || maxWidth <= 0) {
-            return string.Empty;
-        }
-
+        if (string.IsNullOrEmpty(text) || maxWidth <= 0) { return string.Empty; }
         var flags = TextFormatFlags.SingleLine | TextFormatFlags.NoPadding;
-        if (TextRenderer.MeasureText(text, font, new Size(int.MaxValue, int.MaxValue), flags).Width <= maxWidth) {
-            return text;
-        }
-
+        if (TextRenderer.MeasureText(text, font, new Size(int.MaxValue, int.MaxValue), flags).Width <= maxWidth) { return text; }
         const string ellipsis = "...";
         var ellipsisWidth = TextRenderer.MeasureText(ellipsis, font, new Size(int.MaxValue, int.MaxValue), flags).Width;
-        if (ellipsisWidth >= maxWidth) {
-            return ellipsis;
-        }
-
-        int low = 0;
-        int high = text.Length;
+        if (ellipsisWidth >= maxWidth) { return ellipsis; }
+        int low = 0, high = text.Length;
         while (low < high) {
             var mid = (low + high + 1) / 2;
             var candidate = text[..mid] + ellipsis;
             var candidateWidth = TextRenderer.MeasureText(candidate, font, new Size(int.MaxValue, int.MaxValue), flags).Width;
-            if (candidateWidth <= maxWidth) {
-                low = mid;
-            } else {
-                high = mid - 1;
-            }
+            if (candidateWidth <= maxWidth) { low = mid; } else { high = mid - 1; }
         }
-
         return text[..low] + ellipsis;
     }
 
     private void PositionLinkControls() {
-        if (_linkChartsCheckBox == null) {
-            return;
-        }
-
+        if (_linkChartsCheckBox == null) { return; }
         _linkChartsCheckBox.Location = new Point(Math.Max(_quickAccessPanel.Width - _linkChartsCheckBox.Width - 15, 10), 13);
     }
 
     private bool UpdateQuickDashboards() {
         _quickDashboardsPanel.Controls.Clear();
-
         var quickDashboards = _dashboards.Where(d => d.IsQuickAccess).Take(MaxQuickAccessDashboards).ToList();
-        var showSelectedFromMenuBadge = _currentDashboard != null
-            && quickDashboards.All(d => d.Id != _currentDashboard.Id);
-        if (showSelectedFromMenuBadge && _currentDashboard != null) {
-            quickDashboards.Add(_currentDashboard);
-        }
-
-        if (quickDashboards.Count == 0) {
-            _quickDashboardsPanel.Size = new Size(0, 32);
-            UpdateQuickAccessPanelTheme();
-            return false;
-        }
+        var showSelectedFromMenuBadge = _currentDashboard != null && quickDashboards.All(d => d.Id != _currentDashboard.Id);
+        if (showSelectedFromMenuBadge && _currentDashboard != null) { quickDashboards.Add(_currentDashboard); }
+        if (quickDashboards.Count == 0) { _quickDashboardsPanel.Size = new Size(0, 32); UpdateQuickAccessPanelTheme(); return false; }
 
         var segmentPanelLeft = GetQuickDashboardsLeft();
-        var preferredWidths = quickDashboards
-            .Select(d => MeasureDashboardSegmentPreferredWidth(d.Name, _quickDashboardsPanel.Font))
-            .ToList();
-
+        var preferredWidths = quickDashboards.Select(d => MeasureDashboardSegmentPreferredWidth(d.Name, _quickDashboardsPanel.Font)).ToList();
         var maxPanelWidth = GetQuickDashboardPanelMaxWidth();
-        var desiredPanelInnerWidth = preferredWidths.Sum();
-        var desiredPanelWidth = desiredPanelInnerWidth + 2;
+        var desiredPanelWidth = preferredWidths.Sum() + 2;
         var panelWidth = Math.Min(maxPanelWidth, desiredPanelWidth);
 
         _quickDashboardsPanel.Location = new Point(segmentPanelLeft, 10);
         _quickDashboardsPanel.Size = new Size(Math.Max(panelWidth, 0), 32);
 
         var innerWidth = Math.Max(_quickDashboardsPanel.Width - 2, 0);
-        if (innerWidth == 0) {
-            UpdateQuickAccessPanelTheme();
-            return quickDashboards.Count > 0;
-        }
+        if (innerWidth == 0) { UpdateQuickAccessPanelTheme(); return quickDashboards.Count > 0; }
 
         var segmentWidths = ScaleSegmentWidths(preferredWidths, innerWidth);
         var x = 1;
@@ -1399,20 +1274,13 @@ public class MainForm : MaterialForm {
             var dashboard = quickDashboards[i];
             var segmentWidth = segmentWidths[i];
             var renderedText = TruncateWithEllipsis(dashboard.Name, _quickDashboardsPanel.Font, Math.Max(segmentWidth - 12, 1));
-            if (!string.Equals(renderedText, dashboard.Name, StringComparison.Ordinal)) {
-                anyTextTruncated = true;
-            }
+            if (!string.Equals(renderedText, dashboard.Name, StringComparison.Ordinal)) { anyTextTruncated = true; }
 
             var btn = new RadioButton {
                 Text = renderedText,
                 Appearance = Appearance.Button,
                 FlatStyle = FlatStyle.Flat,
-                FlatAppearance = {
-                    BorderSize = 0,
-                    CheckedBackColor = Color.Transparent,
-                    MouseDownBackColor = Color.Transparent,
-                    MouseOverBackColor = Color.Transparent
-                },
+                FlatAppearance = { BorderSize = 0, CheckedBackColor = Color.Transparent, MouseDownBackColor = Color.Transparent, MouseOverBackColor = Color.Transparent },
                 Font = _quickDashboardsPanel.Font,
                 AutoSize = false,
                 Size = new Size(segmentWidth, 30),
@@ -1425,15 +1293,9 @@ public class MainForm : MaterialForm {
             };
 
             if (showSelectedFromMenuBadge && dashboard.Id == _currentDashboard?.Id) {
-                btn.Tag = "menu-selected-badge";
-                btn.AutoCheck = false;
-                btn.TabStop = false;
+                btn.Tag = "menu-selected-badge"; btn.AutoCheck = false; btn.TabStop = false;
             } else {
-                btn.CheckedChanged += (s, e) => {
-                    if (btn.Checked && _currentDashboard?.Id != dashboard.Id) {
-                        LoadDashboard(dashboard);
-                    }
-                };
+                btn.CheckedChanged += (s, e) => { if (btn.Checked && _currentDashboard?.Id != dashboard.Id) { LoadDashboard(dashboard); } };
             }
 
             _quickDashboardsPanel.Controls.Add(btn);
@@ -1445,28 +1307,16 @@ public class MainForm : MaterialForm {
     }
 
     private void UpdateQuickDashboardSelection() {
-        if (_quickDashboardsPanel == null) {
-            return;
-        }
-
+        if (_quickDashboardsPanel == null) { return; }
         var currentDashboardId = _currentDashboard?.Id;
         foreach (var button in _quickDashboardsPanel.Controls.OfType<RadioButton>()) {
-            if (button.Tag is Guid dashboardId) {
-                button.Checked = dashboardId == currentDashboardId;
-            }
+            if (button.Tag is Guid dashboardId) { button.Checked = dashboardId == currentDashboardId; }
         }
-
         UpdateDashboardSwitchAppearance();
     }
 
     private void UpdateStatusBar() {
-        if (_dataService.IsConnected) {
-            _dataPathLabel.Text = $"Storage: {_appSettings.StoragePath}";
-            _statusLabel.Text = "Connected to storage";
-        } else {
-            _dataPathLabel.Text = "Storage: not configured";
-            _statusLabel.Text = "Storage not configured (File → Settings)";
-        }
+        if (_dataService.IsConnected) { _dataPathLabel.Text = $"Storage: {_appSettings.StoragePath}"; _statusLabel.Text = "Connected to storage"; } else { _dataPathLabel.Text = "Storage: not configured"; _statusLabel.Text = "Storage not configured (File → Settings)"; }
     }
 
     #endregion Private Methods
