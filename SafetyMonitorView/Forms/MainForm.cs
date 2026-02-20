@@ -715,7 +715,8 @@ public class MainForm : MaterialForm {
         CreateQuickAccessControls();
         UpdateQuickAccessPanelTheme();
 
-        _dashboardContainer = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Visible = false };
+        // _dashboardContainer = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Visible = false };
+        _dashboardContainer = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         UpdateDashboardContainerTheme();
 
         _statusStrip = new StatusStrip { Dock = DockStyle.Bottom };
