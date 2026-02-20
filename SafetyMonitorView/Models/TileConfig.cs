@@ -27,6 +27,7 @@ public class ValueTileConfig : TileConfig {
     public string ColorSchemeName { get; set; } = "Temperature";
     public int DecimalPlaces { get; set; } = 1;
     public string IconName { get; set; } = "";
+    public string IconColorSchemeName { get; set; } = "";
     public MetricType Metric { get; set; }
     public bool ShowIcon { get; set; } = true;
     public override TileType Type => TileType.Value;

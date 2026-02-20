@@ -12,6 +12,7 @@ public class ValueTileEditorForm : Form {
     private Button _cancelButton = null!;
     private ComboBox _colorSchemeComboBox = null!;
     private NumericUpDown _decimalPlacesNumeric = null!;
+    private ComboBox _iconColorSchemeComboBox = null!;
     private ComboBox _metricComboBox = null!;
     private Button _saveButton = null!;
     private CheckBox _showIconCheckBox = null!;
@@ -88,6 +89,7 @@ public class ValueTileEditorForm : Form {
         editor.ShowDialog(this);
         // Refresh combo after editor closes
         RefreshColorSchemeCombo();
+        RefreshIconColorSchemeCombo();
     }
 
     private void InitializeComponent() {
@@ -107,7 +109,7 @@ public class ValueTileEditorForm : Form {
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 7,
+            RowCount = 8,
             AutoSize = true
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -115,9 +117,10 @@ public class ValueTileEditorForm : Form {
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 1: Title
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 2: Metric
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 3: Color Scheme
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Decimal + Icon
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 5: Spacer
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Buttons
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Icon color scheme
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Decimal + Icon
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 6: Spacer
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 7: Buttons
 
         var descriptionLabel = new Label {
             Text = "Use this form to configure value tile content: title, metric, display options, and color scheme.\n" +
@@ -153,6 +156,11 @@ public class ValueTileEditorForm : Form {
         var colorPanel = CreateLabeledControl("Color Scheme:", colorInnerPanel, titleFont);
         mainLayout.Controls.Add(colorPanel, 0, 3);
 
+        _iconColorSchemeComboBox = new ComboBox { Font = normalFont, Width = 200, DropDownStyle = ComboBoxStyle.DropDownList };
+        RefreshIconColorSchemeCombo();
+        var iconColorPanel = CreateLabeledControl("Icon Color Scheme:", _iconColorSchemeComboBox, titleFont);
+        mainLayout.Controls.Add(iconColorPanel, 0, 4);
+
         // Row 3: Decimal places + Show icon
         var decimalPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 10, 0, 5) };
         decimalPanel.Controls.Add(new Label { Text = "Decimal Places:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 5, 5, 0) });
@@ -160,10 +168,10 @@ public class ValueTileEditorForm : Form {
         decimalPanel.Controls.Add(_decimalPlacesNumeric);
         _showIconCheckBox = new CheckBox { Text = "Show Icon", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(10, 3, 0, 0) };
         decimalPanel.Controls.Add(_showIconCheckBox);
-        mainLayout.Controls.Add(decimalPanel, 0, 4);
+        mainLayout.Controls.Add(decimalPanel, 0, 5);
 
         // Row 5: Spacer (empty)
-        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 5);
+        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 6);
 
         // Row 6: Buttons
         var buttonPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Margin = new Padding(0, 10, 0, 0) };
@@ -173,7 +181,7 @@ public class ValueTileEditorForm : Form {
         _saveButton = new Button { Text = "Save", Width = 110, Height = 35, Font = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
-        mainLayout.Controls.Add(buttonPanel, 0, 6);
+        mainLayout.Controls.Add(buttonPanel, 0, 7);
 
         Controls.Add(mainLayout);
 
@@ -195,6 +203,13 @@ public class ValueTileEditorForm : Form {
 
         _decimalPlacesNumeric.Value = _config.DecimalPlaces;
         _showIconCheckBox.Checked = _config.ShowIcon;
+
+        if (string.IsNullOrEmpty(_config.IconColorSchemeName)) {
+            _iconColorSchemeComboBox.SelectedIndex = 0; // "(Theme)"
+        } else {
+            var iconSchemeIndex = _iconColorSchemeComboBox.Items.IndexOf(_config.IconColorSchemeName);
+            _iconColorSchemeComboBox.SelectedIndex = iconSchemeIndex >= 0 ? iconSchemeIndex : 0;
+        }
     }
 
     private void RefreshColorSchemeCombo() {
@@ -211,11 +226,28 @@ public class ValueTileEditorForm : Form {
             _colorSchemeComboBox.SelectedIndex = idx >= 0 ? idx : 0;
         }
     }
+
+    private void RefreshIconColorSchemeCombo() {
+        var currentSelection = _iconColorSchemeComboBox.SelectedItem?.ToString();
+        _iconColorSchemeComboBox.Items.Clear();
+        _iconColorSchemeComboBox.Items.Add("(Theme)");
+        foreach (var scheme in _colorSchemeService.LoadSchemes()) {
+            _iconColorSchemeComboBox.Items.Add(scheme.Name);
+        }
+
+        if (currentSelection != null) {
+            var idx = _iconColorSchemeComboBox.Items.IndexOf(currentSelection);
+            _iconColorSchemeComboBox.SelectedIndex = idx >= 0 ? idx : 0;
+        }
+    }
+
     private void SaveButton_Click(object? sender, EventArgs e) {
         _config.Title = _titleTextBox.Text;
         _config.Metric = (MetricType)_metricComboBox.SelectedIndex;
         var selectedScheme = _colorSchemeComboBox.SelectedItem?.ToString();
         _config.ColorSchemeName = selectedScheme == "(None)" ? "" : (selectedScheme ?? "");
+        var selectedIconScheme = _iconColorSchemeComboBox.SelectedItem?.ToString();
+        _config.IconColorSchemeName = selectedIconScheme == "(Theme)" ? "" : (selectedIconScheme ?? "");
         _config.DecimalPlaces = (int)_decimalPlacesNumeric.Value;
         _config.ShowIcon = _showIconCheckBox.Checked;
 

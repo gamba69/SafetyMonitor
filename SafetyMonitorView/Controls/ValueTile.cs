@@ -13,6 +13,7 @@ public class ValueTile : Panel {
     private readonly ValueTileConfig _config;
     private readonly DataService _dataService;
     private ColorScheme? _colorScheme;
+    private ColorScheme? _iconColorScheme;
     private Color _currentIconColor = Color.Transparent;
     private double? _currentValue;
     private PictureBox? _iconBox;
@@ -148,7 +149,11 @@ public class ValueTile : Panel {
         _titleLabel.ForeColor = primaryColor;
         _unitLabel.ForeColor = primaryColor;
 
-        SetIconColor(primaryColor);
+        if (_currentValue.HasValue && _iconColorScheme != null) {
+            SetIconColor(_iconColorScheme.GetColor(_currentValue.Value));
+        } else {
+            SetIconColor(primaryColor);
+        }
     }
 
     private void ApplyColorScheme() {
@@ -216,12 +221,13 @@ public class ValueTile : Panel {
     }
 
     private void LoadColorScheme() {
-        if (string.IsNullOrEmpty(_config.ColorSchemeName)) {
-            _colorScheme = null;
-            return;
-        }
         var schemes = _colorSchemeService.LoadSchemes();
-        _colorScheme = schemes.FirstOrDefault(s => s.Name == _config.ColorSchemeName);
+        _colorScheme = string.IsNullOrEmpty(_config.ColorSchemeName)
+            ? null
+            : schemes.FirstOrDefault(s => s.Name == _config.ColorSchemeName);
+        _iconColorScheme = string.IsNullOrEmpty(_config.IconColorSchemeName)
+            ? null
+            : schemes.FirstOrDefault(s => s.Name == _config.IconColorSchemeName);
     }
 
     private void OnTileResize(object? sender, EventArgs e) {
