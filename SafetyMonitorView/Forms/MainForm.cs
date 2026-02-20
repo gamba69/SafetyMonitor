@@ -65,13 +65,13 @@ public class MainForm : MaterialForm {
     // ── Visor timing constants (configurable) ──
     // Delay in OnShown before visor appears and dashboard starts building.
     // Gives the window time to fully stabilize (maximize, DPI, theme).
-    private const int VisorStartupStabilizeMs = 120;
+    private const int VisorStartupStabilizeMs = 50;
     // Delay after dashboard is fully built before starting the fade-out.
-    private const int VisorPreRevealDelayMs = 100;
+    private const int VisorPreRevealDelayMs = 50;
     // Total duration of the visor fade-out animation.
-    private const int VisorFadeDurationMs = 250;
+    private const int VisorFadeDurationMs = 300;
     // Timer interval between individual fade-out opacity steps.
-    private const int VisorFadeStepMs = 20;
+    private const int VisorFadeStepMs = 10;
 
     #endregion Private Fields
 
