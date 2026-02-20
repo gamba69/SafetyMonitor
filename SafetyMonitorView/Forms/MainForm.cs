@@ -225,7 +225,7 @@ public class MainForm : MaterialForm {
             "Delete Current" => MaterialIcons.DashboardDeleteCurrent,
             "Manage Dashboards..." => MaterialIcons.DashboardManage,
             "Axis Rules..." => MaterialIcons.MenuViewAxisRules,
-            "Metric Settings..." => MaterialIcons.MenuViewMetricEditor,
+            "Metric Settings..." => MaterialIcons.MenuViewMetricSettings,
             "Chart Periods..." => MaterialIcons.MenuViewChartPeriods,
             "Color Schemes..." => MaterialIcons.MenuViewColorSchemes,
             _ => ""
@@ -317,7 +317,7 @@ public class MainForm : MaterialForm {
         viewMenu.DropDownItems.Add(CreateMenuItem("Axis Rules...", MaterialIcons.MenuViewAxisRules, iconColor, (s, e) => ShowAxisRulesEditor()));
         viewMenu.DropDownItems.Add(CreateMenuItem("Chart Periods...", MaterialIcons.MenuViewChartPeriods, iconColor, (s, e) => ShowChartPeriodPresetEditor()));
         viewMenu.DropDownItems.Add(CreateMenuItem("Color Schemes...", MaterialIcons.MenuViewColorSchemes, iconColor, (s, e) => ShowColorSchemeEditor()));
-        viewMenu.DropDownItems.Add(CreateMenuItem("Metric Settings...", MaterialIcons.MenuViewMetricEditor, iconColor, (s, e) => ShowMetricSettingsEditor()));
+        viewMenu.DropDownItems.Add(CreateMenuItem("Metric Settings...", MaterialIcons.MenuViewMetricSettings, iconColor, (s, e) => ShowMetricSettingsEditor()));
 
         var helpMenu = new ToolStripMenuItem("Help");
         helpMenu.DropDownItems.Add(CreateMenuItem("About", MaterialIcons.MenuHelpAbout, iconColor, (s, e) => ShowAbout()));

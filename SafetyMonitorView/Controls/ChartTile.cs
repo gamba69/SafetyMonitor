@@ -1047,7 +1047,9 @@ public class ChartTile : Panel {
         LoadPeriodPresets();
         SetSelectedPeriodPreset();
         _periodSelector.SelectedIndexChanged += (s, e) => {
-            if (!_suppressPeriodChange) UpdatePeriodFromSelection();
+            if (!_suppressPeriodChange) {
+                UpdatePeriodFromSelection();
+            }
         };
         ChartPeriodPresetStore.PresetsChanged += HandlePresetsChanged;
         MetricAxisRuleStore.RulesChanged += HandleAxisRulesChanged;
@@ -1652,8 +1654,8 @@ public class ChartTile : Panel {
             return;
         }
 
-        var startLocal = ToLocalChartTime(_config.CustomStartTime.Value);
-        var endLocal = ToLocalChartTime(_config.CustomEndTime.Value);
+        var startLocal = ToLocalChartTime(_config.CustomStartTime!.Value);
+        var endLocal = ToLocalChartTime(_config.CustomEndTime!.Value);
         if (endLocal <= startLocal) {
             _staticModePaused = false;
             _config.StaticModePaused = false;

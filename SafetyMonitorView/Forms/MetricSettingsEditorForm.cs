@@ -21,7 +21,7 @@ public class MetricSettingsEditorForm : Form {
         })];
 
         InitializeComponent();
-        FormIconHelper.Apply(this, MaterialIcons.MenuViewMetricEditor);
+        FormIconHelper.Apply(this, MaterialIcons.MenuViewMetricSettings);
         ApplyTheme();
         LoadSettings();
     }

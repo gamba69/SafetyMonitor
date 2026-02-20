@@ -38,15 +38,15 @@ public static class MetricAxisRuleStore {
     /// </summary>
     public static void SetRules(IEnumerable<MetricAxisRuleSetting>? rules) {
         _rules = rules != null
-            ? new List<MetricAxisRuleSetting>(rules.Select(r => new MetricAxisRuleSetting {
+            ? [.. rules.Select(r => new MetricAxisRuleSetting {
                 Metric = r.Metric,
                 Enabled = r.Enabled,
                 MinBoundary = r.MinBoundary,
                 MaxBoundary = r.MaxBoundary,
                 MinSpan = r.MinSpan,
                 MaxSpan = r.MaxSpan
-            }))
-            : new List<MetricAxisRuleSetting>();
+            })]
+            : [];
         RulesChanged?.Invoke();
     }
 
