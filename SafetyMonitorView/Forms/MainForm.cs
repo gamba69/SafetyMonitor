@@ -69,7 +69,7 @@ public class MainForm : MaterialForm {
     // Delay after dashboard is fully built before starting the fade-out.
     private const int VisorPreRevealDelayMs = 50;
     // Total duration of the visor fade-out animation.
-    private const int VisorFadeDurationMs = 300;
+    private const int VisorFadeDurationMs = 250;
     // Timer interval between individual fade-out opacity steps.
     private const int VisorFadeStepMs = 10;
 
