@@ -67,6 +67,7 @@ public class MainForm : MaterialForm {
         }
         ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
         MetricAxisRuleStore.SetRules(_appSettings.MetricAxisRules);
+        MetricDisplaySettingsStore.SetSettings(_appSettings.MetricDisplaySettings);
 
         // Apply theme from settings
         _skinManager.Theme = _appSettings.IsDarkTheme
@@ -224,6 +225,7 @@ public class MainForm : MaterialForm {
             "Delete Current" => MaterialIcons.DashboardDeleteCurrent,
             "Manage Dashboards..." => MaterialIcons.DashboardManage,
             "Axis Rules..." => MaterialIcons.MenuViewAxisRules,
+            "Metric Settings..." => MaterialIcons.MenuViewMetricEditor,
             "Chart Periods..." => MaterialIcons.MenuViewChartPeriods,
             "Color Schemes..." => MaterialIcons.MenuViewColorSchemes,
             _ => ""
@@ -315,6 +317,7 @@ public class MainForm : MaterialForm {
         viewMenu.DropDownItems.Add(CreateMenuItem("Axis Rules...", MaterialIcons.MenuViewAxisRules, iconColor, (s, e) => ShowAxisRulesEditor()));
         viewMenu.DropDownItems.Add(CreateMenuItem("Chart Periods...", MaterialIcons.MenuViewChartPeriods, iconColor, (s, e) => ShowChartPeriodPresetEditor()));
         viewMenu.DropDownItems.Add(CreateMenuItem("Color Schemes...", MaterialIcons.MenuViewColorSchemes, iconColor, (s, e) => ShowColorSchemeEditor()));
+        viewMenu.DropDownItems.Add(CreateMenuItem("Metric Settings...", MaterialIcons.MenuViewMetricEditor, iconColor, (s, e) => ShowMetricSettingsEditor()));
 
         var helpMenu = new ToolStripMenuItem("Help");
         helpMenu.DropDownItems.Add(CreateMenuItem("About", MaterialIcons.MenuHelpAbout, iconColor, (s, e) => ShowAbout()));
@@ -909,6 +912,15 @@ public class MainForm : MaterialForm {
             _appSettings.MetricAxisRules = editor.Rules;
             _appSettingsService.SaveSettings(_appSettings);
             MetricAxisRuleStore.SetRules(_appSettings.MetricAxisRules);
+        }
+    }
+
+    private void ShowMetricSettingsEditor() {
+        using var editor = new MetricSettingsEditorForm(_appSettings.MetricDisplaySettings);
+        if (editor.ShowDialog(this) == DialogResult.OK) {
+            _appSettings.MetricDisplaySettings = editor.Settings;
+            _appSettingsService.SaveSettings(_appSettings);
+            MetricDisplaySettingsStore.SetSettings(_appSettings.MetricDisplaySettings);
         }
     }
 

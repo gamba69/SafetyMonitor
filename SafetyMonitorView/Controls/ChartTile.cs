@@ -65,7 +65,7 @@ public class ChartTile : Panel {
     private sealed class SeriesHoverSnapshot {
         public string Label { get; init; } = string.Empty;
         public string Unit { get; init; } = string.Empty;
-        public string ValueFormat { get; init; } = "0.##";
+        public MetricType Metric { get; init; }
         public Color SeriesColor { get; init; } = Color.White;
         public double[] Xs { get; init; } = [];
         public double[] Ys { get; init; } = [];
@@ -235,7 +235,7 @@ public class ChartTile : Panel {
                     ? agg.Metric.GetDisplayName()
                     : agg.Label,
                 Unit = agg.Metric.GetUnit() ?? string.Empty,
-                ValueFormat = agg.Metric == MetricType.IsSafe ? "0" : "0.##",
+                Metric = agg.Metric,
                 SeriesColor = agg.GetColorForTheme(isLightTheme),
                 Xs = validTimes,
                 Ys = validValues
@@ -444,6 +444,7 @@ public class ChartTile : Panel {
         if (disposing) {
             ChartPeriodPresetStore.PresetsChanged -= HandlePresetsChanged;
             MetricAxisRuleStore.RulesChanged -= HandleAxisRulesChanged;
+            MetricDisplaySettingsStore.SettingsChanged -= HandleAxisRulesChanged;
             _plot?.MouseUp -= Plot_MouseUp;
             _plot?.MouseMove -= Plot_MouseMove;
             _plot?.MouseEnter -= Plot_MouseEnter;
@@ -1050,6 +1051,7 @@ public class ChartTile : Panel {
         };
         ChartPeriodPresetStore.PresetsChanged += HandlePresetsChanged;
         MetricAxisRuleStore.RulesChanged += HandleAxisRulesChanged;
+        MetricDisplaySettingsStore.SettingsChanged += HandleAxisRulesChanged;
 
         _topPanel.Controls.Add(_titleLabel);
 
@@ -1347,7 +1349,9 @@ public class ChartTile : Panel {
                 continue;
             }
 
+            var displaySetting = MetricDisplaySettingsStore.GetSettingOrDefault(metric);
             var xAxis = _plot.Plot.Axes.Bottom;
+            SetAxisInversion(yAxis, displaySetting.InvertY);
 
             if (rule.MinBoundary.HasValue && rule.MaxBoundary.HasValue) {
                 _plot.Plot.Axes.Rules.Add(
@@ -1385,6 +1389,35 @@ public class ChartTile : Panel {
             if (rule.MinSpan.HasValue) {
                 _plot.Plot.Axes.Rules.Add(
                 new ScottPlot.AxisRules.MinimumSpan(xAxis, yAxis, 0, rule.MinSpan.Value));
+            }
+        }
+    }
+
+
+    private static void SetAxisInversion(object axis, bool isInverted) {
+        var axisType = axis.GetType();
+
+        var propertyCandidates = new[] { "Inverted", "IsInverted" };
+        foreach (var propertyName in propertyCandidates) {
+            var property = axisType.GetProperty(propertyName);
+            if (property?.CanWrite == true && property.PropertyType == typeof(bool)) {
+                property.SetValue(axis, isInverted);
+                return;
+            }
+        }
+
+        var setInvertedMethod = axisType.GetMethod("SetInverted", [typeof(bool)]);
+        if (setInvertedMethod != null) {
+            setInvertedMethod.Invoke(axis, [isInverted]);
+            return;
+        }
+
+        var invertMethod = axisType.GetMethod("Invert", Type.EmptyTypes);
+        var isInvertedMethod = axisType.GetMethod("IsInverted", Type.EmptyTypes);
+        if (invertMethod != null && isInvertedMethod != null) {
+            var current = isInvertedMethod.Invoke(axis, null) as bool?;
+            if (current.HasValue && current.Value != isInverted) {
+                invertMethod.Invoke(axis, null);
             }
         }
     }
@@ -1940,7 +1973,8 @@ public class ChartTile : Panel {
             var unit = string.IsNullOrWhiteSpace(series.Unit) ? string.Empty : $" {series.Unit}";
 
             AppendHoverInfoChunk(series.Label, isBold: true, series.SeriesColor, addSeparator: false);
-            AppendHoverInfoChunk($": {value.ToString(series.ValueFormat)}{unit}", isBold: false, series.SeriesColor,
+            var formattedValue = MetricDisplaySettingsStore.FormatMetricValue(series.Metric, value);
+            AppendHoverInfoChunk($": {formattedValue}{unit}", isBold: false, series.SeriesColor,
                 addSeparator: i < visibleSeries.Count - 1);
         }
 

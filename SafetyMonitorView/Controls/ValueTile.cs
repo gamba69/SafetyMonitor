@@ -53,7 +53,7 @@ public class ValueTile : Panel {
         if (latestData != null) {
             _currentValue = _config.Metric.GetValue(latestData);
             if (_currentValue.HasValue) {
-                _valueLabel.Text = _currentValue.Value.ToString($"F{_config.DecimalPlaces}");
+                _valueLabel.Text = MetricDisplaySettingsStore.FormatMetricValue(_config.Metric, _currentValue.Value);
                 ApplyColorScheme();
             } else {
                 _valueLabel.Text = " ?";

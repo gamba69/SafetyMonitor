@@ -20,6 +20,7 @@ public class AppSettings {
     // Data settings
     public List<ChartPeriodPresetDefinition> ChartPeriodPresets { get; set; } = ChartPeriodPresetStore.CreateDefaultPresets();
     public List<MetricAxisRuleSetting> MetricAxisRules { get; set; } = [];
+    public List<MetricDisplaySetting> MetricDisplaySettings { get; set; } = [];
     public string StoragePath { get; set; } = "";
     public int WindowHeight { get; set; } = 900;
 

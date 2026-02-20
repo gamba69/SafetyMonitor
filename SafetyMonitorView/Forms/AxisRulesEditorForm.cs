@@ -1,6 +1,6 @@
 using MaterialSkin;
-using SafetyMonitorView.Services;
 using SafetyMonitorView.Models;
+using SafetyMonitorView.Services;
 
 namespace SafetyMonitorView.Forms;
 
@@ -66,12 +66,11 @@ public class AxisRulesEditorForm : Form {
             AutoSize = false
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));      // 0: Header
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // 1: Grid
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));      // 2: Add/Remove
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));      // 3: Save/Cancel
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        // Row 0: Header
         var headerPanel = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
@@ -95,39 +94,33 @@ public class AxisRulesEditorForm : Form {
         headerPanel.Controls.Add(_headerLabel, 0, 0);
         headerPanel.SetColumnSpan(_headerLabel, 2);
 
-        var minBoundaryLabel = new Label {
+        headerPanel.Controls.Add(new Label {
             Text = "• Min Boundary: chart cannot go below this Y value.",
             Font = normalFont,
             AutoSize = true,
             Margin = new Padding(0, 0, 12, 2)
-        };
-        var minSpanLabel = new Label {
+        }, 0, 1);
+        headerPanel.Controls.Add(new Label {
             Text = "• Min Span: prevents too much zoom-in (minimum Y range).",
             Font = normalFont,
             AutoSize = true,
             Margin = new Padding(0, 0, 0, 2)
-        };
-        var maxBoundaryLabel = new Label {
+        }, 1, 1);
+        headerPanel.Controls.Add(new Label {
             Text = "• Max Boundary: chart cannot go above this Y value.",
             Font = normalFont,
             AutoSize = true,
             Margin = new Padding(0, 0, 12, 0)
-        };
-        var maxSpanLabel = new Label {
+        }, 0, 2);
+        headerPanel.Controls.Add(new Label {
             Text = "• Max Span: prevents too much zoom-out (maximum Y range).",
             Font = normalFont,
             AutoSize = true,
             Margin = new Padding(0)
-        };
-
-        headerPanel.Controls.Add(minBoundaryLabel, 0, 1);
-        headerPanel.Controls.Add(minSpanLabel, 1, 1);
-        headerPanel.Controls.Add(maxBoundaryLabel, 0, 2);
-        headerPanel.Controls.Add(maxSpanLabel, 1, 2);
+        }, 1, 2);
 
         mainLayout.Controls.Add(headerPanel, 0, 0);
 
-        // Row 1: DataGridView
         _rulesGrid = new DataGridView {
             Dock = DockStyle.Fill,
             AllowUserToAddRows = false,
@@ -142,7 +135,6 @@ public class AxisRulesEditorForm : Form {
             ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing
         };
 
-        // Metric column (ComboBox)
         var metricColumn = new DataGridViewComboBoxColumn {
             Name = "Metric",
             HeaderText = "Metric",
@@ -153,46 +145,11 @@ public class AxisRulesEditorForm : Form {
             metricColumn.Items.Add(mt.GetDisplayName());
         }
         _rulesGrid.Columns.Add(metricColumn);
-
-        // Enabled column (CheckBox)
-        _rulesGrid.Columns.Add(new DataGridViewCheckBoxColumn {
-            Name = "Enabled",
-            HeaderText = "Enabled",
-            FillWeight = 14,
-            MinimumWidth = 90
-        });
-
-        // MinBoundary
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn {
-            Name = "MinBoundary",
-            HeaderText = "Min Boundary",
-            FillWeight = 17,
-            MinimumWidth = 120
-        });
-
-        // MaxBoundary
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn {
-            Name = "MaxBoundary",
-            HeaderText = "Max Boundary",
-            FillWeight = 17,
-            MinimumWidth = 120
-        });
-
-        // MinSpan
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn {
-            Name = "MinSpan",
-            HeaderText = "Min Span",
-            FillWeight = 14,
-            MinimumWidth = 100
-        });
-
-        // MaxSpan
-        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn {
-            Name = "MaxSpan",
-            HeaderText = "Max Span",
-            FillWeight = 14,
-            MinimumWidth = 100
-        });
+        _rulesGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Enabled", HeaderText = "Enabled", FillWeight = 14, MinimumWidth = 90 });
+        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "MinBoundary", HeaderText = "Min Boundary", FillWeight = 17, MinimumWidth = 120 });
+        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaxBoundary", HeaderText = "Max Boundary", FillWeight = 17, MinimumWidth = 120 });
+        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "MinSpan", HeaderText = "Min Span", FillWeight = 14, MinimumWidth = 100 });
+        _rulesGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaxSpan", HeaderText = "Max Span", FillWeight = 14, MinimumWidth = 100 });
 
         foreach (DataGridViewColumn column in _rulesGrid.Columns) {
             column.SortMode = DataGridViewColumnSortMode.NotSortable;
@@ -203,7 +160,6 @@ public class AxisRulesEditorForm : Form {
         _rulesGrid.EditingControlShowing += RulesGrid_EditingControlShowing;
         mainLayout.Controls.Add(_rulesGrid, 0, 1);
 
-        // Row 2: Add / Remove buttons
         var actionPanel = new FlowLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -211,29 +167,16 @@ public class AxisRulesEditorForm : Form {
             Margin = new Padding(0, 6, 0, 6)
         };
 
-        _addButton = new Button {
-            Text = "Add",
-            Width = 100,
-            Height = 30,
-            Font = normalFont,
-            Margin = new Padding(0, 0, 8, 0)
-        };
+        _addButton = new Button { Text = "Add", Width = 100, Height = 30, Font = normalFont, Margin = new Padding(0, 0, 8, 0) };
         _addButton.Click += AddButton_Click;
         actionPanel.Controls.Add(_addButton);
 
-        _removeButton = new Button {
-            Text = "Delete",
-            Width = 100,
-            Height = 30,
-            Font = normalFont,
-            Margin = new Padding(0)
-        };
+        _removeButton = new Button { Text = "Delete", Width = 100, Height = 30, Font = normalFont, Margin = new Padding(0) };
         _removeButton.Click += RemoveButton_Click;
         actionPanel.Controls.Add(_removeButton);
 
         mainLayout.Controls.Add(actionPanel, 0, 2);
 
-        // Row 3: Save / Cancel
         var buttonPanel = new FlowLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -241,13 +184,7 @@ public class AxisRulesEditorForm : Form {
             Margin = new Padding(0, 4, 0, 0)
         };
 
-        _cancelButton = new Button {
-            Text = "Cancel",
-            Width = 110,
-            Height = 35,
-            Font = normalFont,
-            Margin = new Padding(0)
-        };
+        _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 35, Font = normalFont, Margin = new Padding(0) };
         _cancelButton.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
         buttonPanel.Controls.Add(_cancelButton);
 
@@ -276,8 +213,7 @@ public class AxisRulesEditorForm : Form {
                 rule.MinBoundary.HasValue ? rule.MinBoundary.Value.ToString() : "",
                 rule.MaxBoundary.HasValue ? rule.MaxBoundary.Value.ToString() : "",
                 rule.MinSpan.HasValue ? rule.MinSpan.Value.ToString() : "",
-                rule.MaxSpan.HasValue ? rule.MaxSpan.Value.ToString() : ""
-            );
+                rule.MaxSpan.HasValue ? rule.MaxSpan.Value.ToString() : "");
         }
     }
 
@@ -301,7 +237,7 @@ public class AxisRulesEditorForm : Form {
 
         var text = e.FormattedValue?.ToString() ?? "";
         if (string.IsNullOrWhiteSpace(text)) {
-            return; // empty is allowed (means no constraint)
+            return;
         }
 
         if (!double.TryParse(text, out _)) {
@@ -323,8 +259,7 @@ public class AxisRulesEditorForm : Form {
 
             var metricName = row.Cells["Metric"].Value?.ToString() ?? "";
             if (!metricNames.TryGetValue(metricName, out var metric)) {
-                ThemedMessageBox.Show(this, $"Unknown metric: {metricName}", "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ThemedMessageBox.Show(this, $"Unknown metric: {metricName}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -373,7 +308,6 @@ public class AxisRulesEditorForm : Form {
         _rulesGrid.ColumnHeadersDefaultCellStyle.SelectionForeColor = _rulesGrid.ColumnHeadersDefaultCellStyle.ForeColor;
 
         _rulesGrid.EnableHeadersVisualStyles = false;
-
         _rulesGrid.GridColor = isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(60, 75, 80);
 
         if (_rulesGrid.Columns["Metric"] is DataGridViewComboBoxColumn metricCol) {
@@ -416,7 +350,7 @@ public class AxisRulesEditorForm : Form {
     private static Font CreateSafeFont(string familyName, float emSize, FontStyle style = FontStyle.Regular) {
         try {
             var font = new Font(familyName, emSize, style);
-            _ = font.GetHeight(); // verify GDI+ handle is actually valid
+            _ = font.GetHeight();
             return font;
         } catch {
             try {

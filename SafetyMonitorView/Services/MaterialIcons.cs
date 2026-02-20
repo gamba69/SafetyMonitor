@@ -22,6 +22,7 @@ public static class MaterialIcons {
     public const string DashboardDeleteCurrent = "dashboard_delete_current";
     public const string DashboardManage = "dashboard_manage";
     public const string MenuViewAxisRules = "menu_view_axis_rules";
+    public const string MenuViewMetricEditor = "menu_view_metric_editor";
     public const string MenuViewChartPeriods = "menu_view_chart_periods";
     public const string MenuViewColorSchemes = "menu_view_color_schemes";
     public const string ToolbarChartsLink = "toolbar_charts_link";
@@ -112,7 +113,8 @@ public static class MaterialIcons {
         [PlotMenuAutoscale] = "\uF417",
         [PlotMenuSaveImage] = "\uF17F", //"\uE161",
         [PlotMenuOpenInWindow] = "\uE89E", // "\uE2C7",
-        [MenuViewAxisRules] = "\uEA9A", // "\uE6E1",
+        [MenuViewAxisRules] = "\uEA9A",
+        [MenuViewMetricEditor] = "\uEA49",
         [PlotMenuDisplayOption] = "\uE6E1",
         [PlotMenuLegendToggle] = "\uE267",
         [CommonCheck] = "\uE5CA",

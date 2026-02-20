@@ -11,7 +11,6 @@ public class ValueTileEditorForm : Form {
     private readonly ValueTileConfig _config;
     private Button _cancelButton = null!;
     private ComboBox _colorSchemeComboBox = null!;
-    private NumericUpDown _decimalPlacesNumeric = null!;
     private ComboBox _iconColorSchemeComboBox = null!;
     private ComboBox _metricComboBox = null!;
     private Button _editSchemesButton = null!;
@@ -73,10 +72,6 @@ public class ValueTileEditorForm : Form {
                     break;
                 case ComboBox cmb:
                     ThemedComboBoxStyler.Apply(cmb, isLight);
-                    break;
-                case NumericUpDown num:
-                    num.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
-                    num.ForeColor = isLight ? Color.Black : Color.White;
                     break;
                 case CheckBox chk:
                     chk.ForeColor = isLight ? Color.Black : Color.White;
@@ -186,14 +181,11 @@ public class ValueTileEditorForm : Form {
         schemesPanel.Controls.Add(_editSchemesButton);
         mainLayout.Controls.Add(schemesPanel, 0, 3);
 
-        // Row 3: Decimal places + Show icon
-        var decimalPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 10, 0, 5) };
-        decimalPanel.Controls.Add(new Label { Text = "Decimal Places:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 5, 5, 0) });
-        _decimalPlacesNumeric = new NumericUpDown { Width = 70, Minimum = 0, Maximum = 5, Value = 1, Font = normalFont, Margin = new Padding(0, 0, 20, 0) };
-        decimalPanel.Controls.Add(_decimalPlacesNumeric);
-        _showIconCheckBox = new CheckBox { Text = "Show Icon", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(10, 3, 0, 0) };
-        decimalPanel.Controls.Add(_showIconCheckBox);
-        mainLayout.Controls.Add(decimalPanel, 0, 4);
+        var iconPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 10, 0, 5) };
+        _showIconCheckBox = new CheckBox { Text = "Show Icon", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 3, 0, 0) };
+        iconPanel.Controls.Add(_showIconCheckBox);
+        mainLayout.Controls.Add(iconPanel, 0, 4);
+
 
         // Row 5: Spacer (empty)
         mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 5);
@@ -226,7 +218,6 @@ public class ValueTileEditorForm : Form {
             _colorSchemeComboBox.SelectedIndex = schemeIndex >= 0 ? schemeIndex : 0;
         }
 
-        _decimalPlacesNumeric.Value = _config.DecimalPlaces;
         _showIconCheckBox.Checked = _config.ShowIcon;
 
         if (string.IsNullOrEmpty(_config.IconColorSchemeName)) {
@@ -273,7 +264,6 @@ public class ValueTileEditorForm : Form {
         _config.ColorSchemeName = selectedScheme == "(None)" ? "" : (selectedScheme ?? "");
         var selectedIconScheme = _iconColorSchemeComboBox.SelectedItem?.ToString();
         _config.IconColorSchemeName = selectedIconScheme == "(Theme)" ? "" : (selectedIconScheme ?? "");
-        _config.DecimalPlaces = (int)_decimalPlacesNumeric.Value;
         _config.ShowIcon = _showIconCheckBox.Checked;
 
         DialogResult = DialogResult.OK;
