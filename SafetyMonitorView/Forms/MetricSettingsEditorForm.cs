@@ -37,7 +37,7 @@ public class MetricSettingsEditorForm : Form {
         MinimizeBox = false;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         Padding = new Padding(16);
-        ClientSize = new Size(820, 470);
+        ClientSize = new Size(920, 560);
 
         var normalFont = CreateSafeFont("Segoe UI", 10f);
         Font = normalFont;
@@ -47,14 +47,64 @@ public class MetricSettingsEditorForm : Form {
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        root.Controls.Add(new Label {
+        var headerPanel = new TableLayoutPanel {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 3,
             AutoSize = true,
-            Margin = new Padding(0, 0, 0, 10),
-            MaximumSize = new Size(780, 0),
-            Text = "Configure per-metric display settings. Metric list is fixed and cannot be changed."
-        }, 0, 0);
+            Margin = new Padding(0, 0, 0, 12)
+        };
+        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        var headerLabel = new Label {
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 8),
+            MaximumSize = new Size(860, 0),
+            Text = "Configure per-metric display settings. Metric list is fixed and cannot be changed.",
+            Font = CreateSafeFont("Segoe UI", 10f, FontStyle.Bold)
+        };
+        headerPanel.Controls.Add(headerLabel, 0, 0);
+        headerPanel.SetColumnSpan(headerLabel, 2);
+
+        const int headerDescriptionMaxWidth = 400;
+
+        headerPanel.Controls.Add(new Label {
+            Text = "• Decimals: number of digits after decimal point (0..10).",
+            Font = normalFont,
+            AutoSize = true,
+            MaximumSize = new Size(headerDescriptionMaxWidth, 0),
+            Margin = new Padding(0, 0, 12, 2)
+        }, 0, 1);
+        headerPanel.Controls.Add(new Label {
+            Text = "• Hide zeroes: if enabled, zero values are shown as empty text instead of 0/0.0.",
+            Font = normalFont,
+            AutoSize = true,
+            MaximumSize = new Size(headerDescriptionMaxWidth, 0),
+            Margin = new Padding(0, 0, 0, 2)
+        }, 1, 1);
+        headerPanel.Controls.Add(new Label {
+            Text = "• Invert Y: flips chart Y-axis direction for this metric.",
+            Font = normalFont,
+            AutoSize = true,
+            MaximumSize = new Size(headerDescriptionMaxWidth, 0),
+            Margin = new Padding(0, 0, 12, 0)
+        }, 0, 2);
+        headerPanel.Controls.Add(new Label {
+            Text = "• Tray name: short alias shown in tray/compact displays.",
+            Font = normalFont,
+            AutoSize = true,
+            MaximumSize = new Size(headerDescriptionMaxWidth, 0),
+            Margin = new Padding(0)
+        }, 1, 2);
+
+        root.Controls.Add(headerPanel, 0, 0);
 
         _metricsGrid = new DataGridView {
+            Margin = new Padding(0, 0, 0, 12),
             Dock = DockStyle.Fill,
             AllowUserToAddRows = false,
             AllowUserToDeleteRows = false,
@@ -80,7 +130,14 @@ public class MetricSettingsEditorForm : Form {
         _metricsGrid.CellValidating += MetricsGrid_CellValidating;
         root.Controls.Add(_metricsGrid, 0, 1);
 
-        var buttonPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Margin = new Padding(0, 12, 0, 0) };
+        var buttonPanel = new FlowLayoutPanel {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Right,
+            FlowDirection = FlowDirection.RightToLeft,
+            Margin = new Padding(0),
+            WrapContents = false
+        };
         _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 35, Font = normalFont };
         _cancelButton.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
         _saveButton = new Button { Text = "Save", Width = 110, Height = 35, Font = CreateSafeFont("Segoe UI", 10f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
