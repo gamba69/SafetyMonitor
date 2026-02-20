@@ -33,6 +33,7 @@ public class ThemedDateTimePicker : UserControl {
     private Color _backColor;
     private Color _foreColor;
     private Color _borderColor;
+    private Color? _borderColorOverride;
     private Color _buttonColor;
     private Color _buttonHoverColor;
     private Color _disabledBackColor;
@@ -115,6 +116,19 @@ public class ThemedDateTimePicker : UserControl {
         set { _format = value; Invalidate(true); }
     }
 
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public Color? BorderColorOverride {
+        get => _borderColorOverride;
+        set {
+            if (_borderColorOverride == value) {
+                return;
+            }
+
+            _borderColorOverride = value;
+            Invalidate(true);
+        }
+    }
+
     #endregion Public Properties
 
     #region Public Methods
@@ -148,7 +162,7 @@ public class ThemedDateTimePicker : UserControl {
         using var bgBrush = new SolidBrush(bg);
         g.FillRectangle(bgBrush, ClientRectangle);
 
-        var borderCol = _isHovering && Enabled ? Color.FromArgb(0, 121, 107) : _borderColor;
+        var borderCol = GetBorderColor();
         using var borderPen = new Pen(borderCol);
         g.DrawRectangle(borderPen, 0, 0, Width - 1, Height - 1);
     }
@@ -241,6 +255,11 @@ public class ThemedDateTimePicker : UserControl {
         var textSize = g.MeasureString(text, Font);
         var y = (_textPanel.Height - textSize.Height) / 2f;
         g.DrawString(text, Font, fgBrush, 4, y);
+
+        using var borderPen = new Pen(GetBorderColor());
+        g.DrawLine(borderPen, 0, 0, _textPanel.Width - 1, 0);
+        g.DrawLine(borderPen, 0, _textPanel.Height - 1, _textPanel.Width - 1, _textPanel.Height - 1);
+        g.DrawLine(borderPen, 0, 0, 0, _textPanel.Height - 1);
     }
 
     private void ButtonPanel_Paint(object? sender, PaintEventArgs e) {
@@ -259,6 +278,17 @@ public class ThemedDateTimePicker : UserControl {
         var cy = _buttonPanel.Height / 2;
         g.DrawLine(arrowPen, cx - 4, cy - 2, cx, cy + 2);
         g.DrawLine(arrowPen, cx, cy + 2, cx + 4, cy - 2);
+
+        using var borderPen = new Pen(GetBorderColor());
+        g.DrawLine(borderPen, 0, 0, _buttonPanel.Width - 1, 0);
+        g.DrawLine(borderPen, _buttonPanel.Width - 1, 0, _buttonPanel.Width - 1, _buttonPanel.Height - 1);
+        g.DrawLine(borderPen, 0, _buttonPanel.Height - 1, _buttonPanel.Width - 1, _buttonPanel.Height - 1);
+    }
+
+    private Color GetBorderColor() {
+        return _isHovering && Enabled
+            ? Color.FromArgb(0, 121, 107)
+            : _borderColorOverride ?? _borderColor;
     }
 
     private void TogglePopup() {

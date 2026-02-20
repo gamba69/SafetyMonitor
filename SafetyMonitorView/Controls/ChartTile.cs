@@ -659,6 +659,9 @@ public class ChartTile : Panel {
             _topPanel.BackColor = tileBg;
         }
         _periodSelector?.ApplyTheme();
+        if (_periodSelector != null) {
+            _periodSelector.BorderColorOverride = isLight ? Color.FromArgb(150, 150, 150) : null;
+        }
 
         if (_staticRangePanel != null && _staticRangePanel.BackColor != tileBg) {
             _staticRangePanel.BackColor = tileBg;
@@ -666,6 +669,12 @@ public class ChartTile : Panel {
 
         _staticStartPicker?.ApplyTheme();
         _staticEndPicker?.ApplyTheme();
+        if (_staticStartPicker != null) {
+            _staticStartPicker.BorderColorOverride = isLight ? Color.FromArgb(150, 150, 150) : null;
+        }
+        if (_staticEndPicker != null) {
+            _staticEndPicker.BorderColorOverride = isLight ? Color.FromArgb(150, 150, 150) : null;
+        }
 
         if (_inspectorActive && _lastHoverAnchorX.HasValue) {
             UpdateHoverInfo(_lastHoverAnchorX.Value);
