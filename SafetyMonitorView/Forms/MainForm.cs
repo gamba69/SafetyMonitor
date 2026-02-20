@@ -307,7 +307,8 @@ public class MainForm : MaterialForm {
             }
 
             try {
-                _visorForm.Opacity = Math.Max(0, 1.0 - currentStep * opacityDecrement);
+                var t = (double)currentStep / totalSteps;   // 0 → 1
+                _visorForm.Opacity = Math.Max(0, (1.0 - t) * (1.0 - t) * (1.0 - t));
             } catch {
                 _visorFadeTimer?.Stop();
                 _visorFadeTimer?.Dispose();
