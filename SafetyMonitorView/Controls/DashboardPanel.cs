@@ -50,16 +50,16 @@ public class DashboardPanel : TableLayoutPanel {
         SuspendLayout();
         try {
             foreach (var control in _tileControls.Values) {
-                if (control is ValueTile vt) {
-                    vt.RefreshData();
-                } else if (control is ChartTile ct) {
-                    ct.RefreshData();
+                if (!control.Visible) {
+                    control.Visible = true;
                 }
             }
 
             foreach (var control in _tileControls.Values) {
-                if (!control.Visible) {
-                    control.Visible = true;
+                if (control is ValueTile vt) {
+                    vt.RefreshData();
+                } else if (control is ChartTile ct) {
+                    ct.RefreshData();
                 }
             }
         } finally {
