@@ -114,6 +114,7 @@ public static class MaterialIcons {
         [PlotMenuOpenInWindow] = "\uE89E", // "\uE2C7",
         [MenuViewAxisRules] = "\uEA9A", // "\uE6E1",
         [PlotMenuDisplayOption] = "\uE6E1",
+        [PlotMenuLegendToggle] = "\uE267",
         [CommonCheck] = "\uE5CA",
         [CommonClose] = "\uE5CD",
         [CommonSave] = "\uE5CA", // "\uE161",
