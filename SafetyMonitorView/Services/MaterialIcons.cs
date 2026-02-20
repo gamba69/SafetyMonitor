@@ -151,7 +151,7 @@ public static class MaterialIcons {
         [MetricStarFwhm] = "\uF31C",
         [MetricIsSafe] = "\uEAA9",
         [WindowTileValue] = "\uE400",
-        [WindowTileChart] = "\uE6E1",
+        [WindowTileChart] = "\uE667", //"\uE6E1",
     };
 
     private static readonly string[] _fontCandidates = [
