@@ -16,6 +16,7 @@ public class ChartTile : Panel {
 
     private readonly ChartTileConfig _config;
     private readonly DataService _dataService;
+    private readonly ValueSchemeService _valueSchemeService = new();
     private readonly List<ScottPlot.IYAxis> _extraAxes = [];
     private bool _initialized;
     private readonly ThemedMenuRenderer _contextMenuRenderer = new();
@@ -69,6 +70,7 @@ public class ChartTile : Panel {
         public Color SeriesColor { get; init; } = Color.White;
         public double[] Xs { get; init; } = [];
         public double[] Ys { get; init; } = [];
+        public string ValueSchemeName { get; init; } = string.Empty;
     }
 
     #endregion Private Fields
@@ -238,7 +240,8 @@ public class ChartTile : Panel {
                 Metric = agg.Metric,
                 SeriesColor = agg.GetColorForTheme(isLightTheme),
                 Xs = validTimes,
-                Ys = validValues
+                Ys = validValues,
+                ValueSchemeName = agg.ValueSchemeName ?? string.Empty
             });
         }
 
@@ -1984,7 +1987,15 @@ public class ChartTile : Panel {
             var unit = string.IsNullOrWhiteSpace(series.Unit) ? string.Empty : $" {series.Unit}";
 
             AppendHoverInfoChunk(series.Label, isBold: true, series.SeriesColor, addSeparator: false);
-            var formattedValue = MetricDisplaySettingsStore.FormatMetricValue(series.Metric, value);
+            string formattedValue;
+            if (!string.IsNullOrEmpty(series.ValueSchemeName)) {
+                var valueSchemes = _valueSchemeService.LoadSchemes();
+                var valueScheme = valueSchemes.FirstOrDefault(s => s.Name == series.ValueSchemeName);
+                var transformedText = valueScheme?.GetText(value);
+                formattedValue = transformedText ?? MetricDisplaySettingsStore.FormatMetricValue(series.Metric, value);
+            } else {
+                formattedValue = MetricDisplaySettingsStore.FormatMetricValue(series.Metric, value);
+            }
             AppendHoverInfoChunk($": {formattedValue}{unit}", isBold: false, series.SeriesColor,
                 addSeparator: i < visibleSeries.Count - 1);
         }

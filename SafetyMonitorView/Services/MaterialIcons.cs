@@ -25,6 +25,7 @@ public static class MaterialIcons {
     public const string MenuViewMetricSettings = "menu_view_metric_settings";
     public const string MenuViewChartPeriods = "menu_view_chart_periods";
     public const string MenuViewColorSchemes = "menu_view_color_schemes";
+    public const string MenuViewValueSchemes = "menu_view_value_schemes";
     public const string ToolbarChartsLink = "toolbar_charts_link";
     public const string ToolbarChartsUnlink = "toolbar_charts_unlink";
     public const string ChartModeAuto = "chart_mode_auto";
@@ -98,6 +99,7 @@ public static class MaterialIcons {
         [DashboardManage] = "\uE871",
         [MenuViewTheme] = "\uE6A2", // "\uE3A1",
         [MenuViewColorSchemes] = "\uE40A",
+        [MenuViewValueSchemes] = "\uE262",
         [ThemeLightMode] = "\uF157",
         [ThemeDarkMode] = "\uF03D",
         [MenuHelpAbout] = "\uE88E",

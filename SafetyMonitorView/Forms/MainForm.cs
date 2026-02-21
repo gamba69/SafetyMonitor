@@ -441,6 +441,7 @@ public class MainForm : MaterialForm {
             "Metric Settings..." => MaterialIcons.MenuViewMetricSettings,
             "Chart Periods..." => MaterialIcons.MenuViewChartPeriods,
             "Color Schemes..." => MaterialIcons.MenuViewColorSchemes,
+            "Value Schemes..." => MaterialIcons.MenuViewValueSchemes,
             _ => ""
         };
     }
@@ -523,6 +524,7 @@ public class MainForm : MaterialForm {
         viewMenu.DropDownItems.Add(CreateMenuItem("Axis Rules...", MaterialIcons.MenuViewAxisRules, iconColor, (s, e) => ShowAxisRulesEditor()));
         viewMenu.DropDownItems.Add(CreateMenuItem("Chart Periods...", MaterialIcons.MenuViewChartPeriods, iconColor, (s, e) => ShowChartPeriodPresetEditor()));
         viewMenu.DropDownItems.Add(CreateMenuItem("Color Schemes...", MaterialIcons.MenuViewColorSchemes, iconColor, (s, e) => ShowColorSchemeEditor()));
+        viewMenu.DropDownItems.Add(CreateMenuItem("Value Schemes...", MaterialIcons.MenuViewValueSchemes, iconColor, (s, e) => ShowValueSchemeEditor()));
         viewMenu.DropDownItems.Add(CreateMenuItem("Metric Settings...", MaterialIcons.MenuViewMetricSettings, iconColor, (s, e) => ShowMetricSettingsEditor()));
 
         var helpMenu = new ToolStripMenuItem("Help");
@@ -981,6 +983,8 @@ public class MainForm : MaterialForm {
     }
 
     private void ShowColorSchemeEditor() { using var editor = new ColorSchemeEditorForm(); editor.ShowDialog(this); }
+
+    private void ShowValueSchemeEditor() { using var editor = new ValueSchemeEditorForm(); editor.ShowDialog(this); }
 
     private void ShowChartPeriodPresetEditor() {
         using var editor = new ChartPeriodsEditorForm(_appSettings.ChartPeriodPresets, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds);

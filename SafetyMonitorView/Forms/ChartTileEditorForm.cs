@@ -25,6 +25,7 @@ public class ChartTileEditorForm : Form {
     #region Private Fields
 
     private readonly ChartTileConfig _config;
+    private readonly ValueSchemeService _valueSchemeService;
     private Color _inputBackColor;
     private Color _inputForeColor;
 
@@ -44,6 +45,7 @@ public class ChartTileEditorForm : Form {
 
     public ChartTileEditorForm(ChartTileConfig config, Dashboard dashboard) {
         _config = config;
+        _valueSchemeService = new ValueSchemeService();
 
         InitializeComponent();
         FormIconHelper.Apply(this, MaterialIcons.WindowTileChart);
@@ -65,7 +67,7 @@ public class ChartTileEditorForm : Form {
     }
 
     private void AddMetricButton_Click(object? sender, EventArgs e) {
-        var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, null!, 2.0f, false, 0.5f, false);
+        var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, null!, 2.0f, false, 0.5f, false, "(None)");
         _metricsGrid.Rows[newRow].Tag = new MetricRowColors();
         _metricsGrid.InvalidateRow(newRow);
     }
@@ -233,6 +235,19 @@ public class ChartTileEditorForm : Form {
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Tension", HeaderText = "Tns", FillWeight = 8 });
         _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "ShowMarkers", HeaderText = "Mark", FillWeight = 12 });
 
+        var valueSchemeCol = new DataGridViewComboBoxColumn {
+            Name = "ValueScheme",
+            HeaderText = "Val.Scheme",
+            FillWeight = 18,
+            FlatStyle = FlatStyle.Flat,
+            DisplayStyle = DataGridViewComboBoxDisplayStyle.DropDownButton
+        };
+        valueSchemeCol.Items.Add("(None)");
+        foreach (var vs in _valueSchemeService.LoadSchemes()) {
+            valueSchemeCol.Items.Add(vs.Name);
+        }
+        _metricsGrid.Columns.Add(valueSchemeCol);
+
         foreach (DataGridViewColumn column in _metricsGrid.Columns) {
             column.SortMode = DataGridViewColumnSortMode.NotSortable;
         }
@@ -314,7 +329,8 @@ public class ChartTileEditorForm : Form {
         _showInspectorCheckBox.Checked = _config.ShowInspector;
 
         foreach (var agg in _config.MetricAggregations) {
-            var rowIndex = _metricsGrid.Rows.Add(agg.Metric, agg.Function, agg.Label, null!, null!, agg.LineWidth, agg.Smooth, agg.Tension, agg.ShowMarkers);
+            var rowIndex = _metricsGrid.Rows.Add(agg.Metric, agg.Function, agg.Label, null!, null!, agg.LineWidth, agg.Smooth, agg.Tension, agg.ShowMarkers,
+                string.IsNullOrEmpty(agg.ValueSchemeName) ? "(None)" : agg.ValueSchemeName);
             _metricsGrid.Rows[rowIndex].Tag = new MetricRowColors {
                 Light = agg.Color,
                 Dark = agg.DarkThemeColor.IsEmpty ? agg.Color : agg.DarkThemeColor
@@ -485,7 +501,8 @@ public class ChartTileEditorForm : Form {
                 LineWidth = float.Parse(row.Cells["LineWidth"].Value?.ToString() ?? "2"),
                 Smooth = (bool)(row.Cells["Smooth"].Value ?? false),
                 Tension = ParseTension(row.Cells["Tension"].Value?.ToString()),
-                ShowMarkers = (bool)(row.Cells["ShowMarkers"].Value ?? false)
+                ShowMarkers = (bool)(row.Cells["ShowMarkers"].Value ?? false),
+                ValueSchemeName = row.Cells["ValueScheme"].Value?.ToString() is var vs && vs != "(None)" ? vs ?? "" : ""
             };
             _config.MetricAggregations.Add(agg);
         }

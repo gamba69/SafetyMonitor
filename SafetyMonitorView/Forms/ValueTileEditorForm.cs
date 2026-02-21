@@ -8,10 +8,12 @@ public class ValueTileEditorForm : Form {
     #region Private Fields
 
     private readonly ColorSchemeService _colorSchemeService;
+    private readonly ValueSchemeService _valueSchemeService;
     private readonly ValueTileConfig _config;
     private Button _cancelButton = null!;
     private ComboBox _colorSchemeComboBox = null!;
     private ComboBox _iconColorSchemeComboBox = null!;
+    private ComboBox _valueSchemeComboBox = null!;
     private ComboBox _metricComboBox = null!;
     private Button _editSchemesButton = null!;
     private Button _saveButton = null!;
@@ -25,6 +27,7 @@ public class ValueTileEditorForm : Form {
     public ValueTileEditorForm(ValueTileConfig config, Dashboard dashboard) {
         _config = config;
         _colorSchemeService = new ColorSchemeService();
+        _valueSchemeService = new ValueSchemeService();
 
         InitializeComponent();
         FormIconHelper.Apply(this, MaterialIcons.WindowTileValue);
@@ -89,6 +92,12 @@ public class ValueTileEditorForm : Form {
         RefreshIconColorSchemeCombo();
     }
 
+    private void EditValueSchemesButton_Click(object? sender, EventArgs e) {
+        using var editor = new ValueSchemeEditorForm();
+        editor.ShowDialog(this);
+        RefreshValueSchemeCombo();
+    }
+
 
     private void UpdateSchemeEditorButtonIcon(bool isLight) {
         if (_editSchemesButton is null) {
@@ -119,17 +128,18 @@ public class ValueTileEditorForm : Form {
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 7,
+            RowCount = 8,
             AutoSize = true
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 0: Description
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 1: Title
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 2: Metric
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 3: Schemes
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Decimal + Icon
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 5: Spacer
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Buttons
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 3: Color Schemes
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Value Schemes
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Decimal + Icon
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 6: Spacer
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 7: Buttons
 
         var descriptionLabel = new Label {
             Text = "Use this form to configure value tile content: title, metric, display options, and color scheme.\n" +
@@ -157,8 +167,10 @@ public class ValueTileEditorForm : Form {
         // Row 3: Value scheme + Icon scheme + Scheme editor
         _colorSchemeComboBox = new ComboBox { Font = normalFont, Width = 170, DropDownStyle = ComboBoxStyle.DropDownList };
         _iconColorSchemeComboBox = new ComboBox { Font = normalFont, Width = 170, DropDownStyle = ComboBoxStyle.DropDownList };
+        _valueSchemeComboBox = new ComboBox { Font = normalFont, Width = 170, DropDownStyle = ComboBoxStyle.DropDownList };
         RefreshColorSchemeCombo();
         RefreshIconColorSchemeCombo();
+        RefreshValueSchemeCombo();
 
         var valueSchemePanel = new Panel { AutoSize = true, Margin = new Padding(0, 0, 10, 0) };
         var valueSchemeLabel = new Label { Text = "Value scheme:", Font = titleFont, AutoSize = true, Location = new Point(0, 0) };
@@ -181,16 +193,31 @@ public class ValueTileEditorForm : Form {
         schemesPanel.Controls.Add(_editSchemesButton);
         mainLayout.Controls.Add(schemesPanel, 0, 3);
 
+        // Row 4: Text value scheme
+        var textSchemePanel = new Panel { AutoSize = true, Margin = new Padding(0, 0, 10, 0) };
+        var textSchemeLabel = new Label { Text = "Text value scheme:", Font = titleFont, AutoSize = true, Location = new Point(0, 0) };
+        _valueSchemeComboBox.Location = new Point(0, textSchemeLabel.Bottom + 5);
+        textSchemePanel.Controls.Add(textSchemeLabel);
+        textSchemePanel.Controls.Add(_valueSchemeComboBox);
+
+        var editValueSchemesButton = new Button { Text = "Value scheme editor...", Width = 180, Height = 30, Font = normalFont, Margin = new Padding(0, 24, 0, 0), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft };
+        editValueSchemesButton.Click += EditValueSchemesButton_Click;
+
+        var valueSchemesPanel = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Top, WrapContents = false, Margin = new Padding(0, 0, 0, 5) };
+        valueSchemesPanel.Controls.Add(textSchemePanel);
+        valueSchemesPanel.Controls.Add(editValueSchemesButton);
+
         var iconPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 10, 0, 5) };
         _showIconCheckBox = new CheckBox { Text = "Show Icon", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 3, 0, 0) };
         iconPanel.Controls.Add(_showIconCheckBox);
-        mainLayout.Controls.Add(iconPanel, 0, 4);
+        mainLayout.Controls.Add(valueSchemesPanel, 0, 4);
+        mainLayout.Controls.Add(iconPanel, 0, 5);
 
 
-        // Row 5: Spacer (empty)
-        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 5);
+        // Row 6: Spacer (empty)
+        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 6);
 
-        // Row 6: Buttons
+        // Row 7: Buttons
         var buttonPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Margin = new Padding(0, 10, 0, 0) };
         _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 35, Font = normalFont, Margin = new Padding(0) };
         _cancelButton.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
@@ -198,13 +225,13 @@ public class ValueTileEditorForm : Form {
         _saveButton = new Button { Text = "Save", Width = 110, Height = 35, Font = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
-        mainLayout.Controls.Add(buttonPanel, 0, 6);
+        mainLayout.Controls.Add(buttonPanel, 0, 7);
 
         Controls.Add(mainLayout);
 
         // Set form size after layout
-        MinimumSize = new Size(560, 500);
-        ClientSize = new Size(560, 500);
+        MinimumSize = new Size(560, 560);
+        ClientSize = new Size(560, 560);
     }
 
     private void LoadConfig() {
@@ -225,6 +252,13 @@ public class ValueTileEditorForm : Form {
         } else {
             var iconSchemeIndex = _iconColorSchemeComboBox.Items.IndexOf(_config.IconColorSchemeName);
             _iconColorSchemeComboBox.SelectedIndex = iconSchemeIndex >= 0 ? iconSchemeIndex : 0;
+        }
+
+        if (string.IsNullOrEmpty(_config.ValueSchemeName)) {
+            _valueSchemeComboBox.SelectedIndex = 0; // "(None)"
+        } else {
+            var valueSchemeIndex = _valueSchemeComboBox.Items.IndexOf(_config.ValueSchemeName);
+            _valueSchemeComboBox.SelectedIndex = valueSchemeIndex >= 0 ? valueSchemeIndex : 0;
         }
     }
 
@@ -257,6 +291,20 @@ public class ValueTileEditorForm : Form {
         }
     }
 
+    private void RefreshValueSchemeCombo() {
+        var currentSelection = _valueSchemeComboBox.SelectedItem?.ToString();
+        _valueSchemeComboBox.Items.Clear();
+        _valueSchemeComboBox.Items.Add("(None)");
+        foreach (var scheme in _valueSchemeService.LoadSchemes()) {
+            _valueSchemeComboBox.Items.Add(scheme.Name);
+        }
+
+        if (currentSelection != null) {
+            var idx = _valueSchemeComboBox.Items.IndexOf(currentSelection);
+            _valueSchemeComboBox.SelectedIndex = idx >= 0 ? idx : 0;
+        }
+    }
+
     private void SaveButton_Click(object? sender, EventArgs e) {
         _config.Title = _titleTextBox.Text;
         _config.Metric = (MetricType)_metricComboBox.SelectedIndex;
@@ -264,6 +312,8 @@ public class ValueTileEditorForm : Form {
         _config.ColorSchemeName = selectedScheme == "(None)" ? "" : (selectedScheme ?? "");
         var selectedIconScheme = _iconColorSchemeComboBox.SelectedItem?.ToString();
         _config.IconColorSchemeName = selectedIconScheme == "(Theme)" ? "" : (selectedIconScheme ?? "");
+        var selectedValueScheme = _valueSchemeComboBox.SelectedItem?.ToString();
+        _config.ValueSchemeName = selectedValueScheme == "(None)" ? "" : (selectedValueScheme ?? "");
         _config.ShowIcon = _showIconCheckBox.Checked;
 
         DialogResult = DialogResult.OK;

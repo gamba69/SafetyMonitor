@@ -10,10 +10,12 @@ public class ValueTile : Panel {
     #region Private Fields
 
     private readonly ColorSchemeService _colorSchemeService;
+    private readonly ValueSchemeService _valueSchemeService;
     private readonly ValueTileConfig _config;
     private readonly DataService _dataService;
     private ColorScheme? _colorScheme;
     private ColorScheme? _iconColorScheme;
+    private ValueScheme? _valueScheme;
     private Color _currentIconColor = Color.Transparent;
     private double? _currentValue;
     private PictureBox? _iconBox;
@@ -30,6 +32,7 @@ public class ValueTile : Panel {
         _config = config;
         _dataService = dataService;
         _colorSchemeService = new ColorSchemeService();
+        _valueSchemeService = new ValueSchemeService();
 
         Dock = DockStyle.Fill;
         Padding = new Padding(8);
@@ -53,7 +56,12 @@ public class ValueTile : Panel {
         if (latestData != null) {
             _currentValue = _config.Metric.GetValue(latestData);
             if (_currentValue.HasValue) {
-                _valueLabel.Text = MetricDisplaySettingsStore.FormatMetricValue(_config.Metric, _currentValue.Value);
+                var transformedText = _valueScheme?.GetText(_currentValue.Value);
+                if (transformedText != null) {
+                    _valueLabel.Text = transformedText;
+                } else {
+                    _valueLabel.Text = MetricDisplaySettingsStore.FormatMetricValue(_config.Metric, _currentValue.Value);
+                }
                 ApplyColorScheme();
             } else {
                 _valueLabel.Text = " ?";
@@ -228,6 +236,10 @@ public class ValueTile : Panel {
         _iconColorScheme = string.IsNullOrEmpty(_config.IconColorSchemeName)
             ? null
             : schemes.FirstOrDefault(s => s.Name == _config.IconColorSchemeName);
+        var valueSchemes = _valueSchemeService.LoadSchemes();
+        _valueScheme = string.IsNullOrEmpty(_config.ValueSchemeName)
+            ? null
+            : valueSchemes.FirstOrDefault(s => s.Name == _config.ValueSchemeName);
     }
 
     private void OnTileResize(object? sender, EventArgs e) {

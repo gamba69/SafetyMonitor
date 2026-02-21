@@ -31,6 +31,7 @@ public class ValueTileConfig : TileConfig {
     public MetricType Metric { get; set; }
     public bool ShowIcon { get; set; } = true;
     public override TileType Type => TileType.Value;
+    public string ValueSchemeName { get; set; } = "";
 
     #endregion Public Properties
 }

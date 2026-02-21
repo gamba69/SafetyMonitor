@@ -13,6 +13,7 @@ public class MetricAggregation {
     public bool Smooth { get; set; } = false;
     public float Tension { get; set; } = 0.5f;
     public bool ShowMarkers { get; set; } = false;
+    public string ValueSchemeName { get; set; } = "";
 
     #endregion Public Properties
 
