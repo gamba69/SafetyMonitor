@@ -26,6 +26,9 @@ public class SettingsForm : Form {
     private int _selectedTabIndex;
 
     private static readonly string[] TabNames = { "General", "Storage", "Value Tiles", "Chart Tiles", "Aggregation" };
+    private const int SettingValueColumnWidth = 120;
+    private const int SettingUnitColumnWidth = 90;
+
     private static readonly string[] TabIcons = {
         MaterialIcons.CommonBuild,
         MaterialIcons.CommonDatabase,
@@ -531,14 +534,15 @@ public class SettingsForm : Form {
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         _chartStaticAggregationPresetMatchToleranceNumeric = new NumericUpDown {
-            Width = 60,
+            Width = SettingValueColumnWidth,
             Minimum = 0,
             Maximum = 100,
             DecimalPlaces = 1,
             Increment = 0.5m,
             Value = 10,
+            TextAlign = HorizontalAlignment.Right,
             Font = normalFont,
-            Margin = new Padding(0, 0, 10, 10)
+            Margin = new Padding(0, 0, 0, 10)
         };
         layout.Controls.Add(CreateSettingRow(
             "Preset Match Tolerance",
@@ -609,10 +613,11 @@ public class SettingsForm : Form {
     };
 
     private static NumericUpDown CreateNumeric(int min, int max, int value, Font font) => new() {
-        Width = 60,
+        Width = SettingValueColumnWidth,
         Minimum = min,
         Maximum = max,
         Value = value,
+        TextAlign = HorizontalAlignment.Right,
         Font = font,
         Margin = new Padding(0, 0, 0, 20)
     };
@@ -627,8 +632,8 @@ public class SettingsForm : Form {
             Margin = new Padding(0, 0, 0, 16)
         };
         row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        row.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        row.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, SettingValueColumnWidth));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, SettingUnitColumnWidth));
         row.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         row.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
@@ -636,8 +641,9 @@ public class SettingsForm : Form {
         label.Margin = new Padding(0, 0, 14, 0);
         row.Controls.Add(label, 0, 0);
 
-        valueControl.Anchor = AnchorStyles.Left;
-        valueControl.Margin = new Padding(0, 0, 10, 0);
+        valueControl.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        valueControl.Margin = new Padding(0);
+        valueControl.Dock = DockStyle.Fill;
         row.Controls.Add(valueControl, 1, 0);
 
         var unitLabel = new Label {
@@ -645,7 +651,7 @@ public class SettingsForm : Form {
             Font = titleFont,
             AutoSize = true,
             Anchor = AnchorStyles.Left,
-            Margin = new Padding(0, 0, 0, 0)
+            Margin = new Padding(8, 0, 0, 0)
         };
         row.Controls.Add(unitLabel, 2, 0);
 
