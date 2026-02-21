@@ -52,7 +52,9 @@ public static class MetricTypeExtensions {
         MetricType.WindGust => data.WindGust,
         MetricType.WindDirection => data.WindDirection,
         MetricType.StarFwhm => data.StarFwhm,
-        MetricType.IsSafe => data.IsSafe.HasValue ? (data.IsSafe.Value ? 1.0 : 0.0) : null,
+        MetricType.IsSafe => data.IsSafeInt.HasValue
+            ? data.IsSafeInt.Value
+            : (data.SafePercentage.HasValue ? data.SafePercentage.Value / 100.0 : null),
         _ => null
     };
 
