@@ -77,9 +77,11 @@ public class ColorSchemeEditorForm : Form {
     #region Private Methods
 
     private void AddStop_Click(object? sender, EventArgs e) {
-        var rowIdx = _stopsGrid.Rows.Add("", "", "", "");
+        var rowIdx = _stopsGrid.Rows.Add("0", "", "");
         _stopsGrid.Rows[rowIdx].Tag = Color.Gray;
+        SortGridByValue();
         UpdateDirtyState();
+        UpdatePreview();
     }
 
     private void ApplyTheme() {
@@ -250,7 +252,7 @@ public class ColorSchemeEditorForm : Form {
         headerPanel.SetColumnSpan(headerLabel, 2);
 
         var rangesLabel = new Label {
-            Text = "• Stops define Min/Max bounds for each color segment.",
+            Text = "• Stops define threshold values (compared as ≤).",
             Font = normalFont,
             AutoSize = true,
             Margin = new Padding(0, 0, 12, 2)
@@ -306,19 +308,15 @@ public class ColorSchemeEditorForm : Form {
         };
         SetupGridColumns();
         _stopsGrid.CellClick += StopsGrid_CellClick;
-        _stopsGrid.CellValueChanged += (s, e) => { UpdateDirtyState(); UpdatePreview(); };
-        _stopsGrid.CellEndEdit += (s, e) => { UpdateDirtyState(); UpdatePreview(); };
+        _stopsGrid.CellValueChanged += (s, e) => { SortGridByValue(); UpdateDirtyState(); UpdatePreview(); };
+        _stopsGrid.CellEndEdit += (s, e) => { SortGridByValue(); UpdateDirtyState(); UpdatePreview(); };
 
         var gridButtons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 38, FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(0, 3, 0, 3) };
         var addStopBtn = new Button { Text = "Add Stop", Width = 110, Height = 32, Font = normalFont };
         addStopBtn.Click += AddStop_Click;
         var removeStopBtn = new Button { Text = "Del Stop", Width = 110, Height = 32, Font = normalFont };
         removeStopBtn.Click += RemoveStop_Click;
-        var moveUpBtn = new Button { Text = "Up", Width = 80, Height = 32, Font = normalFont };
-        moveUpBtn.Click += MoveUpStop_Click;
-        var moveDownBtn = new Button { Text = "Down", Width = 80, Height = 32, Font = normalFont };
-        moveDownBtn.Click += MoveDownStop_Click;
-        gridButtons.Controls.AddRange([addStopBtn, removeStopBtn, moveUpBtn, moveDownBtn]);
+        gridButtons.Controls.AddRange([addStopBtn, removeStopBtn]);
 
         _previewPanel = new PreviewPanel { Dock = DockStyle.Bottom, Height = 40, Padding = new Padding(0, 5, 0, 0) };
         _previewPanel.Paint += PreviewPanel_Paint;
@@ -399,50 +397,15 @@ public class ColorSchemeEditorForm : Form {
         _gradientCheckBox.Checked = scheme.IsGradient;
 
         _stopsGrid.Rows.Clear();
-        foreach (var stop in scheme.Stops) {
+        foreach (var stop in scheme.Stops.OrderBy(s => s.Value)) {
             var rowIdx = _stopsGrid.Rows.Add(
-                stop.MinValue?.ToString() ?? "",
-                stop.MaxValue?.ToString() ?? "",
+                stop.Value.ToString(),
                 "",
                 stop.Description);
             _stopsGrid.Rows[rowIdx].Tag = stop.Color;
         }
         UpdatePreview();
         _isLoading = false;
-    }
-
-    private void MoveDownStop_Click(object? sender, EventArgs e) {
-        MoveRow(1);
-    }
-
-    private void MoveRow(int direction) {
-        if (_stopsGrid.CurrentRow == null) {
-            return;
-        }
-
-        var idx = _stopsGrid.CurrentRow.Index;
-        var newIdx = idx + direction;
-        if (newIdx < 0 || newIdx >= _stopsGrid.Rows.Count) {
-            return;
-        }
-
-        var values = new object[_stopsGrid.Columns.Count];
-        for (int i = 0; i < _stopsGrid.Columns.Count; i++) {
-            values[i] = _stopsGrid.Rows[idx].Cells[i].Value ?? "";
-        }
-
-        var tag = _stopsGrid.Rows[idx].Tag;
-
-        _stopsGrid.Rows.RemoveAt(idx);
-        _stopsGrid.Rows.Insert(newIdx, values);
-        _stopsGrid.Rows[newIdx].Tag = tag;
-        _stopsGrid.CurrentCell = _stopsGrid.Rows[newIdx].Cells[0];
-        UpdateDirtyState();
-        UpdatePreview();
-    }
-
-    private void MoveUpStop_Click(object? sender, EventArgs e) {
-        MoveRow(-1);
     }
 
     private void NewButton_Click(object? sender, EventArgs e) {
@@ -455,9 +418,9 @@ public class ColorSchemeEditorForm : Form {
         var scheme = new ColorScheme {
             Name = name,
             Stops = [
-                new() { MaxValue = 25, Color = Color.Green, Description = "Normal" },
-                new() { MinValue = 25, MaxValue = 50, Color = Color.Yellow, Description = "Warning" },
-                new() { MinValue = 50, Color = Color.Red, Description = "Critical" }
+                new() { Value = 25, Color = Color.Green, Description = "Normal" },
+                new() { Value = 50, Color = Color.Yellow, Description = "Warning" },
+                new() { Value = 100, Color = Color.Red, Description = "Critical" }
             ]
         };
         _colorSchemeService.SaveScheme(scheme);
@@ -492,17 +455,29 @@ public class ColorSchemeEditorForm : Form {
             return;
         }
 
-        // Find value range
-        double minVal = double.MaxValue, maxVal = double.MinValue;
-        foreach (var stop in scheme.Stops) {
-            if (stop.MinValue.HasValue) { minVal = Math.Min(minVal, stop.MinValue.Value); maxVal = Math.Max(maxVal, stop.MinValue.Value); }
-            if (stop.MaxValue.HasValue) { minVal = Math.Min(minVal, stop.MaxValue.Value); maxVal = Math.Max(maxVal, stop.MaxValue.Value); }
+        var sorted = scheme.Stops.OrderBy(s => s.Value).ToList();
+        double firstVal = sorted[0].Value;
+        double lastVal = sorted[^1].Value;
+
+        if (firstVal >= lastVal) {
+            // Single value or identical — fill with single color
+            using var brush = new SolidBrush(scheme.GetColor(firstVal));
+            g.FillRectangle(brush, rect);
+            return;
         }
-        if (minVal >= maxVal) { minVal = 0; maxVal = 100; }
-        // Add some margin
-        var range = maxVal - minVal;
-        minVal -= range * 0.05;
-        maxVal += range * 0.05;
+
+        double minVal, maxVal;
+
+        if (!scheme.IsGradient) {
+            // Discrete mode: 5% reserved for first value on the left, right edge = last value
+            var dataRange = lastVal - firstVal;
+            minVal = firstVal - dataRange * 0.05 / 0.95;
+            maxVal = lastVal;
+        } else {
+            // Gradient mode: left edge = first value, right edge = last value, no margins
+            minVal = firstVal;
+            maxVal = lastVal;
+        }
 
         // Draw color bar
         for (int x = rect.X; x < rect.Right; x++) {
@@ -525,14 +500,16 @@ public class ColorSchemeEditorForm : Form {
         };
 
         foreach (DataGridViewRow row in _stopsGrid.Rows) {
-            var minStr = row.Cells["MinValue"].Value?.ToString()?.Trim() ?? "";
-            var maxStr = row.Cells["MaxValue"].Value?.ToString()?.Trim() ?? "";
+            var valStr = row.Cells["Value"].Value?.ToString()?.Trim() ?? "";
             var desc = row.Cells["Description"].Value?.ToString() ?? "";
             var color = row.Tag is Color c ? c : Color.Gray;
 
+            if (!double.TryParse(valStr, out var val)) {
+                val = 0;
+            }
+
             scheme.Stops.Add(new ColorStop {
-                MinValue = double.TryParse(minStr, out var minV) ? minV : null,
-                MaxValue = double.TryParse(maxStr, out var maxV) ? maxV : null,
+                Value = val,
                 Color = color,
                 Description = desc
             });
@@ -623,16 +600,9 @@ public class ColorSchemeEditorForm : Form {
 
     private void SetupGridColumns() {
         _stopsGrid.Columns.Add(new DataGridViewTextBoxColumn {
-            Name = "MinValue",
-            HeaderText = "Min",
-            FillWeight = 16,
-            MinimumWidth = 80,
-            ValueType = typeof(string)
-        });
-        _stopsGrid.Columns.Add(new DataGridViewTextBoxColumn {
-            Name = "MaxValue",
-            HeaderText = "Max",
-            FillWeight = 16,
+            Name = "Value",
+            HeaderText = "Value",
+            FillWeight = 20,
             MinimumWidth = 80,
             ValueType = typeof(string)
         });
@@ -648,7 +618,7 @@ public class ColorSchemeEditorForm : Form {
         _stopsGrid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "Description",
             HeaderText = "Description",
-            FillWeight = 52,
+            FillWeight = 64,
             MinimumWidth = 180,
             ValueType = typeof(string)
         });
@@ -662,7 +632,7 @@ public class ColorSchemeEditorForm : Form {
     }
 
     private void StopsGrid_CellClick(object? sender, DataGridViewCellEventArgs e) {
-        if (e.ColumnIndex == 2 && e.RowIndex >= 0) // Color column
+        if (e.ColumnIndex == 1 && e.RowIndex >= 0) // Color column
         {
             var row = _stopsGrid.Rows[e.RowIndex];
             var currentColor = row.Tag is Color c ? c : Color.Gray;
@@ -676,7 +646,7 @@ public class ColorSchemeEditorForm : Form {
     }
 
     private void StopsGrid_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e) {
-        if (e.ColumnIndex == 2 && e.RowIndex >= 0) // Color column
+        if (e.ColumnIndex == 1 && e.RowIndex >= 0) // Color column
         {
             var row = _stopsGrid.Rows[e.RowIndex];
             if (row.Tag is Color color) {
@@ -686,6 +656,47 @@ public class ColorSchemeEditorForm : Form {
             }
         }
     }
+
+    private void SortGridByValue() {
+        if (_isLoading || _stopsGrid.Rows.Count <= 1) {
+            return;
+        }
+
+        // Collect all rows data
+        var rows = new List<(double Value, Color Color, string Description, string ValueStr)>();
+        foreach (DataGridViewRow row in _stopsGrid.Rows) {
+            var valStr = row.Cells["Value"].Value?.ToString()?.Trim() ?? "0";
+            var desc = row.Cells["Description"].Value?.ToString() ?? "";
+            var color = row.Tag is Color c ? c : Color.Gray;
+            double.TryParse(valStr, out var val);
+            rows.Add((val, color, desc, valStr));
+        }
+
+        var sorted = rows.OrderBy(r => r.Value).ToList();
+
+        // Check if already sorted
+        bool alreadySorted = true;
+        for (int i = 0; i < sorted.Count; i++) {
+            var currentVal = _stopsGrid.Rows[i].Cells["Value"].Value?.ToString()?.Trim() ?? "0";
+            double.TryParse(currentVal, out var cv);
+            if (cv != sorted[i].Value || (_stopsGrid.Rows[i].Tag is Color cc ? cc.ToArgb() : 0) != sorted[i].Color.ToArgb()) {
+                alreadySorted = false;
+                break;
+            }
+        }
+        if (alreadySorted) {
+            return;
+        }
+
+        _isLoading = true;
+        _stopsGrid.Rows.Clear();
+        foreach (var item in sorted) {
+            var rowIdx = _stopsGrid.Rows.Add(item.ValueStr, "", item.Description);
+            _stopsGrid.Rows[rowIdx].Tag = item.Color;
+        }
+        _isLoading = false;
+    }
+
     // ── Preview ──
 
     private void PreviewUpdateTimer_Tick(object? sender, EventArgs e) {
@@ -746,15 +757,14 @@ public class ColorSchemeEditorForm : Form {
             return false;
         }
 
-        for (int i = 0; i < original.Stops.Count; i++) {
-            var originalStop = original.Stops[i];
-            var updatedStop = updated.Stops[i];
+        var origSorted = original.Stops.OrderBy(s => s.Value).ToList();
+        var updSorted = updated.Stops.OrderBy(s => s.Value).ToList();
 
-            if (originalStop.MinValue != updatedStop.MinValue) {
-                return false;
-            }
+        for (int i = 0; i < origSorted.Count; i++) {
+            var originalStop = origSorted[i];
+            var updatedStop = updSorted[i];
 
-            if (originalStop.MaxValue != updatedStop.MaxValue) {
+            if (originalStop.Value != updatedStop.Value) {
                 return false;
             }
 

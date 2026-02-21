@@ -16,73 +16,49 @@ public class ColorScheme {
             return Color.Gray;
         }
 
+        var sorted = Stops.OrderBy(s => s.Value).ToList();
+
         if (!IsGradient) {
-            // Discrete mode - find exact range
-            var stop = Stops.FirstOrDefault(s =>
-                (!s.MinValue.HasValue || value >= s.MinValue.Value) &&
-                (!s.MaxValue.HasValue || value <= s.MaxValue.Value));
-            return stop?.Color ?? Stops.Last().Color;
+            // Discrete mode — find first stop where value <= stop.Value
+            foreach (var stop in sorted) {
+                if (value <= stop.Value) {
+                    return stop.Color;
+                }
+            }
+            return sorted[^1].Color;
         }
 
-        // Gradient mode - each stop is a control point; interpolate between them.
-        // The representative value of a stop is: midpoint of (Min,Max), or Min, or Max.
-        var points = Stops
-            .Select(s => new { Value = GetControlPointValue(s), s.Color })
-            .OrderBy(p => p.Value)
-            .ToList();
-
-        if (points.Count == 0) {
-            return Color.Gray;
+        // Gradient mode — interpolate; values at specified points match exactly.
+        if (sorted.Count == 1) {
+            return sorted[0].Color;
         }
 
-        // Below first point
-        if (value <= points[0].Value) {
-            return points[0].Color;
+        if (value <= sorted[0].Value) {
+            return sorted[0].Color;
         }
 
-        // Above last point
-        if (value >= points[^1].Value) {
-            return points[^1].Color;
+        if (value >= sorted[^1].Value) {
+            return sorted[^1].Color;
         }
 
-        // Find two adjacent points to interpolate between
-        for (int i = 0; i < points.Count - 1; i++) {
-            if (value >= points[i].Value && value <= points[i + 1].Value) {
-                var range = points[i + 1].Value - points[i].Value;
+        for (int i = 0; i < sorted.Count - 1; i++) {
+            if (value >= sorted[i].Value && value <= sorted[i + 1].Value) {
+                var range = sorted[i + 1].Value - sorted[i].Value;
                 if (range <= 0) {
-                    return points[i].Color;
+                    return sorted[i].Color;
                 }
 
-                var ratio = (value - points[i].Value) / range;
-                return InterpolateColor(points[i].Color, points[i + 1].Color, ratio);
+                var ratio = (value - sorted[i].Value) / range;
+                return InterpolateColor(sorted[i].Color, sorted[i + 1].Color, ratio);
             }
         }
 
-        return points[^1].Color;
+        return sorted[^1].Color;
     }
 
     #endregion Public Methods
 
     #region Private Methods
-
-    /// <summary>
-    /// Gets a single representative value for a color stop (used as control point in gradient mode).
-    /// </summary>
-    private static double GetControlPointValue(ColorStop stop) {
-        if (stop.MinValue.HasValue && stop.MaxValue.HasValue) {
-            return (stop.MinValue.Value + stop.MaxValue.Value) / 2.0;
-        }
-
-        if (stop.MinValue.HasValue) {
-            return stop.MinValue.Value;
-        }
-
-        if (stop.MaxValue.HasValue) {
-            return stop.MaxValue.Value;
-        }
-
-        return 0;
-    }
 
     private static Color InterpolateColor(Color c1, Color c2, double ratio) {
         int r = (int)(c1.R + (c2.R - c1.R) * ratio);
@@ -99,8 +75,7 @@ public class ColorStop {
 
     public Color Color { get; set; }
     public string Description { get; set; } = "";
-    public double? MaxValue { get; set; }
-    public double? MinValue { get; set; }
+    public double Value { get; set; }
 
     #endregion Public Properties
 }

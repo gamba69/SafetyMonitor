@@ -140,10 +140,10 @@ public class ColorSchemeService {
         Name = "Cloud Cover",
         Stops =
         [
-            new() { MaxValue = 10, Color = Color.LightGreen, Description = "Clear" },
-            new() { MinValue = 10, MaxValue = 30, Color = Color.Green, Description = "Few clouds" },
-            new() { MinValue = 30, MaxValue = 70, Color = Color.Gray, Description = "Cloudy" },
-            new() { MinValue = 70, Color = Color.DarkGray, Description = "Overcast" }
+            new() { Value = 10, Color = Color.LightGreen, Description = "Clear" },
+            new() { Value = 30, Color = Color.Green, Description = "Few clouds" },
+            new() { Value = 70, Color = Color.Gray, Description = "Cloudy" },
+            new() { Value = 100, Color = Color.DarkGray, Description = "Overcast" }
         ]
     };
 
@@ -151,11 +151,11 @@ public class ColorSchemeService {
         Name = "Humidity",
         Stops =
         [
-            new() { MaxValue = 30, Color = Color.Orange, Description = "Very dry" },
-            new() { MinValue = 30, MaxValue = 40, Color = Color.Yellow, Description = "Dry" },
-            new() { MinValue = 40, MaxValue = 60, Color = Color.Green, Description = "Comfortable" },
-            new() { MinValue = 60, MaxValue = 80, Color = Color.LightBlue, Description = "Humid" },
-            new() { MinValue = 80, Color = Color.Blue, Description = "Very humid" }
+            new() { Value = 30, Color = Color.Orange, Description = "Very dry" },
+            new() { Value = 40, Color = Color.Yellow, Description = "Dry" },
+            new() { Value = 60, Color = Color.Green, Description = "Comfortable" },
+            new() { Value = 80, Color = Color.LightBlue, Description = "Humid" },
+            new() { Value = 100, Color = Color.Blue, Description = "Very humid" }
         ]
     };
 
@@ -164,26 +164,26 @@ public class ColorSchemeService {
         IsGradient = true,
         Stops =
         [
-            new() { MaxValue = -20, Color = Color.FromArgb(0, 0, 139), Description = "Very cold" },
-            new() { MinValue = -20, MaxValue = -10, Color = Color.Blue, Description = "Cold" },
-            new() { MinValue = -10, MaxValue = 0, Color = Color.LightBlue, Description = "Cool" },
-            new() { MinValue = 0, MaxValue = 10, Color = Color.Cyan, Description = "Fresh" },
-            new() { MinValue = 10, MaxValue = 20, Color = Color.Green, Description = "Comfortable" },
-            new() { MinValue = 20, MaxValue = 25, Color = Color.YellowGreen, Description = "Warm" },
-            new() { MinValue = 25, MaxValue = 30, Color = Color.Yellow, Description = "Hot" },
-            new() { MinValue = 30, MaxValue = 35, Color = Color.Orange, Description = "Very hot" },
-            new() { MinValue = 35, Color = Color.Red, Description = "Extremely hot" }
+            new() { Value = -20, Color = Color.FromArgb(0, 0, 139), Description = "Very cold" },
+            new() { Value = -10, Color = Color.Blue, Description = "Cold" },
+            new() { Value = 0, Color = Color.LightBlue, Description = "Cool" },
+            new() { Value = 10, Color = Color.Cyan, Description = "Fresh" },
+            new() { Value = 20, Color = Color.Green, Description = "Comfortable" },
+            new() { Value = 25, Color = Color.YellowGreen, Description = "Warm" },
+            new() { Value = 30, Color = Color.Yellow, Description = "Hot" },
+            new() { Value = 35, Color = Color.Orange, Description = "Very hot" },
+            new() { Value = 45, Color = Color.Red, Description = "Extremely hot" }
         ]
     };
     private static ColorScheme CreateWindSpeedScheme() => new() {
         Name = "Wind Speed",
         Stops =
         [
-            new() { MaxValue = 2, Color = Color.Green, Description = "Calm" },
-            new() { MinValue = 2, MaxValue = 5, Color = Color.YellowGreen, Description = "Light" },
-            new() { MinValue = 5, MaxValue = 10, Color = Color.Yellow, Description = "Moderate" },
-            new() { MinValue = 10, MaxValue = 15, Color = Color.Orange, Description = "Strong" },
-            new() { MinValue = 15, Color = Color.Red, Description = "Very strong" }
+            new() { Value = 2, Color = Color.Green, Description = "Calm" },
+            new() { Value = 5, Color = Color.YellowGreen, Description = "Light" },
+            new() { Value = 10, Color = Color.Yellow, Description = "Moderate" },
+            new() { Value = 15, Color = Color.Orange, Description = "Strong" },
+            new() { Value = 20, Color = Color.Red, Description = "Very strong" }
         ]
     };
 
