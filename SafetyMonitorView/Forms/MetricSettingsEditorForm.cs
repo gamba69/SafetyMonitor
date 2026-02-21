@@ -130,20 +130,24 @@ public class MetricSettingsEditorForm : Form {
         _metricsGrid.CellValidating += MetricsGrid_CellValidating;
         root.Controls.Add(_metricsGrid, 0, 1);
 
-        var buttonPanel = new FlowLayoutPanel {
+        var buttonPanel = new TableLayoutPanel {
             AutoSize = true,
             AutoSizeMode = AutoSizeMode.GrowAndShrink,
             Dock = DockStyle.Right,
-            FlowDirection = FlowDirection.RightToLeft,
+            ColumnCount = 2,
+            RowCount = 1,
             Margin = new Padding(0),
-            WrapContents = false
+            Padding = new Padding(0)
         };
-        _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 35, Font = normalFont };
+        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+
+        _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 35, Font = normalFont, Margin = new Padding(0) };
         _cancelButton.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
         _saveButton = new Button { Text = "Save", Width = 110, Height = 35, Font = CreateSafeFont("Segoe UI", 10f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
         _saveButton.Click += SaveButton_Click;
-        buttonPanel.Controls.Add(_cancelButton);
-        buttonPanel.Controls.Add(_saveButton);
+        buttonPanel.Controls.Add(_saveButton, 0, 0);
+        buttonPanel.Controls.Add(_cancelButton, 1, 0);
         root.Controls.Add(buttonPanel, 0, 2);
 
         Controls.Add(root);

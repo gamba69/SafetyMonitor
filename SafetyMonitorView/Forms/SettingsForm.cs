@@ -420,7 +420,7 @@ public class SettingsForm : Form {
             Margin = new Padding(0, 4, 0, 0)
         };
         pathPanel.Controls.Add(description, 0, 1);
-        pathPanel.SetColumnSpan(description, 2);
+        pathPanel.SetColumnSpan(description, 3);
 
         layout.Controls.Add(pathPanel, 0, 1);
 
