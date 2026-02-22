@@ -180,13 +180,13 @@ public class ValueTileEditorForm : Form {
         RefreshValueSchemeCombo();
 
         var valueSchemePanel = new Panel { AutoSize = true, Margin = new Padding(0, 0, 10, 0) };
-        var valueSchemeLabel = new Label { Text = "Value scheme:", Font = titleFont, AutoSize = true, Location = new Point(0, 0) };
+        var valueSchemeLabel = new Label { Text = "Color value scheme:", Font = titleFont, AutoSize = true, Location = new Point(0, 0) };
         _colorSchemeComboBox.Location = new Point(0, valueSchemeLabel.Bottom + 5);
         valueSchemePanel.Controls.Add(valueSchemeLabel);
         valueSchemePanel.Controls.Add(_colorSchemeComboBox);
 
         var iconSchemePanel = new Panel { AutoSize = true, Margin = new Padding(0, 0, 10, 0) };
-        var iconSchemeLabel = new Label { Text = "Icon scheme:", Font = titleFont, AutoSize = true, Location = new Point(0, 0) };
+        var iconSchemeLabel = new Label { Text = "Color icon scheme:", Font = titleFont, AutoSize = true, Location = new Point(0, 0) };
         _iconColorSchemeComboBox.Location = new Point(0, iconSchemeLabel.Bottom + 5);
         iconSchemePanel.Controls.Add(iconSchemeLabel);
         iconSchemePanel.Controls.Add(_iconColorSchemeComboBox);
