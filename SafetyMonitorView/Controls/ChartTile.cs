@@ -84,6 +84,7 @@ public class ChartTile : Panel {
     public event Action<ChartTile, bool>? InspectorToggled;
     public event Action<ChartTile, bool>? PlotHoverPresenceChanged;
     public event Action<ChartTile, double>? HoverAnchorChanged;
+    public event Action<ChartTile>? EditRequested;
 
     #endregion Public Events
 
@@ -448,6 +449,7 @@ public class ChartTile : Panel {
             ChartPeriodPresetStore.PresetsChanged -= HandlePresetsChanged;
             MetricAxisRuleStore.RulesChanged -= HandleAxisRulesChanged;
             MetricDisplaySettingsStore.SettingsChanged -= HandleAxisRulesChanged;
+            DetachTileContextMenuHandlers(this);
             _plot?.MouseUp -= Plot_MouseUp;
             _plot?.MouseMove -= Plot_MouseMove;
             _plot?.MouseEnter -= Plot_MouseEnter;
@@ -734,10 +736,10 @@ public class ChartTile : Panel {
     private void RebuildPlotContextMenu(ContextMenuStrip contextMenu) {
         contextMenu.Items.Clear();
 
-        contextMenu.Items.Add(CreatePlotMenuItem("Save Image", MaterialIcons.PlotMenuSaveImage, HandleSaveImageClick));
+        contextMenu.Items.Add(CreatePlotMenuItem("Edit Tile", MaterialIcons.CommonEdit, HandleEditTileClick));
+        contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add(CreatePlotMenuItem("Copy to Clipboard", MaterialIcons.PlotMenuCopyToClipboard, HandleCopyImageClick));
-        contextMenu.Items.Add(CreatePlotMenuItem("Autoscale", MaterialIcons.PlotMenuAutoscale, HandleAutoscaleClick));
-        contextMenu.Items.Add(CreatePlotMenuItem("Open in New Window", MaterialIcons.PlotMenuOpenInWindow, HandleOpenInWindowClick));
+        contextMenu.Items.Add(CreatePlotMenuItem("Save Image", MaterialIcons.PlotMenuImage, HandleSaveImageClick));
         contextMenu.Items.Add(new ToolStripSeparator());
 
         AddToggleMenuItems(contextMenu);
@@ -769,12 +771,12 @@ public class ChartTile : Panel {
 
         if (_config.MetricAggregations.Count == 1) {
             var aggregation = _config.MetricAggregations[0];
-            contextMenu.Items.Add(CreateToggleMenuItem("Smoothing", MaterialIcons.PlotMenuConversionPath, aggregation.Smooth, (_, _) => {
+            contextMenu.Items.Add(CreateToggleMenuItem("Smooth", MaterialIcons.PlotMenuConversionPath, aggregation.Smooth, (_, _) => {
                 aggregation.Smooth = !aggregation.Smooth;
                 ApplyViewSettings();
             }));
         } else {
-            var smoothItem = new ToolStripMenuItem("Smoothing") { Tag = MaterialIcons.PlotMenuConversionPath };
+            var smoothItem = new ToolStripMenuItem("Smooth") { Tag = MaterialIcons.PlotMenuConversionPath };
             foreach (var aggregation in _config.MetricAggregations) {
                 smoothItem.DropDownItems.Add(CreateToggleMenuItem(GetAggregationDisplayName(aggregation), MaterialIcons.PlotMenuConversionPath, aggregation.Smooth, (_, _) => {
                     aggregation.Smooth = !aggregation.Smooth;
@@ -848,6 +850,10 @@ public class ChartTile : Panel {
                 UpdateContextMenuIcons(menuItem.DropDownItems, iconColor);
             }
         }
+    }
+
+    private void HandleEditTileClick(object? sender, EventArgs e) {
+        EditRequested?.Invoke(this);
     }
 
     private void HandleSaveImageClick(object? sender, EventArgs e) {
@@ -936,6 +942,40 @@ public class ChartTile : Panel {
 
         ApplyPlotContextMenuTheme();
         _plotContextMenu.Show(_plot, e.Location);
+    }
+
+    private void Tile_MouseUp(object? sender, MouseEventArgs e) {
+        if (e.Button != MouseButtons.Right || _plotContextMenu == null || sender is not Control sourceControl) {
+            return;
+        }
+
+        ApplyPlotContextMenuTheme();
+        _plotContextMenu.Show(sourceControl, e.Location);
+    }
+
+    private void AttachTileContextMenuHandlers(Control root) {
+        if (root is FormsPlot) {
+            return;
+        }
+
+        root.MouseUp -= Tile_MouseUp;
+        root.MouseUp += Tile_MouseUp;
+
+        foreach (Control child in root.Controls) {
+            AttachTileContextMenuHandlers(child);
+        }
+    }
+
+    private void DetachTileContextMenuHandlers(Control root) {
+        if (root is FormsPlot) {
+            return;
+        }
+
+        root.MouseUp -= Tile_MouseUp;
+
+        foreach (Control child in root.Controls) {
+            DetachTileContextMenuHandlers(child);
+        }
     }
 
     private void TryDisableScottPlotBuiltInContextMenu() {
@@ -1330,6 +1370,7 @@ public class ChartTile : Panel {
             Font = new Font("Segoe UI", 9f, System.Drawing.FontStyle.Regular)
         };
         _plotContextMenu = CreatePlotContextMenu();
+        ContextMenuStrip = _plotContextMenu;
         _plot.ContextMenuStrip = null;
         _plot.MouseUp += Plot_MouseUp;
         _plot.MouseMove += Plot_MouseMove;
@@ -1343,6 +1384,7 @@ public class ChartTile : Panel {
         // Add header and info labels first
         Controls.Add(_topPanel);
         Controls.Add(bottomInfoPanel);
+        AttachTileContextMenuHandlers(this);
 
         // Use BeginInvoke to defer adding FormsPlot until message loop is ready
         // This avoids GDI+ font errors during auto-scaling

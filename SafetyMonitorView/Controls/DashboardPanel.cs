@@ -1,3 +1,4 @@
+using SafetyMonitorView.Forms;
 using SafetyMonitorView.Models;
 using SafetyMonitorView.Services;
 
@@ -23,6 +24,7 @@ public class DashboardPanel : TableLayoutPanel {
     #region Public Constructors
 
     public event Action? DashboardChanged;
+    public event Action<TileConfig>? TileEditRequested;
 
     public DashboardPanel(
         Dashboard dashboard,
@@ -154,6 +156,11 @@ public class DashboardPanel : TableLayoutPanel {
             if (tileControl != null) {
                 tileControl.Visible = false;
 
+                if (tileControl is ValueTile valueTile) {
+                    valueTile.EditRequested += OnValueTileEditRequested;
+                    valueTile.ViewSettingsChanged += OnValueTileViewSettingsChanged;
+                }
+
                 if (tileControl is ChartTile chartTile) {
                     chartTile.PeriodChanged += OnChartPeriodChanged;
                     chartTile.StaticRangeChanged += OnChartStaticRangeChanged;
@@ -167,6 +174,7 @@ public class DashboardPanel : TableLayoutPanel {
                         _chartStaticAggregationPresetMatchTolerancePercent,
                         _chartStaticAggregationTargetPointCount,
                         _chartAggregationRoundingSeconds);
+                    chartTile.EditRequested += OnChartTileEditRequested;
                 }
                 Controls.Add(tileControl, tileConfig.Column, tileConfig.Row);
                 SetColumnSpan(tileControl, tileConfig.ColumnSpan);
@@ -293,6 +301,26 @@ public class DashboardPanel : TableLayoutPanel {
 
             chartTile.ShowInspectorAt(x);
         }
+    }
+
+    private void OnChartTileEditRequested(ChartTile source) {
+        var config = _dashboard.Tiles.OfType<ChartTileConfig>().FirstOrDefault(c =>
+            _tileControls.TryGetValue(c.Id, out var ctrl) && ReferenceEquals(ctrl, source));
+        if (config != null) {
+            TileEditRequested?.Invoke(config);
+        }
+    }
+
+    private void OnValueTileEditRequested(ValueTile source) {
+        var config = _dashboard.Tiles.OfType<ValueTileConfig>().FirstOrDefault(c =>
+            _tileControls.TryGetValue(c.Id, out var ctrl) && ReferenceEquals(ctrl, source));
+        if (config != null) {
+            TileEditRequested?.Invoke(config);
+        }
+    }
+
+    private void OnValueTileViewSettingsChanged(ValueTile source) {
+        DashboardChanged?.Invoke();
     }
 
     private void InitializeUI() {

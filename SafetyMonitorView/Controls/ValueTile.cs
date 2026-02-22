@@ -1,4 +1,5 @@
 using MaterialSkin;
+using SafetyMonitorView.Forms;
 using SafetyMonitorView.Models;
 using SafetyMonitorView.Services;
 using ColorScheme = SafetyMonitorView.Models.ColorScheme;
@@ -13,6 +14,10 @@ public class ValueTile : Panel {
     private readonly ValueSchemeService _valueSchemeService;
     private readonly ValueTileConfig _config;
     private readonly DataService _dataService;
+    private readonly ThemedMenuRenderer _contextMenuRenderer = new();
+    private const int MenuIconSize = 22;
+    private const float ContextMenuFontSize = 10f;
+    private ContextMenuStrip? _contextMenu;
     private ColorScheme? _colorScheme;
     private ColorScheme? _iconColorScheme;
     private ValueScheme? _valueScheme;
@@ -28,6 +33,13 @@ public class ValueTile : Panel {
     private const int HorizontalFitPadding = 8;
 
     #endregion Private Fields
+
+    #region Public Events
+
+    public event Action<ValueTile>? EditRequested;
+    public event Action<ValueTile>? ViewSettingsChanged;
+
+    #endregion Public Events
 
     #region Public Constructors
 
@@ -81,6 +93,7 @@ public class ValueTile : Panel {
 
     public void UpdateTheme() {
         UpdateLayout();
+        ApplyContextMenuTheme();
         if (_currentValue.HasValue) {
             ApplyColorScheme();
         } else {
@@ -230,6 +243,9 @@ public class ValueTile : Panel {
         Controls.Add(_iconBox);
         Controls.Add(_valueLabel);
         Controls.Add(_unitLabel);
+
+        _contextMenu = CreateContextMenu();
+        ContextMenuStrip = _contextMenu;
 
         // Subscribe to resize for dynamic font scaling
         Resize += OnTileResize;
@@ -415,6 +431,119 @@ public class ValueTile : Panel {
         var unitWidth = Math.Max(0, contentWidth - valueWidth);
         _unitLabel.SetBounds(unitStartX, Padding.Top + halfHeight, unitWidth, halfHeight);
         _unitLabel.Visible = _config.ShowUnit;
+    }
+
+    private ContextMenuStrip CreateContextMenu() {
+        var contextMenu = new ContextMenuStrip {
+            ShowImageMargin = true,
+            ImageScalingSize = new Size(MenuIconSize, MenuIconSize),
+            Cursor = Cursors.Hand
+        };
+
+        contextMenu.Opening += (_, _) => {
+            RebuildContextMenu(contextMenu);
+            ApplyContextMenuTheme(contextMenu);
+        };
+
+        RebuildContextMenu(contextMenu);
+        InteractiveCursorStyler.Apply(contextMenu.Items);
+        return contextMenu;
+    }
+
+    private void RebuildContextMenu(ContextMenuStrip contextMenu) {
+        contextMenu.Items.Clear();
+
+        contextMenu.Items.Add(CreateMenuItem("Edit Tile", MaterialIcons.CommonEdit, (_, _) => EditRequested?.Invoke(this)));
+        contextMenu.Items.Add(new ToolStripSeparator());
+        contextMenu.Items.Add(CreateToggleMenuItem("Show Icon", MaterialIcons.ValueMenuNorthEast, _config.ShowIcon, (_, _) => {
+            _config.ShowIcon = !_config.ShowIcon;
+            if (_iconBox != null) { _iconBox.Visible = _config.ShowIcon; }
+            ViewSettingsChanged?.Invoke(this);
+        }));
+        contextMenu.Items.Add(CreateToggleMenuItem("Show Unit", MaterialIcons.ValueMenuSouthEast, _config.ShowUnit, (_, _) => {
+            _config.ShowUnit = !_config.ShowUnit;
+            UpdateLayout();
+            ViewSettingsChanged?.Invoke(this);
+        }));
+
+        InteractiveCursorStyler.Apply(contextMenu.Items);
+    }
+
+    private void ApplyContextMenuTheme() {
+        if (_contextMenu == null) {
+            return;
+        }
+
+        ApplyContextMenuTheme(_contextMenu);
+    }
+
+    private void ApplyContextMenuTheme(ContextMenuStrip contextMenu) {
+        var skinManager = MaterialSkinManager.Instance;
+        var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+        var menuBackground = isLight ? Color.FromArgb(255, 255, 255) : Color.FromArgb(38, 52, 57);
+        var menuText = isLight ? Color.FromArgb(33, 33, 33) : Color.FromArgb(240, 240, 240);
+        var menuIconColor = isLight ? Color.FromArgb(33, 33, 33) : Color.FromArgb(240, 240, 240);
+
+        _contextMenuRenderer.UpdateTheme();
+
+        contextMenu.RenderMode = ToolStripRenderMode.Professional;
+        contextMenu.Renderer = _contextMenuRenderer;
+        contextMenu.ShowImageMargin = true;
+        contextMenu.BackColor = menuBackground;
+        contextMenu.ForeColor = menuText;
+        contextMenu.Font = CreateSafeFont("Segoe UI", ContextMenuFontSize, System.Drawing.FontStyle.Regular);
+        contextMenu.ImageScalingSize = new Size(MenuIconSize, MenuIconSize);
+
+        ApplyContextMenuItemColors(contextMenu.Items, menuBackground, menuText);
+        UpdateContextMenuIcons(contextMenu.Items, menuIconColor);
+    }
+
+    private static void ApplyContextMenuItemColors(ToolStripItemCollection items, Color backColor, Color foreColor) {
+        foreach (ToolStripItem item in items) {
+            item.BackColor = backColor;
+            item.ForeColor = foreColor;
+            if (item is ToolStripMenuItem menuItem && menuItem.DropDownItems.Count > 0) {
+                ApplyContextMenuItemColors(menuItem.DropDownItems, backColor, foreColor);
+            }
+        }
+    }
+
+    private static void UpdateContextMenuIcons(ToolStripItemCollection items, Color iconColor) {
+        foreach (ToolStripItem item in items) {
+            if (item is not ToolStripMenuItem menuItem) {
+                continue;
+            }
+            if (menuItem.Tag is string iconName) {
+                menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize);
+            }
+            if (menuItem.DropDownItems.Count > 0) {
+                UpdateContextMenuIcons(menuItem.DropDownItems, iconColor);
+            }
+        }
+    }
+
+    private static ToolStripMenuItem CreateMenuItem(string text, string iconName, EventHandler onClick) {
+        var iconColor = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT
+            ? Color.FromArgb(33, 33, 33)
+            : Color.FromArgb(240, 240, 240);
+
+        var item = new ToolStripMenuItem(text) {
+            DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+            Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize),
+            ImageScaling = ToolStripItemImageScaling.None,
+            TextImageRelation = TextImageRelation.ImageBeforeText,
+            ImageAlign = ContentAlignment.MiddleLeft,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Tag = iconName
+        };
+        item.Click += onClick;
+        return item;
+    }
+
+    private static ToolStripMenuItem CreateToggleMenuItem(string text, string iconName, bool isChecked, EventHandler onClick) {
+        var item = CreateMenuItem(text, iconName, onClick);
+        item.Checked = isChecked;
+        return item;
     }
 
     #endregion Private Methods

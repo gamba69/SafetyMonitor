@@ -772,6 +772,7 @@ public class MainForm : MaterialForm {
             Visible = false
         };
         _dashboardPanel.DashboardChanged += OnDashboardChanged;
+        _dashboardPanel.TileEditRequested += OnTileEditRequested;
         _dashboardPanel.SetLinkChartPeriods(_appSettings.LinkChartPeriods);
         _dashboardContainer.Controls.Add(_dashboardPanel);
         _dashboardContainer.ResumeLayout(true);
@@ -870,6 +871,28 @@ public class MainForm : MaterialForm {
     private void OnDashboardChanged() {
         if (_currentDashboard == null) { return; }
         _dashboardService.SaveDashboard(_currentDashboard);
+    }
+
+    private void OnTileEditRequested(TileConfig tileConfig) {
+        if (_currentDashboard == null) { return; }
+
+        DialogResult result;
+        if (tileConfig is ValueTileConfig vtc) {
+            using var editor = new ValueTileEditorForm(vtc, _currentDashboard);
+            result = editor.ShowDialog();
+        } else if (tileConfig is ChartTileConfig ctc) {
+            using var editor = new ChartTileEditorForm(ctc, _currentDashboard);
+            result = editor.ShowDialog();
+        } else {
+            return;
+        }
+
+        if (result == DialogResult.OK) {
+            _dashboardService.SaveDashboard(_currentDashboard);
+            _dashboards = _dashboardService.LoadDashboards();
+            var updatedDashboard = _dashboards.FirstOrDefault(d => d.Id == _currentDashboard.Id);
+            if (updatedDashboard != null) { LoadDashboard(updatedDashboard); }
+        }
     }
 
     private void SaveWindowSettings() {
