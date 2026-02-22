@@ -15,7 +15,9 @@ public class ColorSchemeEditorForm : Form {
     private ColorScheme? _currentScheme;
     private Button _deleteButton = null!;
     private Button _duplicateButton = null!;
-    private CheckBox _gradientCheckBox = null!;
+    private RadioButton _gradientButton = null!;
+    private RadioButton _solidButton = null!;
+    private Panel _colorModeSegmentPanel = null!;
     private bool _isDirty;
     private bool _isLoading;
     private TextBox _nameTextBox = null!;
@@ -92,6 +94,7 @@ public class ColorSchemeEditorForm : Form {
         ForeColor = isLight ? Color.Black : Color.White;
 
         ApplyThemeRecursive(this, isLight);
+        UpdateColorModeToggleAppearance();
     }
 
     // ── Theme ──
@@ -108,9 +111,6 @@ public class ColorSchemeEditorForm : Form {
                 case TextBox txt:
                     txt.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
                     txt.ForeColor = isLight ? Color.Black : Color.White;
-                    break;
-                case CheckBox chk:
-                    chk.ForeColor = isLight ? Color.Black : Color.White;
                     break;
                 case ListBox lb:
                     lb.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
@@ -286,11 +286,63 @@ public class ColorSchemeEditorForm : Form {
         _nameTextBox = new TextBox { Width = 250, Font = normalFont, Margin = new Padding(0, 2, 15, 0) };
         _nameTextBox.TextChanged += (s, e) => UpdateDirtyState();
         namePanel.Controls.Add(_nameTextBox);
-        _gradientCheckBox = new CheckBox { Text = "Gradient interpolation", Font = normalFont, AutoSize = true, Margin = new Padding(0, 4, 0, 0) };
-        _gradientCheckBox.CheckedChanged += (s, e) => { UpdateDirtyState(); UpdatePreview(); };
-        namePanel.Controls.Add(_gradientCheckBox);
+        var colorTogglePanel = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 42, WrapContents = false, AutoSize = false, Padding = new Padding(0, 4, 0, 4) };
+        var colorLabel = new Label { Text = "Color:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 6, 5, 0) };
 
-        var stopsLabel = new Label { Text = "Color Stops:", Font = titleFont, Dock = DockStyle.Top, AutoSize = true, Margin = new Padding(0, 5, 0, 3) };
+        _solidButton = new RadioButton {
+            Text = "Solid",
+            Appearance = Appearance.Button,
+            TextImageRelation = TextImageRelation.ImageBeforeText,
+            ImageAlign = ContentAlignment.MiddleCenter,
+            TextAlign = ContentAlignment.MiddleCenter,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = { BorderSize = 0, CheckedBackColor = Color.Transparent, MouseDownBackColor = Color.Transparent, MouseOverBackColor = Color.Transparent },
+            Font = normalFont,
+            Padding = new Padding(8, 0, 8, 0),
+            AutoSize = false,
+            Size = new Size(124, 30),
+            Checked = true,
+            Cursor = Cursors.Hand
+        };
+        _solidButton.CheckedChanged += (s, e) => {
+            if (_solidButton.Checked) {
+                UpdateDirtyState();
+                UpdatePreview();
+                UpdateColorModeToggleAppearance();
+            }
+        };
+
+        _gradientButton = new RadioButton {
+            Text = "Gradient",
+            Appearance = Appearance.Button,
+            TextImageRelation = TextImageRelation.ImageBeforeText,
+            ImageAlign = ContentAlignment.MiddleCenter,
+            TextAlign = ContentAlignment.MiddleCenter,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = { BorderSize = 0, CheckedBackColor = Color.Transparent, MouseDownBackColor = Color.Transparent, MouseOverBackColor = Color.Transparent },
+            Font = normalFont,
+            Padding = new Padding(8, 0, 8, 0),
+            AutoSize = false,
+            Size = new Size(140, 30),
+            Checked = false,
+            Cursor = Cursors.Hand
+        };
+        _gradientButton.CheckedChanged += (s, e) => {
+            if (_gradientButton.Checked) {
+                UpdateDirtyState();
+                UpdatePreview();
+                UpdateColorModeToggleAppearance();
+            }
+        };
+
+        _colorModeSegmentPanel = new Panel { Size = new Size(266, 32), Padding = new Padding(1), Margin = new Padding(0, 2, 0, 0) };
+        _solidButton.Location = new Point(1, 1);
+        _gradientButton.Location = new Point(125, 1);
+        _colorModeSegmentPanel.Controls.Add(_solidButton);
+        _colorModeSegmentPanel.Controls.Add(_gradientButton);
+
+        colorTogglePanel.Controls.Add(colorLabel);
+        colorTogglePanel.Controls.Add(_colorModeSegmentPanel);
 
         _stopsGrid = new DataGridView {
             Dock = DockStyle.Fill,
@@ -379,7 +431,7 @@ public class ColorSchemeEditorForm : Form {
         rightPanel.Controls.Add(_stopsGrid);
         rightPanel.Controls.Add(gridButtons);
         rightPanel.Controls.Add(_previewPanel);
-        rightPanel.Controls.Add(stopsLabel);
+        rightPanel.Controls.Add(colorTogglePanel);
         rightPanel.Controls.Add(namePanel);
         rightPanel.Controls.Add(headerPanel);
         root.Controls.Add(rightPanel, 1, 0);
@@ -394,7 +446,8 @@ public class ColorSchemeEditorForm : Form {
         _isLoading = true;
         _nameTextBox.Text = scheme.Name;
         _nameTextBox.ReadOnly = ColorSchemeService.IsBuiltIn(scheme.Name);
-        _gradientCheckBox.Checked = scheme.IsGradient;
+        _gradientButton.Checked = scheme.IsGradient;
+        _solidButton.Checked = !scheme.IsGradient;
 
         _stopsGrid.Rows.Clear();
         foreach (var stop in scheme.Stops.OrderBy(s => s.Value)) {
@@ -405,6 +458,7 @@ public class ColorSchemeEditorForm : Form {
             _stopsGrid.Rows[rowIdx].Tag = stop.Color;
         }
         UpdatePreview();
+        UpdateColorModeToggleAppearance();
         _isLoading = false;
     }
 
@@ -495,7 +549,7 @@ public class ColorSchemeEditorForm : Form {
     private ColorScheme ReadSchemeFromEditor() {
         var scheme = new ColorScheme {
             Name = _nameTextBox.Text.Trim(),
-            IsGradient = _gradientCheckBox.Checked,
+            IsGradient = _gradientButton.Checked,
             Stops = []
         };
 
@@ -729,6 +783,33 @@ public class ColorSchemeEditorForm : Form {
 
         _previewUpdateTimer.Stop();
         _previewUpdateTimer.Start();
+    }
+
+    private void UpdateColorModeToggleAppearance() {
+        if (_colorModeSegmentPanel == null || _solidButton == null || _gradientButton == null) {
+            return;
+        }
+
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        var segmentBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
+        var activeBg = isLight ? Color.White : Color.FromArgb(62, 77, 84);
+        var inactiveFg = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
+        var activeFg = isLight ? Color.FromArgb(21, 28, 31) : Color.White;
+        var borderColor = isLight ? Color.FromArgb(196, 206, 211) : Color.FromArgb(70, 85, 92);
+
+        _colorModeSegmentPanel.BackColor = borderColor;
+        _solidButton.BackColor = _solidButton.Checked ? activeBg : segmentBg;
+        _gradientButton.BackColor = _gradientButton.Checked ? activeBg : segmentBg;
+        _solidButton.ForeColor = _solidButton.Checked ? activeFg : inactiveFg;
+        _gradientButton.ForeColor = _gradientButton.Checked ? activeFg : inactiveFg;
+
+        var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
+        _solidButton.Image = MaterialIcons.GetIcon(MaterialIcons.ColorModeSolid, iconColor, 22);
+        _gradientButton.Image = MaterialIcons.GetIcon(MaterialIcons.ColorModeGradient, iconColor, 22);
+        _solidButton.ImageAlign = ContentAlignment.MiddleLeft;
+        _gradientButton.ImageAlign = ContentAlignment.MiddleLeft;
+        _solidButton.TextAlign = ContentAlignment.MiddleLeft;
+        _gradientButton.TextAlign = ContentAlignment.MiddleLeft;
     }
 
     private void UpdateDirtyState() {
