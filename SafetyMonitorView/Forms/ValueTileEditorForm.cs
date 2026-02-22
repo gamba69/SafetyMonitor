@@ -16,6 +16,7 @@ public class ValueTileEditorForm : Form {
     private ComboBox _valueSchemeComboBox = null!;
     private ComboBox _metricComboBox = null!;
     private Button _editSchemesButton = null!;
+    private Button _editValueSchemesButton = null!;
     private Button _saveButton = null!;
     private CheckBox _showIconCheckBox = null!;
     private TextBox _titleTextBox = null!;
@@ -56,7 +57,7 @@ public class ValueTileEditorForm : Form {
         ForeColor = isLight ? Color.Black : Color.White;
 
         ApplyThemeRecursive(this, isLight);
-        UpdateSchemeEditorButtonIcon(isLight);
+        UpdateSchemeEditorButtonIcons(isLight);
     }
 
     private void ApplyThemeRecursive(Control parent, bool isLight) {
@@ -99,16 +100,22 @@ public class ValueTileEditorForm : Form {
     }
 
 
-    private void UpdateSchemeEditorButtonIcon(bool isLight) {
-        if (_editSchemesButton is null) {
-            return;
+    private void UpdateSchemeEditorButtonIcons(bool isLight) {
+        var iconColor = isLight ? Color.FromArgb(48, 48, 48) : Color.White;
+
+        if (_editSchemesButton != null) {
+            var colorSchemesIcon = MaterialIcons.GetIcon(MaterialIcons.MenuViewColorSchemes, iconColor, 18);
+            var oldImage = _editSchemesButton.Image;
+            _editSchemesButton.Image = colorSchemesIcon;
+            oldImage?.Dispose();
         }
 
-        var iconColor = isLight ? Color.FromArgb(48, 48, 48) : Color.White;
-        var icon = MaterialIcons.GetIcon(MaterialIcons.MenuViewColorSchemes, iconColor, 18);
-        var oldImage = _editSchemesButton.Image;
-        _editSchemesButton.Image = icon;
-        oldImage?.Dispose();
+        if (_editValueSchemesButton != null) {
+            var valueSchemesIcon = MaterialIcons.GetIcon(MaterialIcons.CommonEdit, iconColor, 18);
+            var oldImage = _editValueSchemesButton.Image;
+            _editValueSchemesButton.Image = valueSchemesIcon;
+            oldImage?.Dispose();
+        }
     }
 
     private void InitializeComponent() {
@@ -184,7 +191,7 @@ public class ValueTileEditorForm : Form {
         iconSchemePanel.Controls.Add(iconSchemeLabel);
         iconSchemePanel.Controls.Add(_iconColorSchemeComboBox);
 
-        _editSchemesButton = new Button { Text = "Scheme editor...", Width = 160, Height = 30, Font = normalFont, Margin = new Padding(0, 24, 0, 0), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft };
+        _editSchemesButton = new Button { Text = "Color schemes...", Width = 160, Height = 30, Font = normalFont, Margin = new Padding(0, 24, 0, 0), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft };
         _editSchemesButton.Click += EditSchemesButton_Click;
 
         var schemesPanel = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Top, WrapContents = false, Margin = new Padding(0, 5, 0, 5) };
@@ -200,12 +207,12 @@ public class ValueTileEditorForm : Form {
         textSchemePanel.Controls.Add(textSchemeLabel);
         textSchemePanel.Controls.Add(_valueSchemeComboBox);
 
-        var editValueSchemesButton = new Button { Text = "Value scheme editor...", Width = 180, Height = 30, Font = normalFont, Margin = new Padding(0, 24, 0, 0), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft };
-        editValueSchemesButton.Click += EditValueSchemesButton_Click;
+        _editValueSchemesButton = new Button { Text = "Value schemes...", Width = 180, Height = 30, Font = normalFont, Margin = new Padding(0, 24, 0, 0), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft };
+        _editValueSchemesButton.Click += EditValueSchemesButton_Click;
 
         var valueSchemesPanel = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Top, WrapContents = false, Margin = new Padding(0, 0, 0, 5) };
         valueSchemesPanel.Controls.Add(textSchemePanel);
-        valueSchemesPanel.Controls.Add(editValueSchemesButton);
+        valueSchemesPanel.Controls.Add(_editValueSchemesButton);
 
         var iconPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 10, 0, 5) };
         _showIconCheckBox = new CheckBox { Text = "Show Icon", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 3, 0, 0) };

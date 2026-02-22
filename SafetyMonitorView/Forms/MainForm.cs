@@ -433,7 +433,7 @@ public class MainForm : MaterialForm {
             "Dark" => MaterialIcons.ThemeDarkMode,
             "About" => MaterialIcons.MenuHelpAbout,
             "New Dashboard" => MaterialIcons.DashboardCreateNew,
-            "Edit Current" => MaterialIcons.DashboardEditCurrent,
+            "Edit Current..." => MaterialIcons.DashboardEditCurrent,
             "Duplicate Current" => MaterialIcons.DashboardDuplicateCurrent,
             "Delete Current" => MaterialIcons.DashboardDeleteCurrent,
             "Manage Dashboards..." => MaterialIcons.DashboardManage,
@@ -1082,7 +1082,7 @@ public class MainForm : MaterialForm {
 
         dashboardMenu.DropDownItems.Add(new ToolStripSeparator());
         dashboardMenu.DropDownItems.Add(CreateMenuItem("New Dashboard", MaterialIcons.DashboardCreateNew, iconColor, (s, e) => CreateNewDashboard()));
-        dashboardMenu.DropDownItems.Add(CreateMenuItem("Edit Current", MaterialIcons.DashboardEditCurrent, iconColor, (s, e) => EditCurrentDashboard()));
+        dashboardMenu.DropDownItems.Add(CreateMenuItem("Edit current...", MaterialIcons.DashboardEditCurrent, iconColor, (s, e) => EditCurrentDashboard()));
         dashboardMenu.DropDownItems.Add(CreateMenuItem("Duplicate Current", MaterialIcons.DashboardDuplicateCurrent, iconColor, (s, e) => DuplicateCurrentDashboard()));
         dashboardMenu.DropDownItems.Add(CreateMenuItem("Manage Dashboards...", MaterialIcons.DashboardManage, iconColor, (s, e) => ShowDashboardManager()));
         dashboardMenu.DropDownItems.Add(new ToolStripSeparator());
