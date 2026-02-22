@@ -61,7 +61,7 @@ public class ValueTileEditorForm : Form {
         UpdateSchemeEditorButtonIcons(isLight);
     }
 
-    private void ApplyThemeRecursive(Control parent, bool isLight) {
+    private static void ApplyThemeRecursive(Control parent, bool isLight) {
         foreach (Control control in parent.Controls) {
             InteractiveCursorStyler.Apply(control);
             switch (control) {

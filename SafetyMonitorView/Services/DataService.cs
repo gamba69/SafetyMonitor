@@ -1,6 +1,7 @@
 using DataStorage.Models;
 using FirebirdSql.Data.FirebirdClient;
 using SafetyMonitorView.Models;
+using System.Threading;
 
 namespace SafetyMonitorView.Services;
 
@@ -10,7 +11,11 @@ public class DataService {
 
     private readonly DataStorage.DataStorage? _storage;
     private readonly int _valueTileLookbackMinutes;
+    private readonly object _valueTileSnapshotLock = new();
     private bool _isConnectionFailed;
+    private bool _isValueTileSnapshotActive;
+    private bool _isValueTileSnapshotLoaded;
+    private ObservingData? _valueTileSnapshotData;
 
     #endregion Private Fields
 
@@ -93,15 +98,40 @@ public class DataService {
 
         try {
             var endTime = DateTime.UtcNow;
-            var startTime = endTime.AddMinutes(-_valueTileLookbackMinutes);
-            var data = _storage.GetData(startTime, endTime);
-            return data.OrderByDescending(d => d.Timestamp).FirstOrDefault();
+            var maxLookback = TimeSpan.FromMinutes(_valueTileLookbackMinutes);
+
+            lock (_valueTileSnapshotLock) {
+                if (_isValueTileSnapshotActive && _isValueTileSnapshotLoaded) {
+                    return _valueTileSnapshotData;
+                }
+            }
+
+            var latest = _storage.GetLatestData(endTime, maxLookback);
+
+            lock (_valueTileSnapshotLock) {
+                if (_isValueTileSnapshotActive) {
+                    _isValueTileSnapshotLoaded = true;
+                    _valueTileSnapshotData = latest;
+                }
+            }
+
+            return latest;
         } catch (FbException ex) {
             HandleConnectionFailure(ex.Message);
             return null;
         } catch {
             return null;
         }
+    }
+
+    public IDisposable BeginValueTileSnapshot() {
+        lock (_valueTileSnapshotLock) {
+            _isValueTileSnapshotActive = true;
+            _isValueTileSnapshotLoaded = false;
+            _valueTileSnapshotData = null;
+        }
+
+        return new ValueTileSnapshotScope(this);
     }
 
     #endregion Public Methods
@@ -134,6 +164,40 @@ public class DataService {
 
         _isConnectionFailed = true;
         ConnectionFailed?.Invoke(details);
+    }
+
+    private void EndValueTileSnapshot() {
+        lock (_valueTileSnapshotLock) {
+            _isValueTileSnapshotActive = false;
+            _isValueTileSnapshotLoaded = false;
+            _valueTileSnapshotData = null;
+        }
+    }
+
+    private sealed class ValueTileSnapshotScope : IDisposable {
+
+        #region Private Fields
+
+        private DataService? _owner;
+
+        #endregion Private Fields
+
+        #region Public Constructors
+
+        public ValueTileSnapshotScope(DataService owner) {
+            _owner = owner;
+        }
+
+        #endregion Public Constructors
+
+        #region Public Methods
+
+        public void Dispose() {
+            var owner = Interlocked.Exchange(ref _owner, null);
+            owner?.EndValueTileSnapshot();
+        }
+
+        #endregion Public Methods
     }
 
     #endregion Private Methods

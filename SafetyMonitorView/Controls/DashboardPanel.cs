@@ -49,6 +49,8 @@ public class DashboardPanel : TableLayoutPanel {
     public void RefreshData() {
         SuspendLayout();
         try {
+            using var valueTileSnapshot = _dataService.BeginValueTileSnapshot();
+
             foreach (var control in _tileControls.Values) {
                 if (!control.Visible) {
                     control.Visible = true;

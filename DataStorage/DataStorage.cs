@@ -108,6 +108,60 @@ namespace DataStorage {
             return GetAggregatedData(startTime, endTime, slotDuration.Value, aggregationFunction);
         }
 
+        /// <summary>
+        /// Returns the latest record in reverse chronological order that is not newer than <paramref name="endTime"/>
+        /// and not older than <paramref name="maxLookback"/>.
+        /// </summary>
+        public ObservingData? GetLatestData(DateTime endTime, TimeSpan maxLookback) {
+            if (maxLookback <= TimeSpan.Zero) {
+                throw new ArgumentException("Max lookback must be positive", nameof(maxLookback));
+            }
+
+            var startTime = endTime - maxLookback;
+            var currentMonth = new DateTime(endTime.Year, endTime.Month, 1);
+            var startMonth = new DateTime(startTime.Year, startTime.Month, 1);
+
+            while (currentMonth >= startMonth) {
+                var dbPath = GetDatabasePath(currentMonth);
+                if (File.Exists(dbPath)) {
+                    using var connection = new FbConnection(GetConnectionString(dbPath));
+                    connection.Open();
+
+                    const string sql = @"
+                        SELECT
+                            CREATED_AT      AS ""Timestamp"",
+                            CLOUD_COVER     AS CloudCover,
+                            DEW_POINT       AS DewPoint,
+                            HUMIDITY        AS Humidity,
+                            PRESSURE        AS Pressure,
+                            RAIN_RATE       AS RainRate,
+                            SKY_BRIGHTNESS  AS SkyBrightness,
+                            SKY_QUALITY     AS SkyQuality,
+                            SKY_TEMPERATURE AS SkyTemperature,
+                            STAR_FWHM       AS StarFwhm,
+                            TEMPERATURE     AS Temperature,
+                            WIND_DIRECTION  AS WindDirection,
+                            WIND_GUST       AS WindGust,
+                            WIND_SPEED      AS WindSpeed,
+                            IS_SAFE         AS IsSafeInt,
+                            NOTES           AS Notes
+                        FROM METEO_DATA
+                        WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime
+                        ORDER BY CREATED_AT DESC
+                        OFFSET 0 ROWS FETCH FIRST 1 ROWS ONLY";
+
+                    var latest = connection.QueryFirstOrDefault<ObservingData>(sql, new { startTime, endTime });
+                    if (latest != null) {
+                        return latest;
+                    }
+                }
+
+                currentMonth = currentMonth.AddMonths(-1);
+            }
+
+            return null;
+        }
+
         #endregion Public Methods
 
         #region Private Methods
