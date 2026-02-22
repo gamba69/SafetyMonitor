@@ -82,8 +82,14 @@ public class ThemedDateTimePicker : UserControl {
     public DateTime Value {
         get => _value;
         set {
-            if (value < _minDate) value = _minDate;
-            if (value > _maxDate) value = _maxDate;
+            if (value < _minDate) {
+                value = _minDate;
+            }
+
+            if (value > _maxDate) {
+                value = _maxDate;
+            }
+
             if (_value != value) {
                 _value = value;
                 Invalidate(true);
@@ -95,13 +101,19 @@ public class ThemedDateTimePicker : UserControl {
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public DateTime MinDate {
         get => _minDate;
-        set { _minDate = value; if (_value < _minDate) Value = _minDate; }
+        set { _minDate = value; if (_value < _minDate) {
+                Value = _minDate;
+            }
+        }
     }
 
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public DateTime MaxDate {
         get => _maxDate;
-        set { _maxDate = value; if (_value > _maxDate) Value = _maxDate; }
+        set { _maxDate = value; if (_value > _maxDate) {
+                Value = _maxDate;
+            }
+        }
     }
 
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -292,7 +304,9 @@ public class ThemedDateTimePicker : UserControl {
     }
 
     private void TogglePopup() {
-        if (!Enabled) return;
+        if (!Enabled) {
+            return;
+        }
 
         if (_isDroppedDown && _popup != null) {
             _popup.Close();
@@ -579,7 +593,10 @@ public class ThemedDateTimePicker : UserControl {
         }
 
         private void AnimateClose() {
-            if (_isClosing) return;
+            if (_isClosing) {
+                return;
+            }
+
             _isClosing = true;
             _fadeTimer?.Stop();
             _fadeTimer?.Dispose();
@@ -775,9 +792,13 @@ public class ThemedDateTimePicker : UserControl {
             }
 
             Color textColor;
-            if (isSelected) textColor = Color.White;
-            else if (isDim || !isEnabled) textColor = _dimFg;
-            else textColor = _fg;
+            if (isSelected) {
+                textColor = Color.White;
+            } else if (isDim || !isEnabled) {
+                textColor = _dimFg;
+            } else {
+                textColor = _fg;
+            }
 
             var text = day.ToString();
             var sz = g.MeasureString(text, _dayFont);
@@ -794,8 +815,10 @@ public class ThemedDateTimePicker : UserControl {
         private (int row, int col) HitTest(Point p) {
             var col = (p.X - _pad) / _cellSize;
             var row = p.Y / _cellSize;
-            if (col < 0 || col >= Cols || row < 0 || row >= MaxRows)
+            if (col < 0 || col >= Cols || row < 0 || row >= MaxRows) {
                 return (-1, -1);
+            }
+
             return (row, col);
         }
 
@@ -803,13 +826,18 @@ public class ThemedDateTimePicker : UserControl {
             var startOffset = ((int)_displayMonth.DayOfWeek + 6) % 7;
             var dayIndex = row * Cols + col - startOffset;
             var daysInMonth = DateTime.DaysInMonth(_displayMonth.Year, _displayMonth.Month);
-            if (dayIndex < 0 || dayIndex >= daysInMonth) return null;
+            if (dayIndex < 0 || dayIndex >= daysInMonth) {
+                return null;
+            }
+
             return new DateTime(_displayMonth.Year, _displayMonth.Month, dayIndex + 1);
         }
 
         private void CalendarPanel_MouseMove(object? sender, MouseEventArgs e) {
             var (row, col) = HitTest(e.Location);
-            if (row == _hoverRow && col == _hoverCol) return;
+            if (row == _hoverRow && col == _hoverCol) {
+                return;
+            }
 
             var prevRow = _hoverRow;
             var prevCol = _hoverCol;
@@ -822,7 +850,10 @@ public class ThemedDateTimePicker : UserControl {
         }
 
         private void CalendarPanel_MouseLeave(object? sender, EventArgs e) {
-            if (_hoverRow < 0 && _hoverCol < 0) return;
+            if (_hoverRow < 0 && _hoverCol < 0) {
+                return;
+            }
+
             var prevRow = _hoverRow;
             var prevCol = _hoverCol;
             _hoverRow = -1;
@@ -831,7 +862,10 @@ public class ThemedDateTimePicker : UserControl {
         }
 
         private void InvalidateCell(int row, int col) {
-            if (row < 0 || col < 0) return;
+            if (row < 0 || col < 0) {
+                return;
+            }
+
             _calendarPanel.Invalidate(new Rectangle(
                 _pad + col * _cellSize, row * _cellSize, _cellSize, _cellSize));
         }
@@ -839,8 +873,13 @@ public class ThemedDateTimePicker : UserControl {
         private void CalendarPanel_MouseClick(object? sender, MouseEventArgs e) {
             var (row, col) = HitTest(e.Location);
             var date = GetDateFromCell(row, col);
-            if (date == null) return;
-            if (date < _minDate.Date || date > _maxDate.Date) return;
+            if (date == null) {
+                return;
+            }
+
+            if (date < _minDate.Date || date > _maxDate.Date) {
+                return;
+            }
 
             DateTime result;
             if (_showTime && _hourSpin != null && _minuteSpin != null) {
@@ -861,7 +900,9 @@ public class ThemedDateTimePicker : UserControl {
         #region Time controls
 
         private void BuildTimeControls(float dpiScale) {
-            if (_timePanel == null) return;
+            if (_timePanel == null) {
+                return;
+            }
 
             var normalFont = new Font("Segoe UI", 9f);
             var boldFont = new Font("Segoe UI", 9f, FontStyle.Bold);

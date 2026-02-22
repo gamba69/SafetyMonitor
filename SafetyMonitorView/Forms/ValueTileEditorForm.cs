@@ -26,7 +26,7 @@ public class ValueTileEditorForm : Form {
 
     #region Public Constructors
 
-    public ValueTileEditorForm(ValueTileConfig config, Dashboard dashboard) {
+    public ValueTileEditorForm(ValueTileConfig config) {
         _config = config;
         _colorSchemeService = new ColorSchemeService();
         _valueSchemeService = new ValueSchemeService();

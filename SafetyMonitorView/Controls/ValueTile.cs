@@ -201,7 +201,7 @@ public class ValueTile : Panel {
         }
     }
 
-    private Color GetContrastColor(Color bg) {
+    private static Color GetContrastColor(Color bg) {
         var brightness = (bg.R * 299 + bg.G * 587 + bg.B * 114) / 1000;
         return brightness > 128 ? Color.Black : Color.White;
     }
@@ -314,7 +314,9 @@ public class ValueTile : Panel {
     }
 
     private void FitTitleFontAndTruncateWithEllipsis(float maxFontSize) {
-        if (_titleLabel == null) return;
+        if (_titleLabel == null) {
+            return;
+        }
 
         var fullTitle = string.IsNullOrEmpty(_config.Title) ? _config.Metric.GetDisplayName() : _config.Title;
         var availableWidth = Math.Max(0, _titleLabel.Width - HorizontalFitPadding);
@@ -359,7 +361,9 @@ public class ValueTile : Panel {
     }
 
     private void FitValueFontToWidth(int availableWidth, float maxFontSize) {
-        if (_valueLabel == null) return;
+        if (_valueLabel == null) {
+            return;
+        }
 
         var currentSize = maxFontSize;
         availableWidth = Math.Max(0, availableWidth - HorizontalFitPadding);
@@ -457,7 +461,7 @@ public class ValueTile : Panel {
         contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add(CreateToggleMenuItem("Show Icon", MaterialIcons.ValueMenuNorthEast, _config.ShowIcon, (_, _) => {
             _config.ShowIcon = !_config.ShowIcon;
-            if (_iconBox != null) { _iconBox.Visible = _config.ShowIcon; }
+            _iconBox?.Visible = _config.ShowIcon;
             ViewSettingsChanged?.Invoke(this);
         }));
         contextMenu.Items.Add(CreateToggleMenuItem("Show Unit", MaterialIcons.ValueMenuSouthEast, _config.ShowUnit, (_, _) => {

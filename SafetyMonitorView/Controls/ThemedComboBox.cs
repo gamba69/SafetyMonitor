@@ -83,8 +83,14 @@ public class ThemedComboBox : UserControl {
     public int SelectedIndex {
         get => _selectedIndex;
         set {
-            if (value < -1) value = -1;
-            if (value >= _items.Count) value = _items.Count - 1;
+            if (value < -1) {
+                value = -1;
+            }
+
+            if (value >= _items.Count) {
+                value = _items.Count - 1;
+            }
+
             if (_selectedIndex != value) {
                 _selectedIndex = value;
                 Invalidate(true);
@@ -102,7 +108,9 @@ public class ThemedComboBox : UserControl {
                 return;
             }
             var idx = _items.IndexOf(value);
-            if (idx >= 0) SelectedIndex = idx;
+            if (idx >= 0) {
+                SelectedIndex = idx;
+            }
         }
     }
 
@@ -170,7 +178,9 @@ public class ThemedComboBox : UserControl {
     /// Gets the display text for an item, using DisplayMember if set.
     /// </summary>
     public string GetItemText(object? item) {
-        if (item == null) return "";
+        if (item == null) {
+            return "";
+        }
 
         if (!string.IsNullOrEmpty(_displayMember)) {
             var prop = item.GetType().GetProperty(_displayMember);
@@ -217,7 +227,9 @@ public class ThemedComboBox : UserControl {
     protected override void OnFontChanged(EventArgs e) {
         base.OnFontChanged(e);
 
-        if (_enforcingSafeFont) return;
+        if (_enforcingSafeFont) {
+            return;
+        }
 
         if (!IsInstalledFont(Font?.FontFamily?.Name)) {
             try {
@@ -238,14 +250,20 @@ public class ThemedComboBox : UserControl {
     }
 
     private static bool IsInstalledFont(string? familyName) {
-        if (string.IsNullOrWhiteSpace(familyName)) return false;
+        if (string.IsNullOrWhiteSpace(familyName)) {
+            return false;
+        }
+
         var installedFonts = new InstalledFontCollection();
         return installedFonts.Families.Any(f =>
             string.Equals(f.Name, familyName, StringComparison.OrdinalIgnoreCase));
     }
 
     private string GetDisplayText() {
-        if (_selectedIndex < 0 || _selectedIndex >= _items.Count) return "";
+        if (_selectedIndex < 0 || _selectedIndex >= _items.Count) {
+            return "";
+        }
+
         return GetItemText(_items[_selectedIndex]);
     }
 
@@ -299,7 +317,9 @@ public class ThemedComboBox : UserControl {
     }
 
     private void TogglePopup() {
-        if (!Enabled) return;
+        if (!Enabled) {
+            return;
+        }
 
         if (_isDroppedDown && _popup != null) {
             _popup.Close();
@@ -310,7 +330,9 @@ public class ThemedComboBox : UserControl {
     }
 
     private void ShowPopup() {
-        if (_items.Count == 0) return;
+        if (_items.Count == 0) {
+            return;
+        }
 
         _popup = new DropdownPopup(this);
         _popup.ItemSelected += (_, idx) => { SelectedIndex = idx; };
@@ -561,7 +583,10 @@ public class ThemedComboBox : UserControl {
         }
 
         private void AnimateClose() {
-            if (_isClosing) return;
+            if (_isClosing) {
+                return;
+            }
+
             _isClosing = true;
             _fadeTimer?.Stop();
             _fadeTimer?.Dispose();
@@ -592,7 +617,9 @@ public class ThemedComboBox : UserControl {
 
             for (var i = 0; i < _visibleCount; i++) {
                 var itemIndex = i + _scrollOffset;
-                if (itemIndex >= _owner._items.Count) break;
+                if (itemIndex >= _owner._items.Count) {
+                    break;
+                }
 
                 var rect = new Rectangle(1, 1 + i * _itemHeight, listWidth - 2, _itemHeight);
                 Color bg;
@@ -649,9 +676,14 @@ public class ThemedComboBox : UserControl {
         #region Mouse handling
 
         private int HitTestItem(Point location) {
-            if (location.Y < 1 || location.Y >= _listPanel.Height - 1) return -1;
+            if (location.Y < 1 || location.Y >= _listPanel.Height - 1) {
+                return -1;
+            }
+
             var listWidth = _needsScrollBar ? _listPanel.Width - ScrollBarWidth : _listPanel.Width;
-            if (location.X < 1 || location.X >= listWidth) return -1;
+            if (location.X < 1 || location.X >= listWidth) {
+                return -1;
+            }
 
             var row = (location.Y - 1) / _itemHeight;
             var itemIndex = row + _scrollOffset;
@@ -669,7 +701,10 @@ public class ThemedComboBox : UserControl {
         }
 
         private void ListPanel_MouseLeave(object? sender, EventArgs e) {
-            if (_hoverIndex < 0) return;
+            if (_hoverIndex < 0) {
+                return;
+            }
+
             var prev = _hoverIndex;
             _hoverIndex = -1;
             InvalidateItem(prev);
@@ -684,7 +719,9 @@ public class ThemedComboBox : UserControl {
         }
 
         private void ListPanel_MouseWheel(object? sender, MouseEventArgs e) {
-            if (!_needsScrollBar) return;
+            if (!_needsScrollBar) {
+                return;
+            }
 
             var maxOffset = _owner._items.Count - _visibleCount;
             var delta = e.Delta > 0 ? -1 : 1;
@@ -697,7 +734,10 @@ public class ThemedComboBox : UserControl {
         }
 
         private void InvalidateItem(int itemIndex) {
-            if (itemIndex < _scrollOffset || itemIndex >= _scrollOffset + _visibleCount) return;
+            if (itemIndex < _scrollOffset || itemIndex >= _scrollOffset + _visibleCount) {
+                return;
+            }
+
             var row = itemIndex - _scrollOffset;
             _listPanel.Invalidate(new Rectangle(0, 1 + row * _itemHeight, _listPanel.Width, _itemHeight));
         }

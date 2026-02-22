@@ -193,7 +193,7 @@ public class EditableTileControl : Panel {
 
     private void OnEdit(object? sender, EventArgs e) {
         if (Config is ValueTileConfig vtc) {
-            using var editor = new ValueTileEditorForm(vtc, _dashboard);
+            using var editor = new ValueTileEditorForm(vtc);
             if (editor.ShowDialog() == DialogResult.OK) {
                 UpdateDisplay();
                 TileEdited?.Invoke(this, Config);

@@ -878,7 +878,7 @@ public class MainForm : MaterialForm {
 
         DialogResult result;
         if (tileConfig is ValueTileConfig vtc) {
-            using var editor = new ValueTileEditorForm(vtc, _currentDashboard);
+            using var editor = new ValueTileEditorForm(vtc);
             result = editor.ShowDialog();
         } else if (tileConfig is ChartTileConfig ctc) {
             using var editor = new ChartTileEditorForm(ctc, _currentDashboard);
