@@ -281,13 +281,30 @@ public class ColorSchemeEditorForm : Form {
         headerPanel.Controls.Add(descriptionLabel, 0, 2);
         headerPanel.Controls.Add(previewLabel, 1, 2);
 
+        const int editorFieldLabelWidth = 56;
+        const int colorModeFieldWidth = 266;
+
         var namePanel = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 35, WrapContents = false, AutoSize = false };
-        namePanel.Controls.Add(new Label { Text = "Name:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 6, 5, 0) });
-        _nameTextBox = new TextBox { Width = 250, Font = normalFont, Margin = new Padding(0, 2, 15, 0) };
+        namePanel.Controls.Add(new Label {
+            Text = "Name:",
+            Font = titleFont,
+            AutoSize = false,
+            Width = editorFieldLabelWidth,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Margin = new Padding(0, 6, 5, 0)
+        });
+        _nameTextBox = new TextBox { Width = colorModeFieldWidth, Font = normalFont, Margin = new Padding(0, 2, 15, 0) };
         _nameTextBox.TextChanged += (s, e) => UpdateDirtyState();
         namePanel.Controls.Add(_nameTextBox);
         var colorTogglePanel = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 42, WrapContents = false, AutoSize = false, Padding = new Padding(0, 4, 0, 4) };
-        var colorLabel = new Label { Text = "Color:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 6, 5, 0) };
+        var colorLabel = new Label {
+            Text = "Color:",
+            Font = titleFont,
+            AutoSize = false,
+            Width = editorFieldLabelWidth,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Margin = new Padding(0, 6, 5, 0)
+        };
 
         _solidButton = new RadioButton {
             Text = "Solid",
@@ -335,7 +352,7 @@ public class ColorSchemeEditorForm : Form {
             }
         };
 
-        _colorModeSegmentPanel = new Panel { Size = new Size(266, 32), Padding = new Padding(1), Margin = new Padding(0, 2, 0, 0) };
+        _colorModeSegmentPanel = new Panel { Size = new Size(colorModeFieldWidth, 32), Padding = new Padding(1), Margin = new Padding(0, 2, 0, 0) };
         _solidButton.Location = new Point(1, 1);
         _gradientButton.Location = new Point(125, 1);
         _colorModeSegmentPanel.Controls.Add(_solidButton);
