@@ -734,8 +734,8 @@ public class ChartTile : Panel {
         contextMenu.Items.Add(CreatePlotMenuItem("Edit Tile...", MaterialIcons.CommonEdit, HandleEditTileClick));
         contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add(CreatePlotMenuItem("Copy to Clipboard", MaterialIcons.PlotMenuCopyToClipboard, HandleCopyImageClick));
-        contextMenu.Items.Add(CreatePlotMenuItem("Save as .png ...", MaterialIcons.PlotMenuImage, HandleSaveImageClick));
-        contextMenu.Items.Add(CreatePlotMenuItem("Save as .xlsx ...", MaterialIcons.PlotMenuTable, HandleSaveTableClick));
+        contextMenu.Items.Add(CreatePlotMenuItem("Export as png...", MaterialIcons.PlotMenuImage, HandleSaveImageClick));
+        contextMenu.Items.Add(CreatePlotMenuItem("Export as xlsx...", MaterialIcons.PlotMenuTable, HandleSaveTableClick));
         contextMenu.Items.Add(new ToolStripSeparator());
 
         AddToggleMenuItems(contextMenu);
