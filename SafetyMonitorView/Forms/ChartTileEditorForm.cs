@@ -68,8 +68,44 @@ public class ChartTileEditorForm : Form {
 
     private void AddMetricButton_Click(object? sender, EventArgs e) {
         var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, null!, 2.0f, false, 0.5f, false, "(None)");
-        _metricsGrid.Rows[newRow].Tag = new MetricRowColors();
+        _metricsGrid.Rows[newRow].Tag = GenerateUniqueMetricColors();
         _metricsGrid.InvalidateRow(newRow);
+    }
+
+    private MetricRowColors GenerateUniqueMetricColors() {
+        var usedColors = new HashSet<int>();
+        foreach (DataGridViewRow row in _metricsGrid.Rows) {
+            if (row.IsNewRow) {
+                continue;
+            }
+
+            var colors = EnsureRowColors(row);
+            usedColors.Add(colors.Light.ToArgb());
+            usedColors.Add(colors.Dark.ToArgb());
+        }
+
+        const double saturation = 0.75;
+        const double lightThemeValue = 0.55; // darker for light theme
+        const double darkThemeValue = 0.82; // lighter for dark theme
+
+        for (var index = 0; index < 360; index++) {
+            var hue = (index * 137.508) % 360;
+            var lightColor = ColorFromHsv(hue, saturation, lightThemeValue);
+            var darkColor = ColorFromHsv(hue, saturation, darkThemeValue);
+            if (usedColors.Contains(lightColor.ToArgb()) || usedColors.Contains(darkColor.ToArgb())) {
+                continue;
+            }
+
+            return new MetricRowColors { Light = lightColor, Dark = darkColor };
+        }
+
+        var seed = Guid.NewGuid().GetHashCode();
+        var random = new Random(seed);
+        var fallbackHue = random.NextDouble() * 360;
+        return new MetricRowColors {
+            Light = ColorFromHsv(fallbackHue, saturation, lightThemeValue),
+            Dark = ColorFromHsv(fallbackHue, saturation, darkThemeValue)
+        };
     }
 
     private void ApplyTheme() {
@@ -426,6 +462,30 @@ public class ChartTileEditorForm : Form {
         }
 
         return Math.Clamp(tension, 0f, 3f);
+    }
+
+    private static Color ColorFromHsv(double hue, double saturation, double value) {
+        hue = ((hue % 360) + 360) % 360;
+        saturation = Math.Clamp(saturation, 0d, 1d);
+        value = Math.Clamp(value, 0d, 1d);
+
+        var c = value * saturation;
+        var x = c * (1 - Math.Abs((hue / 60d) % 2 - 1));
+        var m = value - c;
+
+        var (rPrime, gPrime, bPrime) = hue switch {
+            < 60d => (c, x, 0d),
+            < 120d => (x, c, 0d),
+            < 180d => (0d, c, x),
+            < 240d => (0d, x, c),
+            < 300d => (x, 0d, c),
+            _ => (c, 0d, x)
+        };
+
+        var r = (int)Math.Round((rPrime + m) * 255);
+        var g = (int)Math.Round((gPrime + m) * 255);
+        var b = (int)Math.Round((bPrime + m) * 255);
+        return Color.FromArgb(r, g, b);
     }
 
     private static MetricRowColors EnsureRowColors(DataGridViewRow row) {
