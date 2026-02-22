@@ -457,7 +457,7 @@ public class ValueTile : Panel {
     private void RebuildContextMenu(ContextMenuStrip contextMenu) {
         contextMenu.Items.Clear();
 
-        contextMenu.Items.Add(CreateMenuItem("Edit Tile", MaterialIcons.CommonEdit, (_, _) => EditRequested?.Invoke(this)));
+        contextMenu.Items.Add(CreateMenuItem("Edit Tile...", MaterialIcons.CommonEdit, (_, _) => EditRequested?.Invoke(this)));
         contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add(CreateToggleMenuItem("Show Icon", MaterialIcons.ValueMenuNorthEast, _config.ShowIcon, (_, _) => {
             _config.ShowIcon = !_config.ShowIcon;

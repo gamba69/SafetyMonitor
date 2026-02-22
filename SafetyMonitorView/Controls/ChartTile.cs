@@ -17,6 +17,7 @@ public class ChartTile : Panel {
     private readonly ChartTileConfig _config;
     private readonly DataService _dataService;
     private readonly ValueSchemeService _valueSchemeService = new();
+    private readonly ChartTableExportService _chartTableExportService = new();
     private readonly List<ScottPlot.IYAxis> _extraAxes = [];
     private bool _initialized;
     private readonly ThemedMenuRenderer _contextMenuRenderer = new();
@@ -664,9 +665,7 @@ public class ChartTile : Panel {
             _topPanel.BackColor = tileBg;
         }
         _periodSelector?.ApplyTheme();
-        if (_periodSelector != null) {
-            _periodSelector.BorderColorOverride = isLight ? Color.FromArgb(150, 150, 150) : null;
-        }
+        _periodSelector?.BorderColorOverride = isLight ? Color.FromArgb(150, 150, 150) : null;
 
         if (_staticRangePanel != null && _staticRangePanel.BackColor != tileBg) {
             _staticRangePanel.BackColor = tileBg;
@@ -674,12 +673,8 @@ public class ChartTile : Panel {
 
         _staticStartPicker?.ApplyTheme();
         _staticEndPicker?.ApplyTheme();
-        if (_staticStartPicker != null) {
-            _staticStartPicker.BorderColorOverride = isLight ? Color.FromArgb(150, 150, 150) : null;
-        }
-        if (_staticEndPicker != null) {
-            _staticEndPicker.BorderColorOverride = isLight ? Color.FromArgb(150, 150, 150) : null;
-        }
+        _staticStartPicker?.BorderColorOverride = isLight ? Color.FromArgb(150, 150, 150) : null;
+        _staticEndPicker?.BorderColorOverride = isLight ? Color.FromArgb(150, 150, 150) : null;
 
         if (_inspectorActive && _lastHoverAnchorX.HasValue) {
             UpdateHoverInfo(_lastHoverAnchorX.Value);
@@ -736,10 +731,11 @@ public class ChartTile : Panel {
     private void RebuildPlotContextMenu(ContextMenuStrip contextMenu) {
         contextMenu.Items.Clear();
 
-        contextMenu.Items.Add(CreatePlotMenuItem("Edit Tile", MaterialIcons.CommonEdit, HandleEditTileClick));
+        contextMenu.Items.Add(CreatePlotMenuItem("Edit Tile...", MaterialIcons.CommonEdit, HandleEditTileClick));
         contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add(CreatePlotMenuItem("Copy to Clipboard", MaterialIcons.PlotMenuCopyToClipboard, HandleCopyImageClick));
-        contextMenu.Items.Add(CreatePlotMenuItem("Save Image", MaterialIcons.PlotMenuImage, HandleSaveImageClick));
+        contextMenu.Items.Add(CreatePlotMenuItem("Save as .png ...", MaterialIcons.PlotMenuImage, HandleSaveImageClick));
+        contextMenu.Items.Add(CreatePlotMenuItem("Save as .xlsx ...", MaterialIcons.PlotMenuTable, HandleSaveTableClick));
         contextMenu.Items.Add(new ToolStripSeparator());
 
         AddToggleMenuItems(contextMenu);
@@ -874,6 +870,123 @@ public class ChartTile : Panel {
 
         using var bmp = CapturePlotBitmap();
         bmp?.Save(dialog.FileName, System.Drawing.Imaging.ImageFormat.Png);
+    }
+
+    private void HandleSaveTableClick(object? sender, EventArgs e) {
+        var aggregationInterval = ResolveAggregationInterval();
+        var aggregatedData = GetAggregatedExportData(aggregationInterval);
+        var rawData = GetRawExportData();
+
+        using var dialog = new SaveFileDialog {
+            Filter = "Excel Workbook|*.xlsx",
+            DefaultExt = "xlsx",
+            AddExtension = true,
+            FileName = $"{_config.Title}_table.xlsx"
+        };
+
+        if (dialog.ShowDialog() != DialogResult.OK) {
+            return;
+        }
+
+        try {
+            _chartTableExportService.Export(dialog.FileName, _config.MetricAggregations, aggregatedData, rawData);
+        } catch (IOException ioEx) {
+            ThemedMessageBox.Show(
+                this,
+                $"Cannot save the table file because it is being used by another process. {ioEx.Message}",
+                "Export Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+        } catch (Exception ex) {
+            ThemedMessageBox.Show(
+                this,
+                $"Failed to export table. {ex.Message}",
+                "Export Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
+    }
+
+    private List<DataStorage.Models.ObservingData> GetAggregatedExportData(TimeSpan? aggregationInterval) {
+        var exportRows = new Dictionary<DateTime, DataStorage.Models.ObservingData>();
+
+        foreach (var aggregation in _config.MetricAggregations) {
+            var rows = _dataService.GetChartData(
+                _config.Period,
+                _config.CustomStartTime,
+                _isStaticMode ? _config.CustomEndTime : null,
+                _config.CustomPeriodDuration,
+                aggregationInterval,
+                aggregation.Function);
+
+            foreach (var row in rows) {
+                if (!exportRows.TryGetValue(row.Timestamp, out var mergedRow)) {
+                    mergedRow = new DataStorage.Models.ObservingData { Timestamp = row.Timestamp };
+                    exportRows[row.Timestamp] = mergedRow;
+                }
+
+                SetMetricValue(mergedRow, aggregation.Metric, aggregation.Metric.GetValue(row));
+            }
+        }
+
+        return [.. exportRows.Values.OrderBy(x => x.Timestamp)];
+    }
+
+    private List<DataStorage.Models.ObservingData> GetRawExportData() {
+        return _dataService.GetChartData(
+            _config.Period,
+            _config.CustomStartTime,
+            _isStaticMode ? _config.CustomEndTime : null,
+            _config.CustomPeriodDuration,
+            null,
+            null);
+    }
+
+    private static void SetMetricValue(DataStorage.Models.ObservingData target, MetricType metric, double? value) {
+        switch (metric) {
+            case MetricType.Temperature:
+                target.Temperature = value;
+                break;
+            case MetricType.Humidity:
+                target.Humidity = value;
+                break;
+            case MetricType.Pressure:
+                target.Pressure = value;
+                break;
+            case MetricType.DewPoint:
+                target.DewPoint = value;
+                break;
+            case MetricType.CloudCover:
+                target.CloudCover = value;
+                break;
+            case MetricType.SkyTemperature:
+                target.SkyTemperature = value;
+                break;
+            case MetricType.SkyBrightness:
+                target.SkyBrightness = value;
+                break;
+            case MetricType.SkyQuality:
+                target.SkyQuality = value;
+                break;
+            case MetricType.RainRate:
+                target.RainRate = value;
+                break;
+            case MetricType.WindSpeed:
+                target.WindSpeed = value;
+                break;
+            case MetricType.WindGust:
+                target.WindGust = value;
+                break;
+            case MetricType.WindDirection:
+                target.WindDirection = value;
+                break;
+            case MetricType.StarFwhm:
+                target.StarFwhm = value;
+                break;
+            case MetricType.IsSafe:
+                target.SafePercentage = value;
+                break;
+        }
     }
 
     private void HandleCopyImageClick(object? sender, EventArgs e) {

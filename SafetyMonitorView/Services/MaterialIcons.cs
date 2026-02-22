@@ -36,6 +36,7 @@ public static class MaterialIcons {
     public const string PlotMenuAutoscale = "plot_menu_autoscale";
     public const string PlotMenuOpenInWindow = "plot_menu_open_in_window";
     public const string PlotMenuImage = "plot_menu_image";
+    public const string PlotMenuTable = "plot_menu_table";
     public const string ValueMenuNorthEast = "value_menu_north_east";
     public const string ValueMenuSouthEast = "value_menu_south_east";
     public const string PlotMenuDisplayOption = "plot_menu_display_option";
@@ -123,6 +124,7 @@ public static class MaterialIcons {
         [PlotMenuAutoscale] = "\uF417",
         [PlotMenuSaveImage] = "\uF17F", // "\uE161",
         [PlotMenuImage] = "\uE3F4",
+        [PlotMenuTable] = "\uF191",
         [PlotMenuOpenInWindow] = "\uE89E", // "\uE2C7",
         [ValueMenuNorthEast] = "\uF1E1",
         [ValueMenuSouthEast] = "\uF1E4",
