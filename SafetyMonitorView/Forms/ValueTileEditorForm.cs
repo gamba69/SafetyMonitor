@@ -111,7 +111,7 @@ public class ValueTileEditorForm : Form {
         }
 
         if (_editValueSchemesButton != null) {
-            var valueSchemesIcon = MaterialIcons.GetIcon(MaterialIcons.CommonEdit, iconColor, 18);
+            var valueSchemesIcon = MaterialIcons.GetIcon(MaterialIcons.MenuViewValueSchemes, iconColor, 18);
             var oldImage = _editValueSchemesButton.Image;
             _editValueSchemesButton.Image = valueSchemesIcon;
             oldImage?.Dispose();
