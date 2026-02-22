@@ -8,9 +8,11 @@ public class ValueSchemeEditorForm : Form {
     #region Private Fields
 
     private readonly ValueSchemeService _valueSchemeService;
+    private RadioButton _ascendingButton = null!;
     private Button _cancelButton = null!;
     private ValueScheme? _currentScheme;
     private Button _deleteButton = null!;
+    private RadioButton _descendingButton = null!;
     private Button _duplicateButton = null!;
     private bool _isDirty;
     private bool _isLoading;
@@ -21,6 +23,7 @@ public class ValueSchemeEditorForm : Form {
     private Button _saveButton = null!;
     private ListBox _schemeList = null!;
     private List<ValueScheme> _schemes;
+    private Panel _sortSegmentPanel = null!;
     private DataGridView _stopsGrid = null!;
 
     #endregion Private Fields
@@ -266,6 +269,52 @@ public class ValueSchemeEditorForm : Form {
 
         var stopsLabel = new Label { Text = "Value Stops:", Font = titleFont, Dock = DockStyle.Top, AutoSize = true, Margin = new Padding(0, 5, 0, 3) };
 
+        var sortTogglePanel = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 38, WrapContents = false, AutoSize = false, Padding = new Padding(0, 3, 0, 3) };
+        var sortLabel = new Label { Text = "Order:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 6, 5, 0) };
+
+        _ascendingButton = new RadioButton {
+            Text = "Ascending",
+            Appearance = Appearance.Button,
+            TextImageRelation = TextImageRelation.ImageBeforeText,
+            ImageAlign = ContentAlignment.MiddleCenter,
+            TextAlign = ContentAlignment.MiddleCenter,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = { BorderSize = 0, CheckedBackColor = Color.Transparent, MouseDownBackColor = Color.Transparent, MouseOverBackColor = Color.Transparent },
+            Font = normalFont,
+            Padding = new Padding(4, 0, 4, 0),
+            AutoSize = false,
+            Size = new Size(110, 30),
+            Checked = true,
+            Cursor = Cursors.Hand
+        };
+        _ascendingButton.CheckedChanged += (s, e) => { if (_ascendingButton.Checked) { SortGridByValue(); UpdateDirtyState(); UpdatePreview(); UpdateSortToggleAppearance(); } };
+
+        _descendingButton = new RadioButton {
+            Text = "Descending",
+            Appearance = Appearance.Button,
+            TextImageRelation = TextImageRelation.ImageBeforeText,
+            ImageAlign = ContentAlignment.MiddleCenter,
+            TextAlign = ContentAlignment.MiddleCenter,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = { BorderSize = 0, CheckedBackColor = Color.Transparent, MouseDownBackColor = Color.Transparent, MouseOverBackColor = Color.Transparent },
+            Font = normalFont,
+            Padding = new Padding(4, 0, 4, 0),
+            AutoSize = false,
+            Size = new Size(120, 30),
+            Checked = false,
+            Cursor = Cursors.Hand
+        };
+        _descendingButton.CheckedChanged += (s, e) => { if (_descendingButton.Checked) { SortGridByValue(); UpdateDirtyState(); UpdatePreview(); UpdateSortToggleAppearance(); } };
+
+        _sortSegmentPanel = new Panel { Size = new Size(232, 32), Padding = new Padding(1), Margin = new Padding(0, 2, 0, 0) };
+        _ascendingButton.Location = new Point(1, 1);
+        _descendingButton.Location = new Point(112, 1);
+        _sortSegmentPanel.Controls.Add(_ascendingButton);
+        _sortSegmentPanel.Controls.Add(_descendingButton);
+
+        sortTogglePanel.Controls.Add(sortLabel);
+        sortTogglePanel.Controls.Add(_sortSegmentPanel);
+
         _stopsGrid = new DataGridView {
             Dock = DockStyle.Fill,
             Font = normalFont,
@@ -349,6 +398,7 @@ public class ValueSchemeEditorForm : Form {
         rightPanel.Controls.Add(_stopsGrid);
         rightPanel.Controls.Add(gridButtons);
         rightPanel.Controls.Add(_previewPanel);
+        rightPanel.Controls.Add(sortTogglePanel);
         rightPanel.Controls.Add(stopsLabel);
         rightPanel.Controls.Add(namePanel);
         rightPanel.Controls.Add(headerPanel);
@@ -358,21 +408,28 @@ public class ValueSchemeEditorForm : Form {
     private void ValueSchemeEditorForm_Shown(object? sender, EventArgs e) {
         _isPreviewPrimed = true;
         UpdatePreview();
+        UpdateSortToggleAppearance();
     }
 
     private void LoadSchemeToEditor(ValueScheme scheme) {
         _isLoading = true;
         _nameTextBox.Text = scheme.Name;
         _nameTextBox.ReadOnly = ValueSchemeService.IsBuiltIn(scheme.Name);
+        _descendingButton.Checked = scheme.Descending;
+        _ascendingButton.Checked = !scheme.Descending;
 
         _stopsGrid.Rows.Clear();
-        foreach (var stop in scheme.Stops.OrderBy(s => s.Value)) {
+        var orderedStops = scheme.Descending
+            ? scheme.Stops.OrderByDescending(s => s.Value)
+            : scheme.Stops.OrderBy(s => s.Value);
+        foreach (var stop in orderedStops) {
             _stopsGrid.Rows.Add(
                 stop.Value.ToString(),
                 stop.Text,
                 stop.Description);
         }
         UpdatePreview();
+        UpdateSortToggleAppearance();
         _isLoading = false;
     }
 
@@ -423,10 +480,13 @@ public class ValueSchemeEditorForm : Form {
             return;
         }
 
-        var sorted = scheme.Stops.OrderBy(s => s.Value).ToList();
+        var sorted = scheme.Descending
+            ? scheme.Stops.OrderByDescending(s => s.Value).ToList()
+            : scheme.Stops.OrderBy(s => s.Value).ToList();
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
         var textColor = isLight ? Color.Black : Color.White;
         var borderColor = Color.FromArgb(120, 120, 120);
+        var comparisonSymbol = scheme.Descending ? "\u2265" : "\u2264";
 
         using var borderPen = new Pen(borderColor);
         g.DrawRectangle(borderPen, rect);
@@ -462,7 +522,7 @@ public class ValueSchemeEditorForm : Form {
 
             // Draw text label
             var textLabel = sorted[i].Text;
-            var valueLabel = $"\u2264{sorted[i].Value}";
+            var valueLabel = $"{comparisonSymbol}{sorted[i].Value}";
             using var textBrush = new SolidBrush(textColor);
 
             var textSize = g.MeasureString(textLabel, previewFont);
@@ -481,6 +541,7 @@ public class ValueSchemeEditorForm : Form {
     private ValueScheme ReadSchemeFromEditor() {
         var scheme = new ValueScheme {
             Name = _nameTextBox.Text.Trim(),
+            Descending = _descendingButton.Checked,
             Stops = []
         };
 
@@ -621,7 +682,9 @@ public class ValueSchemeEditorForm : Form {
             rows.Add((val, text, desc, valStr));
         }
 
-        var sorted = rows.OrderBy(r => r.Value).ToList();
+        var sorted = _descendingButton.Checked
+            ? rows.OrderByDescending(r => r.Value).ToList()
+            : rows.OrderBy(r => r.Value).ToList();
 
         bool alreadySorted = true;
         for (int i = 0; i < sorted.Count; i++) {
@@ -642,6 +705,31 @@ public class ValueSchemeEditorForm : Form {
             _stopsGrid.Rows.Add(item.ValueStr, item.Text, item.Description);
         }
         _isLoading = false;
+    }
+
+    private void UpdateSortToggleAppearance() {
+        if (_sortSegmentPanel == null || _ascendingButton == null || _descendingButton == null) {
+            return;
+        }
+
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        var segmentBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
+        var activeBg = isLight ? Color.White : Color.FromArgb(62, 77, 84);
+        var inactiveFg = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
+        var activeFg = isLight ? Color.FromArgb(21, 28, 31) : Color.White;
+        var borderColor = isLight ? Color.FromArgb(196, 206, 211) : Color.FromArgb(70, 85, 92);
+
+        _sortSegmentPanel.BackColor = borderColor;
+        _ascendingButton.BackColor = _ascendingButton.Checked ? activeBg : segmentBg;
+        _descendingButton.BackColor = _descendingButton.Checked ? activeBg : segmentBg;
+        _ascendingButton.ForeColor = _ascendingButton.Checked ? activeFg : inactiveFg;
+        _descendingButton.ForeColor = _descendingButton.Checked ? activeFg : inactiveFg;
+
+        var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
+        _ascendingButton.Image = MaterialIcons.GetIcon(MaterialIcons.SortAscending, iconColor, 18);
+        _descendingButton.Image = MaterialIcons.GetIcon(MaterialIcons.SortDescending, iconColor, 18);
+        _ascendingButton.ImageAlign = ContentAlignment.MiddleLeft;
+        _descendingButton.ImageAlign = ContentAlignment.MiddleLeft;
     }
 
     private void UpdatePreview() {
@@ -671,6 +759,10 @@ public class ValueSchemeEditorForm : Form {
 
     private static bool AreSchemesEqual(ValueScheme original, ValueScheme updated) {
         if (!string.Equals(original.Name?.Trim() ?? "", updated.Name?.Trim() ?? "", StringComparison.Ordinal)) {
+            return false;
+        }
+
+        if (original.Descending != updated.Descending) {
             return false;
         }
 

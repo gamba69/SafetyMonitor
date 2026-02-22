@@ -57,6 +57,8 @@ public static class MaterialIcons {
     public const string CommonDuplicate = "common_duplicate";
     public const string CommonMoveUp = "common_move_up";
     public const string CommonMoveDown = "common_move_down";
+    public const string SortAscending = "sort_ascending";
+    public const string SortDescending = "sort_descending";
     public const string CommonBrowse = "common_browse";
     public const string CommonResize = "common_resize";
     public const string CommonTest = "common_test";
@@ -128,6 +130,8 @@ public static class MaterialIcons {
         [CommonDuplicate] = "\uE14D",
         [CommonMoveUp] = "\uE5D8",
         [CommonMoveDown] = "\uE5DB",
+        [SortAscending] = "\uE5D8",
+        [SortDescending] = "\uE5DB",
         [CommonBrowse] = "\uE2C8",
         [CommonResize] = "\uE8CE",
         [CommonTest] = "\uE86C",
