@@ -77,10 +77,11 @@ public class ValueSchemeService {
 
     private static ValueScheme CreateSafetyScheme() => new() {
         Name = "Safety",
+        Descending = true,
         Stops =
         [
-            new() { Value = 0, Text = "SAFE", Description = "Safe condition" },
-            new() { Value = 1, Text = "UNSAFE", Description = "Unsafe condition" }
+            new() { Value = 100, Text = "SAFE", Description = "Safe condition (100%)" },
+            new() { Value = 0, Text = "UNSAFE", Description = "Unsafe or partially unsafe condition (<100%)" }
         ]
     };
 

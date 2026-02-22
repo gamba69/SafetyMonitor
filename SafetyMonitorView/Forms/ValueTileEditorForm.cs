@@ -19,6 +19,7 @@ public class ValueTileEditorForm : Form {
     private Button _editValueSchemesButton = null!;
     private Button _saveButton = null!;
     private CheckBox _showIconCheckBox = null!;
+    private CheckBox _showUnitCheckBox = null!;
     private TextBox _titleTextBox = null!;
 
     #endregion Private Fields
@@ -215,8 +216,10 @@ public class ValueTileEditorForm : Form {
         valueSchemesPanel.Controls.Add(_editValueSchemesButton);
 
         var iconPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 10, 0, 5) };
-        _showIconCheckBox = new CheckBox { Text = "Show Icon", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 3, 0, 0) };
+        _showIconCheckBox = new CheckBox { Text = "Show Icon", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 3, 12, 0) };
+        _showUnitCheckBox = new CheckBox { Text = "Show Unit", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 3, 0, 0) };
         iconPanel.Controls.Add(_showIconCheckBox);
+        iconPanel.Controls.Add(_showUnitCheckBox);
         mainLayout.Controls.Add(valueSchemesPanel, 0, 4);
         mainLayout.Controls.Add(iconPanel, 0, 5);
 
@@ -253,6 +256,7 @@ public class ValueTileEditorForm : Form {
         }
 
         _showIconCheckBox.Checked = _config.ShowIcon;
+        _showUnitCheckBox.Checked = _config.ShowUnit;
 
         if (string.IsNullOrEmpty(_config.IconColorSchemeName)) {
             _iconColorSchemeComboBox.SelectedIndex = 0; // "(Theme)"
@@ -322,6 +326,7 @@ public class ValueTileEditorForm : Form {
         var selectedValueScheme = _valueSchemeComboBox.SelectedItem?.ToString();
         _config.ValueSchemeName = selectedValueScheme == "(None)" ? "" : (selectedValueScheme ?? "");
         _config.ShowIcon = _showIconCheckBox.Checked;
+        _config.ShowUnit = _showUnitCheckBox.Checked;
 
         DialogResult = DialogResult.OK;
         Close();

@@ -36,6 +36,7 @@ public static class MetricTypeExtensions {
         MetricType.WindGust => "m/s",
         MetricType.WindDirection => "°",
         MetricType.StarFwhm => "arcsec",
+        MetricType.IsSafe => "%",
         _ => ""
     };
     public static double? GetValue(this MetricType type, DataStorage.Models.ObservingData data) => type switch {
@@ -53,8 +54,8 @@ public static class MetricTypeExtensions {
         MetricType.WindDirection => data.WindDirection,
         MetricType.StarFwhm => data.StarFwhm,
         MetricType.IsSafe => data.IsSafeInt.HasValue
-            ? data.IsSafeInt.Value
-            : (data.SafePercentage.HasValue ? data.SafePercentage.Value / 100.0 : null),
+            ? data.IsSafeInt.Value * 100.0
+            : data.SafePercentage,
         _ => null
     };
 

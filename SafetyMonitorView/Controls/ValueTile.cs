@@ -222,7 +222,8 @@ public class ValueTile : Panel {
             Text = _config.Metric.GetUnit(),
             AutoSize = false,
             TextAlign = ContentAlignment.BottomRight,
-            BackColor = Color.Transparent
+            BackColor = Color.Transparent,
+            Visible = _config.ShowUnit
         };
 
         Controls.Add(_titleLabel);
@@ -405,7 +406,7 @@ public class ValueTile : Panel {
         UpdateIcon(iconLogicalSize);
 
         // Value: bottom-left, takes more space
-        var valueWidth = (int)(contentWidth * 0.84);
+        var valueWidth = _config.ShowUnit ? (int)(contentWidth * 0.84) : contentWidth;
         _valueLabel.SetBounds(Padding.Left, Padding.Top + halfHeight - 10, valueWidth, halfHeight + 10);
         FitValueFontToWidth(valueWidth, valueFontSize);
 
@@ -413,6 +414,7 @@ public class ValueTile : Panel {
         var unitStartX = Padding.Left + valueWidth;
         var unitWidth = Math.Max(0, contentWidth - valueWidth);
         _unitLabel.SetBounds(unitStartX, Padding.Top + halfHeight, unitWidth, halfHeight);
+        _unitLabel.Visible = _config.ShowUnit;
     }
 
     #endregion Private Methods
