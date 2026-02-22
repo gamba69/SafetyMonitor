@@ -24,6 +24,16 @@ public class ValueSchemeEditorForm : Form {
     private ListBox _schemeList = null!;
     private List<ValueScheme> _schemes;
     private Panel _sortSegmentPanel = null!;
+    private static Bitmap? MirrorIconVertically(Bitmap? source) {
+        if (source == null) {
+            return null;
+        }
+
+        var mirrored = (Bitmap)source.Clone();
+        mirrored.RotateFlip(RotateFlipType.RotateNoneFlipY);
+        source.Dispose();
+        return mirrored;
+    }
     private DataGridView _stopsGrid = null!;
 
     #endregion Private Fields
@@ -267,9 +277,7 @@ public class ValueSchemeEditorForm : Form {
         _nameTextBox.TextChanged += (s, e) => UpdateDirtyState();
         namePanel.Controls.Add(_nameTextBox);
 
-        var stopsLabel = new Label { Text = "Value Stops:", Font = titleFont, Dock = DockStyle.Top, AutoSize = true, Margin = new Padding(0, 5, 0, 3) };
-
-        var sortTogglePanel = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 38, WrapContents = false, AutoSize = false, Padding = new Padding(0, 3, 0, 3) };
+        var sortTogglePanel = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 42, WrapContents = false, AutoSize = false, Padding = new Padding(0, 4, 0, 4) };
         var sortLabel = new Label { Text = "Order:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 6, 5, 0) };
 
         _ascendingButton = new RadioButton {
@@ -281,9 +289,9 @@ public class ValueSchemeEditorForm : Form {
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = { BorderSize = 0, CheckedBackColor = Color.Transparent, MouseDownBackColor = Color.Transparent, MouseOverBackColor = Color.Transparent },
             Font = normalFont,
-            Padding = new Padding(4, 0, 4, 0),
+            Padding = new Padding(8, 0, 8, 0),
             AutoSize = false,
-            Size = new Size(110, 30),
+            Size = new Size(142, 30),
             Checked = true,
             Cursor = Cursors.Hand
         };
@@ -298,17 +306,17 @@ public class ValueSchemeEditorForm : Form {
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = { BorderSize = 0, CheckedBackColor = Color.Transparent, MouseDownBackColor = Color.Transparent, MouseOverBackColor = Color.Transparent },
             Font = normalFont,
-            Padding = new Padding(4, 0, 4, 0),
+            Padding = new Padding(8, 0, 8, 0),
             AutoSize = false,
-            Size = new Size(120, 30),
+            Size = new Size(154, 30),
             Checked = false,
             Cursor = Cursors.Hand
         };
         _descendingButton.CheckedChanged += (s, e) => { if (_descendingButton.Checked) { SortGridByValue(); UpdateDirtyState(); UpdatePreview(); UpdateSortToggleAppearance(); } };
 
-        _sortSegmentPanel = new Panel { Size = new Size(232, 32), Padding = new Padding(1), Margin = new Padding(0, 2, 0, 0) };
+        _sortSegmentPanel = new Panel { Size = new Size(298, 32), Padding = new Padding(1), Margin = new Padding(0, 2, 0, 0) };
         _ascendingButton.Location = new Point(1, 1);
-        _descendingButton.Location = new Point(112, 1);
+        _descendingButton.Location = new Point(143, 1);
         _sortSegmentPanel.Controls.Add(_ascendingButton);
         _sortSegmentPanel.Controls.Add(_descendingButton);
 
@@ -340,7 +348,7 @@ public class ValueSchemeEditorForm : Form {
         removeStopBtn.Click += RemoveStop_Click;
         gridButtons.Controls.AddRange([addStopBtn, removeStopBtn]);
 
-        _previewPanel = new PreviewPanel { Dock = DockStyle.Bottom, Height = 40, Padding = new Padding(0, 5, 0, 0) };
+        _previewPanel = new PreviewPanel { Dock = DockStyle.Bottom, Height = 56, Padding = new Padding(0, 6, 0, 0) };
         _previewPanel.Paint += PreviewPanel_Paint;
 
         // ── Row 1: SINGLE bottom bar spanning both columns ──
@@ -399,7 +407,6 @@ public class ValueSchemeEditorForm : Form {
         rightPanel.Controls.Add(gridButtons);
         rightPanel.Controls.Add(_previewPanel);
         rightPanel.Controls.Add(sortTogglePanel);
-        rightPanel.Controls.Add(stopsLabel);
         rightPanel.Controls.Add(namePanel);
         rightPanel.Controls.Add(headerPanel);
         root.Controls.Add(rightPanel, 1, 0);
@@ -520,7 +527,6 @@ public class ValueSchemeEditorForm : Form {
                 g.DrawLine(sepPen, segRect.X, segRect.Y, segRect.X, segRect.Bottom);
             }
 
-            // Draw text label
             var textLabel = sorted[i].Text;
             var valueLabel = $"{comparisonSymbol}{sorted[i].Value}";
             using var textBrush = new SolidBrush(textColor);
@@ -529,9 +535,11 @@ public class ValueSchemeEditorForm : Form {
             var valueSize = g.MeasureString(valueLabel, smallFont);
 
             var textX = segRect.X + (segRect.Width - textSize.Width) / 2;
-            var textY = segRect.Y + (segRect.Height - textSize.Height - valueSize.Height) / 2;
+            var totalHeight = textSize.Height + valueSize.Height + 1;
+            var textY = segRect.Y + (segRect.Height - totalHeight) / 2;
+            var valueX = segRect.X + (segRect.Width - valueSize.Width) / 2;
             g.DrawString(textLabel, previewFont, textBrush, textX, textY);
-            g.DrawString(valueLabel, smallFont, textBrush, segRect.X + (segRect.Width - valueSize.Width) / 2, textY + textSize.Height);
+            g.DrawString(valueLabel, smallFont, textBrush, valueX, textY + textSize.Height + 1);
         }
 
         previewFont.Dispose();
@@ -726,10 +734,12 @@ public class ValueSchemeEditorForm : Form {
         _descendingButton.ForeColor = _descendingButton.Checked ? activeFg : inactiveFg;
 
         var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
-        _ascendingButton.Image = MaterialIcons.GetIcon(MaterialIcons.SortAscending, iconColor, 18);
-        _descendingButton.Image = MaterialIcons.GetIcon(MaterialIcons.SortDescending, iconColor, 18);
+        _ascendingButton.Image = MirrorIconVertically(MaterialIcons.GetIcon(MaterialIcons.Sort, iconColor, 22));
+        _descendingButton.Image = MaterialIcons.GetIcon(MaterialIcons.Sort, iconColor, 22);
         _ascendingButton.ImageAlign = ContentAlignment.MiddleLeft;
         _descendingButton.ImageAlign = ContentAlignment.MiddleLeft;
+        _ascendingButton.TextAlign = ContentAlignment.MiddleLeft;
+        _descendingButton.TextAlign = ContentAlignment.MiddleLeft;
     }
 
     private void UpdatePreview() {
