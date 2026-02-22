@@ -23,6 +23,9 @@ public class ValueTile : Panel {
     private Label? _titleLabel;
     private Label? _unitLabel;
     private Label? _valueLabel;
+    private const float MinTitleFontSize = 10f;
+    private const float MinValueFontSize = 10f;
+    private const int HorizontalFitPadding = 8;
 
     #endregion Private Fields
 
@@ -71,6 +74,9 @@ public class ValueTile : Panel {
             _valueLabel.Text = " ?";
             ResetColors();
         }
+
+        // Value text can change on every refresh; recalculate layout/font fitting to prevent clipping.
+        UpdateLayout();
     }
 
     public void UpdateTheme() {
@@ -286,23 +292,31 @@ public class ValueTile : Panel {
         oldImage?.Dispose();
     }
 
-    private void TruncateTitleWithEllipsis() {
+    private static int MeasureTextWidth(string text, Font font) {
+        return TextRenderer.MeasureText(text, font).Width;
+    }
+
+    private void FitTitleFontAndTruncateWithEllipsis(float maxFontSize) {
         if (_titleLabel == null) return;
 
         var fullTitle = string.IsNullOrEmpty(_config.Title) ? _config.Metric.GetDisplayName() : _config.Title;
-        var availableWidth = _titleLabel.Width;
+        var availableWidth = Math.Max(0, _titleLabel.Width - HorizontalFitPadding);
+        var currentSize = maxFontSize;
 
-        var textSize = TextRenderer.MeasureText(fullTitle, _titleLabel.Font);
-        if (textSize.Width <= availableWidth) {
-            _titleLabel.Text = fullTitle;
-            return;
+        while (currentSize >= MinTitleFontSize) {
+            UpdateFont(_titleLabel, "Segoe UI", currentSize, FontStyle.Bold);
+            if (MeasureTextWidth(fullTitle, _titleLabel.Font) <= availableWidth) {
+                _titleLabel.Text = fullTitle;
+                return;
+            }
+
+            currentSize -= 1f;
         }
 
-        // Truncate with ellipsis
+        // At minimum font size, truncate with ellipsis.
         for (var i = fullTitle.Length - 1; i > 0; i--) {
             var truncated = fullTitle[..i] + "...";
-            var truncatedSize = TextRenderer.MeasureText(truncated, _titleLabel.Font);
-            if (truncatedSize.Width <= availableWidth) {
+            if (MeasureTextWidth(truncated, _titleLabel.Font) <= availableWidth) {
                 _titleLabel.Text = truncated;
                 return;
             }
@@ -311,19 +325,43 @@ public class ValueTile : Panel {
         _titleLabel.Text = "...";
     }
 
+    private List<string> GetValueTextsForSizing() {
+        if (_valueLabel == null) {
+            return [" ?"];
+        }
+
+        var texts = new List<string> { _valueLabel.Text };
+        if (_valueScheme != null && _valueScheme.Stops.Count > 0) {
+            texts.AddRange(_valueScheme.Stops
+                .Select(s => s.Text)
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .Distinct(StringComparer.Ordinal));
+        }
+
+        return texts;
+    }
+
     private void FitValueFontToWidth(int availableWidth, float maxFontSize) {
         if (_valueLabel == null) return;
 
         var currentSize = maxFontSize;
-        var minSize = 8f;
+        availableWidth = Math.Max(0, availableWidth - HorizontalFitPadding);
+        var valueTexts = GetValueTextsForSizing();
 
-        while (currentSize > minSize) {
-            var textSize = TextRenderer.MeasureText(_valueLabel.Text, _valueLabel.Font);
-            if (textSize.Width <= availableWidth) break;
+        while (currentSize >= MinValueFontSize) {
+            var testFont = CreateSafeFont("Segoe UI", currentSize, FontStyle.Bold);
+            var maxWidth = valueTexts.Max(text => MeasureTextWidth(text, testFont));
+            testFont.Dispose();
+
+            if (maxWidth <= availableWidth) {
+                break;
+            }
 
             currentSize -= 1f;
-            UpdateFont(_valueLabel, "Segoe UI", currentSize, FontStyle.Bold);
         }
+
+        currentSize = Math.Max(MinValueFontSize, currentSize);
+        UpdateFont(_valueLabel, "Segoe UI", currentSize, FontStyle.Bold);
     }
 
     private void UpdateLayout() {
@@ -342,7 +380,7 @@ public class ValueTile : Panel {
         var minDimension = Math.Min(contentWidth, contentHeight);
 
         // Font sizes proportional to tile size
-        var titleFontSize = Math.Max(8f, Math.Min(14f, minDimension * 0.09f));
+        var titleFontSize = Math.Max(MinTitleFontSize, Math.Min(14f, minDimension * 0.09f));
         var valueFontSize = Math.Max(14f, Math.Min(48f, minDimension * 0.28f));
         var unitFontSize = Math.Max(8f, Math.Min(14f, minDimension * 0.09f));
 
@@ -357,7 +395,7 @@ public class ValueTile : Panel {
 
         // Title: top-left quadrant
         _titleLabel.SetBounds(Padding.Left, Padding.Top, halfWidth + 20, halfHeight);
-        TruncateTitleWithEllipsis();
+        FitTitleFontAndTruncateWithEllipsis(titleFontSize);
 
         // Icon: top-right area — large, proportional to tile
         var iconLogicalSize = Math.Max(24, Math.Min(102, (int)(minDimension * 0.44f)));
@@ -367,12 +405,14 @@ public class ValueTile : Panel {
         UpdateIcon(iconLogicalSize);
 
         // Value: bottom-left, takes more space
-        var valueWidth = (int)(contentWidth * 0.75);
+        var valueWidth = (int)(contentWidth * 0.84);
         _valueLabel.SetBounds(Padding.Left, Padding.Top + halfHeight - 10, valueWidth, halfHeight + 10);
         FitValueFontToWidth(valueWidth, valueFontSize);
 
         // Unit: bottom-right quadrant
-        _unitLabel.SetBounds(Padding.Left + halfWidth, Padding.Top + halfHeight, halfWidth, halfHeight);
+        var unitStartX = Padding.Left + valueWidth;
+        var unitWidth = Math.Max(0, contentWidth - valueWidth);
+        _unitLabel.SetBounds(unitStartX, Padding.Top + halfHeight, unitWidth, halfHeight);
     }
 
     #endregion Private Methods
