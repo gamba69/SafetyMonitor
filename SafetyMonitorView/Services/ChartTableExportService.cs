@@ -17,7 +17,7 @@ public class ChartTableExportService {
         Thread.Sleep(250);
         
         var aggregatedRows = BuildAggregatedRows(metricAggregations, aggregatedData, progress, 0, 20);
-        progress?.Invoke(50);
+        progress?.Invoke(20);
         Thread.Sleep(250);
 
         var rawRows = BuildRawRows(rawData, progress, 20, 50);
