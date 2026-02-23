@@ -45,6 +45,16 @@ public class MainForm : MaterialForm {
     private ToolStripStatusLabel _statusLabel = null!;
     private StatusStrip _statusStrip = null!;
 
+    // ── Refresh indicator fields ──
+    private PictureBox _refreshIndicatorIcon = null!;
+    private Label _refreshIndicatorTimeLabel = null!;
+    private System.Windows.Forms.Timer? _refreshCountdownTimer;
+    private DateTime _lastRefreshTime = DateTime.Now;
+    private static readonly string[] RefreshLoaderIconSequence = [
+        MaterialIcons.RefreshCircle, MaterialIcons.RefreshLoader10, MaterialIcons.RefreshLoader20,
+        MaterialIcons.RefreshLoader40, MaterialIcons.RefreshLoader60, MaterialIcons.RefreshLoader80,
+        MaterialIcons.RefreshLoader90];
+
     private System.Windows.Forms.Timer? _themeTimer;
     private Icon? _themeApplicationIcon;
     private bool _isExitConfirmed;
@@ -154,6 +164,8 @@ public class MainForm : MaterialForm {
 
         _refreshTimer?.Stop();
         _refreshTimer?.Dispose();
+        _refreshCountdownTimer?.Stop();
+        _refreshCountdownTimer?.Dispose();
         _themeTimer?.Stop();
         _themeTimer?.Dispose();
 
@@ -685,7 +697,20 @@ public class MainForm : MaterialForm {
             }
         };
 
-        _quickAccessPanel.Controls.AddRange([_dashboardLabel, _quickDashboardsPanel, _exportProgressIcon, _exportProgressLabel, _chartsLabel, _linkSegmentPanel, _themeLabel, _themeSegmentPanel, _linkChartsCheckBox]);
+        _refreshIndicatorIcon = new PictureBox {
+            Size = new Size(22, 22),
+            SizeMode = PictureBoxSizeMode.Zoom,
+            Visible = _appSettings.ShowRefreshIndicator
+        };
+
+        _refreshIndicatorTimeLabel = new Label {
+            Text = DateTime.Now.ToString("HH:mm:ss"),
+            AutoSize = true,
+            Font = new Font("Segoe UI", 9f, FontStyle.Bold),
+            Visible = _appSettings.ShowRefreshIndicator
+        };
+
+        _quickAccessPanel.Controls.AddRange([_dashboardLabel, _quickDashboardsPanel, _refreshIndicatorIcon, _refreshIndicatorTimeLabel, _exportProgressIcon, _exportProgressLabel, _chartsLabel, _linkSegmentPanel, _themeLabel, _themeSegmentPanel, _linkChartsCheckBox]);
         RefreshQuickAccessLayout();
         _quickAccessPanel.SizeChanged += (s, e) => RefreshQuickAccessLayout();
     }
@@ -989,6 +1014,7 @@ public class MainForm : MaterialForm {
     private void RefreshDashboardDataNow(DashboardPanel? targetPanel = null) {
         var panel = targetPanel ?? _dashboardPanel;
         panel?.RefreshData();
+        UpdateRefreshIndicatorTimestamp();
         RestartRefreshTimerInterval();
     }
 
@@ -1028,8 +1054,33 @@ public class MainForm : MaterialForm {
 
     private void SetupRefreshTimer() {
         _refreshTimer = new System.Windows.Forms.Timer { Interval = _appSettings.RefreshInterval * 1000 };
-        _refreshTimer.Tick += (s, e) => _dashboardPanel?.RefreshData();
+        _refreshTimer.Tick += (s, e) => { _dashboardPanel?.RefreshData(); UpdateRefreshIndicatorTimestamp(); };
         _refreshTimer.Start();
+        _lastRefreshTime = DateTime.Now;
+
+        _refreshCountdownTimer = new System.Windows.Forms.Timer { Interval = 1000 };
+        _refreshCountdownTimer.Tick += (s, e) => UpdateRefreshCountdownIcon();
+        _refreshCountdownTimer.Start();
+    }
+
+    private void UpdateRefreshIndicatorTimestamp() {
+        _lastRefreshTime = DateTime.Now;
+        if (_refreshIndicatorTimeLabel != null) {
+            _refreshIndicatorTimeLabel.Text = _lastRefreshTime.ToString("HH:mm:ss");
+        }
+    }
+
+    private void UpdateRefreshCountdownIcon() {
+        if (_refreshIndicatorIcon == null || !_refreshIndicatorIcon.Visible) { return; }
+        var elapsed = (DateTime.Now - _lastRefreshTime).TotalSeconds;
+        var interval = _appSettings.RefreshInterval;
+        var progress = interval > 0 ? Math.Clamp(elapsed / interval, 0.0, 1.0) : 0.0;
+        var index = (int)(progress * (RefreshLoaderIconSequence.Length - 1));
+        var iconName = RefreshLoaderIconSequence[Math.Clamp(index, 0, RefreshLoaderIconSequence.Length - 1)];
+        var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+        var iconColor = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
+        _refreshIndicatorIcon.Image?.Dispose();
+        _refreshIndicatorIcon.Image = MaterialIcons.GetIcon(iconName, iconColor, 22);
     }
 
     private void AttachDataServiceHandlers() {
@@ -1077,7 +1128,7 @@ public class MainForm : MaterialForm {
     }
 
     private void ShowSettings() {
-        using var settingsForm = new SettingsForm(_appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds);
+        using var settingsForm = new SettingsForm(_appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds, _appSettings.ShowRefreshIndicator);
         if (settingsForm.ShowDialog() == DialogResult.OK) {
             _appSettings.StoragePath = settingsForm.StoragePath;
             _appSettings.RefreshInterval = settingsForm.RefreshInterval;
@@ -1086,6 +1137,7 @@ public class MainForm : MaterialForm {
             _appSettings.ChartStaticAggregationPresetMatchTolerancePercent = settingsForm.ChartStaticAggregationPresetMatchTolerancePercent;
             _appSettings.ChartStaticAggregationTargetPointCount = settingsForm.ChartStaticAggregationTargetPointCount;
             _appSettings.ChartAggregationRoundingSeconds = settingsForm.ChartAggregationRoundingSeconds;
+            _appSettings.ShowRefreshIndicator = settingsForm.ShowRefreshIndicator;
             _appSettingsService.SaveSettings(_appSettings);
 
             _dataService = new DataService(_appSettings.StoragePath, _appSettings.ValueTileLookbackMinutes);
@@ -1095,6 +1147,8 @@ public class MainForm : MaterialForm {
             _refreshTimer?.Interval = _appSettings.RefreshInterval * 1000;
             _dashboardPanel?.SetChartStaticModeTimeoutSeconds(_appSettings.ChartStaticModeTimeoutSeconds);
             _dashboardPanel?.SetChartStaticAggregationOptions(_appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds);
+            _refreshIndicatorIcon.Visible = _appSettings.ShowRefreshIndicator;
+            _refreshIndicatorTimeLabel.Visible = _appSettings.ShowRefreshIndicator;
             RefreshQuickAccessLayout();
 
             ClearDashboardPanelCache();
@@ -1190,6 +1244,7 @@ public class MainForm : MaterialForm {
         ApplyQuickAccessColors(_quickAccessPanel, panelBg, fg);
         UpdateThemeSwitchAppearance();
         UpdateLinkSwitchAppearance();
+        UpdateRefreshIndicatorAppearance();
         UpdateExportProgressAppearance();
         UpdateDashboardSwitchAppearance();
     }
@@ -1236,6 +1291,14 @@ public class MainForm : MaterialForm {
         _unlinkedChartsButton.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarChartsUnlink, iconColor, 22);
         _linkedChartsButton.ImageAlign = ContentAlignment.MiddleCenter;
         _unlinkedChartsButton.ImageAlign = ContentAlignment.MiddleCenter;
+    }
+
+    private void UpdateRefreshIndicatorAppearance() {
+        if (_refreshIndicatorIcon == null || _refreshIndicatorTimeLabel == null) { return; }
+        var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+        var fg = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
+        _refreshIndicatorTimeLabel.ForeColor = fg;
+        UpdateRefreshCountdownIcon();
     }
 
     private void OnExportStateChanged() {
@@ -1294,7 +1357,14 @@ public class MainForm : MaterialForm {
     private int GetQuickDashboardPanelMaxWidth() {
         var left = GetQuickDashboardsLeft();
         const int spacingToRightGroup = 16;
-        var rightBound = _exportProgressIcon.Visible ? _exportProgressIcon.Left : _chartsLabel.Left;
+        int rightBound;
+        if (_refreshIndicatorIcon.Visible) {
+            rightBound = _refreshIndicatorIcon.Left;
+        } else if (_exportProgressIcon.Visible) {
+            rightBound = _exportProgressIcon.Left;
+        } else {
+            rightBound = _chartsLabel.Left;
+        }
         return Math.Max(rightBound - spacingToRightGroup - left, 0);
     }
 
@@ -1315,6 +1385,14 @@ public class MainForm : MaterialForm {
             const int exportIconGap = 4;
             _exportProgressLabel.Location = new Point(_chartsLabel.Left - sectionGap - _exportProgressLabel.PreferredWidth, 17);
             _exportProgressIcon.Location = new Point(_exportProgressLabel.Left - exportIconGap - _exportProgressIcon.Width, 14);
+        }
+
+        if (_refreshIndicatorTimeLabel.Visible) {
+            var indicatorRightBound = _exportProgressIcon.Visible ? _exportProgressIcon.Left : _chartsLabel.Left;
+            const int indicatorSectionGap = 16;
+            const int indicatorIconGap = 4;
+            _refreshIndicatorTimeLabel.Location = new Point(indicatorRightBound - indicatorSectionGap - _refreshIndicatorTimeLabel.PreferredWidth, 17);
+            _refreshIndicatorIcon.Location = new Point(_refreshIndicatorTimeLabel.Left - indicatorIconGap - _refreshIndicatorIcon.Width, 14);
         }
 
         _lightThemeButton.Text = string.Empty; _darkThemeButton.Text = string.Empty;

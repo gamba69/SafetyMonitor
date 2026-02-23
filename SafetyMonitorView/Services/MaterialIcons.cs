@@ -91,6 +91,13 @@ public static class MaterialIcons {
     public const string WindowTileValue = "window_tile_value";
     public const string WindowTileChart = "window_tile_chart";
     public const string ToolbarExportProgress = "toolbar_export_progress";
+    public const string RefreshCircle = "refresh_circle";
+    public const string RefreshLoader10 = "refresh_loader_10";
+    public const string RefreshLoader20 = "refresh_loader_20";
+    public const string RefreshLoader40 = "refresh_loader_40";
+    public const string RefreshLoader60 = "refresh_loader_60";
+    public const string RefreshLoader80 = "refresh_loader_80";
+    public const string RefreshLoader90 = "refresh_loader_90";
 
     #endregion Public Constants
 
@@ -177,6 +184,13 @@ public static class MaterialIcons {
         [WindowTileValue] = "\uE400",
         [WindowTileChart] = "\uE667", //"\uE6E1",
         [ToolbarExportProgress] = "save_clock",
+        [RefreshCircle] = "\uEF4A",
+        [RefreshLoader10] = "\uF726",
+        [RefreshLoader20] = "\uF725",
+        [RefreshLoader40] = "\uF724",
+        [RefreshLoader60] = "\uF723",
+        [RefreshLoader80] = "\uF722",
+        [RefreshLoader90] = "\uF721",
     };
 
     private static readonly string[] _fontCandidates = [

@@ -10,6 +10,7 @@ public class SettingsForm : Form {
     private Button _browseButton = null!;
     private Button _cancelButton = null!;
     private Label _connectionStatusLabel = null!;
+    private CheckBox _showRefreshIndicatorCheckBox = null!;
     private NumericUpDown _chartStaticTimeoutNumeric = null!;
     private NumericUpDown _chartStaticAggregationPresetMatchToleranceNumeric = null!;
     private NumericUpDown _chartStaticAggregationTargetPointsNumeric = null!;
@@ -46,7 +47,7 @@ public class SettingsForm : Form {
 
     #region Public Constructors
 
-    public SettingsForm(string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartAggregationRoundingSeconds) {
+    public SettingsForm(string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartAggregationRoundingSeconds, bool currentShowRefreshIndicator) {
         StoragePath = currentStoragePath;
         RefreshInterval = currentRefreshInterval;
         ValueTileLookbackMinutes = Math.Max(1, currentValueTileLookbackMinutes);
@@ -54,6 +55,7 @@ public class SettingsForm : Form {
         ChartStaticAggregationPresetMatchTolerancePercent = Math.Clamp(currentChartStaticAggregationPresetMatchTolerancePercent, 0, 100);
         ChartStaticAggregationTargetPointCount = Math.Max(2, currentChartStaticAggregationTargetPointCount);
         ChartAggregationRoundingSeconds = Math.Max(1, currentChartAggregationRoundingSeconds);
+        ShowRefreshIndicator = currentShowRefreshIndicator;
 
         InitializeComponent();
         FormIconHelper.Apply(this, MaterialIcons.MenuFileSettings);
@@ -72,6 +74,7 @@ public class SettingsForm : Form {
     public int ChartStaticAggregationTargetPointCount { get; private set; } = 300;
     public int ChartAggregationRoundingSeconds { get; private set; } = 1;
     public string StoragePath { get; private set; } = "";
+    public bool ShowRefreshIndicator { get; private set; } = true;
 
     #endregion Public Properties
 
@@ -344,10 +347,11 @@ public class SettingsForm : Form {
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 3,
+            RowCount = 4,
             AutoSize = false
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -363,6 +367,20 @@ public class SettingsForm : Form {
             _refreshIntervalNumeric,
             titleFont,
             descriptionFont), 0, 1);
+
+        _showRefreshIndicatorCheckBox = new CheckBox {
+            AutoSize = true,
+            Font = normalFont,
+            Cursor = Cursors.Hand
+        };
+        layout.Controls.Add(CreateSettingRow(
+            "Show Refresh Indicator",
+            "Displays a countdown animation and the last refresh timestamp in the quick-access panel. "
+                + "The animated icon fills progressively until the next automatic data refresh occurs.",
+            "",
+            _showRefreshIndicatorCheckBox,
+            titleFont,
+            descriptionFont), 0, 2);
 
         page.Controls.Add(layout);
         return page;
@@ -723,6 +741,7 @@ public class SettingsForm : Form {
     private void LoadSettings() {
         _storagePathTextBox.Text = StoragePath;
         _refreshIntervalNumeric.Value = RefreshInterval;
+        _showRefreshIndicatorCheckBox.Checked = ShowRefreshIndicator;
         _valueTileLookbackMinutesNumeric.Value = Math.Clamp(ValueTileLookbackMinutes, 1, 43200);
         _chartStaticTimeoutNumeric.Value = ChartStaticTimeoutSeconds;
         _chartStaticAggregationPresetMatchToleranceNumeric.Value = Math.Clamp((decimal)ChartStaticAggregationPresetMatchTolerancePercent, 0m, 100m);
@@ -733,6 +752,7 @@ public class SettingsForm : Form {
     private void SaveButton_Click(object? sender, EventArgs e) {
         StoragePath = _storagePathTextBox.Text;
         RefreshInterval = (int)_refreshIntervalNumeric.Value;
+        ShowRefreshIndicator = _showRefreshIndicatorCheckBox.Checked;
         ValueTileLookbackMinutes = (int)_valueTileLookbackMinutesNumeric.Value;
         ChartStaticTimeoutSeconds = (int)_chartStaticTimeoutNumeric.Value;
         ChartStaticAggregationPresetMatchTolerancePercent = (double)_chartStaticAggregationPresetMatchToleranceNumeric.Value;
