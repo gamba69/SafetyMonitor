@@ -28,6 +28,7 @@ public class ChartTile : Panel {
     private ThemedComboBox? _periodSelector;
     private bool _suppressPeriodChange;
     private bool _suppressStaticRangeChange;
+    private bool _suppressPauseChange;
     private bool _isStaticMode;
     private ThemedDateTimePicker? _staticStartPicker;
     private ThemedDateTimePicker? _staticEndPicker;
@@ -85,6 +86,7 @@ public class ChartTile : Panel {
     public event Action<ChartTile, bool>? InspectorToggled;
     public event Action<ChartTile, bool>? PlotHoverPresenceChanged;
     public event Action<ChartTile, double>? HoverAnchorChanged;
+    public event Action<ChartTile, bool>? StaticPauseChanged;
     public event Action<ChartTile>? EditRequested;
 
     #endregion Public Events
@@ -377,6 +379,36 @@ public class ChartTile : Panel {
 
         if (raiseEvents) {
             AutoModeRestored?.Invoke(this);
+        }
+    }
+
+    public void SetStaticPaused(bool paused, bool raiseEvents = true) {
+        if (_staticModePaused == paused && _config.StaticModePaused == paused) {
+            return;
+        }
+
+        _staticModePaused = paused;
+        _config.StaticModePaused = paused;
+
+        if (!paused) {
+            _lastChartInteractionUtc = DateTime.UtcNow;
+        }
+
+        if (_pauseModeButton != null && _pauseModeButton.Checked != paused) {
+            try {
+                _suppressPauseChange = true;
+                _pauseModeButton.Checked = paused;
+            } finally {
+                _suppressPauseChange = false;
+            }
+        }
+
+        UpdateCountdownLabel();
+        UpdateModeSwitchAppearance();
+
+        if (raiseEvents) {
+            StaticPauseChanged?.Invoke(this, paused);
+            ViewSettingsChanged?.Invoke(this);
         }
     }
 
@@ -1343,16 +1375,11 @@ public class ChartTile : Panel {
             Cursor = Cursors.Hand
         };
         _pauseModeButton.CheckedChanged += (s, e) => {
-            _staticModePaused = _pauseModeButton.Checked;
-            _config.StaticModePaused = _staticModePaused;
-
-            if (!_staticModePaused) {
-                _lastChartInteractionUtc = DateTime.UtcNow;
+            if (_suppressPauseChange) {
+                return;
             }
 
-            UpdateCountdownLabel();
-            UpdateModeSwitchAppearance();
-            ViewSettingsChanged?.Invoke(this);
+            SetStaticPaused(_pauseModeButton.Checked);
         };
 
         _inspectorButton = new CheckBox {

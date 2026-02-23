@@ -169,6 +169,7 @@ public class DashboardPanel : TableLayoutPanel {
                     chartTile.InspectorToggled += OnChartInspectorToggled;
                     chartTile.PlotHoverPresenceChanged += OnPlotHoverPresenceChanged;
                     chartTile.HoverAnchorChanged += OnChartHoverAnchorChanged;
+                    chartTile.StaticPauseChanged += OnChartStaticPauseChanged;
                     chartTile.SetStaticModeTimeout(TimeSpan.FromSeconds(_chartStaticModeTimeoutSeconds));
                     chartTile.SetStaticAggregationSettings(
                         _chartStaticAggregationPresetMatchTolerancePercent,
@@ -228,6 +229,23 @@ public class DashboardPanel : TableLayoutPanel {
             }
 
             chartTile.ExitStaticMode(raiseEvents: false);
+        }
+
+        DashboardChanged?.Invoke();
+    }
+
+    private void OnChartStaticPauseChanged(ChartTile source, bool paused) {
+        if (!_linkChartPeriods) {
+            DashboardChanged?.Invoke();
+            return;
+        }
+
+        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+            if (ReferenceEquals(chartTile, source)) {
+                continue;
+            }
+
+            chartTile.SetStaticPaused(paused, raiseEvents: false);
         }
 
         DashboardChanged?.Invoke();
