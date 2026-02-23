@@ -1,5 +1,6 @@
 using MaterialSkin;
 using SafetyMonitorView.Services;
+using System.Runtime.InteropServices;
 
 namespace SafetyMonitorView.Forms;
 
@@ -28,6 +29,10 @@ public class SettingsForm : Form {
     private static readonly string[] TabNames = { "General", "Storage", "Value Tiles", "Chart Tiles", "Aggregation" };
     private const int SettingValueColumnWidth = 120;
     private const int SettingUnitColumnWidth = 90;
+    private const int EmSetMargins = 0x00D3;
+    private const int EcLeftMargin = 0x0001;
+    private const int EcRightMargin = 0x0002;
+    private const int NumericTextPaddingPx = 6;
 
     private static readonly string[] TabIcons = {
         MaterialIcons.CommonBuild,
@@ -400,6 +405,7 @@ public class SettingsForm : Form {
             Margin = new Padding(0, 0, 10, 0),
             Anchor = AnchorStyles.Left | AnchorStyles.Right
         };
+        ApplyTextBoxLeftPadding(_storagePathTextBox);
         pathPanel.Controls.Add(_storagePathTextBox, 1, 0);
 
         _browseButton = new Button {
@@ -622,6 +628,48 @@ public class SettingsForm : Form {
         Margin = new Padding(0, 0, 0, 20)
     };
 
+    private static void ApplyNumericRightPadding(NumericUpDown numeric) {
+        void ApplyMargin(TextBox textBox) {
+            if (textBox.IsHandleCreated) {
+                SendMessage(textBox.Handle, EmSetMargins, (IntPtr)EcRightMargin, (IntPtr)(NumericTextPaddingPx << 16));
+            }
+        }
+
+        void AttachTextBox(TextBox textBox) {
+            textBox.HandleCreated += (_, _) => ApplyMargin(textBox);
+            ApplyMargin(textBox);
+        }
+
+        var embeddedTextBox = numeric.Controls.OfType<TextBox>().FirstOrDefault();
+        if (embeddedTextBox is not null) {
+            AttachTextBox(embeddedTextBox);
+        }
+
+        numeric.ControlAdded += (_, e) => {
+            if (e.Control is TextBox textBox) {
+                AttachTextBox(textBox);
+            }
+        };
+
+        numeric.HandleCreated += (_, _) => {
+            var textBox = numeric.Controls.OfType<TextBox>().FirstOrDefault();
+            if (textBox is not null) {
+                ApplyMargin(textBox);
+            }
+        };
+    }
+
+    private static void ApplyTextBoxLeftPadding(TextBox textBox) {
+        void ApplyMargin() {
+            if (textBox.IsHandleCreated) {
+                SendMessage(textBox.Handle, EmSetMargins, (IntPtr)EcLeftMargin, (IntPtr)NumericTextPaddingPx);
+            }
+        }
+
+        textBox.HandleCreated += (_, _) => ApplyMargin();
+        ApplyMargin();
+    }
+
 
     private static TableLayoutPanel CreateSettingRow(string title, string description, string units, Control valueControl, Font titleFont, Font descriptionFont) {
         var row = new TableLayoutPanel {
@@ -644,6 +692,10 @@ public class SettingsForm : Form {
         valueControl.Anchor = AnchorStyles.Left | AnchorStyles.Right;
         valueControl.Margin = new Padding(0);
         valueControl.Dock = DockStyle.Fill;
+        if (valueControl is NumericUpDown numericUpDown) {
+            ApplyNumericRightPadding(numericUpDown);
+        }
+
         row.Controls.Add(valueControl, 1, 0);
 
         var unitLabel = new Label {
@@ -726,4 +778,11 @@ public class SettingsForm : Form {
     }
 
     #endregion Private Methods
+
+    #region Native Methods
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+
+    #endregion Native Methods
 }
