@@ -22,6 +22,7 @@ public class MainForm : MaterialForm {
     private RadioButton _darkThemeButton = null!;
     private Panel _dashboardContainer = null!;
     private DashboardPanel? _dashboardPanel;
+    private readonly Dictionary<Guid, DashboardPanel> _dashboardPanelCache = [];
     private List<Dashboard> _dashboards = [];
     private ToolStripStatusLabel _dataPathLabel = null!;
     private DataService _dataService;
@@ -155,6 +156,8 @@ public class MainForm : MaterialForm {
         _refreshTimer?.Dispose();
         _themeTimer?.Stop();
         _themeTimer?.Dispose();
+
+        ClearDashboardPanelCache();
 
         _themeApplicationIcon?.Dispose();
         _themeApplicationIcon = null;
@@ -690,7 +693,7 @@ public class MainForm : MaterialForm {
     private void DeleteCurrentDashboard() {
         if (_currentDashboard == null || _dashboards.Count <= 1) { ThemedMessageBox.Show(this, "Cannot delete the last dashboard", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
         var result = ThemedMessageBox.Show(this, $"Delete dashboard '{_currentDashboard.Name}'?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-        if (result == DialogResult.Yes) { _dashboardService.DeleteDashboard(_currentDashboard); _dashboards.Remove(_currentDashboard); LoadDashboard(_dashboards[0]); UpdateQuickDashboards(); }
+        if (result == DialogResult.Yes) { InvalidateDashboardPanelCache(_currentDashboard.Id); _dashboardService.DeleteDashboard(_currentDashboard); _dashboards.Remove(_currentDashboard); LoadDashboard(_dashboards[0]); UpdateQuickDashboards(); }
     }
 
     private void DuplicateCurrentDashboard() {
@@ -718,7 +721,7 @@ public class MainForm : MaterialForm {
             SortDashboardsForDisplay();
             PersistDashboardOrdering();
             var updatedDashboard = _dashboards.FirstOrDefault(d => d.Id == _currentDashboard.Id);
-            if (updatedDashboard != null) { LoadDashboard(updatedDashboard); }
+            if (updatedDashboard != null) { InvalidateDashboardPanelCache(updatedDashboard.Id); LoadDashboard(updatedDashboard); }
             if (_mainMenu.Items.Count > 1) { var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1]; UpdateDashboardMenu(dashboardMenu); }
             UpdateQuickDashboards();
         }
@@ -784,21 +787,34 @@ public class MainForm : MaterialForm {
 
         var previousPanel = _dashboardPanel;
 
-        _dashboardContainer.SuspendLayout();
-        _dashboardPanel = new DashboardPanel(
-            dashboard, _dataService,
-            _appSettings.ChartStaticModeTimeoutSeconds,
-            _appSettings.ChartStaticAggregationPresetMatchTolerancePercent,
-            _appSettings.ChartStaticAggregationTargetPointCount,
-            _appSettings.ChartAggregationRoundingSeconds) {
-            Dock = DockStyle.Fill,
-            Visible = false
-        };
-        _dashboardPanel.DashboardChanged += OnDashboardChanged;
-        _dashboardPanel.TileEditRequested += OnTileEditRequested;
-        _dashboardPanel.SetLinkChartPeriods(_appSettings.LinkChartPeriods);
-        _dashboardContainer.Controls.Add(_dashboardPanel);
-        _dashboardContainer.ResumeLayout(true);
+        // Try to reuse a previously created panel from cache
+        if (_dashboardPanelCache.TryGetValue(dashboard.Id, out var cachedPanel) && !cachedPanel.IsDisposed) {
+            _dashboardPanel = cachedPanel;
+            _dashboardPanel.SetLinkChartPeriods(_appSettings.LinkChartPeriods);
+            _dashboardContainer.SuspendLayout();
+            if (!_dashboardContainer.Controls.Contains(_dashboardPanel)) {
+                _dashboardPanel.Visible = false;
+                _dashboardContainer.Controls.Add(_dashboardPanel);
+            }
+            _dashboardContainer.ResumeLayout(true);
+        } else {
+            _dashboardContainer.SuspendLayout();
+            _dashboardPanel = new DashboardPanel(
+                dashboard, _dataService,
+                _appSettings.ChartStaticModeTimeoutSeconds,
+                _appSettings.ChartStaticAggregationPresetMatchTolerancePercent,
+                _appSettings.ChartStaticAggregationTargetPointCount,
+                _appSettings.ChartAggregationRoundingSeconds) {
+                Dock = DockStyle.Fill,
+                Visible = false
+            };
+            _dashboardPanel.DashboardChanged += OnDashboardChanged;
+            _dashboardPanel.TileEditRequested += OnTileEditRequested;
+            _dashboardPanel.SetLinkChartPeriods(_appSettings.LinkChartPeriods);
+            _dashboardContainer.Controls.Add(_dashboardPanel);
+            _dashboardPanelCache[dashboard.Id] = _dashboardPanel;
+            _dashboardContainer.ResumeLayout(true);
+        }
         _statusLabel.Text = $"Dashboard: {dashboard.Name}";
 
         if (_mainMenu.Items.Count > 1) { var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1]; UpdateDashboardMenu(dashboardMenu); }
@@ -887,8 +903,25 @@ public class MainForm : MaterialForm {
 
     private void RemoveOldDashboardPanel(DashboardPanel? previousPanel, DashboardPanel newPanel) {
         if (previousPanel == null || ReferenceEquals(previousPanel, newPanel) || previousPanel.IsDisposed) { return; }
+        previousPanel.Visible = false;
         if (_dashboardContainer.Controls.Contains(previousPanel)) { _dashboardContainer.Controls.Remove(previousPanel); }
-        previousPanel.Dispose();
+    }
+
+    private void InvalidateDashboardPanelCache(Guid dashboardId) {
+        if (_dashboardPanelCache.Remove(dashboardId, out var panel) && !panel.IsDisposed) {
+            if (_dashboardContainer.Controls.Contains(panel)) { _dashboardContainer.Controls.Remove(panel); }
+            panel.Dispose();
+        }
+    }
+
+    private void ClearDashboardPanelCache() {
+        foreach (var (id, panel) in _dashboardPanelCache) {
+            if (panel.IsDisposed) { continue; }
+            if (ReferenceEquals(panel, _dashboardPanel)) { continue; }
+            if (_dashboardContainer.Controls.Contains(panel)) { _dashboardContainer.Controls.Remove(panel); }
+            panel.Dispose();
+        }
+        _dashboardPanelCache.Clear();
     }
 
     private void OnDashboardChanged() {
@@ -914,7 +947,7 @@ public class MainForm : MaterialForm {
             _dashboardService.SaveDashboard(_currentDashboard);
             _dashboards = _dashboardService.LoadDashboards();
             var updatedDashboard = _dashboards.FirstOrDefault(d => d.Id == _currentDashboard.Id);
-            if (updatedDashboard != null) { LoadDashboard(updatedDashboard); }
+            if (updatedDashboard != null) { InvalidateDashboardPanelCache(updatedDashboard.Id); LoadDashboard(updatedDashboard); }
         }
     }
 
@@ -1038,6 +1071,7 @@ public class MainForm : MaterialForm {
             _appSettings.ChartPeriodPresets = editor.Presets;
             _appSettingsService.SaveSettings(_appSettings);
             ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
+            ClearDashboardPanelCache();
             if (_currentDashboard != null) { LoadDashboard(_currentDashboard); } else { RefreshDashboardDataNow(); }
         }
     }
@@ -1063,6 +1097,7 @@ public class MainForm : MaterialForm {
             _dashboardPanel?.SetChartStaticAggregationOptions(_appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds);
             RefreshQuickAccessLayout();
 
+            ClearDashboardPanelCache();
             if (_currentDashboard != null) { LoadDashboard(_currentDashboard); } else { RefreshDashboardDataNow(); }
         }
     }
@@ -1083,7 +1118,7 @@ public class MainForm : MaterialForm {
 
         foreach (var deletedId in manager.DeletedDashboardIds) {
             var dashboard = _dashboards.FirstOrDefault(d => d.Id == deletedId);
-            if (dashboard != null) { _dashboardService.DeleteDashboard(dashboard); _dashboards.Remove(dashboard); }
+            if (dashboard != null) { InvalidateDashboardPanelCache(deletedId); _dashboardService.DeleteDashboard(dashboard); _dashboards.Remove(dashboard); }
         }
 
         var updatesById = manager.Updates.ToDictionary(u => u.DashboardId);
