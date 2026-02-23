@@ -90,6 +90,7 @@ public static class MaterialIcons {
     public const string MetricIsSafe = "metric_is_safe";
     public const string WindowTileValue = "window_tile_value";
     public const string WindowTileChart = "window_tile_chart";
+    public const string ToolbarExportProgress = "toolbar_export_progress";
 
     #endregion Public Constants
 
@@ -175,6 +176,7 @@ public static class MaterialIcons {
         [MetricIsSafe] = "\uEAA9",
         [WindowTileValue] = "\uE400",
         [WindowTileChart] = "\uE667", //"\uE6E1",
+        [ToolbarExportProgress] = "save_clock",
     };
 
     private static readonly string[] _fontCandidates = [

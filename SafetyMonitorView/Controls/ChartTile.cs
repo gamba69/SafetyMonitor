@@ -733,9 +733,18 @@ public class ChartTile : Panel {
 
         contextMenu.Items.Add(CreatePlotMenuItem("Edit Tile...", MaterialIcons.CommonEdit, HandleEditTileClick));
         contextMenu.Items.Add(new ToolStripSeparator());
-        contextMenu.Items.Add(CreatePlotMenuItem("Copy to Clipboard", MaterialIcons.PlotMenuCopyToClipboard, HandleCopyImageClick));
-        contextMenu.Items.Add(CreatePlotMenuItem("Export as png...", MaterialIcons.PlotMenuImage, HandleSaveImageClick));
-        contextMenu.Items.Add(CreatePlotMenuItem("Export as xlsx...", MaterialIcons.PlotMenuTable, HandleSaveTableClick));
+
+        var isExporting = ExcelExportStateService.IsExporting;
+        var copyItem = CreatePlotMenuItem("Copy to Clipboard", MaterialIcons.PlotMenuCopyToClipboard, HandleCopyImageClick);
+        copyItem.Enabled = !isExporting;
+        contextMenu.Items.Add(copyItem);
+        var pngItem = CreatePlotMenuItem("Save as .png", MaterialIcons.PlotMenuImage, HandleSaveImageClick);
+        pngItem.Enabled = !isExporting;
+        contextMenu.Items.Add(pngItem);
+        var xlsxItem = CreatePlotMenuItem("Save as .xlsx", MaterialIcons.PlotMenuTable, HandleSaveTableClick);
+        xlsxItem.Enabled = !isExporting;
+        contextMenu.Items.Add(xlsxItem);
+
         contextMenu.Items.Add(new ToolStripSeparator());
 
         AddToggleMenuItems(contextMenu);
@@ -873,6 +882,10 @@ public class ChartTile : Panel {
     }
 
     private void HandleSaveTableClick(object? sender, EventArgs e) {
+        if (ExcelExportStateService.IsExporting) {
+            return;
+        }
+
         var aggregationInterval = ResolveAggregationInterval();
         var aggregatedData = GetAggregatedExportData(aggregationInterval);
         var rawData = GetRawExportData();
@@ -888,23 +901,37 @@ public class ChartTile : Panel {
             return;
         }
 
-        try {
-            _chartTableExportService.Export(dialog.FileName, _config.MetricAggregations, aggregatedData, rawData);
-        } catch (IOException ioEx) {
-            ThemedMessageBox.Show(
-                this,
-                $"Cannot save the table file because it is being used by another process. {ioEx.Message}",
-                "Export Error",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning);
-        } catch (Exception ex) {
-            ThemedMessageBox.Show(
-                this,
-                $"Failed to export table. {ex.Message}",
-                "Export Error",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error);
+        if (!ExcelExportStateService.TryBeginExport()) {
+            return;
         }
+
+        var filePath = dialog.FileName;
+        var metricAggregations = _config.MetricAggregations;
+        var exportService = _chartTableExportService;
+        var syncContext = SynchronizationContext.Current;
+
+        Task.Run(() => {
+            try {
+                exportService.Export(filePath, metricAggregations, aggregatedData, rawData, ExcelExportStateService.ReportProgress);
+            } catch (IOException ioEx) {
+                syncContext?.Post(_ => ThemedMessageBox.Show(
+                    this,
+                    $"Cannot save the table file because it is being used by another process. {ioEx.Message}",
+                    "Export Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning), null);
+            } catch (Exception ex) {
+                syncContext?.Post(_ => ThemedMessageBox.Show(
+                    this,
+                    $"Failed to export table. {ex.Message}",
+                    "Export Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error), null);
+            } finally {
+                Thread.Sleep(500);
+                ExcelExportStateService.EndExport();
+            }
+        });
     }
 
     private List<DataStorage.Models.ObservingData> GetAggregatedExportData(TimeSpan? aggregationInterval) {

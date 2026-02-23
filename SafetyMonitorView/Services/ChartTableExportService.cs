@@ -12,29 +12,62 @@ public class ChartTableExportService {
 
     #region Public Methods
 
-    public void Export(string filePath, IReadOnlyList<MetricAggregation> metricAggregations, IReadOnlyList<ObservingData> aggregatedData, IReadOnlyList<ObservingData> rawData) {
-        var aggregatedRows = BuildAggregatedRows(metricAggregations, aggregatedData);
-        var rawRows = BuildRawRows(rawData);
+    public void Export(string filePath, IReadOnlyList<MetricAggregation> metricAggregations, IReadOnlyList<ObservingData> aggregatedData, IReadOnlyList<ObservingData> rawData, Action<int>? progress = null) {
+        progress?.Invoke(0);
+        Thread.Sleep(250);
+        
+        var aggregatedRows = BuildAggregatedRows(metricAggregations, aggregatedData, progress, 0, 20);
+        progress?.Invoke(50);
+        Thread.Sleep(250);
 
+        var rawRows = BuildRawRows(rawData, progress, 20, 50);
+        progress?.Invoke(50);
+        Thread.Sleep(250);
+        
         var sheets = new Dictionary<string, object> {
             ["Aggregated chart data"] = aggregatedRows,
             ["Full raw data"] = rawRows
         };
-
-        MiniExcel.SaveAs(filePath, sheets, overwriteFile: true);
-        ApplyWorkbookFormatting(filePath);
+        SaveWithProgress(filePath, sheets, aggregatedRows.Count + rawRows.Count, progress, 50, 75);
+        progress?.Invoke(75);
+        Thread.Sleep(250);
+        
+        ApplyWorkbookFormatting(filePath, progress, 75, 95);
+        progress?.Invoke(100);
     }
 
     #endregion Public Methods
 
     #region Private Methods
 
+    private static void SaveWithProgress(string filePath, Dictionary<string, object> sheets, int totalRows, Action<int>? progress, int progressStart, int progressEnd) {
+        if (progress == null) {
+            MiniExcel.SaveAs(filePath, sheets, overwriteFile: true);
+            return;
+        }
+
+        var estimatedBytes = Math.Max((long)totalRows * 200, 4096);
+        using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+        using var progressStream = new ProgressStream(fileStream, estimatedBytes, pct => {
+            var scaled = progressStart + pct * (progressEnd - progressStart) / 100;
+            progress.Invoke(Math.Clamp(scaled, progressStart, progressEnd));
+        });
+        progressStream.SaveAs(sheets);
+    }
+
     private static List<Dictionary<string, object?>> BuildAggregatedRows(
         IReadOnlyList<MetricAggregation> metricAggregations,
-        IReadOnlyList<ObservingData> aggregatedData) {
+        IReadOnlyList<ObservingData> aggregatedData,
+        Action<int>? progress,
+        int progressStart,
+        int progressEnd) {
         var rowsByTime = new SortedDictionary<DateTime, Dictionary<string, object?>>();
+        var sorted = aggregatedData.OrderBy(x => x.Timestamp).ToList();
+        var totalCount = sorted.Count;
+        var lastReported = -1;
 
-        foreach (var row in aggregatedData.OrderBy(x => x.Timestamp)) {
+        for (var i = 0; i < sorted.Count; i++) {
+            var row = sorted[i];
             var timestamp = EnsureUtc(row.Timestamp).ToLocalTime();
             if (!rowsByTime.TryGetValue(timestamp, out var values)) {
                 values = new Dictionary<string, object?> {
@@ -46,15 +79,31 @@ public class ChartTableExportService {
             foreach (var aggregation in metricAggregations) {
                 values[GetAggregatedColumnName(aggregation)] = RoundMetricValue(aggregation.Metric, aggregation.Metric.GetValue(row));
             }
+
+            if (progress != null && totalCount > 0) {
+                var pct = progressStart + (i + 1) * (progressEnd - progressStart) / totalCount;
+                if (pct != lastReported) {
+                    lastReported = pct;
+                    progress.Invoke(pct);
+                }
+            }
         }
 
         return [.. rowsByTime.Values];
     }
 
-    private static List<Dictionary<string, object?>> BuildRawRows(IReadOnlyList<ObservingData> rawData) {
+    private static List<Dictionary<string, object?>> BuildRawRows(
+        IReadOnlyList<ObservingData> rawData,
+        Action<int>? progress,
+        int progressStart,
+        int progressEnd) {
         var rows = new List<Dictionary<string, object?>>();
+        var sorted = rawData.OrderBy(x => x.Timestamp).ToList();
+        var totalCount = sorted.Count;
+        var lastReported = -1;
 
-        foreach (var row in rawData.OrderBy(x => x.Timestamp)) {
+        for (var i = 0; i < sorted.Count; i++) {
+            var row = sorted[i];
             var timestamp = EnsureUtc(row.Timestamp).ToLocalTime();
             rows.Add(new Dictionary<string, object?> {
                 ["Time"] = timestamp,
@@ -73,12 +122,20 @@ public class ChartTableExportService {
                 [MetricType.StarFwhm.GetDisplayName()] = RoundMetricValue(MetricType.StarFwhm, row.StarFwhm),
                 [MetricType.IsSafe.GetDisplayName()] = RoundMetricValue(MetricType.IsSafe, row.IsSafeInt.HasValue ? row.IsSafeInt * 100.0 : null)
             });
+
+            if (progress != null && totalCount > 0) {
+                var pct = progressStart + (i + 1) * (progressEnd - progressStart) / totalCount;
+                if (pct != lastReported) {
+                    lastReported = pct;
+                    progress.Invoke(pct);
+                }
+            }
         }
 
         return rows;
     }
 
-    private static void ApplyWorkbookFormatting(string filePath) {
+    private static void ApplyWorkbookFormatting(string filePath, Action<int>? progress, int progressStart, int progressEnd) {
         using var document = SpreadsheetDocument.Open(filePath, true);
         var workbookPart = document.WorkbookPart;
         if (workbookPart == null) {
@@ -87,14 +144,42 @@ public class ChartTableExportService {
 
         var (headerBoldStyleIndex, dateTimeStyleIndex, noBorderStyleIndex) = EnsureStyles(workbookPart);
 
-        foreach (var worksheetPart in workbookPart.WorksheetParts) {
+        var worksheetParts = workbookPart.WorksheetParts.ToList();
+        const int stepsPerSheet = 5;
+        var totalSteps = worksheetParts.Count * stepsPerSheet;
+        var completedSteps = 0;
+
+        foreach (var worksheetPart in worksheetParts) {
             var worksheet = worksheetPart.Worksheet;
+
             RemoveAutoFilter(worksheet);
+            completedSteps++;
+            ReportStepProgress(progress, progressStart, progressEnd, completedSteps, totalSteps);
+
             FreezeHeaderRow(worksheet);
+            completedSteps++;
+            ReportStepProgress(progress, progressStart, progressEnd, completedSteps, totalSteps);
+
             ApplyCellStyles(worksheet, headerBoldStyleIndex, dateTimeStyleIndex, noBorderStyleIndex);
+            completedSteps++;
+            ReportStepProgress(progress, progressStart, progressEnd, completedSteps, totalSteps);
+
             AutoFitColumns(worksheet, workbookPart.SharedStringTablePart?.SharedStringTable);
+            completedSteps++;
+            ReportStepProgress(progress, progressStart, progressEnd, completedSteps, totalSteps);
+
             worksheet.Save();
+            completedSteps++;
+            ReportStepProgress(progress, progressStart, progressEnd, completedSteps, totalSteps);
         }
+    }
+
+    private static void ReportStepProgress(Action<int>? progress, int start, int end, int completed, int total) {
+        if (progress == null || total <= 0) {
+            return;
+        }
+
+        progress.Invoke(start + completed * (end - start) / total);
     }
 
 
@@ -367,4 +452,90 @@ public class ChartTableExportService {
     };
 
     #endregion Private Methods
+
+    #region Private Classes
+
+    private sealed class ProgressStream : Stream {
+
+        private readonly Stream _inner;
+        private readonly long _estimatedTotal;
+        private readonly Action<int> _onProgress;
+        private long _bytesWritten;
+        private int _lastReported = -1;
+
+        public ProgressStream(Stream inner, long estimatedTotal, Action<int> onProgress) {
+            _inner = inner;
+            _estimatedTotal = Math.Max(estimatedTotal, 1);
+            _onProgress = onProgress;
+        }
+
+        public void SaveAs(Dictionary<string, object> sheets) {
+            MiniExcel.SaveAs(this, sheets);
+        }
+
+        public override void Write(byte[] buffer, int offset, int count) {
+            _inner.Write(buffer, offset, count);
+            _bytesWritten += count;
+            ReportProgress();
+        }
+
+        public override void Write(ReadOnlySpan<byte> buffer) {
+            _inner.Write(buffer);
+            _bytesWritten += buffer.Length;
+            ReportProgress();
+        }
+
+        public override void WriteByte(byte value) {
+            _inner.WriteByte(value);
+            _bytesWritten++;
+            ReportProgress();
+        }
+
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) {
+            _bytesWritten += count;
+            var task = _inner.WriteAsync(buffer, offset, count, cancellationToken);
+            ReportProgress();
+            return task;
+        }
+
+        public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default) {
+            _bytesWritten += buffer.Length;
+            var task = _inner.WriteAsync(buffer, cancellationToken);
+            ReportProgress();
+            return task;
+        }
+
+        private void ReportProgress() {
+            var pct = (int)Math.Min(_bytesWritten * 100 / _estimatedTotal, 99);
+            if (pct != _lastReported) {
+                _lastReported = pct;
+                _onProgress(pct);
+            }
+        }
+
+        public override bool CanRead => _inner.CanRead;
+        public override bool CanSeek => _inner.CanSeek;
+        public override bool CanWrite => _inner.CanWrite;
+        public override long Length => _inner.Length;
+
+        public override long Position {
+            get => _inner.Position;
+            set => _inner.Position = value;
+        }
+
+        public override void Flush() => _inner.Flush();
+        public override int Read(byte[] buffer, int offset, int count) => _inner.Read(buffer, offset, count);
+        public override long Seek(long offset, SeekOrigin origin) => _inner.Seek(offset, origin);
+        public override void SetLength(long value) => _inner.SetLength(value);
+
+        protected override void Dispose(bool disposing) {
+            if (disposing) {
+                _inner.Flush();
+            }
+
+            base.Dispose(disposing);
+        }
+    }
+
+    #endregion Private Classes
 }

@@ -36,6 +36,8 @@ public class MainForm : MaterialForm {
     private Panel _quickAccessPanel = null!;
     private Panel _quickDashboardsPanel = null!;
     private Panel _linkSegmentPanel = null!;
+    private PictureBox _exportProgressIcon = null!;
+    private Label _exportProgressLabel = null!;
     private Label _themeLabel = null!;
     private Panel _themeSegmentPanel = null!;
     private System.Windows.Forms.Timer? _refreshTimer;
@@ -659,7 +661,28 @@ public class MainForm : MaterialForm {
             UpdateLinkSwitchAppearance();
         };
 
-        _quickAccessPanel.Controls.AddRange([_dashboardLabel, _quickDashboardsPanel, _chartsLabel, _linkSegmentPanel, _themeLabel, _themeSegmentPanel, _linkChartsCheckBox]);
+        _exportProgressIcon = new PictureBox {
+            Size = new Size(22, 22),
+            SizeMode = PictureBoxSizeMode.Zoom,
+            Visible = false
+        };
+
+        _exportProgressLabel = new Label {
+            Text = "0%",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 9f, FontStyle.Bold),
+            Visible = false
+        };
+
+        ExcelExportStateService.StateChanged += () => {
+            if (InvokeRequired) {
+                BeginInvoke(OnExportStateChanged);
+            } else {
+                OnExportStateChanged();
+            }
+        };
+
+        _quickAccessPanel.Controls.AddRange([_dashboardLabel, _quickDashboardsPanel, _exportProgressIcon, _exportProgressLabel, _chartsLabel, _linkSegmentPanel, _themeLabel, _themeSegmentPanel, _linkChartsCheckBox]);
         RefreshQuickAccessLayout();
         _quickAccessPanel.SizeChanged += (s, e) => RefreshQuickAccessLayout();
     }
@@ -1132,6 +1155,7 @@ public class MainForm : MaterialForm {
         ApplyQuickAccessColors(_quickAccessPanel, panelBg, fg);
         UpdateThemeSwitchAppearance();
         UpdateLinkSwitchAppearance();
+        UpdateExportProgressAppearance();
         UpdateDashboardSwitchAppearance();
     }
 
@@ -1179,6 +1203,29 @@ public class MainForm : MaterialForm {
         _unlinkedChartsButton.ImageAlign = ContentAlignment.MiddleCenter;
     }
 
+    private void OnExportStateChanged() {
+        var isExporting = ExcelExportStateService.IsExporting;
+        _exportProgressIcon.Visible = isExporting;
+        _exportProgressLabel.Visible = isExporting;
+
+        if (isExporting) {
+            _exportProgressLabel.Text = $"{ExcelExportStateService.ProgressPercent}%";
+        }
+
+        UpdateExportProgressAppearance();
+        RefreshQuickAccessLayout();
+    }
+
+    private void UpdateExportProgressAppearance() {
+        if (_exportProgressIcon == null || _exportProgressLabel == null) { return; }
+        var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+        var fg = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
+        var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
+        _exportProgressLabel.ForeColor = fg;
+        _exportProgressIcon.Image?.Dispose();
+        _exportProgressIcon.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarExportProgress, iconColor, 22);
+    }
+
     private void UpdateDashboardSwitchAppearance() {
         if (_quickDashboardsPanel == null) { return; }
         var buttons = _quickDashboardsPanel.Controls.OfType<RadioButton>().ToList();
@@ -1212,7 +1259,8 @@ public class MainForm : MaterialForm {
     private int GetQuickDashboardPanelMaxWidth() {
         var left = GetQuickDashboardsLeft();
         const int spacingToRightGroup = 16;
-        return Math.Max(_chartsLabel.Left - spacingToRightGroup - left, 0);
+        var rightBound = _exportProgressIcon.Visible ? _exportProgressIcon.Left : _chartsLabel.Left;
+        return Math.Max(rightBound - spacingToRightGroup - left, 0);
     }
 
     private void UpdateThemeSwitchLayout() {
@@ -1227,6 +1275,12 @@ public class MainForm : MaterialForm {
         _linkSegmentPanel.Location = new Point(_themeLabel.Left - sectionGap - panelWidth, top);
         _linkSegmentPanel.Size = new Size(panelWidth, 32);
         _chartsLabel.Location = new Point(_linkSegmentPanel.Left - textGap - _chartsLabel.PreferredWidth, 17);
+
+        if (_exportProgressLabel.Visible) {
+            const int exportIconGap = 4;
+            _exportProgressLabel.Location = new Point(_chartsLabel.Left - sectionGap - _exportProgressLabel.PreferredWidth, 17);
+            _exportProgressIcon.Location = new Point(_exportProgressLabel.Left - exportIconGap - _exportProgressIcon.Width, 14);
+        }
 
         _lightThemeButton.Text = string.Empty; _darkThemeButton.Text = string.Empty;
         _lightThemeButton.Padding = Padding.Empty; _darkThemeButton.Padding = Padding.Empty;
