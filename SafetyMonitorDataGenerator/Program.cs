@@ -7,6 +7,7 @@ namespace SafetyMonitorDataGenerator;
 internal static class Program {
 
     private const int DefaultIntervalSeconds = 60;
+    private const int DefaultBatchSize = 1000;
 
     private static async Task<int> Main(string[] args) {
         var storagePathOption = new Option<string>("--storage-path") {
@@ -35,6 +36,11 @@ internal static class Program {
             Description = "Optional random seed for deterministic output"
         };
 
+        var batchSizeOption = new Option<int>("--batch-size") {
+            Description = "Number of records inserted per batch",
+            DefaultValueFactory = _ => DefaultBatchSize
+        };
+
         var cleanOption = new Option<bool>("--clean") {
             Description = "Delete existing data in selected time range before generation"
         };
@@ -57,6 +63,7 @@ internal static class Program {
         rootCommand.Options.Add(intervalOption);
         rootCommand.Options.Add(countOption);
         rootCommand.Options.Add(seedOption);
+        rootCommand.Options.Add(batchSizeOption);
         rootCommand.Options.Add(cleanOption);
         rootCommand.Options.Add(dbUserOption);
         rootCommand.Options.Add(dbPasswordOption);
@@ -70,6 +77,7 @@ internal static class Program {
             options.IntervalSeconds = parseResult.GetValue(intervalOption);
             options.Count = parseResult.GetValue(countOption);
             options.Seed = parseResult.GetValue(seedOption);
+            options.BatchSize = parseResult.GetValue(batchSizeOption);
             options.Clean = parseResult.GetValue(cleanOption);
             options.DbUser = parseResult.GetValue(dbUserOption)!;
             options.DbPassword = parseResult.GetValue(dbPasswordOption)!;
@@ -102,6 +110,7 @@ internal static class Program {
 
         var startTime = ParseTimestamp(options.StartRaw) ?? DateTime.UtcNow.AddDays(-1);
         var endTime = ParseTimestamp(options.EndRaw);
+        var batchSize = options.BatchSize;
 
         if (options.Count.HasValue && options.Count.Value > 0) {
             endTime = startTime.AddSeconds(interval.TotalSeconds * (options.Count.Value - 1));
@@ -111,6 +120,11 @@ internal static class Program {
 
         if (endTime < startTime) {
             Console.Error.WriteLine("End time must be greater than or equal to start time.");
+            return Task.FromResult(1);
+        }
+
+        if (batchSize <= 0) {
+            Console.Error.WriteLine("Batch size must be positive.");
             return Task.FromResult(1);
         }
 
@@ -125,15 +139,26 @@ internal static class Program {
 
         var totalPlanned = CalculateTotalRecords(startTime, endTime.Value, interval);
         var stopwatch = Stopwatch.StartNew();
+        var batch = new List<ObservingData>(batchSize);
 
         var total = 0;
         for (var timestamp = startTime; timestamp <= endTime; timestamp = timestamp.Add(interval)) {
             var data = GenerateData(timestamp, random);
-            storage.AddData(data);
+            batch.Add(data);
+
+            if (batch.Count >= batchSize) {
+                storage.AddDataBatch(batch);
+                batch.Clear();
+            }
+
             total++;
 
             var remainingTime = CalculateRemainingTime(stopwatch.Elapsed, total, totalPlanned);
             Console.Write($"\rGenerated {total}/{totalPlanned}. Elapsed: {FormatDuration(stopwatch.Elapsed)}. Remaining: {FormatDuration(remainingTime)}.");
+        }
+
+        if (batch.Count > 0) {
+            storage.AddDataBatch(batch);
         }
 
         Console.WriteLine();
@@ -149,6 +174,7 @@ internal static class Program {
         public int IntervalSeconds { get; set; } = DefaultIntervalSeconds;
         public int? Count { get; set; }
         public int? Seed { get; set; }
+        public int BatchSize { get; set; } = DefaultBatchSize;
         public bool Clean { get; set; }
         public string DbUser { get; set; } = "SYSDBA";
         public string DbPassword { get; set; } = "masterkey";
