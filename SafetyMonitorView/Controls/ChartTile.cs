@@ -198,13 +198,21 @@ public class ChartTile : Panel {
         var hasVisibleSeries = false;
         var metricsWithData = new HashSet<MetricType>();
 
+        // Cache DB results per AggregationFunction to avoid duplicate queries.
+        // The DB returns all columns in each row, so the same result set can be
+        // reused for every MetricAggregation that shares the same function.
+        var dataCache = new Dictionary<DataStorage.Models.AggregationFunction, List<DataStorage.Models.ObservingData>>();
+
         foreach (var agg in _config.MetricAggregations) {
-            var data = _dataService.GetChartData(
-                _config.Period,
-                _config.CustomStartTime,
-                _isStaticMode ? _config.CustomEndTime : null,
-                _config.CustomPeriodDuration,
-                aggregationInterval, agg.Function);
+            if (!dataCache.TryGetValue(agg.Function, out var data)) {
+                data = _dataService.GetChartData(
+                    _config.Period,
+                    _config.CustomStartTime,
+                    _isStaticMode ? _config.CustomEndTime : null,
+                    _config.CustomPeriodDuration,
+                    aggregationInterval, agg.Function);
+                dataCache[agg.Function] = data;
+            }
             if (data.Count == 0) {
                 continue;
             }
@@ -969,14 +977,19 @@ public class ChartTile : Panel {
     private List<DataStorage.Models.ObservingData> GetAggregatedExportData(TimeSpan? aggregationInterval) {
         var exportRows = new Dictionary<DateTime, DataStorage.Models.ObservingData>();
 
+        var dataCache = new Dictionary<DataStorage.Models.AggregationFunction, List<DataStorage.Models.ObservingData>>();
+
         foreach (var aggregation in _config.MetricAggregations) {
-            var rows = _dataService.GetChartData(
-                _config.Period,
-                _config.CustomStartTime,
-                _isStaticMode ? _config.CustomEndTime : null,
-                _config.CustomPeriodDuration,
-                aggregationInterval,
-                aggregation.Function);
+            if (!dataCache.TryGetValue(aggregation.Function, out var rows)) {
+                rows = _dataService.GetChartData(
+                    _config.Period,
+                    _config.CustomStartTime,
+                    _isStaticMode ? _config.CustomEndTime : null,
+                    _config.CustomPeriodDuration,
+                    aggregationInterval,
+                    aggregation.Function);
+                dataCache[aggregation.Function] = rows;
+            }
 
             foreach (var row in rows) {
                 if (!exportRows.TryGetValue(row.Timestamp, out var mergedRow)) {
