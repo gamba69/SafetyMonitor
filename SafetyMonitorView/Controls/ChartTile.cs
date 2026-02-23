@@ -952,7 +952,7 @@ public class ChartTile : Panel {
 
         Task.Run(() => {
             try {
-                exportService.Export(filePath, metricAggregations, aggregatedData, rawData, ExcelExportStateService.ReportProgress);
+                ChartTableExportService.Export(filePath, metricAggregations, aggregatedData, rawData, ExcelExportStateService.ReportProgress);
             } catch (IOException ioEx) {
                 syncContext?.Post(_ => ThemedMessageBox.Show(
                     this,

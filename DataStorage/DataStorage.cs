@@ -109,6 +109,42 @@ namespace DataStorage {
         }
 
         /// <summary>
+        /// Delete data in specified time range (inclusive)
+        /// </summary>
+        /// <param name="startTime">Start of time range (inclusive)</param>
+        /// <param name="endTime">End of time range (inclusive)</param>
+        /// <returns>Number of deleted records</returns>
+        public int DeleteData(DateTime startTime, DateTime endTime) {
+            if (endTime < startTime) {
+                throw new ArgumentException("End time must be greater than or equal to start time");
+            }
+
+            var deletedRecords = 0;
+
+            var currentDate = new DateTime(startTime.Year, startTime.Month, 1);
+            var endDate = new DateTime(endTime.Year, endTime.Month, 1);
+
+            while (currentDate <= endDate) {
+                var dbPath = GetDatabasePath(currentDate);
+
+                if (File.Exists(dbPath)) {
+                    using var connection = new FbConnection(GetConnectionString(dbPath));
+                    connection.Open();
+
+                    const string sql = @"
+                        DELETE FROM METEO_DATA
+                        WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime";
+
+                    deletedRecords += connection.Execute(sql, new { startTime, endTime });
+                }
+
+                currentDate = currentDate.AddMonths(1);
+            }
+
+            return deletedRecords;
+        }
+
+        /// <summary>
         /// Returns the latest record in reverse chronological order that is not newer than <paramref name="endTime"/>
         /// and not older than <paramref name="maxLookback"/>.
         /// </summary>

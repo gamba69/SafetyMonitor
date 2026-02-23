@@ -915,7 +915,7 @@ public class MainForm : MaterialForm {
     }
 
     private void ClearDashboardPanelCache() {
-        foreach (var (id, panel) in _dashboardPanelCache) {
+        foreach (var (_, panel) in _dashboardPanelCache) {
             if (panel.IsDisposed) { continue; }
             if (ReferenceEquals(panel, _dashboardPanel)) { continue; }
             if (_dashboardContainer.Controls.Contains(panel)) { _dashboardContainer.Controls.Remove(panel); }

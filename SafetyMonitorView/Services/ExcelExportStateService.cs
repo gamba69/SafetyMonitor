@@ -4,7 +4,7 @@ public static class ExcelExportStateService {
 
     #region Private Fields
 
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
     private static volatile bool _isExporting;
     private static volatile int _progressPercent;
 

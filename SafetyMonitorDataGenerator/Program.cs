@@ -1,5 +1,6 @@
 using DataStorage.Models;
 using System.CommandLine;
+using System.Diagnostics;
 
 namespace SafetyMonitorDataGenerator;
 
@@ -34,6 +35,10 @@ internal static class Program {
             Description = "Optional random seed for deterministic output"
         };
 
+        var cleanOption = new Option<bool>("--clean") {
+            Description = "Delete existing data in selected time range before generation"
+        };
+
         var dbUserOption = new Option<string>("--db-user") {
             Description = "Database user name",
             DefaultValueFactory = _ => "SYSDBA"
@@ -52,20 +57,22 @@ internal static class Program {
         rootCommand.Options.Add(intervalOption);
         rootCommand.Options.Add(countOption);
         rootCommand.Options.Add(seedOption);
+        rootCommand.Options.Add(cleanOption);
         rootCommand.Options.Add(dbUserOption);
         rootCommand.Options.Add(dbPasswordOption);
 
         var options = new GeneratorOptions();
 
         rootCommand.SetAction(parseResult => {
-            options.StoragePath = parseResult.GetValue(storagePathOption);
+            options.StoragePath = parseResult.GetValue(storagePathOption)!;
             options.StartRaw = parseResult.GetValue(startOption);
             options.EndRaw = parseResult.GetValue(endOption);
             options.IntervalSeconds = parseResult.GetValue(intervalOption);
             options.Count = parseResult.GetValue(countOption);
             options.Seed = parseResult.GetValue(seedOption);
-            options.DbUser = parseResult.GetValue(dbUserOption);
-            options.DbPassword = parseResult.GetValue(dbPasswordOption);
+            options.Clean = parseResult.GetValue(cleanOption);
+            options.DbUser = parseResult.GetValue(dbUserOption)!;
+            options.DbPassword = parseResult.GetValue(dbPasswordOption)!;
         });
 
         var parseResult = rootCommand.Parse(args);
@@ -111,12 +118,25 @@ internal static class Program {
 
         var storage = new DataStorage.DataStorage(options.StoragePath, options.DbUser, options.DbPassword);
 
+        if (options.Clean) {
+            var deletedRecords = storage.DeleteData(startTime, endTime.Value);
+            Console.WriteLine($"Cleaned {deletedRecords} records in range {startTime:O} - {endTime:O}.");
+        }
+
+        var totalPlanned = CalculateTotalRecords(startTime, endTime.Value, interval);
+        var stopwatch = Stopwatch.StartNew();
+
         var total = 0;
         for (var timestamp = startTime; timestamp <= endTime; timestamp = timestamp.Add(interval)) {
             var data = GenerateData(timestamp, random);
             storage.AddData(data);
             total++;
+
+            var remainingTime = CalculateRemainingTime(stopwatch.Elapsed, total, totalPlanned);
+            Console.Write($"\rGenerated {total}/{totalPlanned}. Elapsed: {FormatDuration(stopwatch.Elapsed)}. Remaining: {FormatDuration(remainingTime)}.");
         }
+
+        Console.WriteLine();
 
         Console.WriteLine($"Generated {total} records from {startTime:O} to {endTime:O}.");
         return Task.FromResult(0);
@@ -129,8 +149,34 @@ internal static class Program {
         public int IntervalSeconds { get; set; } = DefaultIntervalSeconds;
         public int? Count { get; set; }
         public int? Seed { get; set; }
+        public bool Clean { get; set; }
         public string DbUser { get; set; } = "SYSDBA";
         public string DbPassword { get; set; } = "masterkey";
+    }
+
+    private static int CalculateTotalRecords(DateTime startTime, DateTime endTime, TimeSpan interval) {
+        if (endTime < startTime) {
+            return 0;
+        }
+
+        return (int)((endTime - startTime).Ticks / interval.Ticks) + 1;
+    }
+
+    private static TimeSpan CalculateRemainingTime(TimeSpan elapsed, int generated, int totalPlanned) {
+        if (generated <= 0 || totalPlanned <= generated) {
+            return TimeSpan.Zero;
+        }
+
+        var avgPerRecord = elapsed.TotalSeconds / generated;
+        return TimeSpan.FromSeconds(avgPerRecord * (totalPlanned - generated));
+    }
+
+    private static string FormatDuration(TimeSpan duration) {
+        if (duration < TimeSpan.Zero) {
+            duration = TimeSpan.Zero;
+        }
+
+        return $"{(int)duration.TotalHours:00}:{duration.Minutes:00}:{duration.Seconds:00}";
     }
 
     private static DateTime? ParseTimestamp(string? raw) {

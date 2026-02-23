@@ -12,7 +12,7 @@ public class ChartTableExportService {
 
     #region Public Methods
 
-    public void Export(string filePath, IReadOnlyList<MetricAggregation> metricAggregations, IReadOnlyList<ObservingData> aggregatedData, IReadOnlyList<ObservingData> rawData, Action<int>? progress = null) {
+    public static void Export(string filePath, IReadOnlyList<MetricAggregation> metricAggregations, IReadOnlyList<ObservingData> aggregatedData, IReadOnlyList<ObservingData> rawData, Action<int>? progress = null) {
         progress?.Invoke(0);
         Thread.Sleep(250);
         
@@ -455,19 +455,13 @@ public class ChartTableExportService {
 
     #region Private Classes
 
-    private sealed class ProgressStream : Stream {
+    private sealed class ProgressStream(Stream inner, long estimatedTotal, Action<int> onProgress) : Stream {
 
-        private readonly Stream _inner;
-        private readonly long _estimatedTotal;
-        private readonly Action<int> _onProgress;
+        private readonly Stream _inner = inner;
+        private readonly long _estimatedTotal = Math.Max(estimatedTotal, 1);
+        private readonly Action<int> _onProgress = onProgress;
         private long _bytesWritten;
         private int _lastReported = -1;
-
-        public ProgressStream(Stream inner, long estimatedTotal, Action<int> onProgress) {
-            _inner = inner;
-            _estimatedTotal = Math.Max(estimatedTotal, 1);
-            _onProgress = onProgress;
-        }
 
         public void SaveAs(Dictionary<string, object> sheets) {
             MiniExcel.SaveAs(this, sheets);
