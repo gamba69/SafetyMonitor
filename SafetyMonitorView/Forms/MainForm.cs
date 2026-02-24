@@ -133,6 +133,10 @@ public class MainForm : MaterialForm {
         UpdateStatusBar();
         SetupRefreshTimer();
 
+        // Anti flicker hack
+        this.Opacity = 0.999;
+        this.SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
+
         _isLoading = false;
     }
 
