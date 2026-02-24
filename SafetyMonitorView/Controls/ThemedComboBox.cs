@@ -501,7 +501,8 @@ public class ThemedComboBox : UserControl {
             _scrollBarBg = _isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(30, 42, 47);
             _scrollBarThumb = _isLight ? Color.FromArgb(190, 190, 190) : Color.FromArgb(70, 85, 90);
 
-            _itemFont = owner.Font ?? new Font("Segoe UI", 9f);
+            _itemFont = (owner.Font ?? new Font("Segoe UI", 9f)).Clone() as Font
+                ?? new Font("Segoe UI", 9f);
 
             // Calculate item height based on font
             using var tempG = Graphics.FromHwnd(IntPtr.Zero);
