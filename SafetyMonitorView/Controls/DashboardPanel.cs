@@ -71,6 +71,61 @@ public class DashboardPanel : TableLayoutPanel {
             ResumeLayout(true);
         }
     }
+
+    /// <summary>
+    /// Asynchronous version of <see cref="RefreshData"/>.
+    /// Heavy database queries are executed on a background thread to keep the UI
+    /// responsive; the results are then applied on the UI thread via the existing
+    /// synchronous <c>RefreshData</c> methods of individual tiles which now hit
+    /// the warm <see cref="DataService"/> snapshot caches.
+    /// </summary>
+    public async Task RefreshDataAsync(CancellationToken cancellationToken = default) {
+        // Start snapshot scopes — they enable cross-tile caching in DataService.
+        using var valueTileSnapshot = _dataService.BeginValueTileSnapshot();
+        using var chartDataSnapshot = _dataService.BeginChartDataSnapshot();
+
+        // Collect data requirements on UI thread (reads tile state).
+        var hasValueTiles = _tileControls.Values.OfType<ValueTile>().Any();
+        var chartRequirements = _tileControls.Values
+            .OfType<ChartTile>()
+            .SelectMany(ct => ct.GetDataFetchRequirements())
+            .ToList();
+
+        // Pre-fetch data on a background thread (populates DataService snapshot caches).
+        await Task.Run(() => {
+            if (hasValueTiles) {
+                _dataService.GetLatestData();
+            }
+
+            foreach (var (period, start, end, duration, interval, function) in chartRequirements) {
+                cancellationToken.ThrowIfCancellationRequested();
+                _dataService.GetChartData(period, start, end, duration, interval, function);
+            }
+        }, cancellationToken);
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        // Apply data on the UI thread (hits warm caches — near-instant).
+        SuspendLayout();
+        try {
+            foreach (var control in _tileControls.Values) {
+                if (!control.Visible) {
+                    control.Visible = true;
+                }
+            }
+
+            foreach (var control in _tileControls.Values) {
+                if (control is ValueTile vt) {
+                    vt.RefreshData();
+                } else if (control is ChartTile ct) {
+                    ct.RefreshData();
+                }
+            }
+        } finally {
+            ResumeLayout(true);
+        }
+    }
+
     public void SetLinkChartPeriods(bool linkChartPeriods) {
         _linkChartPeriods = linkChartPeriods;
         _hoveredChartTiles.Clear();

@@ -42,6 +42,8 @@ public class MainForm : MaterialForm {
     private Label _themeLabel = null!;
     private Panel _themeSegmentPanel = null!;
     private System.Windows.Forms.Timer? _refreshTimer;
+    private CancellationTokenSource? _refreshCts;
+    private bool _isRefreshing;
     private ToolStripStatusLabel _statusLabel = null!;
     private StatusStrip _statusStrip = null!;
 
@@ -161,6 +163,11 @@ public class MainForm : MaterialForm {
 
         // Clean up visor
         HideVisorImmediate();
+
+        // Cancel any in-flight async refresh
+        _refreshCts?.Cancel();
+        _refreshCts?.Dispose();
+        _refreshCts = null;
 
         _refreshTimer?.Stop();
         _refreshTimer?.Dispose();
@@ -378,38 +385,35 @@ public class MainForm : MaterialForm {
     /// 2. Apply theme fixup, make dashboard visible, refresh data — all behind visor
     /// 3. Schedule visor fade-out
     /// </summary>
-    private void BeginInitialDashboardReveal() {
+    private async void BeginInitialDashboardReveal() {
         // 1. Show visor FIRST — before any dashboard UI becomes visible
         ShowVisor();
 
-        // 2. Defer all heavy work to AFTER the message loop has painted the visor.
-        //    Without this BeginInvoke, the synchronous layout triggered by
-        //    panel.Visible = true would block the visor's WM_PAINT, making the
-        //    dashboard construction visible before the visor appears on screen.
-        BeginInvoke(() => {
-            // Re-apply theme behind visor (MaterialSkinManager post-init fixup)
-            UpdateDashboardContainerTheme();
-            UpdateQuickAccessPanelTheme();
-            UpdateMenuTheme();
+        // 2. Yield to the message loop so the visor gets a WM_PAINT cycle.
+        await Task.Yield();
 
-            // Make dashboard visible and refresh behind visor
-            if (_dashboardPanel != null) {
-                _dashboardContainer.Visible = true;
-                _dashboardPanel.Visible = true;
-                _dashboardPanel.BringToFront();
-                _dashboardPanel.UpdateTheme();
-                RefreshDashboardDataNow();
-            } else {
-                _dashboardContainer.Visible = true;
-            }
+        // Re-apply theme behind visor (MaterialSkinManager post-init fixup)
+        UpdateDashboardContainerTheme();
+        UpdateQuickAccessPanelTheme();
+        UpdateMenuTheme();
 
-            // Mark initial reveal as completed — subsequent LoadDashboard calls
-            // will use the normal visor-based switching path.
-            _initialRevealCompleted = true;
+        // Make dashboard visible and refresh behind visor
+        if (_dashboardPanel != null) {
+            _dashboardContainer.Visible = true;
+            _dashboardPanel.Visible = true;
+            _dashboardPanel.BringToFront();
+            _dashboardPanel.UpdateTheme();
+            await RefreshDashboardDataAsync(_dashboardPanel);
+        } else {
+            _dashboardContainer.Visible = true;
+        }
 
-            // Schedule visor fade-out
-            ScheduleVisorReveal();
-        });
+        // Mark initial reveal as completed — subsequent LoadDashboard calls
+        // will use the normal visor-based switching path.
+        _initialRevealCompleted = true;
+
+        // Schedule visor fade-out
+        ScheduleVisorReveal();
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -899,9 +903,10 @@ public class MainForm : MaterialForm {
             panel.CreateControl();
             if (!panel.IsHandleCreated) {
                 panel.Visible = true;
-                BeginInvoke(() => {
+                BeginInvoke(async () => {
                     if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) { HideVisorImmediate(); return; }
-                    RefreshDashboardDataNow(panel);
+                    await RefreshDashboardDataAsync(panel);
+                    if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) { HideVisorImmediate(); return; }
                     _dashboardContainer.Visible = true;
                     RemoveOldDashboardPanel(previousPanel, panel);
                     ScheduleVisorReveal();
@@ -910,13 +915,14 @@ public class MainForm : MaterialForm {
             }
         }
 
-        BeginInvoke(() => RefreshAndShowDashboard(panel, previousPanel));
+        BeginInvoke(async () => await RefreshAndShowDashboardAsync(panel, previousPanel));
     }
 
-    private void RefreshAndShowDashboard(DashboardPanel panel, DashboardPanel? previousPanel) {
+    private async Task RefreshAndShowDashboardAsync(DashboardPanel panel, DashboardPanel? previousPanel) {
         if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) { HideVisorImmediate(); return; }
 
-        RefreshDashboardDataNow(panel);
+        await RefreshDashboardDataAsync(panel);
+        if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) { HideVisorImmediate(); return; }
         panel.Visible = true;
         panel.BringToFront();
         _dashboardContainer.Visible = true;
@@ -995,7 +1001,7 @@ public class MainForm : MaterialForm {
     private void ScheduleThemeReapply() {
         if (_themeTimer != null) { _themeTimer.Stop(); _themeTimer.Dispose(); }
         _themeTimer = new System.Windows.Forms.Timer { Interval = 50 };
-        _themeTimer.Tick += (s, e) => {
+        _themeTimer.Tick += async (s, e) => {
             _themeTimer!.Stop();
             _themeTimer.Dispose();
             _themeTimer = null;
@@ -1003,7 +1009,7 @@ public class MainForm : MaterialForm {
             UpdateQuickAccessPanelTheme();
             UpdateMenuTheme();
             _dashboardPanel?.UpdateTheme();
-            RefreshDashboardDataNow();
+            await RefreshDashboardDataAsync();
 
             // If a visor is active (theme switch), reveal it now that colors are applied.
             ScheduleVisorReveal();
@@ -1011,9 +1017,27 @@ public class MainForm : MaterialForm {
         _themeTimer.Start();
     }
 
-    private void RefreshDashboardDataNow(DashboardPanel? targetPanel = null) {
+    private async Task RefreshDashboardDataAsync(DashboardPanel? targetPanel = null) {
         var panel = targetPanel ?? _dashboardPanel;
-        panel?.RefreshData();
+        if (panel == null) {
+            return;
+        }
+
+        // Cancel any previous in-flight refresh.
+        _refreshCts?.Cancel();
+        _refreshCts?.Dispose();
+        _refreshCts = new CancellationTokenSource();
+        var ct = _refreshCts.Token;
+
+        _isRefreshing = true;
+        try {
+            await panel.RefreshDataAsync(ct);
+        } catch (OperationCanceledException) {
+            return;
+        } finally {
+            _isRefreshing = false;
+        }
+
         UpdateRefreshIndicatorTimestamp();
         RestartRefreshTimerInterval();
     }
@@ -1054,7 +1078,12 @@ public class MainForm : MaterialForm {
 
     private void SetupRefreshTimer() {
         _refreshTimer = new System.Windows.Forms.Timer { Interval = _appSettings.RefreshInterval * 1000 };
-        _refreshTimer.Tick += (s, e) => { _dashboardPanel?.RefreshData(); UpdateRefreshIndicatorTimestamp(); };
+        _refreshTimer.Tick += async (s, e) => {
+            if (_isRefreshing) { return; }
+            if (_dashboardPanel != null) {
+                await RefreshDashboardDataAsync(_dashboardPanel);
+            }
+        };
         _refreshTimer.Start();
         _lastRefreshTime = DateTime.Now;
 
@@ -1123,7 +1152,7 @@ public class MainForm : MaterialForm {
             _appSettingsService.SaveSettings(_appSettings);
             ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
             ClearDashboardPanelCache();
-            if (_currentDashboard != null) { LoadDashboard(_currentDashboard); } else { RefreshDashboardDataNow(); }
+            if (_currentDashboard != null) { LoadDashboard(_currentDashboard); } else { _ = RefreshDashboardDataAsync(); }
         }
     }
 
@@ -1152,7 +1181,7 @@ public class MainForm : MaterialForm {
             RefreshQuickAccessLayout();
 
             ClearDashboardPanelCache();
-            if (_currentDashboard != null) { LoadDashboard(_currentDashboard); } else { RefreshDashboardDataNow(); }
+            if (_currentDashboard != null) { LoadDashboard(_currentDashboard); } else { _ = RefreshDashboardDataAsync(); }
         }
     }
 

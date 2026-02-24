@@ -124,6 +124,28 @@ public class ChartTile : Panel {
 
     #region Public Methods
 
+    /// <summary>
+    /// Returns the set of <see cref="DataService.GetChartData"/> parameter tuples that
+    /// <see cref="RefreshData"/> will request.  Called on the UI thread so that
+    /// <see cref="DashboardPanel.RefreshDataAsync"/> can pre-fetch the data on a
+    /// background thread before the synchronous RefreshData renders the chart.
+    /// </summary>
+    public IEnumerable<(ChartPeriod Period, DateTime? Start, DateTime? End, TimeSpan? Duration, TimeSpan? Interval, DataStorage.Models.AggregationFunction Function)> GetDataFetchRequirements() {
+        var aggregationInterval = ResolveAggregationInterval();
+        var seenFunctions = new HashSet<DataStorage.Models.AggregationFunction>();
+        foreach (var agg in _config.MetricAggregations) {
+            if (seenFunctions.Add(agg.Function)) {
+                yield return (
+                    _config.Period,
+                    _config.CustomStartTime,
+                    _isStaticMode ? _config.CustomEndTime : null,
+                    _config.CustomPeriodDuration,
+                    aggregationInterval,
+                    agg.Function);
+            }
+        }
+    }
+
     public void RefreshData() {
         if (_plot == null) {
             return;
