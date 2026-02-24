@@ -17,6 +17,13 @@ public class DataService {
     private bool _isValueTileSnapshotLoaded;
     private ObservingData? _valueTileSnapshotData;
 
+    // Cross-tile chart data cache — avoids duplicate DB queries when multiple
+    // ChartTiles share the same period / aggregation function within one refresh cycle.
+    private readonly object _chartSnapshotLock = new();
+    private bool _isChartSnapshotActive;
+    private DateTime? _chartSnapshotNow;
+    private Dictionary<(DateTime, DateTime, TimeSpan?, AggregationFunction?), List<ObservingData>>? _chartSnapshotCache;
+
     #endregion Private Fields
 
     #region Public Constructors
@@ -68,17 +75,45 @@ public class DataService {
         }
 
         try {
-            var (startTime, endTime) = GetPeriodRange(period, customStart, customEnd, customDuration);
+            // Use frozen UtcNow when a chart snapshot is active so every tile
+            // in the same refresh cycle gets identical time boundaries.
+            DateTime? frozenNow;
+            Dictionary<(DateTime, DateTime, TimeSpan?, AggregationFunction?), List<ObservingData>>? cache;
+            lock (_chartSnapshotLock) {
+                frozenNow = _chartSnapshotNow;
+                cache = _chartSnapshotCache;
+            }
+
+            var (startTime, endTime) = GetPeriodRange(period, customStart, customEnd, customDuration, frozenNow);
+
+            var cacheKey = (startTime, endTime, aggregationInterval, aggregationFunction);
+            if (cache != null) {
+                lock (_chartSnapshotLock) {
+                    if (_chartSnapshotCache != null && _chartSnapshotCache.TryGetValue(cacheKey, out var cached)) {
+                        return cached;
+                    }
+                }
+            }
+
+            List<ObservingData> result;
             if (aggregationInterval.HasValue && aggregationFunction.HasValue) {
-                return [.. _storage.GetData(
+                result = [.. _storage.GetData(
                     startTime,
                     endTime,
                     aggregationInterval.Value,
                     aggregationFunction.Value
                 )];
             } else {
-                return [.. _storage.GetData(startTime, endTime)];
+                result = [.. _storage.GetData(startTime, endTime)];
             }
+
+            if (cache != null) {
+                lock (_chartSnapshotLock) {
+                    _chartSnapshotCache?.TryAdd(cacheKey, result);
+                }
+            }
+
+            return result;
         } catch (FbException ex) {
             HandleConnectionFailure(ex.Message);
             return [];
@@ -134,6 +169,21 @@ public class DataService {
         return new ValueTileSnapshotScope(this);
     }
 
+    /// <summary>
+    /// Begin a chart data snapshot scope. While active, GetChartData results are cached
+    /// and DateTime.UtcNow is frozen so every tile in the same refresh cycle produces
+    /// identical time boundaries, enabling cross-tile cache hits.
+    /// </summary>
+    public IDisposable BeginChartDataSnapshot() {
+        lock (_chartSnapshotLock) {
+            _isChartSnapshotActive = true;
+            _chartSnapshotNow = DateTime.UtcNow;
+            _chartSnapshotCache = new();
+        }
+
+        return new ChartDataSnapshotScope(this);
+    }
+
     #endregion Public Methods
 
     #region Private Methods
@@ -142,8 +192,9 @@ public class DataService {
         ChartPeriod period,
         DateTime? customStart,
         DateTime? customEnd,
-        TimeSpan? customDuration) {
-        var endTime = customEnd ?? DateTime.UtcNow;
+        TimeSpan? customDuration,
+        DateTime? frozenNow = null) {
+        var endTime = customEnd ?? frozenNow ?? DateTime.UtcNow;
         var startTime = period switch {
             ChartPeriod.Last15Minutes => endTime.AddMinutes(-15),
             ChartPeriod.LastHour => endTime.AddHours(-1),
@@ -174,6 +225,14 @@ public class DataService {
         }
     }
 
+    private void EndChartDataSnapshot() {
+        lock (_chartSnapshotLock) {
+            _isChartSnapshotActive = false;
+            _chartSnapshotNow = null;
+            _chartSnapshotCache = null;
+        }
+    }
+
     private sealed class ValueTileSnapshotScope : IDisposable {
 
         #region Private Fields
@@ -195,6 +254,32 @@ public class DataService {
         public void Dispose() {
             var owner = Interlocked.Exchange(ref _owner, null);
             owner?.EndValueTileSnapshot();
+        }
+
+        #endregion Public Methods
+    }
+
+    private sealed class ChartDataSnapshotScope : IDisposable {
+
+        #region Private Fields
+
+        private DataService? _owner;
+
+        #endregion Private Fields
+
+        #region Public Constructors
+
+        public ChartDataSnapshotScope(DataService owner) {
+            _owner = owner;
+        }
+
+        #endregion Public Constructors
+
+        #region Public Methods
+
+        public void Dispose() {
+            var owner = Interlocked.Exchange(ref _owner, null);
+            owner?.EndChartDataSnapshot();
         }
 
         #endregion Public Methods

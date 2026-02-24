@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using DataStorage.Models;
 using FirebirdSql.Data.FirebirdClient;
+using System.Collections.Concurrent;
 using System.Data;
 
 namespace DataStorage {
@@ -425,44 +426,49 @@ namespace DataStorage {
             DateTime endTime,
             TimeSpan slotDuration,
             AggregationFunction aggregationFunction) {
-            var results = new List<ObservingData>();
             var slotSeconds = (long)slotDuration.TotalSeconds;
 
-            // Iterate through all months in the range
-            var currentDate = new DateTime(startTime.Year, startTime.Month, 1);
-            var endDate = new DateTime(endTime.Year, endTime.Month, 1);
+            // Collect all existing shard paths for the requested range
+            var shardPaths = CollectShardPaths(startTime, endTime);
 
-            while (currentDate <= endDate) {
-                var dbPath = GetDatabasePath(currentDate);
-
-                if (File.Exists(dbPath)) {
-                    using var connection = new FbConnection(GetConnectionString(dbPath));
-                    connection.Open();
-
-                    string query;
-
-                    // For First and Last, we need a different query strategy
-                    if (aggregationFunction == AggregationFunction.First ||
-                        aggregationFunction == AggregationFunction.Last) {
-                        query = BuildFirstLastQuery(aggregationFunction, slotSeconds);
-                    } else {
-                        query = BuildStandardAggregationQuery(aggregationFunction, slotSeconds);
-                    }
-
-                    // Execute query using Dapper - maps directly to ObservingData
-                    // Note: SlotSeconds is interpolated directly into SQL, not passed as parameter
-                    var aggregatedData = connection.Query<ObservingData>(
-                        query,
-                        new { StartTime = startTime, EndTime = endTime }
-                    );
-
-                    results.AddRange(aggregatedData);
-                }
-
-                currentDate = currentDate.AddMonths(1);
+            if (shardPaths.Count == 0) {
+                return [];
             }
 
-            return [.. results.OrderBy(d => d.Timestamp)];
+            // Build the query once — it is identical for every shard
+            string query;
+            if (aggregationFunction == AggregationFunction.First ||
+                aggregationFunction == AggregationFunction.Last) {
+                query = BuildFirstLastQuery(aggregationFunction, slotSeconds);
+            } else {
+                query = BuildStandardAggregationQuery(aggregationFunction, slotSeconds);
+            }
+
+            // Single shard — no parallelism overhead
+            if (shardPaths.Count == 1) {
+                using var connection = new FbConnection(GetConnectionString(shardPaths[0]));
+                connection.Open();
+                return [.. connection.Query<ObservingData>(
+                    query,
+                    new { StartTime = startTime, EndTime = endTime }
+                ).OrderBy(d => d.Timestamp)];
+            }
+
+            // Multiple shards — query in parallel
+            var bag = new ConcurrentBag<ObservingData>();
+            var queryParams = new { StartTime = startTime, EndTime = endTime };
+
+            Parallel.ForEach(shardPaths, dbPath => {
+                using var connection = new FbConnection(GetConnectionString(dbPath));
+                connection.Open();
+
+                var aggregatedData = connection.Query<ObservingData>(query, queryParams);
+                foreach (var item in aggregatedData) {
+                    bag.Add(item);
+                }
+            });
+
+            return [.. bag.OrderBy(d => d.Timestamp)];
         }
 
         /// <summary>
@@ -476,10 +482,30 @@ namespace DataStorage {
                 Password = _password,
                 ServerType = FbServerType.Default,
                 Charset = "UTF8",
-                WireCrypt = FbWireCrypt.Enabled
+                WireCrypt = FbWireCrypt.Enabled,
+                Pooling = true
             };
 
             return builder.ToString();
+        }
+
+        /// <summary>
+        /// Collect existing shard file paths that cover the requested time range
+        /// </summary>
+        private List<string> CollectShardPaths(DateTime startTime, DateTime endTime) {
+            var paths = new List<string>();
+            var currentDate = new DateTime(startTime.Year, startTime.Month, 1);
+            var endDate = new DateTime(endTime.Year, endTime.Month, 1);
+
+            while (currentDate <= endDate) {
+                var dbPath = GetDatabasePath(currentDate);
+                if (File.Exists(dbPath)) {
+                    paths.Add(dbPath);
+                }
+                currentDate = currentDate.AddMonths(1);
+            }
+
+            return paths;
         }
 
         /// <summary>
@@ -494,20 +520,14 @@ namespace DataStorage {
         /// Get raw data from database shards
         /// </summary>
         private List<ObservingData> GetRawData(DateTime startTime, DateTime endTime) {
-            var results = new List<ObservingData>();
+            // Collect all existing shard paths for the requested range
+            var shardPaths = CollectShardPaths(startTime, endTime);
 
-            // Iterate through all months in the range
-            var currentDate = new DateTime(startTime.Year, startTime.Month, 1);
-            var endDate = new DateTime(endTime.Year, endTime.Month, 1);
+            if (shardPaths.Count == 0) {
+                return [];
+            }
 
-            while (currentDate <= endDate) {
-                var dbPath = GetDatabasePath(currentDate);
-
-                if (File.Exists(dbPath)) {
-                    using var connection = new FbConnection(GetConnectionString(dbPath));
-                    connection.Open();
-
-                    const string sql = @"
+            const string sql = @"
                         SELECT 
                             CREATED_AT      AS ""Timestamp"", 
                             CLOUD_COVER     AS CloudCover, 
@@ -529,17 +549,30 @@ namespace DataStorage {
                         WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime
                         ORDER BY CREATED_AT ASC";
 
-                    var data = connection
-                        .Query<ObservingData>(sql, new { startTime, endTime })
-                        .ToList();
-
-                    results.AddRange(data);
-                }
-
-                currentDate = currentDate.AddMonths(1);
+            // Single shard — no parallelism overhead
+            if (shardPaths.Count == 1) {
+                using var connection = new FbConnection(GetConnectionString(shardPaths[0]));
+                connection.Open();
+                return [.. connection
+                    .Query<ObservingData>(sql, new { startTime, endTime })
+                    .OrderBy(d => d.Timestamp)];
             }
 
-            return [.. results.OrderBy(d => d.Timestamp)];
+            // Multiple shards — query in parallel
+            var bag = new ConcurrentBag<ObservingData>();
+            var queryParams = new { startTime, endTime };
+
+            Parallel.ForEach(shardPaths, dbPath => {
+                using var connection = new FbConnection(GetConnectionString(dbPath));
+                connection.Open();
+
+                var data = connection.Query<ObservingData>(sql, queryParams);
+                foreach (var item in data) {
+                    bag.Add(item);
+                }
+            });
+
+            return [.. bag.OrderBy(d => d.Timestamp)];
         }
 
         #endregion Private Methods
