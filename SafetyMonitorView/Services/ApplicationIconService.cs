@@ -9,8 +9,8 @@ internal static class ApplicationIconService {
 
     public static Icon GetThemeIcon(MaterialSkinManager.Themes theme) {
         var sourceIcon = theme == MaterialSkinManager.Themes.DARK
-            ? Resources.DarkThemeIcon
-            : Resources.LightThemeIcon;
+            ? Resources.AppIconDark
+            : Resources.AppIconLight;
 
         return (Icon)sourceIcon.Clone();
     }

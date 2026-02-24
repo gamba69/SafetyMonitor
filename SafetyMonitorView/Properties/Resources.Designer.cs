@@ -63,9 +63,9 @@ namespace SafetyMonitorView.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        internal static System.Drawing.Icon DarkThemeIcon {
+        internal static System.Drawing.Icon AppIconDark {
             get {
-                object obj = ResourceManager.GetObject("DarkThemeIcon", resourceCulture);
+                object obj = ResourceManager.GetObject("AppIconDark", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }
@@ -73,9 +73,39 @@ namespace SafetyMonitorView.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        internal static System.Drawing.Icon LightThemeIcon {
+        internal static System.Drawing.Icon AppIconLight {
             get {
-                object obj = ResourceManager.GetObject("LightThemeIcon", resourceCulture);
+                object obj = ResourceManager.GetObject("AppIconLight", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+        /// </summary>
+        internal static System.Drawing.Icon TrayIconBrown {
+            get {
+                object obj = ResourceManager.GetObject("TrayIconBrown", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+        /// </summary>
+        internal static System.Drawing.Icon TrayIconGreen {
+            get {
+                object obj = ResourceManager.GetObject("TrayIconGreen", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+        /// </summary>
+        internal static System.Drawing.Icon TrayIconRed {
+            get {
+                object obj = ResourceManager.GetObject("TrayIconRed", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }
