@@ -23,24 +23,28 @@ public class SettingsForm : Form {
 
     // Tab infrastructure
     private Panel _tabSegmentPanel = null!;
+    private TableLayoutPanel _tabButtonsLayout = null!;
     private readonly List<RadioButton> _tabButtons = new();
     private readonly List<Panel> _tabPages = new();
     private int _selectedTabIndex;
 
-    private static readonly string[] TabNames = { "General", "Storage", "Value Tiles", "Chart Tiles", "Aggregation" };
+    private static readonly string[] TabNames = { "Refresh", "Tray", "Database", "Tiles", "Aggregation", "Config" };
     private const int SettingValueColumnWidth = 120;
     private const int SettingUnitColumnWidth = 90;
     private const int EmSetMargins = 0x00D3;
     private const int EcLeftMargin = 0x0001;
     private const int EcRightMargin = 0x0002;
     private const int NumericTextPaddingPx = 6;
+    private const int TabIconSize = 22;
+    private const int TabButtonHorizontalPadding = 14;
 
     private static readonly string[] TabIcons = {
-        MaterialIcons.CommonBuild,
+        "refresh",
+        "pip",
         MaterialIcons.CommonDatabase,
-        MaterialIcons.WindowTileValue,
-        MaterialIcons.WindowTileChart,
-        MaterialIcons.CommonAvgTime
+        MaterialIcons.DashboardTab,
+        MaterialIcons.CommonAvgTime,
+        "rule_settings"
     };
 
     #endregion Private Fields
@@ -109,7 +113,7 @@ public class SettingsForm : Form {
             button.FlatAppearance.MouseDownBackColor = activeBg;
 
             button.Image?.Dispose();
-            button.Image = MaterialIcons.GetIcon(TabIcons[i], button.ForeColor, 22);
+            button.Image = MaterialIcons.GetIcon(TabIcons[i], button.ForeColor, TabIconSize);
         }
 
         // Tab page backgrounds
@@ -222,17 +226,17 @@ public class SettingsForm : Form {
             Padding = new Padding(1)
         };
 
-        var tabButtonsLayout = new TableLayoutPanel {
+        _tabButtonsLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = TabNames.Length,
             RowCount = 1,
             Margin = Padding.Empty,
             Padding = Padding.Empty
         };
-        tabButtonsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        _tabButtonsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         for (int i = 0; i < TabNames.Length; i++) {
-            tabButtonsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / TabNames.Length));
+            _tabButtonsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100));
         }
 
         for (int i = 0; i < TabNames.Length; i++) {
@@ -256,7 +260,7 @@ public class SettingsForm : Form {
                 Checked = i == 0,
                 Cursor = Cursors.Hand,
                 Margin = Padding.Empty,
-                Padding = Padding.Empty
+                Padding = new Padding(TabButtonHorizontalPadding, 0, TabButtonHorizontalPadding, 0)
             };
             btn.CheckedChanged += (s, e) => {
                 if (btn.Checked) {
@@ -264,16 +268,16 @@ public class SettingsForm : Form {
                 }
             };
 
-            var icon = MaterialIcons.GetIcon(TabIcons[i], Color.White, 22);
+            var icon = MaterialIcons.GetIcon(TabIcons[i], Color.White, TabIconSize);
             if (icon is not null) {
                 btn.Image = icon;
             }
 
             _tabButtons.Add(btn);
-            tabButtonsLayout.Controls.Add(btn, i, 0);
+            _tabButtonsLayout.Controls.Add(btn, i, 0);
         }
 
-        _tabSegmentPanel.Controls.Add(tabButtonsLayout);
+        _tabSegmentPanel.Controls.Add(_tabButtonsLayout);
 
         mainLayout.Controls.Add(_tabSegmentPanel, 0, 1);
 
@@ -284,10 +288,11 @@ public class SettingsForm : Form {
         };
 
         _tabPages.Add(CreateGeneralTab(titleFont, normalFont, descriptionFont));
+        _tabPages.Add(CreateEmptyTab());
         _tabPages.Add(CreateStorageTab(titleFont, normalFont, descriptionFont));
-        _tabPages.Add(CreateValueTilesTab(titleFont, normalFont, descriptionFont));
-        _tabPages.Add(CreateChartTilesTab(titleFont, normalFont, descriptionFont));
+        _tabPages.Add(CreateTilesTab(titleFont, normalFont, descriptionFont));
         _tabPages.Add(CreateAggregationTab(titleFont, normalFont, descriptionFont));
+        _tabPages.Add(CreateEmptyTab());
 
         foreach (var page in _tabPages) {
             page.Dock = DockStyle.Fill;
@@ -332,7 +337,57 @@ public class SettingsForm : Form {
 
         Controls.Add(mainLayout);
         ClientSize = new Size(682, 594);
+
+        Shown += (_, _) => BeginInvoke(new Action(() => {
+            EnsureTabsFitClientWidth();
+            headerLabel.MaximumSize = new Size(ClientSize.Width - 60, 0);
+        }));
+
+        DpiChanged += (_, _) => BeginInvoke(new Action(() => {
+            EnsureTabsFitClientWidth();
+            headerLabel.MaximumSize = new Size(ClientSize.Width - 60, 0);
+        }));
     }
+
+    private void EnsureTabsFitClientWidth() {
+        if (_tabButtons.Count == 0 || _tabButtonsLayout is null) {
+            return;
+        }
+
+        var requiredTabsWidth = 0;
+        _tabButtonsLayout.SuspendLayout();
+        try {
+            _tabButtonsLayout.ColumnStyles.Clear();
+            foreach (var button in _tabButtons) {
+                var textWidth = TextRenderer.MeasureText(
+                    button.Text,
+                    button.Font,
+                    new Size(int.MaxValue, int.MaxValue),
+                    TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width;
+
+                var buttonWidth = textWidth
+                                  + TabIconSize
+                                  + (TabButtonHorizontalPadding * 2)
+                                  + 26;
+                buttonWidth = Math.Max(buttonWidth, 88);
+
+                _tabButtonsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, buttonWidth));
+                requiredTabsWidth += buttonWidth;
+            }
+        } finally {
+            _tabButtonsLayout.ResumeLayout(true);
+        }
+
+        var requiredClientWidth = Math.Max(682, requiredTabsWidth + _tabSegmentPanel.Padding.Horizontal + Padding.Horizontal + 10);
+        if (ClientSize.Width < requiredClientWidth) {
+            ClientSize = new Size(requiredClientWidth, ClientSize.Height);
+        }
+    }
+
+    private static Panel CreateEmptyTab() => new() {
+        Padding = new Padding(0, 4, 0, 0),
+        AutoScroll = true
+    };
 
     // ════════════════════════════════════════════════════════════════
     //  Tab pages
@@ -437,14 +492,14 @@ public class SettingsForm : Form {
         _browseButton.Click += BrowseButton_Click;
         pathPanel.Controls.Add(_browseButton, 2, 0);
 
-        Label description = new Label {
-            Text = "Data storage location where the collector writes Firebird databases. "
-                 + "Each month of data is stored in a separate .fdb file inside this folder. "
-                 + "Firebird Embedded must be installed separately (fbclient.dll and plugins). "
-                 + "Use the Test Connection button to verify the path is valid and Firebird is available.",
-            Font = descriptionFont,
-            AutoSize = true,
-            Margin = new Padding(0, 4, 0, 0)
+        var description = new ExpandableDescriptionPanel(
+            "Data storage location where the collector writes Firebird databases. "
+          + "Each month of data is stored in a separate .fdb file inside this folder. "
+          + "A full Firebird 5 server must be installed and configured in the operating system. "
+          + "Use the Test Connection button to verify the path is valid and Firebird is available.",
+            descriptionFont) {
+            Margin = new Padding(0, 4, 0, 0),
+            Dock = DockStyle.Fill
         };
         pathPanel.Controls.Add(description, 0, 1);
         pathPanel.SetColumnSpan(description, 3);
@@ -476,16 +531,17 @@ public class SettingsForm : Form {
         return page;
     }
 
-    private Panel CreateValueTilesTab(Font titleFont, Font normalFont, Font descriptionFont) {
+    private Panel CreateTilesTab(Font titleFont, Font normalFont, Font descriptionFont) {
         var page = new Panel { Padding = new Padding(0, 4, 0, 0) };
 
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 3,
+            RowCount = 4,
             AutoSize = false
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -503,24 +559,6 @@ public class SettingsForm : Form {
             titleFont,
             descriptionFont), 0, 1);
 
-        page.Controls.Add(layout);
-        return page;
-    }
-
-    private Panel CreateChartTilesTab(Font titleFont, Font normalFont, Font descriptionFont) {
-        var page = new Panel { Padding = new Padding(0, 4, 0, 0) };
-
-        var layout = new TableLayoutPanel {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 3,
-            AutoSize = false
-        };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-
         _chartStaticTimeoutNumeric = CreateNumeric(10, 3600, 120, normalFont);
         layout.Controls.Add(CreateSettingRow(
             "Chart Static Mode Timeout",
@@ -532,7 +570,7 @@ public class SettingsForm : Form {
             "seconds",
             _chartStaticTimeoutNumeric,
             titleFont,
-            descriptionFont), 0, 1);
+            descriptionFont), 0, 2);
 
         page.Controls.Add(layout);
         return page;
@@ -725,15 +763,12 @@ public class SettingsForm : Form {
         };
         row.Controls.Add(unitLabel, 2, 0);
 
-        var descriptionLabel = new Label {
-            Text = description,
-            Font = descriptionFont,
-            AutoSize = true,
-            MaximumSize = new Size(0, 0),
-            Margin = new Padding(0, 6, 14, 0)
+        var descriptionPanel = new ExpandableDescriptionPanel(description, descriptionFont) {
+            Margin = new Padding(0, 6, 14, 0),
+            Dock = DockStyle.Fill
         };
-        row.Controls.Add(descriptionLabel, 0, 1);
-        row.SetColumnSpan(descriptionLabel, 3);
+        row.Controls.Add(descriptionPanel, 0, 1);
+        row.SetColumnSpan(descriptionPanel, 3);
 
         return row;
     }
@@ -805,4 +840,138 @@ public class SettingsForm : Form {
     private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
     #endregion Native Methods
+
+    private sealed class ExpandableDescriptionPanel : Panel {
+        private readonly string _fullText;
+        private readonly Label _descriptionLabel;
+        private readonly PictureBox _arrowPicture;
+        private bool _isExpanded;
+
+        public ExpandableDescriptionPanel(string text, Font font) {
+            _fullText = text;
+            Cursor = Cursors.Hand;
+            AutoSize = false;
+            Height = 44;
+
+            var layout = new TableLayoutPanel {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 1,
+                AutoSize = false,
+                Margin = Padding.Empty,
+                Padding = Padding.Empty
+            };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 22));
+
+            _descriptionLabel = new Label {
+                Font = font,
+                AutoSize = false,
+                Dock = DockStyle.Fill,
+                Cursor = Cursors.Hand
+            };
+
+            _arrowPicture = new PictureBox {
+                Size = new Size(22, 22),
+                SizeMode = PictureBoxSizeMode.CenterImage,
+                Dock = DockStyle.Fill,
+                Cursor = Cursors.Hand,
+                Margin = Padding.Empty
+            };
+
+            layout.Controls.Add(_descriptionLabel, 0, 0);
+            layout.Controls.Add(_arrowPicture, 1, 0);
+            Controls.Add(layout);
+
+            Click += ToggleExpand;
+            _descriptionLabel.Click += ToggleExpand;
+            _arrowPicture.Click += ToggleExpand;
+            Resize += (_, _) => UpdateText();
+            Layout += (_, _) => UpdateText();
+            VisibleChanged += (_, _) => UpdateText();
+            ParentChanged += (_, _) => {
+                if (Parent is not null) {
+                    Parent.Layout += (_, _) => UpdateText();
+                    Parent.Resize += (_, _) => UpdateText();
+                }
+            };
+            _descriptionLabel.Resize += (_, _) => UpdateText();
+            EnsureInitialMeasure();
+        }
+
+        private void EnsureInitialMeasure() {
+            if (IsHandleCreated) {
+                BeginInvoke(new Action(UpdateText));
+            } else {
+                HandleCreated += (_, _) => BeginInvoke(new Action(UpdateText));
+            }
+        }
+
+        private void ToggleExpand(object? sender, EventArgs e) {
+            if (!_arrowPicture.Visible) {
+                return;
+            }
+
+            _isExpanded = !_isExpanded;
+            UpdateText();
+        }
+
+        private void UpdateText() {
+            var width = ClientSize.Width - 22;
+            if (width <= 1) {
+                if (IsHandleCreated) {
+                    BeginInvoke(new Action(UpdateText));
+                }
+
+                return;
+            }
+
+            var lineHeight = TextRenderer.MeasureText("Ag", _descriptionLabel.Font).Height;
+            var maxHeight = lineHeight * 2;
+            var fullSize = TextRenderer.MeasureText(_fullText, _descriptionLabel.Font, new Size(width, int.MaxValue), TextFormatFlags.WordBreak);
+            var truncated = fullSize.Height > maxHeight;
+            _arrowPicture.Visible = truncated;
+
+            if (_isExpanded || !truncated) {
+                _descriptionLabel.Height = fullSize.Height;
+                _descriptionLabel.Text = _fullText;
+            } else {
+                _descriptionLabel.Height = maxHeight;
+                _descriptionLabel.Text = TruncateToTwoLines(_fullText, _descriptionLabel.Font, width);
+            }
+
+            _arrowPicture.Image?.Dispose();
+            _arrowPicture.Image = truncated
+                ? MaterialIcons.GetIcon(_isExpanded ? "keyboard_double_arrow_up" : "keyboard_double_arrow_down", _descriptionLabel.ForeColor, 22)
+                : null;
+
+            Height = Math.Max(_descriptionLabel.Height, 22);
+        }
+
+        private static string TruncateToTwoLines(string text, Font font, int width) {
+            var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length == 0) {
+                return text;
+            }
+
+            var targetHeight = TextRenderer.MeasureText("Ag", font).Height * 2;
+            var low = 1;
+            var high = words.Length;
+            var best = words[0] + " ...";
+
+            while (low <= high) {
+                var mid = (low + high) / 2;
+                var candidate = string.Join(" ", words.Take(mid)) + " ...";
+                var size = TextRenderer.MeasureText(candidate, font, new Size(width, int.MaxValue), TextFormatFlags.WordBreak);
+                if (size.Height <= targetHeight) {
+                    best = candidate;
+                    low = mid + 1;
+                } else {
+                    high = mid - 1;
+                }
+            }
+
+            return best;
+        }
+    }
 }
