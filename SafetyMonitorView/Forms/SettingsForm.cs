@@ -11,6 +11,8 @@ public class SettingsForm : Form {
     private Button _cancelButton = null!;
     private Label _connectionStatusLabel = null!;
     private CheckBox _showRefreshIndicatorCheckBox = null!;
+    private CheckBox _minimizeToTrayCheckBox = null!;
+    private CheckBox _startMinimizedCheckBox = null!;
     private NumericUpDown _chartStaticTimeoutNumeric = null!;
     private NumericUpDown _chartStaticAggregationPresetMatchToleranceNumeric = null!;
     private NumericUpDown _chartStaticAggregationTargetPointsNumeric = null!;
@@ -51,7 +53,7 @@ public class SettingsForm : Form {
 
     #region Public Constructors
 
-    public SettingsForm(string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartAggregationRoundingSeconds, bool currentShowRefreshIndicator) {
+    public SettingsForm(string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartAggregationRoundingSeconds, bool currentShowRefreshIndicator, bool currentMinimizeToTray, bool currentStartMinimized) {
         StoragePath = currentStoragePath;
         RefreshInterval = currentRefreshInterval;
         ValueTileLookbackMinutes = Math.Max(1, currentValueTileLookbackMinutes);
@@ -60,6 +62,8 @@ public class SettingsForm : Form {
         ChartStaticAggregationTargetPointCount = Math.Max(2, currentChartStaticAggregationTargetPointCount);
         ChartAggregationRoundingSeconds = Math.Max(1, currentChartAggregationRoundingSeconds);
         ShowRefreshIndicator = currentShowRefreshIndicator;
+        MinimizeToTray = currentMinimizeToTray;
+        StartMinimized = currentStartMinimized;
 
         InitializeComponent();
         FormIconHelper.Apply(this, MaterialIcons.MenuFileSettings);
@@ -79,6 +83,8 @@ public class SettingsForm : Form {
     public int ChartAggregationRoundingSeconds { get; private set; } = 1;
     public string StoragePath { get; private set; } = "";
     public bool ShowRefreshIndicator { get; private set; } = true;
+    public bool MinimizeToTray { get; private set; } = false;
+    public bool StartMinimized { get; private set; } = false;
 
     #endregion Public Properties
 
@@ -288,7 +294,7 @@ public class SettingsForm : Form {
         };
 
         _tabPages.Add(CreateGeneralTab(titleFont, normalFont, descriptionFont));
-        _tabPages.Add(CreateEmptyTab());
+        _tabPages.Add(CreateTrayTab(titleFont, normalFont, descriptionFont));
         _tabPages.Add(CreateStorageTab(titleFont, normalFont, descriptionFont));
         _tabPages.Add(CreateTilesTab(titleFont, normalFont, descriptionFont));
         _tabPages.Add(CreateAggregationTab(titleFont, normalFont, descriptionFont));
@@ -434,6 +440,59 @@ public class SettingsForm : Form {
                 + "The animated icon fills progressively until the next automatic data refresh occurs.",
             "",
             _showRefreshIndicatorCheckBox,
+            titleFont,
+            descriptionFont), 0, 2);
+
+        page.Controls.Add(layout);
+        return page;
+    }
+
+    private Panel CreateTrayTab(Font titleFont, Font normalFont, Font descriptionFont) {
+        var page = new Panel {
+            Padding = new Padding(0, 4, 0, 0),
+            AutoScroll = true
+        };
+
+        var layout = new TableLayoutPanel {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 4,
+            AutoSize = false
+        };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        _minimizeToTrayCheckBox = new CheckBox {
+            AutoSize = true,
+            Font = normalFont,
+            Cursor = Cursors.Hand
+        };
+        layout.Controls.Add(CreateSettingRow(
+            "Minimize to Tray",
+            "When enabled, minimizing the application will hide it to the system tray instead of the taskbar. "
+                + "The tray icon color reflects the current safety status: green for Safe, red for Unsafe, "
+                + "and brown if there is an error or no data available within the lookback window. "
+                + "Hover over the tray icon to see metric values configured with a Tray Name in Metric Settings.",
+            "",
+            _minimizeToTrayCheckBox,
+            titleFont,
+            descriptionFont), 0, 1);
+
+        _startMinimizedCheckBox = new CheckBox {
+            AutoSize = true,
+            Font = normalFont,
+            Cursor = Cursors.Hand
+        };
+        layout.Controls.Add(CreateSettingRow(
+            "Start Minimized",
+            "When enabled, the application starts minimized. If Minimize to Tray is also enabled, "
+                + "the application will start directly in the system tray. "
+                + "Otherwise it will start minimized to the taskbar.",
+            "",
+            _startMinimizedCheckBox,
             titleFont,
             descriptionFont), 0, 2);
 
@@ -777,6 +836,8 @@ public class SettingsForm : Form {
         _storagePathTextBox.Text = StoragePath;
         _refreshIntervalNumeric.Value = RefreshInterval;
         _showRefreshIndicatorCheckBox.Checked = ShowRefreshIndicator;
+        _minimizeToTrayCheckBox.Checked = MinimizeToTray;
+        _startMinimizedCheckBox.Checked = StartMinimized;
         _valueTileLookbackMinutesNumeric.Value = Math.Clamp(ValueTileLookbackMinutes, 1, 43200);
         _chartStaticTimeoutNumeric.Value = ChartStaticTimeoutSeconds;
         _chartStaticAggregationPresetMatchToleranceNumeric.Value = Math.Clamp((decimal)ChartStaticAggregationPresetMatchTolerancePercent, 0m, 100m);
@@ -788,6 +849,8 @@ public class SettingsForm : Form {
         StoragePath = _storagePathTextBox.Text;
         RefreshInterval = (int)_refreshIntervalNumeric.Value;
         ShowRefreshIndicator = _showRefreshIndicatorCheckBox.Checked;
+        MinimizeToTray = _minimizeToTrayCheckBox.Checked;
+        StartMinimized = _startMinimizedCheckBox.Checked;
         ValueTileLookbackMinutes = (int)_valueTileLookbackMinutesNumeric.Value;
         ChartStaticTimeoutSeconds = (int)_chartStaticTimeoutNumeric.Value;
         ChartStaticAggregationPresetMatchTolerancePercent = (double)_chartStaticAggregationPresetMatchToleranceNumeric.Value;

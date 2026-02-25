@@ -7,7 +7,9 @@ public class AppSettings {
     public bool IsDarkTheme { get; set; } = false;
     public bool IsMaximized { get; set; } = false;
     public bool LinkChartPeriods { get; set; } = false;
+    public bool MinimizeToTray { get; set; } = false;
     public bool ShowRefreshIndicator { get; set; } = true;
+    public bool StartMinimized { get; set; } = false;
     public int ChartStaticModeTimeoutSeconds { get; set; } = 120;
     public double ChartStaticAggregationPresetMatchTolerancePercent { get; set; } = 10;
     public int ChartStaticAggregationTargetPointCount { get; set; } = 300;

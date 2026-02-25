@@ -64,6 +64,12 @@ public class MainForm : MaterialForm {
     private bool _shouldStartMaximized;
     private FormWindowState _windowStateBeforeMinimize = FormWindowState.Normal;
 
+    // ── Tray icon fields ──
+    private NotifyIcon? _trayIcon;
+    private System.Windows.Forms.Timer? _trayRefreshTimer;
+    private bool _isMinimizedToTray;
+    private bool _isTrayRefreshing;
+
     // ── Visor (забрало) fields ──
     // The visor is a borderless overlay Form with real Opacity support.
     // It covers the dashboard area to hide layout/scaling artifacts during
@@ -132,6 +138,7 @@ public class MainForm : MaterialForm {
         LoadDashboards();
         UpdateStatusBar();
         SetupRefreshTimer();
+        SetupTrayIcon();
 
         // Anti flicker hack
         this.Opacity = 0.999;
@@ -180,6 +187,14 @@ public class MainForm : MaterialForm {
         _themeTimer?.Stop();
         _themeTimer?.Dispose();
 
+        _trayRefreshTimer?.Stop();
+        _trayRefreshTimer?.Dispose();
+        if (_trayIcon != null) {
+            _trayIcon.Visible = false;
+            _trayIcon.Dispose();
+            _trayIcon = null;
+        }
+
         ClearDashboardPanelCache();
 
         _themeApplicationIcon?.Dispose();
@@ -204,15 +219,31 @@ public class MainForm : MaterialForm {
 
             if (WindowState == FormWindowState.Minimized) {
                 _restoreToMaximizedAfterMinimize = _windowStateBeforeMinimize == FormWindowState.Maximized;
+
+                // Pause dashboard refresh when minimized
+                PauseDashboardRefresh();
+
+                // Minimize to tray if enabled
+                if (_appSettings.MinimizeToTray) {
+                    MinimizeToTray();
+                    _windowStateBeforeMinimize = WindowState;
+                    return;
+                }
             } else {
-                if (_windowStateBeforeMinimize == FormWindowState.Minimized
-                    && _restoreToMaximizedAfterMinimize
-                    && WindowState == FormWindowState.Normal) {
-                    BeginInvoke(() => {
-                        if (WindowState == FormWindowState.Normal) {
-                            WindowState = FormWindowState.Maximized;
-                        }
-                    });
+                // Restore from taskbar minimize (NOT from tray — tray restore
+                // is handled entirely by RestoreFromTray which pre-sets
+                // _windowStateBeforeMinimize so this branch is skipped).
+                if (_windowStateBeforeMinimize == FormWindowState.Minimized) {
+                    ResumeDashboardRefresh();
+
+                    if (_restoreToMaximizedAfterMinimize
+                        && WindowState == FormWindowState.Normal) {
+                        BeginInvoke(() => {
+                            if (WindowState == FormWindowState.Normal) {
+                                WindowState = FormWindowState.Maximized;
+                            }
+                        });
+                    }
                 }
 
                 _restoreToMaximizedAfterMinimize = false;
@@ -229,6 +260,20 @@ public class MainForm : MaterialForm {
 
     protected override void OnShown(EventArgs e) {
         base.OnShown(e);
+
+        if (_appSettings.StartMinimized) {
+            // Pretend the window was in its intended state so that OnResize
+            // correctly computes _restoreToMaximizedAfterMinimize when the
+            // Minimized transition fires.
+            _windowStateBeforeMinimize = _shouldStartMaximized
+                ? FormWindowState.Maximized
+                : FormWindowState.Normal;
+
+            BeginInvoke(() => {
+                WindowState = FormWindowState.Minimized;
+            });
+            return;
+        }
 
         if (_shouldStartMaximized && WindowState != FormWindowState.Maximized) {
             WindowState = FormWindowState.Maximized;
@@ -1161,7 +1206,7 @@ public class MainForm : MaterialForm {
     }
 
     private void ShowSettings() {
-        using var settingsForm = new SettingsForm(_appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds, _appSettings.ShowRefreshIndicator);
+        using var settingsForm = new SettingsForm(_appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds, _appSettings.ShowRefreshIndicator, _appSettings.MinimizeToTray, _appSettings.StartMinimized);
         if (settingsForm.ShowDialog() == DialogResult.OK) {
             _appSettings.StoragePath = settingsForm.StoragePath;
             _appSettings.RefreshInterval = settingsForm.RefreshInterval;
@@ -1171,6 +1216,8 @@ public class MainForm : MaterialForm {
             _appSettings.ChartStaticAggregationTargetPointCount = settingsForm.ChartStaticAggregationTargetPointCount;
             _appSettings.ChartAggregationRoundingSeconds = settingsForm.ChartAggregationRoundingSeconds;
             _appSettings.ShowRefreshIndicator = settingsForm.ShowRefreshIndicator;
+            _appSettings.MinimizeToTray = settingsForm.MinimizeToTray;
+            _appSettings.StartMinimized = settingsForm.StartMinimized;
             _appSettingsService.SaveSettings(_appSettings);
 
             _dataService = new DataService(_appSettings.StoragePath, _appSettings.ValueTileLookbackMinutes);
@@ -1178,6 +1225,7 @@ public class MainForm : MaterialForm {
             UpdateStatusBar();
 
             _refreshTimer?.Interval = _appSettings.RefreshInterval * 1000;
+            if (_trayRefreshTimer != null) { _trayRefreshTimer.Interval = _appSettings.RefreshInterval * 1000; }
             _dashboardPanel?.SetChartStaticModeTimeoutSeconds(_appSettings.ChartStaticModeTimeoutSeconds);
             _dashboardPanel?.SetChartStaticAggregationOptions(_appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds);
             _refreshIndicatorIcon.Visible = _appSettings.ShowRefreshIndicator;
@@ -1541,6 +1589,180 @@ public class MainForm : MaterialForm {
             if (button.Tag is Guid dashboardId) { button.Checked = dashboardId == currentDashboardId; }
         }
         UpdateDashboardSwitchAppearance();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  Tray icon
+    // ════════════════════════════════════════════════════════════════
+
+    private void SetupTrayIcon() {
+        _trayIcon = new NotifyIcon {
+            Visible = false,
+            Icon = (Icon)Properties.Resources.TrayIconBrown.Clone(),
+            Text = "Safety Monitor"
+        };
+
+        var trayMenu = new ContextMenuStrip();
+        trayMenu.Items.Add("Restore", null, (s, e) => RestoreFromTray());
+        trayMenu.Items.Add(new ToolStripSeparator());
+        trayMenu.Items.Add("Exit", null, (s, e) => {
+            _isExitConfirmed = true;
+            RestoreFromTray();
+            Close();
+        });
+        _trayIcon.ContextMenuStrip = trayMenu;
+        _trayIcon.DoubleClick += (s, e) => RestoreFromTray();
+
+        _trayRefreshTimer = new System.Windows.Forms.Timer { Interval = _appSettings.RefreshInterval * 1000 };
+        _trayRefreshTimer.Tick += async (s, e) => {
+            if (_isTrayRefreshing) { return; }
+            await RefreshTrayDataAsync();
+        };
+    }
+
+    private void MinimizeToTray() {
+        if (_trayIcon == null) { return; }
+        _isMinimizedToTray = true;
+        Hide();
+        _trayIcon.Visible = true;
+        StartTrayRefresh();
+    }
+
+    private void RestoreFromTray() {
+        if (_trayIcon == null) { return; }
+        StopTrayRefresh();
+        _trayIcon.Visible = false;
+        _isMinimizedToTray = false;
+
+        // Determine target window state from the state saved before minimize.
+        var targetState = _restoreToMaximizedAfterMinimize
+            ? FormWindowState.Maximized
+            : FormWindowState.Normal;
+
+        // Pre-set _windowStateBeforeMinimize so that OnResize (triggered by
+        // WindowState assignment below) does NOT see a Minimized→Normal
+        // transition and does not double-call ResumeDashboardRefresh.
+        _windowStateBeforeMinimize = targetState;
+
+        Show();
+        WindowState = targetState;
+        Activate();
+
+        if (!_initialRevealCompleted) {
+            // First-ever restore (app was started minimized to tray) —
+            // run the full initial dashboard reveal which creates the visor,
+            // makes the dashboard visible, refreshes data and sets
+            // _initialRevealCompleted = true.
+            BeginInitialDashboardReveal();
+            _refreshTimer?.Start();
+            _refreshCountdownTimer?.Start();
+        } else {
+            // Normal restore — force full theme and layout repaint because
+            // MaterialSkin does not automatically repaint after Hide()/Show().
+            UpdateDashboardContainerTheme();
+            UpdateQuickAccessPanelTheme();
+            UpdateMenuTheme();
+
+            if (_dashboardPanel != null) {
+                _dashboardPanel.Visible = true;
+                _dashboardPanel.BringToFront();
+                _dashboardPanel.UpdateTheme();
+            }
+
+            ResumeDashboardRefresh();
+        }
+    }
+
+    private void StartTrayRefresh() {
+        if (_trayRefreshTimer == null) { return; }
+        _trayRefreshTimer.Interval = _appSettings.RefreshInterval * 1000;
+        _trayRefreshTimer.Start();
+        _ = RefreshTrayDataAsync();
+    }
+
+    private void StopTrayRefresh() {
+        _trayRefreshTimer?.Stop();
+    }
+
+    private async Task RefreshTrayDataAsync() {
+        if (_trayIcon == null || !_isMinimizedToTray) { return; }
+        _isTrayRefreshing = true;
+        try {
+            var data = await Task.Run(() => _dataService.GetLatestData());
+            if (IsDisposed || !_isMinimizedToTray) { return; }
+            UpdateTrayIcon(data);
+            UpdateTrayTooltip(data);
+        } catch {
+            if (!IsDisposed && _isMinimizedToTray) {
+                UpdateTrayIcon(null);
+                UpdateTrayTooltip(null);
+            }
+        } finally {
+            _isTrayRefreshing = false;
+        }
+    }
+
+    private void UpdateTrayIcon(DataStorage.Models.ObservingData? data) {
+        if (_trayIcon == null) { return; }
+
+        Icon newIcon;
+        if (data == null) {
+            newIcon = (Icon)Properties.Resources.TrayIconBrown.Clone();
+        } else if (data.IsSafe == true) {
+            newIcon = (Icon)Properties.Resources.TrayIconGreen.Clone();
+        } else if (data.IsSafe == false) {
+            newIcon = (Icon)Properties.Resources.TrayIconRed.Clone();
+        } else {
+            newIcon = (Icon)Properties.Resources.TrayIconBrown.Clone();
+        }
+
+        var oldIcon = _trayIcon.Icon;
+        _trayIcon.Icon = newIcon;
+        oldIcon?.Dispose();
+    }
+
+    private void UpdateTrayTooltip(DataStorage.Models.ObservingData? data) {
+        if (_trayIcon == null) { return; }
+
+        if (data == null) {
+            _trayIcon.Text = "Safety Monitor — no data";
+            return;
+        }
+
+        var lines = new List<string>();
+        foreach (var setting in MetricDisplaySettingsStore.Settings) {
+            if (string.IsNullOrWhiteSpace(setting.TrayName)) { continue; }
+            var value = setting.Metric.GetValue(data);
+            if (value.HasValue) {
+                var formatted = MetricDisplaySettingsStore.FormatMetricValue(setting.Metric, value.Value);
+                lines.Add($"{setting.TrayName}: {formatted} {setting.Metric.GetUnit()}");
+            } else {
+                lines.Add($"{setting.TrayName}: —");
+            }
+        }
+
+        var text = lines.Count > 0
+            ? string.Join("\n", lines)
+            : "Safety Monitor";
+
+        if (text.Length > 127) { text = text[..124] + "..."; }
+        _trayIcon.Text = text;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  Dashboard refresh pause / resume
+    // ════════════════════════════════════════════════════════════════
+
+    private void PauseDashboardRefresh() {
+        _refreshTimer?.Stop();
+        _refreshCountdownTimer?.Stop();
+    }
+
+    private void ResumeDashboardRefresh() {
+        _refreshTimer?.Start();
+        _refreshCountdownTimer?.Start();
+        _lastRefreshTime = DateTime.Now;
+        _ = RefreshDashboardDataAsync();
     }
 
     private void UpdateStatusBar() {
