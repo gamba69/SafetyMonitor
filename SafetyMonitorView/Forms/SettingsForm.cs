@@ -1,4 +1,5 @@
 using MaterialSkin;
+using MaterialSkin.Controls;
 using SafetyMonitorView.Services;
 using System.Runtime.InteropServices;
 
@@ -10,9 +11,9 @@ public class SettingsForm : Form {
     private Button _browseButton = null!;
     private Button _cancelButton = null!;
     private Label _connectionStatusLabel = null!;
-    private CheckBox _showRefreshIndicatorCheckBox = null!;
-    private CheckBox _minimizeToTrayCheckBox = null!;
-    private CheckBox _startMinimizedCheckBox = null!;
+    private MaterialSwitch _showRefreshIndicatorSwitch = null!;
+    private MaterialSwitch _minimizeToTraySwitch = null!;
+    private MaterialSwitch _startMinimizedSwitch = null!;
     private NumericUpDown _chartStaticTimeoutNumeric = null!;
     private NumericUpDown _chartStaticAggregationPresetMatchToleranceNumeric = null!;
     private NumericUpDown _chartStaticAggregationTargetPointsNumeric = null!;
@@ -158,8 +159,8 @@ public class SettingsForm : Form {
                     num.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
                     num.ForeColor = isLight ? Color.Black : Color.White;
                     break;
-                case CheckBox chk:
-                    chk.ForeColor = isLight ? Color.Black : Color.White;
+                case MaterialSwitch materialSwitch:
+                    materialSwitch.ForeColor = isLight ? Color.Black : Color.White;
                     break;
             }
 
@@ -429,17 +430,13 @@ public class SettingsForm : Form {
             titleFont,
             descriptionFont), 0, 1);
 
-        _showRefreshIndicatorCheckBox = new CheckBox {
-            AutoSize = true,
-            Font = normalFont,
-            Cursor = Cursors.Hand
-        };
+        _showRefreshIndicatorSwitch = CreateMaterialSwitch(normalFont);
         layout.Controls.Add(CreateSettingRow(
             "Show Refresh Indicator",
             "Displays a countdown animation and the last refresh timestamp in the quick-access panel. "
                 + "The animated icon fills progressively until the next automatic data refresh occurs.",
             "",
-            _showRefreshIndicatorCheckBox,
+            _showRefreshIndicatorSwitch,
             titleFont,
             descriptionFont), 0, 2);
 
@@ -465,11 +462,7 @@ public class SettingsForm : Form {
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        _minimizeToTrayCheckBox = new CheckBox {
-            AutoSize = true,
-            Font = normalFont,
-            Cursor = Cursors.Hand
-        };
+        _minimizeToTraySwitch = CreateMaterialSwitch(normalFont);
         layout.Controls.Add(CreateSettingRow(
             "Minimize to Tray",
             "When enabled, minimizing the application will hide it to the system tray instead of the taskbar. "
@@ -477,22 +470,18 @@ public class SettingsForm : Form {
                 + "and brown if there is an error or no data available within the lookback window. "
                 + "Hover over the tray icon to see metric values configured with a Tray Name in Metric Settings.",
             "",
-            _minimizeToTrayCheckBox,
+            _minimizeToTraySwitch,
             titleFont,
             descriptionFont), 0, 1);
 
-        _startMinimizedCheckBox = new CheckBox {
-            AutoSize = true,
-            Font = normalFont,
-            Cursor = Cursors.Hand
-        };
+        _startMinimizedSwitch = CreateMaterialSwitch(normalFont);
         layout.Controls.Add(CreateSettingRow(
             "Start Minimized",
             "When enabled, the application starts minimized. If Minimize to Tray is also enabled, "
                 + "the application will start directly in the system tray. "
                 + "Otherwise it will start minimized to the taskbar.",
             "",
-            _startMinimizedCheckBox,
+            _startMinimizedSwitch,
             titleFont,
             descriptionFont), 0, 2);
 
@@ -743,6 +732,14 @@ public class SettingsForm : Form {
         Margin = new Padding(0, 0, 0, 20)
     };
 
+    private static MaterialSwitch CreateMaterialSwitch(Font font) => new() {
+        AutoSize = true,
+        Font = font,
+        Cursor = Cursors.Hand,
+        Dock = DockStyle.Left,
+        Text = string.Empty
+    };
+
     private static void ApplyNumericRightPadding(NumericUpDown numeric) {
         void ApplyMargin(TextBox textBox) {
             if (textBox.IsHandleCreated) {
@@ -835,9 +832,9 @@ public class SettingsForm : Form {
     private void LoadSettings() {
         _storagePathTextBox.Text = StoragePath;
         _refreshIntervalNumeric.Value = RefreshInterval;
-        _showRefreshIndicatorCheckBox.Checked = ShowRefreshIndicator;
-        _minimizeToTrayCheckBox.Checked = MinimizeToTray;
-        _startMinimizedCheckBox.Checked = StartMinimized;
+        _showRefreshIndicatorSwitch.Checked = ShowRefreshIndicator;
+        _minimizeToTraySwitch.Checked = MinimizeToTray;
+        _startMinimizedSwitch.Checked = StartMinimized;
         _valueTileLookbackMinutesNumeric.Value = Math.Clamp(ValueTileLookbackMinutes, 1, 43200);
         _chartStaticTimeoutNumeric.Value = ChartStaticTimeoutSeconds;
         _chartStaticAggregationPresetMatchToleranceNumeric.Value = Math.Clamp((decimal)ChartStaticAggregationPresetMatchTolerancePercent, 0m, 100m);
@@ -848,9 +845,9 @@ public class SettingsForm : Form {
     private void SaveButton_Click(object? sender, EventArgs e) {
         StoragePath = _storagePathTextBox.Text;
         RefreshInterval = (int)_refreshIntervalNumeric.Value;
-        ShowRefreshIndicator = _showRefreshIndicatorCheckBox.Checked;
-        MinimizeToTray = _minimizeToTrayCheckBox.Checked;
-        StartMinimized = _startMinimizedCheckBox.Checked;
+        ShowRefreshIndicator = _showRefreshIndicatorSwitch.Checked;
+        MinimizeToTray = _minimizeToTraySwitch.Checked;
+        StartMinimized = _startMinimizedSwitch.Checked;
         ValueTileLookbackMinutes = (int)_valueTileLookbackMinutesNumeric.Value;
         ChartStaticTimeoutSeconds = (int)_chartStaticTimeoutNumeric.Value;
         ChartStaticAggregationPresetMatchTolerancePercent = (double)_chartStaticAggregationPresetMatchToleranceNumeric.Value;
