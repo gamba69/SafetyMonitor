@@ -319,6 +319,7 @@ public class ColorSchemeEditorForm : Form {
             AutoSize = false,
             Size = new Size(124, 30),
             Checked = true,
+            UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
         };
         _solidButton.CheckedChanged += (s, e) => {
@@ -342,6 +343,7 @@ public class ColorSchemeEditorForm : Form {
             AutoSize = false,
             Size = new Size(140, 30),
             Checked = false,
+            UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
         };
         _gradientButton.CheckedChanged += (s, e) => {

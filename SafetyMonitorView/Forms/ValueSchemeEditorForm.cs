@@ -310,6 +310,7 @@ public class ValueSchemeEditorForm : Form {
             AutoSize = false,
             Size = new Size(142, 30),
             Checked = true,
+            UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
         };
         _ascendingButton.CheckedChanged += (s, e) => { if (_ascendingButton.Checked) { SortGridByValue(); UpdateDirtyState(); UpdatePreview(); UpdateSortToggleAppearance(); } };
@@ -327,6 +328,7 @@ public class ValueSchemeEditorForm : Form {
             AutoSize = false,
             Size = new Size(154, 30),
             Checked = false,
+            UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
         };
         _descendingButton.CheckedChanged += (s, e) => { if (_descendingButton.Checked) { SortGridByValue(); UpdateDirtyState(); UpdatePreview(); UpdateSortToggleAppearance(); } };

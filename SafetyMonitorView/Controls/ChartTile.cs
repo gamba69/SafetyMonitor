@@ -1346,6 +1346,7 @@ public class ChartTile : Panel {
             AutoSize = false,
             Size = new Size(34, HeaderControlHeight),
             Checked = true,
+            UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
         };
         _autoModeButton.CheckedChanged += (s, e) => {
@@ -1371,6 +1372,7 @@ public class ChartTile : Panel {
             AutoSize = false,
             Size = new Size(34, HeaderControlHeight),
             Checked = false,
+            UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
         };
         _staticModeButton.CheckedChanged += (s, e) => {
@@ -1407,6 +1409,7 @@ public class ChartTile : Panel {
             Size = new Size(34, HeaderControlHeight),
             Checked = _staticModePaused,
             Visible = false,
+            UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
         };
         _pauseModeButton.CheckedChanged += (s, e) => {
@@ -1432,6 +1435,7 @@ public class ChartTile : Panel {
             AutoSize = false,
             Dock = DockStyle.Fill,
             Checked = _config.ShowInspector,
+            UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
         };
         _inspectorButton.CheckedChanged += (s, e) => {

@@ -1,5 +1,4 @@
 using MaterialSkin;
-using MaterialSkin.Controls;
 using SafetyMonitorView.Services;
 using System.Runtime.InteropServices;
 
@@ -11,9 +10,9 @@ public class SettingsForm : Form {
     private Button _browseButton = null!;
     private Button _cancelButton = null!;
     private Label _connectionStatusLabel = null!;
-    private MaterialSwitch _showRefreshIndicatorSwitch = null!;
-    private MaterialSwitch _minimizeToTraySwitch = null!;
-    private MaterialSwitch _startMinimizedSwitch = null!;
+    private CheckBox _showRefreshIndicatorSwitch = null!;
+    private CheckBox _minimizeToTraySwitch = null!;
+    private CheckBox _startMinimizedSwitch = null!;
     private NumericUpDown _chartStaticTimeoutNumeric = null!;
     private NumericUpDown _chartStaticAggregationPresetMatchToleranceNumeric = null!;
     private NumericUpDown _chartStaticAggregationTargetPointsNumeric = null!;
@@ -100,6 +99,7 @@ public class SettingsForm : Form {
 
         ApplyTabSegmentTheme(isLight);
         ApplyThemeRecursive(this, isLight);
+        ApplySettingSwitchTheme(isLight);
     }
 
     private void ApplyTabSegmentTheme(bool isLight) {
@@ -158,9 +158,6 @@ public class SettingsForm : Form {
                 case NumericUpDown num:
                     num.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
                     num.ForeColor = isLight ? Color.Black : Color.White;
-                    break;
-                case MaterialSwitch materialSwitch:
-                    materialSwitch.ForeColor = isLight ? Color.Black : Color.White;
                     break;
             }
 
@@ -265,6 +262,7 @@ public class SettingsForm : Form {
                 AutoSize = false,
                 Dock = DockStyle.Fill,
                 Checked = i == 0,
+                UseVisualStyleBackColor = false,
                 Cursor = Cursors.Hand,
                 Margin = Padding.Empty,
                 Padding = new Padding(TabButtonHorizontalPadding, 0, TabButtonHorizontalPadding, 0)
@@ -430,7 +428,7 @@ public class SettingsForm : Form {
             titleFont,
             descriptionFont), 0, 1);
 
-        _showRefreshIndicatorSwitch = CreateMaterialSwitch(normalFont);
+        _showRefreshIndicatorSwitch = CreateThemeSwitch(normalFont);
         layout.Controls.Add(CreateSettingRow(
             "Show Refresh Indicator",
             "Displays a countdown animation and the last refresh timestamp in the quick-access panel. "
@@ -462,7 +460,7 @@ public class SettingsForm : Form {
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        _minimizeToTraySwitch = CreateMaterialSwitch(normalFont);
+        _minimizeToTraySwitch = CreateThemeSwitch(normalFont);
         layout.Controls.Add(CreateSettingRow(
             "Minimize to Tray",
             "When enabled, minimizing the application will hide it to the system tray instead of the taskbar. "
@@ -474,7 +472,7 @@ public class SettingsForm : Form {
             titleFont,
             descriptionFont), 0, 1);
 
-        _startMinimizedSwitch = CreateMaterialSwitch(normalFont);
+        _startMinimizedSwitch = CreateThemeSwitch(normalFont);
         layout.Controls.Add(CreateSettingRow(
             "Start Minimized",
             "When enabled, the application starts minimized. If Minimize to Tray is also enabled, "
@@ -732,13 +730,32 @@ public class SettingsForm : Form {
         Margin = new Padding(0, 0, 0, 20)
     };
 
-    private static MaterialSwitch CreateMaterialSwitch(Font font) => new() {
-        AutoSize = true,
-        Font = font,
-        Cursor = Cursors.Hand,
-        Dock = DockStyle.Left,
-        Text = string.Empty
-    };
+    private static CheckBox CreateThemeSwitch(Font font) {
+        var checkBox = new CheckBox {
+            Appearance = Appearance.Button,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = {
+                BorderSize = 0,
+                CheckedBackColor = Color.Transparent,
+                MouseDownBackColor = Color.Transparent,
+                MouseOverBackColor = Color.Transparent
+            },
+            AutoSize = false,
+            Width = 72,
+            Height = 30,
+            Font = new Font(font.FontFamily, 8.5f, FontStyle.Bold),
+            Cursor = Cursors.Hand,
+            TextAlign = ContentAlignment.MiddleCenter,
+            UseVisualStyleBackColor = false
+        };
+
+        checkBox.CheckedChanged += (_, _) => {
+            var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+            StyleSettingSwitch(checkBox, isLight);
+        };
+
+        return checkBox;
+    }
 
     private static void ApplyNumericRightPadding(NumericUpDown numeric) {
         void ApplyMargin(TextBox textBox) {
@@ -829,6 +846,30 @@ public class SettingsForm : Form {
         return row;
     }
 
+    private void ApplySettingSwitchTheme(bool isLight) {
+        StyleSettingSwitch(_showRefreshIndicatorSwitch, isLight);
+        StyleSettingSwitch(_minimizeToTraySwitch, isLight);
+        StyleSettingSwitch(_startMinimizedSwitch, isLight);
+    }
+
+    private static void StyleSettingSwitch(CheckBox checkBox, bool isLight) {
+        if (checkBox == null) {
+            return;
+        }
+
+        var offBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
+        var onBg = isLight ? Color.FromArgb(62, 77, 84) : Color.FromArgb(117, 132, 139);
+        var borderColor = isLight ? Color.FromArgb(196, 206, 211) : Color.FromArgb(70, 85, 92);
+
+        checkBox.BackColor = checkBox.Checked ? onBg : offBg;
+        checkBox.ForeColor = checkBox.Checked ? Color.White : (isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205));
+        checkBox.FlatAppearance.BorderSize = 1;
+        checkBox.FlatAppearance.BorderColor = borderColor;
+        checkBox.FlatAppearance.MouseOverBackColor = checkBox.Checked ? onBg : offBg;
+        checkBox.FlatAppearance.MouseDownBackColor = checkBox.Checked ? onBg : offBg;
+        checkBox.Text = checkBox.Checked ? "ON" : "OFF";
+    }
+
     private void LoadSettings() {
         _storagePathTextBox.Text = StoragePath;
         _refreshIntervalNumeric.Value = RefreshInterval;
@@ -840,6 +881,9 @@ public class SettingsForm : Form {
         _chartStaticAggregationPresetMatchToleranceNumeric.Value = Math.Clamp((decimal)ChartStaticAggregationPresetMatchTolerancePercent, 0m, 100m);
         _chartStaticAggregationTargetPointsNumeric.Value = Math.Clamp(ChartStaticAggregationTargetPointCount, 2, 5000);
         _chartAggregationRoundingSecondsNumeric.Value = Math.Clamp(ChartAggregationRoundingSeconds, 1, 3600);
+
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        ApplySettingSwitchTheme(isLight);
     }
 
     private void SaveButton_Click(object? sender, EventArgs e) {

@@ -129,10 +129,7 @@ public class MainForm : MaterialForm {
             ? MaterialSkinManager.Themes.DARK
             : MaterialSkinManager.Themes.LIGHT;
 
-        _skinManager.ColorScheme = new ColorScheme(
-            Primary.Teal700, Primary.Teal900, Primary.Teal500,
-            Accent.Teal200, TextShade.WHITE
-        );
+        ApplyMaterialColorScheme(_skinManager.Theme);
 
         _dataService = new DataService(_appSettings.StoragePath, _appSettings.ValueTileLookbackMinutes);
         AttachDataServiceHandlers();
@@ -661,6 +658,7 @@ public class MainForm : MaterialForm {
             AutoSize = false,
             Size = new Size(36, 30),
             Checked = !_appSettings.IsDarkTheme,
+            UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
         };
         _lightThemeButton.CheckedChanged += (s, e) => {
@@ -685,6 +683,7 @@ public class MainForm : MaterialForm {
             AutoSize = false,
             Size = new Size(36, 30),
             Checked = _appSettings.IsDarkTheme,
+            UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
         };
         _darkThemeButton.CheckedChanged += (s, e) => {
@@ -709,6 +708,7 @@ public class MainForm : MaterialForm {
             AutoSize = false,
             Size = new Size(36, 30),
             Checked = _appSettings.LinkChartPeriods,
+            UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
         };
         _linkedChartsButton.CheckedChanged += (s, e) => { if (_linkedChartsButton.Checked) { _linkChartsCheckBox.Checked = true; } };
@@ -722,6 +722,7 @@ public class MainForm : MaterialForm {
             AutoSize = false,
             Size = new Size(36, 30),
             Checked = !_appSettings.LinkChartPeriods,
+            UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
         };
         _unlinkedChartsButton.CheckedChanged += (s, e) => { if (_unlinkedChartsButton.Checked) { _linkChartsCheckBox.Checked = false; } };
@@ -1112,6 +1113,22 @@ public class MainForm : MaterialForm {
         _refreshTimer.Start();
     }
 
+    private void ApplyMaterialColorScheme(MaterialSkinManager.Themes theme) {
+        _skinManager.ColorScheme = theme == MaterialSkinManager.Themes.LIGHT
+            ? new ColorScheme(
+                Primary.BlueGrey700,
+                Primary.BlueGrey900,
+                Primary.BlueGrey500,
+                Accent.LightBlue200,
+                TextShade.WHITE)
+            : new ColorScheme(
+                Primary.BlueGrey800,
+                Primary.BlueGrey900,
+                Primary.BlueGrey500,
+                Accent.LightBlue200,
+                TextShade.WHITE);
+    }
+
     /// <summary>
     /// Switches theme with visor protection: visor appears immediately before
     /// any theme colors start changing, then fades out after reapply completes.
@@ -1124,6 +1141,7 @@ public class MainForm : MaterialForm {
         }
 
         _skinManager.Theme = theme;
+        ApplyMaterialColorScheme(theme);
         ApplyApplicationIcon();
 
         // ИЗМЕНЕНО: Сразу после переключения темы обновляем цвет забрала на новый
@@ -1586,6 +1604,7 @@ public class MainForm : MaterialForm {
                 Checked = dashboard.Id == _currentDashboard?.Id,
                 Tag = dashboard.Id,
                 Margin = Padding.Empty,
+                UseVisualStyleBackColor = false,
                 Cursor = Cursors.Hand
             };
 
