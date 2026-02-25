@@ -119,23 +119,23 @@
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="AppIconDark" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Assets\shield_theme_dark_v1.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Assets\ThemeDarkD.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
     <comment>Icon Dark</comment>
   </data>
   <data name="AppIconLight" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Assets\shield_dark_white.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Assets\ThemeLight.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
     <comment>Icon Light</comment>
   </data>
   <data name="TrayIconBrown" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Assets\shield_brown.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Assets\TrayOrange.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
     <comment>Tray Icon Brown</comment>
   </data>
   <data name="TrayIconGreen" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Assets\shield_dark_green.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Assets\TrayGreen.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
     <comment>Tray Icon Green</comment>
   </data>
   <data name="TrayIconRed" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Assets\shield_dark_red.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>..\Assets\TrayRed.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
     <comment>Tray Icon Red</comment>
   </data>
 </root>

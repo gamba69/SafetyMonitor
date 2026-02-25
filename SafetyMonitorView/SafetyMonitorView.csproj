@@ -12,10 +12,10 @@
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationDefaultFont>Segoe UI, 9pt</ApplicationDefaultFont>
     <ApplicationVisualStyles>true</ApplicationVisualStyles>
-    <ApplicationIcon>Assets\shield_theme_dark_v1.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\ThemeDarkD.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="Assets\shield_theme_dark_v1.ico" />
+    <Content Include="Assets\ThemeDarkD.ico" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MaterialSkin.2" Version="2.3.1" />
