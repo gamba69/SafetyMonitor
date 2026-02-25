@@ -599,11 +599,12 @@ public class MainForm : MaterialForm {
         themeMenu.DropDownItems.Add(CreateMenuItem("Dark", MaterialIcons.ThemeDarkMode, iconColor, (s, e) => { _darkThemeButton.Checked = true; }));
         viewMenu.DropDownItems.Add(themeMenu);
         viewMenu.DropDownItems.Add(new ToolStripSeparator());
+        viewMenu.DropDownItems.Add(CreateMenuItem("Metric Settings...", MaterialIcons.MenuViewMetricSettings, iconColor, (s, e) => ShowMetricSettingsEditor()));
         viewMenu.DropDownItems.Add(CreateMenuItem("Axis Rules...", MaterialIcons.MenuViewAxisRules, iconColor, (s, e) => ShowAxisRulesEditor()));
         viewMenu.DropDownItems.Add(CreateMenuItem("Chart Periods...", MaterialIcons.MenuViewChartPeriods, iconColor, (s, e) => ShowChartPeriodPresetEditor()));
+        viewMenu.DropDownItems.Add(new ToolStripSeparator());
         viewMenu.DropDownItems.Add(CreateMenuItem("Color Schemes...", MaterialIcons.MenuViewColorSchemes, iconColor, (s, e) => ShowColorSchemeEditor()));
         viewMenu.DropDownItems.Add(CreateMenuItem("Value Schemes...", MaterialIcons.MenuViewValueSchemes, iconColor, (s, e) => ShowValueSchemeEditor()));
-        viewMenu.DropDownItems.Add(CreateMenuItem("Metric Settings...", MaterialIcons.MenuViewMetricSettings, iconColor, (s, e) => ShowMetricSettingsEditor()));
 
         var helpMenu = new ToolStripMenuItem("Help");
         helpMenu.DropDownItems.Add(CreateMenuItem("About", MaterialIcons.MenuHelpAbout, iconColor, (s, e) => ShowAbout()));
