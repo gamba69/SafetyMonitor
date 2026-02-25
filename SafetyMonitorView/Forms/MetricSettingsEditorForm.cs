@@ -152,6 +152,7 @@ public class MetricSettingsEditorForm : Form {
         }
 
         _metricsGrid.CellValidating += MetricsGrid_CellValidating;
+        _metricsGrid.CellEndEdit += MetricsGrid_CellEndEdit;
         _metricsGrid.EditingControlShowing += MetricsGrid_EditingControlShowing;
         root.Controls.Add(_metricsGrid, 0, 1);
 
@@ -181,10 +182,17 @@ public class MetricSettingsEditorForm : Form {
     private void LoadSettings() {
         _metricsGrid.Rows.Clear();
         var map = _settings.ToDictionary(s => s.Metric, s => s);
-        foreach (var metric in Enum.GetValues<MetricType>()) {
+        foreach (var metric in GetOrderedMetricsForGrid(map)) {
             var s = map.TryGetValue(metric, out var found) ? found : new MetricDisplaySetting { Metric = metric };
             _metricsGrid.Rows.Add(metric.GetDisplayName(), Math.Max(0, s.Decimals), s.HideZeroes, s.InvertY, s.TrayName, NormalizeTrayValueScheme(s.TrayValueSchemeName));
         }
+    }
+
+    private static IEnumerable<MetricType> GetOrderedMetricsForGrid(IReadOnlyDictionary<MetricType, MetricDisplaySetting> settingsByMetric) {
+        return Enum
+            .GetValues<MetricType>()
+            .OrderByDescending(metric => settingsByMetric.TryGetValue(metric, out var setting) && !string.IsNullOrWhiteSpace(setting.TrayName))
+            .ThenBy(metric => (int)metric);
     }
 
     private void MetricsGrid_CellValidating(object? sender, DataGridViewCellValidatingEventArgs e) {
@@ -198,6 +206,74 @@ public class MetricSettingsEditorForm : Form {
             _metricsGrid.Rows[e.RowIndex].ErrorText = "Decimals must be integer between 0 and 10.";
         } else {
             _metricsGrid.Rows[e.RowIndex].ErrorText = string.Empty;
+        }
+    }
+
+
+    private void MetricsGrid_CellEndEdit(object? sender, DataGridViewCellEventArgs e) {
+        if (e.RowIndex < 0 || _metricsGrid.Columns[e.ColumnIndex].Name != "TrayName") {
+            return;
+        }
+
+        ReorderGridRowsByTrayName();
+    }
+
+    private void ReorderGridRowsByTrayName() {
+        var metricNames = Enum.GetValues<MetricType>().ToDictionary(m => m.GetDisplayName(), m => m);
+        var selectedMetric = _metricsGrid.CurrentRow?.Cells["Metric"].Value?.ToString();
+
+        var rowStates = _metricsGrid.Rows
+            .Cast<DataGridViewRow>()
+            .Where(row => !row.IsNewRow)
+            .Select(row => new {
+                Metric = metricNames.TryGetValue(row.Cells["Metric"].Value?.ToString() ?? string.Empty, out var metric) ? metric : (MetricType?)null,
+                Decimals = row.Cells["Decimals"].Value,
+                HideZeroes = row.Cells["HideZeroes"].Value is true,
+                InvertY = row.Cells["InvertY"].Value is true,
+                TrayName = row.Cells["TrayName"].Value?.ToString() ?? string.Empty,
+                TrayScheme = NormalizeTrayValueScheme(row.Cells["TrayValueScheme"].Value?.ToString())
+            })
+            .Where(state => state.Metric.HasValue)
+            .Select(state => new {
+                Metric = state.Metric!.Value,
+                state.Decimals,
+                state.HideZeroes,
+                state.InvertY,
+                state.TrayName,
+                state.TrayScheme
+            })
+            .OrderByDescending(state => !string.IsNullOrWhiteSpace(state.TrayName))
+            .ThenBy(state => (int)state.Metric)
+            .ToList();
+
+        _metricsGrid.Rows.Clear();
+
+        foreach (var rowState in rowStates) {
+            _metricsGrid.Rows.Add(
+                rowState.Metric.GetDisplayName(),
+                rowState.Decimals,
+                rowState.HideZeroes,
+                rowState.InvertY,
+                rowState.TrayName,
+                rowState.TrayScheme);
+        }
+
+        if (selectedMetric is null) {
+            return;
+        }
+
+        foreach (DataGridViewRow row in _metricsGrid.Rows) {
+            if (row.IsNewRow) {
+                continue;
+            }
+
+            if (!string.Equals(row.Cells["Metric"].Value?.ToString(), selectedMetric, StringComparison.Ordinal)) {
+                continue;
+            }
+
+            row.Selected = true;
+            _metricsGrid.CurrentCell = row.Cells["TrayName"];
+            break;
         }
     }
 
