@@ -52,6 +52,8 @@ public class MainForm : MaterialForm {
     private Label _refreshIndicatorTimeLabel = null!;
     private System.Windows.Forms.Timer? _refreshCountdownTimer;
     private DateTime _lastRefreshTime = DateTime.Now;
+    private DateTime _refreshHourglassVisibleUntil = DateTime.MinValue;
+    private const int RefreshHourglassHoldMs = 300;
     private static readonly string[] RefreshLoaderIconSequence = [
         MaterialIcons.RefreshCircle, MaterialIcons.RefreshLoader10, MaterialIcons.RefreshLoader20,
         MaterialIcons.RefreshLoader40, MaterialIcons.RefreshLoader60, MaterialIcons.RefreshLoader80,
@@ -1079,12 +1081,16 @@ public class MainForm : MaterialForm {
         var ct = _refreshCts.Token;
 
         _isRefreshing = true;
+        _refreshHourglassVisibleUntil = DateTime.Now.AddMilliseconds(RefreshHourglassHoldMs);
+        UpdateRefreshCountdownIcon();
+
         try {
             await panel.RefreshDataAsync(ct);
         } catch (OperationCanceledException) {
             return;
         } finally {
             _isRefreshing = false;
+            UpdateRefreshCountdownIcon();
         }
 
         UpdateRefreshIndicatorTimestamp();
@@ -1150,11 +1156,17 @@ public class MainForm : MaterialForm {
 
     private void UpdateRefreshCountdownIcon() {
         if (_refreshIndicatorIcon == null || !_refreshIndicatorIcon.Visible) { return; }
-        var elapsed = (DateTime.Now - _lastRefreshTime).TotalSeconds;
-        var interval = _appSettings.RefreshInterval;
-        var progress = interval > 0 ? Math.Clamp(elapsed / interval, 0.0, 1.0) : 0.0;
-        var index = (int)(progress * (RefreshLoaderIconSequence.Length - 1));
-        var iconName = RefreshLoaderIconSequence[Math.Clamp(index, 0, RefreshLoaderIconSequence.Length - 1)];
+
+        var showHourglass = _isRefreshing || DateTime.Now < _refreshHourglassVisibleUntil;
+        var iconName = MaterialIcons.RefreshHourglass;
+        if (!showHourglass) {
+            var elapsed = (DateTime.Now - _lastRefreshTime).TotalSeconds;
+            var interval = _appSettings.RefreshInterval;
+            var progress = interval > 0 ? Math.Clamp(elapsed / interval, 0.0, 1.0) : 0.0;
+            var index = (int)(progress * (RefreshLoaderIconSequence.Length - 1));
+            iconName = RefreshLoaderIconSequence[Math.Clamp(index, 0, RefreshLoaderIconSequence.Length - 1)];
+        }
+
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var iconColor = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
         _refreshIndicatorIcon.Image?.Dispose();

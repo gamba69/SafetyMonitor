@@ -98,6 +98,7 @@ public static class MaterialIcons {
     public const string RefreshLoader60 = "refresh_loader_60";
     public const string RefreshLoader80 = "refresh_loader_80";
     public const string RefreshLoader90 = "refresh_loader_90";
+    public const string RefreshHourglass = "refresh_hourglass";
 
     #endregion Public Constants
 
@@ -191,6 +192,7 @@ public static class MaterialIcons {
         [RefreshLoader60] = "\uF723",
         [RefreshLoader80] = "\uF722",
         [RefreshLoader90] = "\uF721",
+        [RefreshHourglass] = "hourglass",
     };
 
     private static readonly string[] _fontCandidates = [
