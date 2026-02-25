@@ -9,6 +9,12 @@ namespace SafetyMonitorView.Forms;
 
 public class MainForm : MaterialForm {
 
+    #region Public Events
+
+    public event EventHandler? StartupReady;
+
+    #endregion Public Events
+
     #region Private Fields
 
     private readonly AppSettings _appSettings = null!;
@@ -64,6 +70,7 @@ public class MainForm : MaterialForm {
     private bool _isExitConfirmed;
     private bool _restoreToMaximizedAfterMinimize;
     private bool _shouldStartMaximized;
+    private bool _startupReadyRaised;
     private FormWindowState _windowStateBeforeMinimize = FormWindowState.Normal;
 
     // ── Tray icon fields ──
@@ -462,6 +469,7 @@ public class MainForm : MaterialForm {
         // Mark initial reveal as completed — subsequent LoadDashboard calls
         // will use the normal visor-based switching path.
         _initialRevealCompleted = true;
+        SignalStartupReady();
 
         // Schedule visor fade-out
         ScheduleVisorReveal();
@@ -1638,6 +1646,10 @@ public class MainForm : MaterialForm {
         Hide();
         _trayIcon.Visible = true;
         StartTrayRefresh();
+
+        // Startup path: app can begin directly in tray (StartMinimized + MinimizeToTray).
+        // In this case, splash screen should close once app is fully in tray.
+        SignalStartupReady();
     }
 
     private void RestoreFromTray() {
@@ -1694,6 +1706,16 @@ public class MainForm : MaterialForm {
 
     private void StopTrayRefresh() {
         _trayRefreshTimer?.Stop();
+    }
+
+
+    private void SignalStartupReady() {
+        if (_startupReadyRaised) {
+            return;
+        }
+
+        _startupReadyRaised = true;
+        StartupReady?.Invoke(this, EventArgs.Empty);
     }
 
     private async Task RefreshTrayDataAsync() {
