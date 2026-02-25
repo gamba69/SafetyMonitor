@@ -34,7 +34,8 @@ public static class MetricDisplaySettingsStore {
                 Decimals = s.Decimals,
                 HideZeroes = s.HideZeroes,
                 InvertY = s.InvertY,
-                TrayName = s.TrayName
+                TrayName = s.TrayName,
+                TrayValueSchemeName = s.TrayValueSchemeName
             }))
             : new List<MetricDisplaySetting>();
 

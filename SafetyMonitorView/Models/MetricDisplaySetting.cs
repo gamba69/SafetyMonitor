@@ -7,4 +7,5 @@ public class MetricDisplaySetting {
     public bool InvertY { get; set; }
     public MetricType Metric { get; set; }
     public string TrayName { get; set; } = string.Empty;
+    public string TrayValueSchemeName { get; set; } = string.Empty;
 }

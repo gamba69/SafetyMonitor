@@ -20,6 +20,7 @@ public class MainForm : MaterialForm {
     private readonly AppSettings _appSettings = null!;
     private readonly AppSettingsService _appSettingsService;
     private readonly DashboardService _dashboardService;
+    private readonly ValueSchemeService _valueSchemeService = new();
     private readonly bool _isLoading = true;
     private readonly MaterialSkinManager _skinManager;
     private Label _chartsLabel = null!;
@@ -1623,13 +1624,26 @@ public class MainForm : MaterialForm {
         };
 
         var trayMenu = new ContextMenuStrip();
-        trayMenu.Items.Add("Restore", null, (s, e) => RestoreFromTray());
+        var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+        var iconColor = isLight ? Color.Black : Color.White;
+
+        trayMenu.Items.Add(new ToolStripMenuItem("Restore") {
+            Image = MaterialIcons.GetIcon("open_in_full", iconColor, MenuIconSize),
+            ImageScaling = ToolStripItemImageScaling.None
+        });
+        ((ToolStripMenuItem)trayMenu.Items[^1]).Click += (s, e) => RestoreFromTray();
+
         trayMenu.Items.Add(new ToolStripSeparator());
-        trayMenu.Items.Add("Exit", null, (s, e) => {
+
+        trayMenu.Items.Add(new ToolStripMenuItem("Exit") {
+            Image = MaterialIcons.GetIcon(MaterialIcons.MenuFileExitApp, iconColor, MenuIconSize),
+            ImageScaling = ToolStripItemImageScaling.None
+        });
+        ((ToolStripMenuItem)trayMenu.Items[^1]).Click += (s, e) => {
             _isExitConfirmed = true;
             RestoreFromTray();
             Close();
-        });
+        };
         _trayIcon.ContextMenuStrip = trayMenu;
         _trayIcon.DoubleClick += (s, e) => RestoreFromTray();
 
@@ -1763,13 +1777,21 @@ public class MainForm : MaterialForm {
             return;
         }
 
+        var valueSchemes = _valueSchemeService.LoadSchemes();
         var lines = new List<string>();
         foreach (var setting in MetricDisplaySettingsStore.Settings) {
             if (string.IsNullOrWhiteSpace(setting.TrayName)) { continue; }
             var value = setting.Metric.GetValue(data);
             if (value.HasValue) {
                 var formatted = MetricDisplaySettingsStore.FormatMetricValue(setting.Metric, value.Value);
-                lines.Add($"{setting.TrayName}: {formatted} {setting.Metric.GetUnit()}");
+                var transformedText = string.IsNullOrWhiteSpace(setting.TrayValueSchemeName)
+                    ? null
+                    : valueSchemes.FirstOrDefault(s => s.Name == setting.TrayValueSchemeName)?.GetText(value.Value);
+                if (string.IsNullOrWhiteSpace(transformedText)) {
+                    lines.Add($"{setting.TrayName}: {formatted} {setting.Metric.GetUnit()}");
+                } else {
+                    lines.Add($"{setting.TrayName}: {transformedText}");
+                }
             } else {
                 lines.Add($"{setting.TrayName}: —");
             }

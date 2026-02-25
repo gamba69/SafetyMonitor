@@ -1,6 +1,7 @@
 using MaterialSkin;
 using SafetyMonitorView.Models;
 using SafetyMonitorView.Services;
+using System.Linq;
 
 namespace SafetyMonitorView.Forms;
 
@@ -10,6 +11,7 @@ public class MetricSettingsEditorForm : Form {
     private DataGridView _metricsGrid = null!;
     private Button _saveButton = null!;
     private readonly List<MetricDisplaySetting> _settings;
+    private readonly List<string> _trayValueSchemeNames;
 
     public MetricSettingsEditorForm(IEnumerable<MetricDisplaySetting> settings) {
         _settings = [.. settings.Select(s => new MetricDisplaySetting {
@@ -17,8 +19,10 @@ public class MetricSettingsEditorForm : Form {
             Decimals = s.Decimals,
             HideZeroes = s.HideZeroes,
             InvertY = s.InvertY,
-            TrayName = s.TrayName
+            TrayName = s.TrayName,
+            TrayValueSchemeName = s.TrayValueSchemeName
         })];
+        _trayValueSchemeNames = ["(None)", .. new ValueSchemeService().LoadSchemes().Select(s => s.Name).Distinct().OrderBy(n => n)];
 
         InitializeComponent();
         FormIconHelper.Apply(this, MaterialIcons.MenuViewMetricSettings);
@@ -50,12 +54,13 @@ public class MetricSettingsEditorForm : Form {
         var headerPanel = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 3,
+            RowCount = 4,
             AutoSize = true,
             Margin = new Padding(0, 0, 0, 12)
         };
         headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
         headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -100,6 +105,14 @@ public class MetricSettingsEditorForm : Form {
             MaximumSize = new Size(headerDescriptionMaxWidth, 0),
             Margin = new Padding(0)
         }, 1, 2);
+        headerPanel.Controls.Add(new Label {
+            Text = "• Tray scheme: optional value-scheme text mapping used in tray tooltip.",
+            Font = normalFont,
+            AutoSize = true,
+            MaximumSize = new Size(860, 0),
+            Margin = new Padding(0, 8, 0, 0)
+        }, 0, 3);
+        headerPanel.SetColumnSpan(headerPanel.Controls[^1], 2);
 
         root.Controls.Add(headerPanel, 0, 0);
 
@@ -121,13 +134,25 @@ public class MetricSettingsEditorForm : Form {
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Decimals", HeaderText = "Decimals", FillWeight = 12, MinimumWidth = 90 });
         _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "HideZeroes", HeaderText = "Hide zeroes", FillWeight = 16, MinimumWidth = 110 });
         _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "InvertY", HeaderText = "Invert Y", FillWeight = 13, MinimumWidth = 100 });
-        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "TrayName", HeaderText = "Tray name", FillWeight = 25, MinimumWidth = 120 });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "TrayName", HeaderText = "Tray name", FillWeight = 19, MinimumWidth = 120 });
+
+        var traySchemeColumn = new DataGridViewComboBoxColumn {
+            Name = "TrayValueScheme",
+            HeaderText = "Tray scheme",
+            FillWeight = 16,
+            MinimumWidth = 150,
+            DisplayStyle = DataGridViewComboBoxDisplayStyle.DropDownButton,
+            FlatStyle = FlatStyle.Popup
+        };
+        traySchemeColumn.Items.AddRange(_trayValueSchemeNames.Cast<object>().ToArray());
+        _metricsGrid.Columns.Add(traySchemeColumn);
 
         foreach (DataGridViewColumn column in _metricsGrid.Columns) {
             column.SortMode = DataGridViewColumnSortMode.NotSortable;
         }
 
         _metricsGrid.CellValidating += MetricsGrid_CellValidating;
+        _metricsGrid.EditingControlShowing += MetricsGrid_EditingControlShowing;
         root.Controls.Add(_metricsGrid, 0, 1);
 
         var buttonPanel = new TableLayoutPanel {
@@ -158,7 +183,7 @@ public class MetricSettingsEditorForm : Form {
         var map = _settings.ToDictionary(s => s.Metric, s => s);
         foreach (var metric in Enum.GetValues<MetricType>()) {
             var s = map.TryGetValue(metric, out var found) ? found : new MetricDisplaySetting { Metric = metric };
-            _metricsGrid.Rows.Add(metric.GetDisplayName(), Math.Max(0, s.Decimals), s.HideZeroes, s.InvertY, s.TrayName);
+            _metricsGrid.Rows.Add(metric.GetDisplayName(), Math.Max(0, s.Decimals), s.HideZeroes, s.InvertY, s.TrayName, NormalizeTrayValueScheme(s.TrayValueSchemeName));
         }
     }
 
@@ -174,6 +199,17 @@ public class MetricSettingsEditorForm : Form {
         } else {
             _metricsGrid.Rows[e.RowIndex].ErrorText = string.Empty;
         }
+    }
+
+    private void MetricsGrid_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e) {
+        if (_metricsGrid.CurrentCell?.OwningColumn?.Name != "TrayValueScheme" || e.Control is not ComboBox comboBox) {
+            return;
+        }
+
+        comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+        comboBox.Font = CreateSafeFont(comboBox.Font.FontFamily.Name, comboBox.Font.Size, comboBox.Font.Style);
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        ThemedComboBoxStyler.Apply(comboBox, isLight);
     }
 
     private void SaveButton_Click(object? sender, EventArgs e) {
@@ -196,13 +232,22 @@ public class MetricSettingsEditorForm : Form {
                 Decimals = Math.Clamp(decimals, 0, 10),
                 HideZeroes = row.Cells["HideZeroes"].Value is true,
                 InvertY = row.Cells["InvertY"].Value is true,
-                TrayName = row.Cells["TrayName"].Value?.ToString() ?? string.Empty
+                TrayName = row.Cells["TrayName"].Value?.ToString() ?? string.Empty,
+                TrayValueSchemeName = NormalizeTrayValueScheme(row.Cells["TrayValueScheme"].Value?.ToString())
             });
         }
 
         Settings = [.. newSettings.OrderBy(s => (int)s.Metric)];
         DialogResult = DialogResult.OK;
         Close();
+    }
+
+    private string NormalizeTrayValueScheme(string? schemeName) {
+        if (string.IsNullOrWhiteSpace(schemeName) || schemeName == "(None)") {
+            return string.Empty;
+        }
+
+        return _trayValueSchemeNames.Contains(schemeName) ? schemeName : string.Empty;
     }
 
     private void ApplyTheme() {
@@ -222,6 +267,14 @@ public class MetricSettingsEditorForm : Form {
         _metricsGrid.ColumnHeadersDefaultCellStyle.SelectionForeColor = _metricsGrid.ColumnHeadersDefaultCellStyle.ForeColor;
         _metricsGrid.EnableHeadersVisualStyles = false;
         _metricsGrid.GridColor = isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(60, 75, 80);
+
+        if (_metricsGrid.Columns["TrayValueScheme"] is DataGridViewComboBoxColumn traySchemeColumn) {
+            traySchemeColumn.FlatStyle = FlatStyle.Popup;
+            traySchemeColumn.DefaultCellStyle.BackColor = _metricsGrid.DefaultCellStyle.BackColor;
+            traySchemeColumn.DefaultCellStyle.ForeColor = _metricsGrid.DefaultCellStyle.ForeColor;
+            traySchemeColumn.DefaultCellStyle.SelectionBackColor = _metricsGrid.DefaultCellStyle.SelectionBackColor;
+            traySchemeColumn.DefaultCellStyle.SelectionForeColor = _metricsGrid.DefaultCellStyle.SelectionForeColor;
+        }
 
         ApplyThemeRecursive(this, isLight);
     }
