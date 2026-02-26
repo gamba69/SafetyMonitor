@@ -1073,12 +1073,31 @@ public class MainForm : MaterialForm {
             UpdateQuickAccessPanelTheme();
             UpdateMenuTheme();
             _dashboardPanel?.UpdateTheme();
+
+            // Force an immediate repaint of all recolored controls before
+            // potentially expensive data refresh starts.
+            RequestImmediateThemeRepaint();
+
             await RefreshDashboardDataAsync();
 
             // If a visor is active (theme switch), reveal it now that colors are applied.
             ScheduleVisorReveal();
         };
         _themeTimer.Start();
+    }
+
+    private void RequestImmediateThemeRepaint() {
+        SuspendLayout();
+        Invalidate(true);
+        ResumeLayout(true);
+        Update();
+
+        _dashboardContainer?.Invalidate(true);
+        _dashboardContainer?.Update();
+        _quickAccessPanel?.Invalidate(true);
+        _quickAccessPanel?.Update();
+        _dashboardPanel?.Invalidate(true);
+        _dashboardPanel?.Update();
     }
 
     private async Task RefreshDashboardDataAsync(DashboardPanel? targetPanel = null) {
@@ -1167,9 +1186,7 @@ public class MainForm : MaterialForm {
 
     private void UpdateRefreshIndicatorTimestamp() {
         _lastRefreshTime = DateTime.Now;
-        if (_refreshIndicatorTimeLabel != null) {
-            _refreshIndicatorTimeLabel.Text = _lastRefreshTime.ToString("HH:mm:ss");
-        }
+        _refreshIndicatorTimeLabel?.Text = _lastRefreshTime.ToString("HH:mm:ss");
     }
 
     private void UpdateRefreshCountdownIcon() {
@@ -1311,7 +1328,7 @@ public class MainForm : MaterialForm {
         UpdateStatusBar();
 
         _refreshTimer?.Interval = _appSettings.RefreshInterval * 1000;
-        if (_trayRefreshTimer != null) { _trayRefreshTimer.Interval = _appSettings.RefreshInterval * 1000; }
+        _trayRefreshTimer?.Interval = _appSettings.RefreshInterval * 1000;
         _dashboardPanel?.SetChartStaticModeTimeoutSeconds(_appSettings.ChartStaticModeTimeoutSeconds);
         _dashboardPanel?.SetChartStaticAggregationOptions(_appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds);
         _refreshIndicatorIcon.Visible = _appSettings.ShowRefreshIndicator;

@@ -11,7 +11,7 @@ public class DataService {
 
     private readonly DataStorage.DataStorage? _storage;
     private readonly int _valueTileLookbackMinutes;
-    private readonly object _valueTileSnapshotLock = new();
+    private readonly Lock _valueTileSnapshotLock = new();
     private bool _isConnectionFailed;
     private bool _isValueTileSnapshotActive;
     private bool _isValueTileSnapshotLoaded;
@@ -19,7 +19,7 @@ public class DataService {
 
     // Cross-tile chart data cache — avoids duplicate DB queries when multiple
     // ChartTiles share the same period / aggregation function within one refresh cycle.
-    private readonly object _chartSnapshotLock = new();
+    private readonly Lock _chartSnapshotLock = new();
     private bool _isChartSnapshotActive;
     private DateTime? _chartSnapshotNow;
     private Dictionary<(DateTime, DateTime, TimeSpan?, AggregationFunction?), List<ObservingData>>? _chartSnapshotCache;
@@ -178,7 +178,7 @@ public class DataService {
         lock (_chartSnapshotLock) {
             _isChartSnapshotActive = true;
             _chartSnapshotNow = DateTime.UtcNow;
-            _chartSnapshotCache = new();
+            _chartSnapshotCache = [];
         }
 
         return new ChartDataSnapshotScope(this);
@@ -233,19 +233,14 @@ public class DataService {
         }
     }
 
-    private sealed class ValueTileSnapshotScope : IDisposable {
+    private sealed class ValueTileSnapshotScope(DataService owner) : IDisposable {
 
         #region Private Fields
 
-        private DataService? _owner;
+        private DataService? _owner = owner;
 
         #endregion Private Fields
-
         #region Public Constructors
-
-        public ValueTileSnapshotScope(DataService owner) {
-            _owner = owner;
-        }
 
         #endregion Public Constructors
 
@@ -259,19 +254,14 @@ public class DataService {
         #endregion Public Methods
     }
 
-    private sealed class ChartDataSnapshotScope : IDisposable {
+    private sealed class ChartDataSnapshotScope(DataService owner) : IDisposable {
 
         #region Private Fields
 
-        private DataService? _owner;
+        private DataService? _owner = owner;
 
         #endregion Private Fields
-
         #region Public Constructors
-
-        public ChartDataSnapshotScope(DataService owner) {
-            _owner = owner;
-        }
 
         #endregion Public Constructors
 
