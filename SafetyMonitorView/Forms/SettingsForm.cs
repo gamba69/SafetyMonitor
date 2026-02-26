@@ -962,9 +962,9 @@ public class SettingsForm : Form {
         }
 
         var segmentBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
-        var activeBg = isLight ? Color.White : Color.FromArgb(62, 77, 84);
+        var activeBg = isLight ? Color.FromArgb(0, 121, 107) : Color.FromArgb(62, 77, 84);
         var inactiveFg = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
-        var activeFg = isLight ? Color.FromArgb(21, 28, 31) : Color.White;
+        var activeFg = Color.White;
         var background = checkBox.Checked ? activeBg : segmentBg;
 
         checkBox.BackColor = background;

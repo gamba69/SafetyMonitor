@@ -735,7 +735,7 @@ public class MainForm : MaterialForm {
         _linkSegmentPanel.Controls.Add(_linkedChartsButton);
         _linkSegmentPanel.Controls.Add(_unlinkedChartsButton);
 
-        _quickDashboardsPanel = new Panel { Location = new Point(240, 10), Size = new Size(0, 32), Padding = new Padding(1), Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
+        _quickDashboardsPanel = new Panel { Location = new Point(240, 10), Size = new Size(0, 32), Padding = new Padding(1), Font = new Font("Segoe UI", 9f, FontStyle.Regular) };
 
         _linkChartsCheckBox = new CheckBox { Visible = false, AutoSize = true, Checked = _appSettings.LinkChartPeriods, Cursor = Cursors.Hand };
         _linkChartsCheckBox.CheckedChanged += (s, e) => {
@@ -1544,6 +1544,7 @@ public class MainForm : MaterialForm {
             }
             button.BackColor = button.Checked ? activeBg : segmentBg;
             button.ForeColor = button.Checked ? activeFg : inactiveFg;
+            button.Font = new Font(_quickDashboardsPanel.Font, button.Checked ? FontStyle.Bold : FontStyle.Regular);
         }
     }
 
