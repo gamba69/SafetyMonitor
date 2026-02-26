@@ -17,9 +17,13 @@ public sealed class AppColorizationService {
         //["Yellow"] = new("Yellow", Primary.Yellow700, Primary.Yellow900, Primary.Yellow500, Accent.Yellow200)
         ["Teal"] = new("Teal", Primary.Teal800, Primary.Teal900, Primary.Teal800, Accent.Teal400),
         ["Amber"] = new("Amber", Primary.Amber800, Primary.Amber900, Primary.Amber800, Accent.Amber400),
+        ["Blue"] = new("Blue", Primary.Blue800, Primary.Blue900, Primary.Blue800, Accent.Blue400),
         ["Brown"] = new("Brown", Primary.Brown800, Primary.Brown900, Primary.Brown800, Accent.LightBlue400),
+        ["Cyan"] = new("Cyan", Primary.Cyan800, Primary.Cyan900, Primary.Cyan800, Accent.Cyan400),
         ["DeepOrange"] = new("DeepOrange", Primary.DeepOrange800, Primary.DeepOrange900, Primary.DeepOrange800, Accent.DeepOrange400),
+        ["Green"] = new("Green", Primary.Green800, Primary.Green900, Primary.Green800, Accent.Green400),
         ["Indigo"] = new("Indigo", Primary.Indigo800, Primary.Indigo900, Primary.Indigo800, Accent.Indigo400),
+        ["Pink"] = new("Pink", Primary.Pink800, Primary.Pink900, Primary.Pink800, Accent.Pink400),
         ["Red"] = new("Red", Primary.Red800, Primary.Red900, Primary.Red800, Accent.Red400),
         ["Yellow"] = new("Yellow", Primary.Yellow800, Primary.Yellow900, Primary.Yellow800, Accent.Yellow400)
     };

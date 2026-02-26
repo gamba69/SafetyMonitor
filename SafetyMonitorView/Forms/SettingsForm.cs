@@ -773,17 +773,19 @@ public class SettingsForm : Form {
             Font = normalFont,
             DrawMode = DrawMode.OwnerDrawFixed
         };
-        foreach (var schemeName in AppColorizationService.Instance.AvailableMaterialSchemes) {
-            var displayName = schemeName switch {
-                "BlueGray" => "Gray",
-                "DeepOrange" => "Orange",
-                _ => schemeName
-            };
+        var sortedSchemes = AppColorizationService.Instance.AvailableMaterialSchemes
+            .Select(schemeName => new {
+                SchemeName = schemeName,
+                DisplayName = GetMaterialSchemeDisplayName(schemeName)
+            })
+            .OrderBy(static item => item.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
+        foreach (var scheme in sortedSchemes) {
             _materialColorSchemeComboBox.Items.Add(new MaterialSchemeComboItem(
-                schemeName,
-                displayName,
-                AppColorizationService.Instance.GetPrimaryActionColor(schemeName)));
+                scheme.SchemeName,
+                scheme.DisplayName,
+                AppColorizationService.Instance.GetPrimaryActionColor(scheme.SchemeName)));
         }
 
         _materialColorSchemeComboBox.DrawItem += MaterialColorSchemeComboBox_DrawItem;
@@ -1202,6 +1204,14 @@ public class SettingsForm : Form {
         } catch (Exception ex) {
             ThemedMessageBox.Show(this, $"Failed to reset settings: {ex.Message}", "Reset settings", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+    }
+
+    private static string GetMaterialSchemeDisplayName(string schemeName) {
+        return schemeName switch {
+            "BlueGray" => "Gray",
+            "DeepOrange" => "Orange",
+            _ => schemeName
+        };
     }
 
     private static Color GetConnectionStatusColor(bool isSuccess) {
