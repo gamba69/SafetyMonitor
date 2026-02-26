@@ -5,6 +5,13 @@ using System.Runtime.InteropServices;
 
 namespace SafetyMonitorView.Forms;
 
+public enum SettingsMaintenanceAction {
+    None,
+    Export,
+    Import,
+    Reset,
+}
+
 public class SettingsForm : Form {
     #region Private Fields
 
@@ -23,6 +30,10 @@ public class SettingsForm : Form {
     private Button _saveButton = null!;
     private TextBox _storagePathTextBox = null!;
     private Button _testConnectionButton = null!;
+    private Button _exportSettingsButton = null!;
+    private Button _importSettingsButton = null!;
+    private Button _resetSettingsButton = null!;
+    private readonly AppSettingsMaintenanceService _settingsMaintenanceService;
 
     // Tab infrastructure
     private Panel _tabSegmentPanel = null!;
@@ -54,7 +65,10 @@ public class SettingsForm : Form {
 
     #region Public Constructors
 
-    public SettingsForm(string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartAggregationRoundingSeconds, bool currentShowRefreshIndicator, bool currentMinimizeToTray, bool currentStartMinimized) {
+    public SettingsMaintenanceAction SettingsMaintenanceAction { get; private set; }
+
+    public SettingsForm(AppSettingsMaintenanceService settingsMaintenanceService, string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartAggregationRoundingSeconds, bool currentShowRefreshIndicator, bool currentMinimizeToTray, bool currentStartMinimized) {
+        _settingsMaintenanceService = settingsMaintenanceService;
         StoragePath = currentStoragePath;
         RefreshInterval = currentRefreshInterval;
         ValueTileLookbackMinutes = Math.Max(1, currentValueTileLookbackMinutes);
@@ -101,6 +115,27 @@ public class SettingsForm : Form {
         ApplyTabSegmentTheme(isLight);
         ApplyThemeRecursive(this, isLight);
         ApplySettingSwitchTheme(isLight);
+        ApplyConfigButtonsTheme(isLight);
+    }
+
+    private void ApplyConfigButtonsTheme(bool isLight) {
+        if (_exportSettingsButton != null) {
+            ThemedButtonStyler.Apply(_exportSettingsButton, isLight);
+            _exportSettingsButton.Image?.Dispose();
+            _exportSettingsButton.Image = MaterialIcons.GetIcon("output_circle", _exportSettingsButton.ForeColor, 24);
+        }
+
+        if (_importSettingsButton != null) {
+            ThemedButtonStyler.Apply(_importSettingsButton, isLight);
+            _importSettingsButton.Image?.Dispose();
+            _importSettingsButton.Image = MaterialIcons.GetIcon("input_circle", _importSettingsButton.ForeColor, 24);
+        }
+
+        if (_resetSettingsButton != null) {
+            ThemedButtonStyler.Apply(_resetSettingsButton, isLight);
+            _resetSettingsButton.Image?.Dispose();
+            _resetSettingsButton.Image = MaterialIcons.GetIcon("dangerous", _resetSettingsButton.ForeColor, 24);
+        }
     }
 
     private void ApplyTabSegmentTheme(bool isLight) {
@@ -298,7 +333,7 @@ public class SettingsForm : Form {
         _tabPages.Add(CreateStorageTab(titleFont, normalFont, descriptionFont));
         _tabPages.Add(CreateTilesTab(titleFont, normalFont, descriptionFont));
         _tabPages.Add(CreateAggregationTab(titleFont, normalFont, descriptionFont));
-        _tabPages.Add(CreateEmptyTab());
+        _tabPages.Add(CreateConfigTab(titleFont, normalFont, descriptionFont));
 
         foreach (var page in _tabPages) {
             page.Dock = DockStyle.Fill;
@@ -531,7 +566,7 @@ public class SettingsForm : Form {
         _browseButton = new Button {
             Text = "Browse...",
             Width = 110,
-            Height = _storagePathTextBox.PreferredHeight,
+            Height = 35,
             Font = normalFont,
             Margin = new Padding(0),
             Anchor = AnchorStyles.None
@@ -556,7 +591,7 @@ public class SettingsForm : Form {
         _testConnectionButton = new Button {
             Text = "Test Connection",
             Width = 150,
-            Height = 30,
+            Height = 35,
             Font = normalFont,
             Margin = new Padding(0, 26, 0, 0),
             Anchor = AnchorStyles.None
@@ -693,6 +728,58 @@ public class SettingsForm : Form {
         return page;
     }
 
+    private Panel CreateConfigTab(Font titleFont, Font normalFont, Font descriptionFont) {
+        var page = new Panel {
+            Padding = new Padding(0, 4, 0, 0),
+            AutoScroll = true
+        };
+
+        var layout = new TableLayoutPanel {
+            Dock = DockStyle.Top,
+            ColumnCount = 1,
+            RowCount = 4,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink
+        };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+        _exportSettingsButton = CreateSettingsActionButton("Export...", "output_circle", normalFont);
+        _exportSettingsButton.Click += ExportSettingsButton_Click;
+        layout.Controls.Add(CreateSettingRow(
+            "Export settings",
+            "Export all application settings as a ZIP backup archive: dashboards, visual preferences, chart presets, and other configuration files. "
+            + "By default, backup files are created in the settings folder under Backup and use the YYYY-MM-DD.zip naming format.",
+            "",
+            _exportSettingsButton,
+            titleFont,
+            descriptionFont), 0, 0);
+
+        _importSettingsButton = CreateSettingsActionButton("Import...", "input_circle", normalFont);
+        _importSettingsButton.Click += ImportSettingsButton_Click;
+        layout.Controls.Add(CreateSettingRow(
+            "Import settings",
+            "Import a previously exported settings ZIP archive and fully replace current configuration. "
+            + "After import, the application refreshes dashboards and visual state to reflect loaded settings.",
+            "",
+            _importSettingsButton,
+            titleFont,
+            descriptionFont), 0, 1);
+
+        _resetSettingsButton = CreateSettingsActionButton("Reset...", "dangerous", normalFont);
+        _resetSettingsButton.Click += ResetSettingsButton_Click;
+        layout.Controls.Add(CreateSettingRow(
+            "Reset settings",
+            "Restore all settings to default values. This clears current dashboard and custom configuration data, then rebuilds default startup settings.",
+            "",
+            _resetSettingsButton,
+            titleFont,
+            descriptionFont), 0, 2);
+
+        layout.Controls.Add(new Panel { Height = 8, Dock = DockStyle.Top }, 0, 3);
+        page.Controls.Add(layout);
+        return page;
+    }
+
     // ════════════════════════════════════════════════════════════════
     //  Tab switching
     // ════════════════════════════════════════════════════════════════
@@ -756,6 +843,22 @@ public class SettingsForm : Form {
         };
 
         return checkBox;
+    }
+
+    private static Button CreateSettingsActionButton(string text, string iconName, Font font) {
+        var button = new Button {
+            Text = text,
+            Width = 130,
+            Height = 35,
+            Font = font,
+            TextImageRelation = TextImageRelation.ImageBeforeText,
+            ImageAlign = ContentAlignment.MiddleLeft,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Margin = new Padding(0, 0, 0, 0)
+        };
+
+        button.Image = MaterialIcons.GetIcon(iconName, Color.White, 24);
+        return button;
     }
 
     private static void ApplyNumericRightPadding(NumericUpDown numeric) {
@@ -858,39 +961,21 @@ public class SettingsForm : Form {
             return;
         }
 
-        // Keep switch colors exactly aligned with ThemedButtonStyler palette:
-        // ON  -> Save (primary)
-        // OFF -> Cancel
-        var onBg = Color.FromArgb(0, 137, 123);
-        var offBg = isLight ? Color.FromArgb(189, 189, 189) : Color.FromArgb(96, 105, 109);
-        var activeBg = checkBox.Checked ? onBg : offBg;
+        var segmentBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
+        var activeBg = isLight ? Color.White : Color.FromArgb(62, 77, 84);
+        var inactiveFg = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
+        var activeFg = isLight ? Color.FromArgb(21, 28, 31) : Color.White;
+        var background = checkBox.Checked ? activeBg : segmentBg;
 
-        // Add the same subtle hover/pressed feedback users expect from action buttons.
-        var hoverBg = BlendWith(activeBg, Color.White, 0.08f);
-        var downBg = BlendWith(activeBg, Color.Black, 0.08f);
-
-        checkBox.BackColor = activeBg;
-        checkBox.ForeColor = Color.White;
+        checkBox.BackColor = background;
+        checkBox.ForeColor = checkBox.Checked ? activeFg : inactiveFg;
         checkBox.FlatAppearance.BorderSize = 0;
-        checkBox.FlatAppearance.BorderColor = activeBg;
-
-        // Appearance.Button uses FlatAppearance.CheckedBackColor in checked state,
-        // so we must set it explicitly to avoid color drift versus Save/Cancel.
-        checkBox.FlatAppearance.CheckedBackColor = onBg;
-        checkBox.FlatAppearance.MouseOverBackColor = hoverBg;
-        checkBox.FlatAppearance.MouseDownBackColor = downBg;
+        checkBox.FlatAppearance.BorderColor = background;
+        checkBox.FlatAppearance.CheckedBackColor = activeBg;
+        checkBox.FlatAppearance.MouseOverBackColor = isLight ? Color.FromArgb(235, 240, 243) : Color.FromArgb(55, 70, 76);
+        checkBox.FlatAppearance.MouseDownBackColor = activeBg;
 
         checkBox.Text = checkBox.Checked ? "ON" : "OFF";
-    }
-
-    private static Color BlendWith(Color source, Color target, float amount) {
-        amount = Math.Clamp(amount, 0f, 1f);
-
-        var r = (int)Math.Round(source.R + ((target.R - source.R) * amount));
-        var g = (int)Math.Round(source.G + ((target.G - source.G) * amount));
-        var b = (int)Math.Round(source.B + ((target.B - source.B) * amount));
-
-        return Color.FromArgb(source.A, r, g, b);
     }
 
     private void LoadSettings() {
@@ -910,6 +995,7 @@ public class SettingsForm : Form {
     }
 
     private void SaveButton_Click(object? sender, EventArgs e) {
+        SettingsMaintenanceAction = SettingsMaintenanceAction.None;
         StoragePath = _storagePathTextBox.Text;
         RefreshInterval = (int)_refreshIntervalNumeric.Value;
         ShowRefreshIndicator = _showRefreshIndicatorSwitch.Checked;
@@ -923,6 +1009,76 @@ public class SettingsForm : Form {
 
         DialogResult = DialogResult.OK;
         Close();
+    }
+
+    private void ExportSettingsButton_Click(object? sender, EventArgs e) {
+        using var dialog = new SaveFileDialog {
+            Filter = "ZIP archive (*.zip)|*.zip",
+            Title = "Export settings",
+            FileName = Path.GetFileName(_settingsMaintenanceService.GetDefaultBackupFilePath()),
+            InitialDirectory = Path.GetDirectoryName(_settingsMaintenanceService.GetDefaultBackupFilePath())
+        };
+
+        if (dialog.ShowDialog(this) != DialogResult.OK) {
+            return;
+        }
+
+        try {
+            _settingsMaintenanceService.ExportToArchive(dialog.FileName);
+            SettingsMaintenanceAction = SettingsMaintenanceAction.Export;
+            ThemedMessageBox.Show(this, "Settings exported successfully.", "Export settings", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        } catch (Exception ex) {
+            ThemedMessageBox.Show(this, $"Failed to export settings: {ex.Message}", "Export settings", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void ImportSettingsButton_Click(object? sender, EventArgs e) {
+        var confirm = ThemedMessageBox.Show(this,
+            "All current settings will be lost and replaced with settings from the selected archive. Continue?",
+            "Import settings",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning);
+        if (confirm != DialogResult.Yes) {
+            return;
+        }
+
+        using var dialog = new OpenFileDialog {
+            Filter = "ZIP archive (*.zip)|*.zip",
+            Title = "Import settings"
+        };
+
+        if (dialog.ShowDialog(this) != DialogResult.OK) {
+            return;
+        }
+
+        try {
+            _settingsMaintenanceService.ImportFromArchive(dialog.FileName);
+            SettingsMaintenanceAction = SettingsMaintenanceAction.Import;
+            DialogResult = DialogResult.OK;
+            Close();
+        } catch (Exception ex) {
+            ThemedMessageBox.Show(this, $"Failed to import settings: {ex.Message}", "Import settings", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void ResetSettingsButton_Click(object? sender, EventArgs e) {
+        var confirm = ThemedMessageBox.Show(this,
+            "All settings will be restored to defaults. Continue?",
+            "Reset settings",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning);
+        if (confirm != DialogResult.Yes) {
+            return;
+        }
+
+        try {
+            _settingsMaintenanceService.ResetToDefaults();
+            SettingsMaintenanceAction = SettingsMaintenanceAction.Reset;
+            DialogResult = DialogResult.OK;
+            Close();
+        } catch (Exception ex) {
+            ThemedMessageBox.Show(this, $"Failed to reset settings: {ex.Message}", "Reset settings", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     private static Color GetConnectionStatusColor(bool isSuccess) {
@@ -1008,10 +1164,11 @@ public class SettingsForm : Form {
         private readonly Label _descriptionLabel;
         private readonly PictureBox _arrowPicture;
         private bool _isExpanded;
+        private bool _isExpandable;
 
         public ExpandableDescriptionPanel(string text, Font font) {
             _fullText = text;
-            Cursor = Cursors.Hand;
+            Cursor = Cursors.Default;
             AutoSize = false;
             Height = 44;
 
@@ -1030,14 +1187,14 @@ public class SettingsForm : Form {
                 Font = font,
                 AutoSize = false,
                 Dock = DockStyle.Fill,
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Default
             };
 
             _arrowPicture = new PictureBox {
                 Size = new Size(22, 22),
                 SizeMode = PictureBoxSizeMode.CenterImage,
                 Dock = DockStyle.Fill,
-                Cursor = Cursors.Hand,
+                Cursor = Cursors.Default,
                 Margin = Padding.Empty
             };
 
@@ -1070,7 +1227,7 @@ public class SettingsForm : Form {
         }
 
         private void ToggleExpand(object? sender, EventArgs e) {
-            if (!_arrowPicture.Visible) {
+            if (!_isExpandable) {
                 return;
             }
 
@@ -1106,6 +1263,12 @@ public class SettingsForm : Form {
             _arrowPicture.Image = truncated
                 ? MaterialIcons.GetIcon(_isExpanded ? "keyboard_double_arrow_up" : "keyboard_double_arrow_down", _descriptionLabel.ForeColor, 22)
                 : null;
+
+            _isExpandable = truncated;
+            var cursor = _isExpandable ? Cursors.Hand : Cursors.Default;
+            Cursor = cursor;
+            _descriptionLabel.Cursor = cursor;
+            _arrowPicture.Cursor = cursor;
 
             Height = Math.Max(_descriptionLabel.Height, 22);
         }

@@ -86,8 +86,8 @@ internal static class ThemedButtonStyler {
     private static (Color BackColor, Color ForeColor) ResolveColors(ButtonRole role, bool isLight) => role switch {
         ButtonRole.Save => (PrimaryButtonColor, Color.White),
         ButtonRole.Confirm => (PrimaryButtonColor, Color.White),
-        ButtonRole.Browse => (PrimaryButtonColor, Color.White),
-        ButtonRole.Test => (PrimaryButtonColor, Color.White),
+        ButtonRole.Browse => (isLight ? SecondaryButtonColorLight : SecondaryButtonColorDark, isLight ? Color.Black : Color.White),
+        ButtonRole.Test => (isLight ? SecondaryButtonColorLight : SecondaryButtonColorDark, isLight ? Color.Black : Color.White),
         ButtonRole.Cancel => (isLight ? CancelButtonColorLight : CancelButtonColorDark, Color.White),
         ButtonRole.Delete => (isLight ? DeleteButtonColorLight : DeleteButtonColorDark, Color.White),
         ButtonRole.Calculate => (isLight ? CalculateButtonColorLight : CalculateButtonColorDark, Color.White),
@@ -130,6 +130,10 @@ internal static class ThemedButtonStyler {
         }
 
         if (normalized.StartsWith("del")) {
+            return ButtonRole.Delete;
+        }
+
+        if (normalized.StartsWith("reset")) {
             return ButtonRole.Delete;
         }
 

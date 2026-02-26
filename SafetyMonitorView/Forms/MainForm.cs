@@ -19,6 +19,7 @@ public class MainForm : MaterialForm {
 
     private readonly AppSettings _appSettings = null!;
     private readonly AppSettingsService _appSettingsService;
+    private readonly AppSettingsMaintenanceService _appSettingsMaintenanceService;
     private readonly DashboardService _dashboardService;
     private readonly ValueSchemeService _valueSchemeService = new();
     private readonly bool _isLoading = true;
@@ -114,6 +115,8 @@ public class MainForm : MaterialForm {
 
         _dashboardService = new DashboardService();
         _appSettingsService = new AppSettingsService();
+        _appSettingsMaintenanceService = new AppSettingsMaintenanceService(_appSettingsService, _dashboardService);
+        _appSettingsMaintenanceService.EnsureSettingsExists();
 
         // Load settings BEFORE initializing UI
         _appSettings = _appSettingsService.LoadSettings();
@@ -1258,34 +1261,95 @@ public class MainForm : MaterialForm {
     }
 
     private void ShowSettings() {
-        using var settingsForm = new SettingsForm(_appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds, _appSettings.ShowRefreshIndicator, _appSettings.MinimizeToTray, _appSettings.StartMinimized);
-        if (settingsForm.ShowDialog() == DialogResult.OK) {
-            _appSettings.StoragePath = settingsForm.StoragePath;
-            _appSettings.RefreshInterval = settingsForm.RefreshInterval;
-            _appSettings.ValueTileLookbackMinutes = settingsForm.ValueTileLookbackMinutes;
-            _appSettings.ChartStaticModeTimeoutSeconds = settingsForm.ChartStaticTimeoutSeconds;
-            _appSettings.ChartStaticAggregationPresetMatchTolerancePercent = settingsForm.ChartStaticAggregationPresetMatchTolerancePercent;
-            _appSettings.ChartStaticAggregationTargetPointCount = settingsForm.ChartStaticAggregationTargetPointCount;
-            _appSettings.ChartAggregationRoundingSeconds = settingsForm.ChartAggregationRoundingSeconds;
-            _appSettings.ShowRefreshIndicator = settingsForm.ShowRefreshIndicator;
-            _appSettings.MinimizeToTray = settingsForm.MinimizeToTray;
-            _appSettings.StartMinimized = settingsForm.StartMinimized;
-            _appSettingsService.SaveSettings(_appSettings);
+        using var settingsForm = new SettingsForm(_appSettingsMaintenanceService, _appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds, _appSettings.ShowRefreshIndicator, _appSettings.MinimizeToTray, _appSettings.StartMinimized);
+        if (settingsForm.ShowDialog() != DialogResult.OK) {
+            return;
+        }
 
-            _dataService = new DataService(_appSettings.StoragePath, _appSettings.ValueTileLookbackMinutes);
-            AttachDataServiceHandlers();
-            UpdateStatusBar();
+        if (settingsForm.SettingsMaintenanceAction == SettingsMaintenanceAction.Import || settingsForm.SettingsMaintenanceAction == SettingsMaintenanceAction.Reset) {
+            ReloadSettingsFromStorage();
+            return;
+        }
 
-            _refreshTimer?.Interval = _appSettings.RefreshInterval * 1000;
-            if (_trayRefreshTimer != null) { _trayRefreshTimer.Interval = _appSettings.RefreshInterval * 1000; }
-            _dashboardPanel?.SetChartStaticModeTimeoutSeconds(_appSettings.ChartStaticModeTimeoutSeconds);
-            _dashboardPanel?.SetChartStaticAggregationOptions(_appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds);
-            _refreshIndicatorIcon.Visible = _appSettings.ShowRefreshIndicator;
-            _refreshIndicatorTimeLabel.Visible = _appSettings.ShowRefreshIndicator;
-            RefreshQuickAccessLayout();
+        if (settingsForm.SettingsMaintenanceAction == SettingsMaintenanceAction.Export) {
+            return;
+        }
 
-            ClearDashboardPanelCache();
-            if (_currentDashboard != null) { LoadDashboard(_currentDashboard); } else { _ = RefreshDashboardDataAsync(); }
+        _appSettings.StoragePath = settingsForm.StoragePath;
+        _appSettings.RefreshInterval = settingsForm.RefreshInterval;
+        _appSettings.ValueTileLookbackMinutes = settingsForm.ValueTileLookbackMinutes;
+        _appSettings.ChartStaticModeTimeoutSeconds = settingsForm.ChartStaticTimeoutSeconds;
+        _appSettings.ChartStaticAggregationPresetMatchTolerancePercent = settingsForm.ChartStaticAggregationPresetMatchTolerancePercent;
+        _appSettings.ChartStaticAggregationTargetPointCount = settingsForm.ChartStaticAggregationTargetPointCount;
+        _appSettings.ChartAggregationRoundingSeconds = settingsForm.ChartAggregationRoundingSeconds;
+        _appSettings.ShowRefreshIndicator = settingsForm.ShowRefreshIndicator;
+        _appSettings.MinimizeToTray = settingsForm.MinimizeToTray;
+        _appSettings.StartMinimized = settingsForm.StartMinimized;
+        _appSettingsService.SaveSettings(_appSettings);
+
+        ApplySettingsToRuntime();
+    }
+
+    private void ReloadSettingsFromStorage() {
+        var loaded = _appSettingsService.LoadSettings();
+        CopySettings(loaded, _appSettings);
+        ApplySettingsToRuntime();
+    }
+
+    private static void CopySettings(AppSettings source, AppSettings target) {
+        target.IsDarkTheme = source.IsDarkTheme;
+        target.IsMaximized = source.IsMaximized;
+        target.LinkChartPeriods = source.LinkChartPeriods;
+        target.MinimizeToTray = source.MinimizeToTray;
+        target.ShowRefreshIndicator = source.ShowRefreshIndicator;
+        target.StartMinimized = source.StartMinimized;
+        target.ChartStaticModeTimeoutSeconds = source.ChartStaticModeTimeoutSeconds;
+        target.ChartStaticAggregationPresetMatchTolerancePercent = source.ChartStaticAggregationPresetMatchTolerancePercent;
+        target.ChartStaticAggregationTargetPointCount = source.ChartStaticAggregationTargetPointCount;
+        target.ChartAggregationRoundingSeconds = source.ChartAggregationRoundingSeconds;
+        target.LastDashboardId = source.LastDashboardId;
+        target.RefreshInterval = source.RefreshInterval;
+        target.ValueTileLookbackMinutes = source.ValueTileLookbackMinutes;
+        target.ChartPeriodPresets = source.ChartPeriodPresets;
+        target.MetricAxisRules = source.MetricAxisRules;
+        target.MetricDisplaySettings = source.MetricDisplaySettings;
+        target.StoragePath = source.StoragePath;
+        target.WindowHeight = source.WindowHeight;
+        target.WindowWidth = source.WindowWidth;
+        target.WindowX = source.WindowX;
+        target.WindowY = source.WindowY;
+    }
+
+    private void ApplySettingsToRuntime() {
+        ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
+        MetricAxisRuleStore.SetRules(_appSettings.MetricAxisRules);
+        MetricDisplaySettingsStore.SetSettings(_appSettings.MetricDisplaySettings);
+
+        _dataService = new DataService(_appSettings.StoragePath, _appSettings.ValueTileLookbackMinutes);
+        AttachDataServiceHandlers();
+        UpdateStatusBar();
+
+        _refreshTimer?.Interval = _appSettings.RefreshInterval * 1000;
+        if (_trayRefreshTimer != null) { _trayRefreshTimer.Interval = _appSettings.RefreshInterval * 1000; }
+        _dashboardPanel?.SetChartStaticModeTimeoutSeconds(_appSettings.ChartStaticModeTimeoutSeconds);
+        _dashboardPanel?.SetChartStaticAggregationOptions(_appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds);
+        _refreshIndicatorIcon.Visible = _appSettings.ShowRefreshIndicator;
+        _refreshIndicatorTimeLabel.Visible = _appSettings.ShowRefreshIndicator;
+        RefreshQuickAccessLayout();
+
+        _dashboards = _dashboardService.LoadDashboards();
+        SortDashboardsForDisplay();
+
+        ClearDashboardPanelCache();
+        var nextDashboard = _appSettings.LastDashboardId.HasValue
+            ? _dashboards.FirstOrDefault(d => d.Id == _appSettings.LastDashboardId.Value)
+            : _dashboards.FirstOrDefault();
+        nextDashboard ??= _dashboards.FirstOrDefault();
+
+        if (nextDashboard != null) {
+            LoadDashboard(nextDashboard);
+        } else {
+            _ = RefreshDashboardDataAsync();
         }
     }
 

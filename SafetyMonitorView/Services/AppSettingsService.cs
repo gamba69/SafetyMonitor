@@ -28,18 +28,21 @@ public class AppSettingsService {
 
     #region Public Methods
 
+    public string AppDataFolderPath => Path.GetDirectoryName(_settingsPath) ?? string.Empty;
+    public string SettingsPath => _settingsPath;
+
     public AppSettings LoadSettings() {
         try {
             if (File.Exists(_settingsPath)) {
                 var json = File.ReadAllText(_settingsPath);
                 var settings = JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions);
-                return settings ?? new AppSettings();
+                return AppSettingsDefaultsService.Normalize(settings);
             }
         } catch {
             // If loading fails, return defaults
         }
 
-        return new AppSettings();
+        return AppSettingsDefaultsService.CreateDefaults();
     }
 
     public void SaveSettings(AppSettings settings) {

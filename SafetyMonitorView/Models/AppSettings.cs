@@ -4,31 +4,31 @@ public class AppSettings {
     #region Public Properties
 
     // Theme settings
-    public bool IsDarkTheme { get; set; } = false;
-    public bool IsMaximized { get; set; } = false;
-    public bool LinkChartPeriods { get; set; } = false;
-    public bool MinimizeToTray { get; set; } = false;
-    public bool ShowRefreshIndicator { get; set; } = true;
-    public bool StartMinimized { get; set; } = false;
-    public int ChartStaticModeTimeoutSeconds { get; set; } = 120;
-    public double ChartStaticAggregationPresetMatchTolerancePercent { get; set; } = 10;
-    public int ChartStaticAggregationTargetPointCount { get; set; } = 300;
-    public int ChartAggregationRoundingSeconds { get; set; } = 1;
+    public bool IsDarkTheme { get; set; }
+    public bool IsMaximized { get; set; }
+    public bool LinkChartPeriods { get; set; }
+    public bool MinimizeToTray { get; set; }
+    public bool ShowRefreshIndicator { get; set; }
+    public bool StartMinimized { get; set; }
+    public int ChartStaticModeTimeoutSeconds { get; set; }
+    public double ChartStaticAggregationPresetMatchTolerancePercent { get; set; }
+    public int ChartStaticAggregationTargetPointCount { get; set; }
+    public int ChartAggregationRoundingSeconds { get; set; }
 
     // Dashboard settings
     public Guid? LastDashboardId { get; set; }
-    public int RefreshInterval { get; set; } = 5;
-    public int ValueTileLookbackMinutes { get; set; } = 60;
+    public int RefreshInterval { get; set; }
+    public int ValueTileLookbackMinutes { get; set; }
 
     // Data settings
-    public List<ChartPeriodPresetDefinition> ChartPeriodPresets { get; set; } = ChartPeriodPresetStore.CreateDefaultPresets();
+    public List<ChartPeriodPresetDefinition> ChartPeriodPresets { get; set; } = [];
     public List<MetricAxisRuleSetting> MetricAxisRules { get; set; } = [];
     public List<MetricDisplaySetting> MetricDisplaySettings { get; set; } = [];
     public string StoragePath { get; set; } = "";
-    public int WindowHeight { get; set; } = 900;
+    public int WindowHeight { get; set; }
 
     // Window settings
-    public int WindowWidth { get; set; } = 1400;
+    public int WindowWidth { get; set; }
     public int WindowX { get; set; } = -1;  // -1 = center
     public int WindowY { get; set; } = -1;
 

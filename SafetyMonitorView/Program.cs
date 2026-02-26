@@ -29,7 +29,10 @@ static class Program {
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
 
-        var appSettings = new AppSettingsService().LoadSettings();
+        var appSettingsService = new AppSettingsService();
+        var settingsMaintenanceService = new AppSettingsMaintenanceService(appSettingsService, new DashboardService());
+        settingsMaintenanceService.EnsureSettingsExists();
+        var appSettings = appSettingsService.LoadSettings();
         var context = new SplashApplicationContext(appSettings.IsDarkTheme, SplashMinimumVisibleMs);
 
         Application.Run(context);
