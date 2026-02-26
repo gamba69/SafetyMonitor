@@ -54,6 +54,9 @@ public class SettingsForm : Form {
     private const int NumericTextPaddingPx = 6;
     private const int TabIconSize = 22;
     private const int TabButtonHorizontalPadding = 14;
+    private const int ColorSwatchSize = 12;
+    private const int ColorSwatchLeftPadding = 8;
+    private const int ColorSwatchTextGap = 8;
 
     private static readonly string[] TabIcons = {
         "refresh",
@@ -63,6 +66,10 @@ public class SettingsForm : Form {
         MaterialIcons.CommonAvgTime,
         "rule_settings"
     };
+
+    private sealed record MaterialSchemeComboItem(string SchemeName, string DisplayName, Color PrimaryColor) {
+        public override string ToString() => DisplayName;
+    }
 
     #endregion Private Fields
 
@@ -120,6 +127,10 @@ public class SettingsForm : Form {
 
         ApplyTabSegmentTheme(isLight);
         ApplyThemeRecursive(this, isLight);
+        if (_materialColorSchemeComboBox != null) {
+            _materialColorSchemeComboBox.DrawItem -= MaterialColorSchemeComboBox_DrawItem;
+            _materialColorSchemeComboBox.DrawItem += MaterialColorSchemeComboBox_DrawItem;
+        }
         ApplySettingSwitchTheme(isLight);
         ApplyConfigButtonsTheme(isLight);
         if (_configColorSectionSeparator != null) {
@@ -759,11 +770,23 @@ public class SettingsForm : Form {
         _materialColorSchemeComboBox = new ComboBox {
             Width = 160,
             DropDownStyle = ComboBoxStyle.DropDownList,
-            Font = normalFont
+            Font = normalFont,
+            DrawMode = DrawMode.OwnerDrawFixed
         };
         foreach (var schemeName in AppColorizationService.Instance.AvailableMaterialSchemes) {
-            _materialColorSchemeComboBox.Items.Add(schemeName);
+            var displayName = schemeName switch {
+                "BlueGray" => "Gray",
+                "DeepOrange" => "Orange",
+                _ => schemeName
+            };
+
+            _materialColorSchemeComboBox.Items.Add(new MaterialSchemeComboItem(
+                schemeName,
+                displayName,
+                AppColorizationService.Instance.GetPrimaryActionColor(schemeName)));
         }
+
+        _materialColorSchemeComboBox.DrawItem += MaterialColorSchemeComboBox_DrawItem;
 
         layout.Controls.Add(CreateSettingRow(
             "Color scheme",
@@ -1030,7 +1053,12 @@ public class SettingsForm : Form {
         _chartAggregationRoundingSecondsNumeric.Value = Math.Clamp(ChartAggregationRoundingSeconds, 1, 3600);
 
         if (_materialColorSchemeComboBox.Items.Count > 0) {
-            _materialColorSchemeComboBox.SelectedItem = MaterialColorScheme;
+            var selectedItem = _materialColorSchemeComboBox
+                .Items
+                .OfType<MaterialSchemeComboItem>()
+                .FirstOrDefault(item => string.Equals(item.SchemeName, MaterialColorScheme, StringComparison.OrdinalIgnoreCase));
+
+            _materialColorSchemeComboBox.SelectedItem = selectedItem;
             if (_materialColorSchemeComboBox.SelectedIndex < 0) {
                 _materialColorSchemeComboBox.SelectedIndex = 0;
             }
@@ -1047,7 +1075,8 @@ public class SettingsForm : Form {
         ShowRefreshIndicator = _showRefreshIndicatorSwitch.Checked;
         MinimizeToTray = _minimizeToTraySwitch.Checked;
         StartMinimized = _startMinimizedSwitch.Checked;
-        MaterialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(_materialColorSchemeComboBox.SelectedItem?.ToString());
+        var selectedSchemeName = (_materialColorSchemeComboBox.SelectedItem as MaterialSchemeComboItem)?.SchemeName;
+        MaterialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(selectedSchemeName);
         ValueTileLookbackMinutes = (int)_valueTileLookbackMinutesNumeric.Value;
         ChartStaticTimeoutSeconds = (int)_chartStaticTimeoutNumeric.Value;
         ChartStaticAggregationPresetMatchTolerancePercent = (double)_chartStaticAggregationPresetMatchToleranceNumeric.Value;
@@ -1056,6 +1085,53 @@ public class SettingsForm : Form {
 
         DialogResult = DialogResult.OK;
         Close();
+    }
+
+    private void MaterialColorSchemeComboBox_DrawItem(object? sender, DrawItemEventArgs e) {
+        if (sender is not ComboBox comboBox || e.Index < 0 || e.Index >= comboBox.Items.Count) {
+            return;
+        }
+
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        var bg = comboBox.BackColor;
+        var fg = comboBox.ForeColor;
+
+        if ((e.State & DrawItemState.Selected) != 0 && (e.State & DrawItemState.ComboBoxEdit) == 0) {
+            bg = isLight ? SystemColors.Highlight : MaterialSkinManager.Instance.ColorScheme.PrimaryColor;
+            fg = isLight ? SystemColors.HighlightText : Color.White;
+        }
+
+        using var bgBrush = new SolidBrush(bg);
+        e.Graphics.FillRectangle(bgBrush, e.Bounds);
+
+        if (comboBox.Items[e.Index] is not MaterialSchemeComboItem item) {
+            var fallbackText = comboBox.GetItemText(comboBox.Items[e.Index]);
+            TextRenderer.DrawText(e.Graphics, fallbackText, e.Font ?? comboBox.Font, e.Bounds, fg,
+                TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+            return;
+        }
+
+        var swatchRect = new Rectangle(
+            e.Bounds.Left + ColorSwatchLeftPadding,
+            e.Bounds.Top + Math.Max(0, (e.Bounds.Height - ColorSwatchSize) / 2),
+            ColorSwatchSize,
+            ColorSwatchSize);
+
+        using (var swatchBrush = new SolidBrush(item.PrimaryColor)) {
+            e.Graphics.FillRectangle(swatchBrush, swatchRect);
+        }
+
+        using var swatchBorderPen = new Pen(Color.FromArgb(140, Color.Black));
+        e.Graphics.DrawRectangle(swatchBorderPen, swatchRect);
+
+        var textRect = new Rectangle(
+            swatchRect.Right + ColorSwatchTextGap,
+            e.Bounds.Top,
+            Math.Max(0, e.Bounds.Width - (swatchRect.Right - e.Bounds.Left) - ColorSwatchTextGap - 4),
+            e.Bounds.Height);
+
+        TextRenderer.DrawText(e.Graphics, item.DisplayName, e.Font ?? comboBox.Font, textRect, fg,
+            TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
     }
 
     private void ExportSettingsButton_Click(object? sender, EventArgs e) {
