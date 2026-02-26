@@ -7,7 +7,7 @@ public sealed class AppColorizationService {
     #region Private Fields
 
     private static readonly Dictionary<string, MaterialPaletteDefinition> MaterialPalettes = new(StringComparer.OrdinalIgnoreCase) {
-        ["BlueGray"] = new("BlueGray", Primary.BlueGrey700, Primary.BlueGrey900, Primary.BlueGrey500, Accent.LightBlue200),
+        ["BlueGray"] = new("BlueGray", Primary.BlueGrey800, Primary.BlueGrey900, Primary.BlueGrey500, Accent.LightBlue200),
         //["Teal"] = new("Teal", Primary.Teal700, Primary.Teal900, Primary.Teal500, Accent.Teal200),
         //["Amber"] = new("Amber", Primary.Amber700, Primary.Amber900, Primary.Amber500, Accent.Amber200),
         //["Brown"] = new("Brown", Primary.Brown700, Primary.Brown900, Primary.Brown500, Accent.LightBlue200),
