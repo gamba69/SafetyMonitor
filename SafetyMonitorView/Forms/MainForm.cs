@@ -1119,30 +1119,30 @@ public class MainForm : MaterialForm {
 
     private void ApplyMaterialColorScheme(MaterialSkinManager.Themes theme) {
         _skinManager.ColorScheme = theme == MaterialSkinManager.Themes.LIGHT
-            //? new ColorScheme(
-            //    Primary.BlueGrey700,
-            //    Primary.BlueGrey900,
-            //    Primary.BlueGrey500,
-            //    Accent.LightBlue200,
-            //    TextShade.WHITE)
-            //: new ColorScheme(
-            //    Primary.BlueGrey800,
-            //    Primary.BlueGrey900,
-            //    Primary.BlueGrey500,
-            //    Accent.LightBlue200,
-            //    TextShade.WHITE);
-            ? new ColorScheme(
-                Primary.Teal700,
-                Primary.Teal900,
-                Primary.Teal500,
-                Accent.Teal200,
-                TextShade.WHITE)
-            : new ColorScheme(
-                Primary.Teal700,
-                Primary.Teal900,
-                Primary.Teal500,
-                Accent.Teal200,
-                TextShade.WHITE);
+        //? new ColorScheme(
+        //    Primary.BlueGrey700,
+        //    Primary.BlueGrey900,
+        //    Primary.BlueGrey500,
+        //    Accent.LightBlue200,
+        //    TextShade.WHITE)
+        //: new ColorScheme(
+        //    Primary.BlueGrey800,
+        //    Primary.BlueGrey900,
+        //    Primary.BlueGrey500,
+        //    Accent.LightBlue200,
+        //    TextShade.WHITE);
+        ? new ColorScheme(
+            Primary.Teal700,
+            Primary.Teal900,
+            Primary.Teal500,
+            Accent.Teal200,
+            TextShade.WHITE)
+        : new ColorScheme(
+            Primary.Teal700,
+            Primary.Teal900,
+            Primary.Teal500,
+            Accent.Teal200,
+            TextShade.WHITE);
     }
 
     /// <summary>
