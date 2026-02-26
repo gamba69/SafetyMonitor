@@ -4,7 +4,6 @@ using MaterialSkin;
 namespace SafetyMonitorView.Forms;
 
 internal static class ThemedComboBoxStyler {
-    private static readonly Color DarkSelectedBackColor = Color.FromArgb(0, 137, 123);
 
     [DllImport("uxtheme.dll", CharSet = CharSet.Unicode)]
     private static extern int SetWindowTheme(IntPtr hWnd, string? pszSubAppName, string? pszSubIdList);
@@ -45,7 +44,7 @@ internal static class ThemedComboBoxStyler {
         var fg = comboBox.ForeColor;
 
         if ((e.State & DrawItemState.Selected) != 0 && (e.State & DrawItemState.ComboBoxEdit) == 0) {
-            bg = isLight ? SystemColors.Highlight : DarkSelectedBackColor;
+            bg = isLight ? SystemColors.Highlight : MaterialSkinManager.Instance.ColorScheme.PrimaryColor;
             fg = isLight ? SystemColors.HighlightText : Color.White;
         }
 

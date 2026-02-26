@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Drawing.Text;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using SafetyMonitorView.Services;
 
 namespace SafetyMonitorView.Controls;
 
@@ -299,7 +300,7 @@ public class ThemedDateTimePicker : UserControl {
 
     private Color GetBorderColor() {
         return _isHovering && Enabled
-            ? Color.FromArgb(0, 121, 107)
+            ? MaterialSkinManager.Instance.ColorScheme.PrimaryColor
             : _borderColorOverride ?? _borderColor;
     }
 
@@ -380,7 +381,7 @@ public class ThemedDateTimePicker : UserControl {
         private readonly Color _hoverBg;
         private readonly Color _dimFg;
         private readonly Color _inputBg;
-        private readonly Color _accentColor = Color.FromArgb(0, 121, 107);
+        private readonly Color _accentColor;
 
         // Layout (DPI-scaled)
         private readonly int _cellSize;
@@ -438,8 +439,9 @@ public class ThemedDateTimePicker : UserControl {
             _fg = _isLight ? Color.Black : Color.White;
             _headerBg = _isLight ? Color.FromArgb(245, 245, 245) : Color.FromArgb(30, 42, 47);
             _borderColor = _isLight ? Color.FromArgb(200, 200, 200) : Color.FromArgb(55, 70, 75);
-            _todayColor = Color.FromArgb(0, 121, 107);
-            _selectedBg = Color.FromArgb(0, 121, 107);
+            _accentColor = MaterialSkinManager.Instance.ColorScheme.PrimaryColor;
+            _todayColor = _accentColor;
+            _selectedBg = _accentColor;
             _hoverBg = _isLight ? Color.FromArgb(232, 240, 238) : Color.FromArgb(48, 65, 70);
             _dimFg = _isLight ? Color.FromArgb(170, 170, 170) : Color.FromArgb(90, 105, 110);
             _inputBg = _isLight ? Color.White : Color.FromArgb(46, 61, 66);
@@ -984,7 +986,7 @@ public class ThemedDateTimePicker : UserControl {
                 Size = new Size(nowBtnWidth, btnHeight),
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Segoe UI", 8.5f),
-                ForeColor = Color.White,
+                ForeColor = AppColorizationService.Instance.GetReadableTextColor(MaterialSkinManager.Instance.ColorScheme.PrimaryColor),
                 BackColor = _accentColor,
                 Cursor = Cursors.Hand,
                 Margin = new System.Windows.Forms.Padding(0)

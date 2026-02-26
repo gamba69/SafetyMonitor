@@ -2,6 +2,7 @@ using MaterialSkin;
 using System.Collections;
 using System.ComponentModel;
 using System.Drawing.Text;
+using SafetyMonitorView.Services;
 
 namespace SafetyMonitorView.Controls;
 
@@ -312,7 +313,7 @@ public class ThemedComboBox : UserControl {
 
     private Color GetBorderColor() {
         return _isHovering && Enabled
-            ? Color.FromArgb(0, 121, 107)
+            ? MaterialSkinManager.Instance.ColorScheme.PrimaryColor
             : _borderColorOverride ?? _borderColor;
     }
 
@@ -496,7 +497,7 @@ public class ThemedComboBox : UserControl {
             _bg = _isLight ? Color.FromArgb(255, 255, 255) : Color.FromArgb(38, 52, 57);
             _fg = _isLight ? Color.Black : Color.White;
             _borderColor = _isLight ? Color.FromArgb(200, 200, 200) : Color.FromArgb(55, 70, 75);
-            _selectedBg = Color.FromArgb(0, 121, 107);
+            _selectedBg = MaterialSkinManager.Instance.ColorScheme.PrimaryColor;
             _hoverBg = _isLight ? Color.FromArgb(232, 240, 238) : Color.FromArgb(48, 65, 70);
             _scrollBarBg = _isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(30, 42, 47);
             _scrollBarThumb = _isLight ? Color.FromArgb(190, 190, 190) : Color.FromArgb(70, 85, 90);
@@ -628,7 +629,7 @@ public class ThemedComboBox : UserControl {
 
                 if (itemIndex == _owner._selectedIndex) {
                     bg = _selectedBg;
-                    fg = Color.White;
+                    fg = AppColorizationService.Instance.GetReadableTextColor(MaterialSkinManager.Instance.ColorScheme.PrimaryColor);
                 } else if (itemIndex == _hoverIndex) {
                     bg = _hoverBg;
                     fg = _fg;

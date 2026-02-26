@@ -1,5 +1,6 @@
 using MaterialSkin;
 using SafetyMonitorView.Properties;
+using SafetyMonitorView.Services;
 
 namespace SafetyMonitorView.Forms;
 
@@ -35,17 +36,12 @@ internal sealed class SplashForm : Form {
             : Resources.AppIconLight;
         _appIcon = new Icon(sourceIcon, new Size(SplashIconSizePx, SplashIconSizePx));
 
-        BackColor = theme == MaterialSkinManager.Themes.DARK
-            ? Color.FromArgb(25, 36, 40)
-            : Color.FromArgb(245, 245, 245);
-        ForeColor = theme == MaterialSkinManager.Themes.DARK
-            ? Color.FromArgb(235, 235, 235)
-            : Color.FromArgb(33, 33, 33);
+        var palette = AppColorizationService.Instance.GetNeutralPalette(theme == MaterialSkinManager.Themes.LIGHT);
+        BackColor = palette.SurfaceBackground;
+        ForeColor = palette.Text;
 
         // Border color is taken from the same theme palette used in the app UI.
-        _borderColor = theme == MaterialSkinManager.Themes.DARK
-            ? Color.FromArgb(70, 85, 92)
-            : Color.FromArgb(196, 206, 211);
+        _borderColor = palette.Border;
 
         FormBorderStyle = FormBorderStyle.None;
         StartPosition = FormStartPosition.CenterScreen;

@@ -78,14 +78,14 @@ public class ThemedMenuRenderer : ToolStripProfessionalRenderer {
 
         // Check background
         public override Color CheckBackground => _isLight
-            ? Color.FromArgb(195, 225, 220)
-            : Color.FromArgb(40, 90, 85);
+            ? Blend(MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.White, 0.75f)
+            : Blend(MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.Black, 0.45f);
 
         public override Color CheckPressedBackground => CheckSelectedBackground;
 
         public override Color CheckSelectedBackground => _isLight
-            ? Color.FromArgb(175, 215, 210)
-            : Color.FromArgb(45, 100, 95);
+            ? Blend(MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.White, 0.68f)
+            : Blend(MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.Black, 0.35f);
 
         // Image margin (left side of dropdown)
         public override Color ImageMarginGradientBegin => _isLight
@@ -98,12 +98,12 @@ public class ThemedMenuRenderer : ToolStripProfessionalRenderer {
 
         // Menu item border when selected
         public override Color MenuItemBorder => _isLight
-            ? Color.FromArgb(195, 220, 215)
+            ? Blend(MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.White, 0.72f)
             : Color.FromArgb(55, 75, 80);
 
         // Pressed menu item
         public override Color MenuItemPressedGradientBegin => _isLight
-            ? Color.FromArgb(215, 230, 228)
+            ? Blend(MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.White, 0.82f)
             : Color.FromArgb(46, 61, 66);
 
         public override Color MenuItemPressedGradientEnd => MenuItemPressedGradientBegin;
@@ -112,12 +112,12 @@ public class ThemedMenuRenderer : ToolStripProfessionalRenderer {
 
         // Menu item selected (hover)
         public override Color MenuItemSelected => _isLight
-            ? Color.FromArgb(225, 240, 238)
+            ? Blend(MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.White, 0.86f)
             : Color.FromArgb(53, 70, 76);
 
         // Selected menu item background
         public override Color MenuItemSelectedGradientBegin => _isLight
-            ? Color.FromArgb(230, 242, 240)
+            ? Blend(MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.White, 0.88f)
             : Color.FromArgb(50, 66, 71);
 
         public override Color MenuItemSelectedGradientEnd => MenuItemSelectedGradientBegin;
@@ -147,6 +147,15 @@ public class ThemedMenuRenderer : ToolStripProfessionalRenderer {
 
         public void UpdateTheme(bool isLight) {
             _isLight = isLight;
+        }
+
+        private static Color Blend(Color source, Color target, float ratioToTarget) {
+            var clamped = Math.Clamp(ratioToTarget, 0f, 1f);
+            var ratioToSource = 1f - clamped;
+            var r = (int)Math.Round(source.R * ratioToSource + target.R * clamped);
+            var g = (int)Math.Round(source.G * ratioToSource + target.G * clamped);
+            var b = (int)Math.Round(source.B * ratioToSource + target.B * clamped);
+            return Color.FromArgb(r, g, b);
         }
 
         #endregion Public Methods

@@ -6,7 +6,6 @@ internal static class ThemedButtonStyler {
 
     #region Private Fields
 
-    private static readonly Color PrimaryButtonColor = Color.FromArgb(0, 137, 123);
     private static readonly Color CancelButtonColorLight = Color.FromArgb(189, 189, 189);
     private static readonly Color CancelButtonColorDark = Color.FromArgb(96, 105, 109);
     private static readonly Color DeleteButtonColorLight = Color.FromArgb(198, 64, 58);
@@ -84,10 +83,10 @@ internal static class ThemedButtonStyler {
     }
 
     private static (Color BackColor, Color ForeColor) ResolveColors(ButtonRole role, bool isLight) => role switch {
-        ButtonRole.Save => (PrimaryButtonColor, Color.White),
-        ButtonRole.Confirm => (PrimaryButtonColor, Color.White),
+        ButtonRole.Save => (MaterialSkin.MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.White),
+        ButtonRole.Confirm => (MaterialSkin.MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.White),
         ButtonRole.Browse => (isLight ? SecondaryButtonColorLight : SecondaryButtonColorDark, isLight ? Color.Black : Color.White),
-        ButtonRole.Test => (isLight ? SecondaryButtonColorLight : SecondaryButtonColorDark, isLight ? Color.Black : Color.White),
+        ButtonRole.Test => (MaterialSkin.MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.White),
         ButtonRole.Cancel => (isLight ? CancelButtonColorLight : CancelButtonColorDark, Color.White),
         ButtonRole.Delete => (isLight ? DeleteButtonColorLight : DeleteButtonColorDark, Color.White),
         ButtonRole.Calculate => (isLight ? CalculateButtonColorLight : CalculateButtonColorDark, Color.White),

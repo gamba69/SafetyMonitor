@@ -8,6 +8,7 @@ public class DashboardEditorForm : Form {
     #region Private Fields
 
     private readonly Dashboard _dashboard;
+    private readonly string _materialColorScheme;
     private readonly List<EditableTileControl> _tileControls = [];
     private Button _addChartButton = null!;
     private Button _addValueButton = null!;
@@ -26,6 +27,7 @@ public class DashboardEditorForm : Form {
 
     public DashboardEditorForm(Dashboard dashboard) {
         _dashboard = dashboard;
+        _materialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(new AppSettingsService().LoadSettings().MaterialColorScheme);
 
         InitializeComponent();
         FormIconHelper.Apply(this, MaterialIcons.DashboardEditCurrent);
@@ -44,7 +46,7 @@ public class DashboardEditorForm : Form {
     #region Private Methods
 
     private void AddEditableTile(TileConfig config) {
-        var control = new EditableTileControl(config, _dashboard);
+        var control = new EditableTileControl(config, _dashboard, _materialColorScheme);
         control.TileDeleted += OnTileDeleted;
         control.TileEdited += OnTileEdited;
 

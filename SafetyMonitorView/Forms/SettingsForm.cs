@@ -33,6 +33,8 @@ public class SettingsForm : Form {
     private Button _exportSettingsButton = null!;
     private Button _importSettingsButton = null!;
     private Button _resetSettingsButton = null!;
+    private ComboBox _materialColorSchemeComboBox = null!;
+    private Panel _configColorSectionSeparator = null!;
     private readonly AppSettingsMaintenanceService _settingsMaintenanceService;
 
     // Tab infrastructure
@@ -67,7 +69,7 @@ public class SettingsForm : Form {
 
     public SettingsMaintenanceAction SettingsMaintenanceAction { get; private set; }
 
-    public SettingsForm(AppSettingsMaintenanceService settingsMaintenanceService, string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartAggregationRoundingSeconds, bool currentShowRefreshIndicator, bool currentMinimizeToTray, bool currentStartMinimized) {
+    public SettingsForm(AppSettingsMaintenanceService settingsMaintenanceService, string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartAggregationRoundingSeconds, bool currentShowRefreshIndicator, bool currentMinimizeToTray, bool currentStartMinimized, string currentMaterialColorScheme) {
         _settingsMaintenanceService = settingsMaintenanceService;
         StoragePath = currentStoragePath;
         RefreshInterval = currentRefreshInterval;
@@ -79,6 +81,7 @@ public class SettingsForm : Form {
         ShowRefreshIndicator = currentShowRefreshIndicator;
         MinimizeToTray = currentMinimizeToTray;
         StartMinimized = currentStartMinimized;
+        MaterialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(currentMaterialColorScheme);
 
         InitializeComponent();
         FormIconHelper.Apply(this, MaterialIcons.MenuFileSettings);
@@ -100,6 +103,7 @@ public class SettingsForm : Form {
     public bool ShowRefreshIndicator { get; private set; } = true;
     public bool MinimizeToTray { get; private set; } = false;
     public bool StartMinimized { get; private set; } = false;
+    public string MaterialColorScheme { get; private set; } = "Teal";
 
     #endregion Public Properties
 
@@ -109,13 +113,17 @@ public class SettingsForm : Form {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
 
-        BackColor = isLight ? Color.FromArgb(250, 250, 250) : Color.FromArgb(38, 52, 57);
-        ForeColor = isLight ? Color.Black : Color.White;
+        var palette = AppColorizationService.Instance.GetNeutralPalette(isLight);
+        BackColor = palette.FormBackground;
+        ForeColor = palette.StrongText;
 
         ApplyTabSegmentTheme(isLight);
         ApplyThemeRecursive(this, isLight);
         ApplySettingSwitchTheme(isLight);
         ApplyConfigButtonsTheme(isLight);
+        if (_configColorSectionSeparator != null) {
+            _configColorSectionSeparator.BackColor = palette.Border;
+        }
     }
 
     private void ApplyConfigButtonsTheme(bool isLight) {
@@ -180,20 +188,24 @@ public class SettingsForm : Form {
                 continue;
             }
 
+            var palette = AppColorizationService.Instance.GetNeutralPalette(isLight);
             switch (control) {
                 case Label lbl:
-                    lbl.ForeColor = isLight ? Color.Black : Color.White;
+                    lbl.ForeColor = palette.StrongText;
                     break;
                 case Button btn:
                     ThemedButtonStyler.Apply(btn, isLight);
                     break;
                 case TextBox txt:
-                    txt.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
-                    txt.ForeColor = isLight ? Color.Black : Color.White;
+                    txt.BackColor = palette.InputBackground;
+                    txt.ForeColor = palette.StrongText;
                     break;
                 case NumericUpDown num:
-                    num.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
-                    num.ForeColor = isLight ? Color.Black : Color.White;
+                    num.BackColor = palette.InputBackground;
+                    num.ForeColor = palette.StrongText;
+                    break;
+                case ComboBox comboBox:
+                    ThemedComboBoxStyler.Apply(comboBox, isLight);
                     break;
             }
 
@@ -239,7 +251,7 @@ public class SettingsForm : Form {
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 4,
+            RowCount = 5,
             AutoSize = false
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -443,7 +455,7 @@ public class SettingsForm : Form {
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 4,
+            RowCount = 5,
             AutoSize = false
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -487,7 +499,7 @@ public class SettingsForm : Form {
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 4,
+            RowCount = 5,
             AutoSize = false
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -619,7 +631,7 @@ public class SettingsForm : Form {
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 4,
+            RowCount = 5,
             AutoSize = false
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -667,7 +679,7 @@ public class SettingsForm : Form {
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Top,
             ColumnCount = 1,
-            RowCount = 4,
+            RowCount = 5,
             AutoSize = true,
             AutoSizeMode = AutoSizeMode.GrowAndShrink
         };
@@ -737,11 +749,35 @@ public class SettingsForm : Form {
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Top,
             ColumnCount = 1,
-            RowCount = 4,
+            RowCount = 5,
             AutoSize = true,
             AutoSizeMode = AutoSizeMode.GrowAndShrink
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+        _materialColorSchemeComboBox = new ComboBox {
+            Width = 160,
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            Font = normalFont
+        };
+        foreach (var schemeName in AppColorizationService.Instance.AvailableMaterialSchemes) {
+            _materialColorSchemeComboBox.Items.Add(schemeName);
+        }
+
+        layout.Controls.Add(CreateSettingRow(
+            "Color scheme",
+            "Choose a colorization scheme that defines the main accent color of the application (header, save buttons, menu selection, etc.).",
+            string.Empty,
+            _materialColorSchemeComboBox,
+            titleFont,
+            descriptionFont), 0, 0);
+
+        _configColorSectionSeparator = new Panel {
+            Dock = DockStyle.Top,
+            Height = 1,
+            Margin = new Padding(0, 0, 0, 12)
+        };
+        layout.Controls.Add(_configColorSectionSeparator, 0, 1);
 
         _exportSettingsButton = CreateSettingsActionButton("Export...", "output_circle", normalFont);
         _exportSettingsButton.Click += ExportSettingsButton_Click;
@@ -752,7 +788,7 @@ public class SettingsForm : Form {
             "",
             _exportSettingsButton,
             titleFont,
-            descriptionFont), 0, 0);
+            descriptionFont), 0, 2);
 
         _importSettingsButton = CreateSettingsActionButton("Import...", "input_circle", normalFont);
         _importSettingsButton.Click += ImportSettingsButton_Click;
@@ -763,7 +799,7 @@ public class SettingsForm : Form {
             "",
             _importSettingsButton,
             titleFont,
-            descriptionFont), 0, 1);
+            descriptionFont), 0, 3);
 
         _resetSettingsButton = CreateSettingsActionButton("Reset...", "dangerous", normalFont);
         _resetSettingsButton.Click += ResetSettingsButton_Click;
@@ -773,9 +809,7 @@ public class SettingsForm : Form {
             "",
             _resetSettingsButton,
             titleFont,
-            descriptionFont), 0, 2);
-
-        layout.Controls.Add(new Panel { Height = 8, Dock = DockStyle.Top }, 0, 3);
+            descriptionFont), 0, 4);
         page.Controls.Add(layout);
         return page;
     }
@@ -990,6 +1024,13 @@ public class SettingsForm : Form {
         _chartStaticAggregationTargetPointsNumeric.Value = Math.Clamp(ChartStaticAggregationTargetPointCount, 2, 5000);
         _chartAggregationRoundingSecondsNumeric.Value = Math.Clamp(ChartAggregationRoundingSeconds, 1, 3600);
 
+        if (_materialColorSchemeComboBox.Items.Count > 0) {
+            _materialColorSchemeComboBox.SelectedItem = MaterialColorScheme;
+            if (_materialColorSchemeComboBox.SelectedIndex < 0) {
+                _materialColorSchemeComboBox.SelectedIndex = 0;
+            }
+        }
+
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
         ApplySettingSwitchTheme(isLight);
     }
@@ -1001,6 +1042,7 @@ public class SettingsForm : Form {
         ShowRefreshIndicator = _showRefreshIndicatorSwitch.Checked;
         MinimizeToTray = _minimizeToTraySwitch.Checked;
         StartMinimized = _startMinimizedSwitch.Checked;
+        MaterialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(_materialColorSchemeComboBox.SelectedItem?.ToString());
         ValueTileLookbackMinutes = (int)_valueTileLookbackMinutesNumeric.Value;
         ChartStaticTimeoutSeconds = (int)_chartStaticTimeoutNumeric.Value;
         ChartStaticAggregationPresetMatchTolerancePercent = (double)_chartStaticAggregationPresetMatchToleranceNumeric.Value;
@@ -1084,7 +1126,7 @@ public class SettingsForm : Form {
     private static Color GetConnectionStatusColor(bool isSuccess) {
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
         if (isSuccess) {
-            return isLight ? Color.FromArgb(0, 121, 107) : Color.FromArgb(77, 208, 182);
+            return MaterialSkinManager.Instance.ColorScheme.PrimaryColor;
         }
 
         return isLight ? Color.FromArgb(198, 40, 40) : Color.FromArgb(239, 154, 154);

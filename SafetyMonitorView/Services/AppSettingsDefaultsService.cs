@@ -11,6 +11,7 @@ public static class AppSettingsDefaultsService {
             MinimizeToTray = false,
             ShowRefreshIndicator = true,
             StartMinimized = false,
+            MaterialColorScheme = "Teal",
             ChartStaticModeTimeoutSeconds = 120,
             ChartStaticAggregationPresetMatchTolerancePercent = 10,
             ChartStaticAggregationTargetPointCount = 300,
@@ -47,6 +48,7 @@ public static class AppSettingsDefaultsService {
         loaded.ChartAggregationRoundingSeconds = loaded.ChartAggregationRoundingSeconds <= 0 ? defaults.ChartAggregationRoundingSeconds : loaded.ChartAggregationRoundingSeconds;
         loaded.ChartStaticAggregationPresetMatchTolerancePercent = loaded.ChartStaticAggregationPresetMatchTolerancePercent <= 0 ? defaults.ChartStaticAggregationPresetMatchTolerancePercent : loaded.ChartStaticAggregationPresetMatchTolerancePercent;
         loaded.StoragePath ??= string.Empty;
+        loaded.MaterialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(loaded.MaterialColorScheme);
 
         return loaded;
     }

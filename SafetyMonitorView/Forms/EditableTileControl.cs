@@ -10,6 +10,7 @@ public class EditableTileControl : Panel {
 
     private readonly Dashboard _dashboard;
     private readonly Font _titleFont;
+    private readonly string _materialColorScheme;
 
     private Button _deleteButton = null!;
     private Point _dragStartPoint;
@@ -28,9 +29,10 @@ public class EditableTileControl : Panel {
 
     #region Public Constructors
 
-    public EditableTileControl(TileConfig config, Dashboard dashboard) {
+    public EditableTileControl(TileConfig config, Dashboard dashboard, string materialColorScheme) {
         Config = config;
         _dashboard = dashboard;
+        _materialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(materialColorScheme);
 
         _titleFont = new Font("Segoe UI", 10, FontStyle.Bold);
 
@@ -96,10 +98,13 @@ public class EditableTileControl : Panel {
         BackColor = isLight ? Color.White : Color.FromArgb(35, 47, 52);
         Cursor = Cursors.SizeAll;
 
+        var headerBackgroundColor = AppColorizationService.Instance.GetPrimaryActionColor(_materialColorScheme);
+        var headerTextColor = AppColorizationService.Instance.GetPrimaryActionTextColor(_materialColorScheme);
+
         var header = new Panel {
             Dock = DockStyle.Top,
             Height = 30,
-            BackColor = Color.FromArgb(0, 121, 107)
+            BackColor = headerBackgroundColor
         };
 
         var tileIconName = Config is ValueTileConfig
@@ -113,12 +118,12 @@ public class EditableTileControl : Panel {
             Width = 30,
             SizeMode = PictureBoxSizeMode.CenterImage,
             BackColor = Color.Transparent,
-            Image = MaterialIcons.GetIcon(tileIconName, Color.White, 20)
+            Image = MaterialIcons.GetIcon(tileIconName, headerTextColor, 20)
         };
 
         _titleLabel = new Label {
             Dock = DockStyle.Fill,
-            ForeColor = Color.White,
+            ForeColor = headerTextColor,
             Font = _titleFont,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(5, 0, 0, 0),
@@ -130,7 +135,7 @@ public class EditableTileControl : Panel {
             Dock = DockStyle.Right,
             Width = 30,
             FlatStyle = FlatStyle.Flat,
-            ForeColor = Color.White,
+            ForeColor = headerTextColor,
             Cursor = Cursors.Hand
         };
         _editButton.FlatAppearance.BorderSize = 0;
@@ -141,7 +146,7 @@ public class EditableTileControl : Panel {
             Dock = DockStyle.Right,
             Width = 30,
             FlatStyle = FlatStyle.Flat,
-            ForeColor = Color.White,
+            ForeColor = headerTextColor,
             Cursor = Cursors.Hand
         };
         _deleteButton.FlatAppearance.BorderSize = 0;

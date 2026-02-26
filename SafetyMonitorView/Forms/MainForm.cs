@@ -3,7 +3,6 @@ using MaterialSkin.Controls;
 using SafetyMonitorView.Controls;
 using SafetyMonitorView.Models;
 using SafetyMonitorView.Services;
-using ColorScheme = MaterialSkin.ColorScheme;
 
 namespace SafetyMonitorView.Forms;
 
@@ -132,7 +131,8 @@ public class MainForm : MaterialForm {
             ? MaterialSkinManager.Themes.DARK
             : MaterialSkinManager.Themes.LIGHT;
 
-        ApplyMaterialColorScheme(_skinManager.Theme);
+        _appSettings.MaterialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(_appSettings.MaterialColorScheme);
+        ApplyMaterialColorScheme();
 
         _dataService = new DataService(_appSettings.StoragePath, _appSettings.ValueTileLookbackMinutes);
         AttachDataServiceHandlers();
@@ -316,9 +316,8 @@ public class MainForm : MaterialForm {
     /// Returns the visor background color matching the current theme.
     /// </summary>
     private Color GetVisorColor() {
-        return _skinManager.Theme == MaterialSkinManager.Themes.LIGHT
-            ? Color.FromArgb(250, 250, 250)
-            : Color.FromArgb(25, 36, 40);
+        var isLightTheme = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+        return AppColorizationService.Instance.GetNeutralPalette(isLightTheme).FormBackground;
     }
 
     /// <summary>
@@ -1117,32 +1116,8 @@ public class MainForm : MaterialForm {
         _refreshTimer.Start();
     }
 
-    private void ApplyMaterialColorScheme(MaterialSkinManager.Themes theme) {
-        _skinManager.ColorScheme = theme == MaterialSkinManager.Themes.LIGHT
-        //? new ColorScheme(
-        //    Primary.BlueGrey700,
-        //    Primary.BlueGrey900,
-        //    Primary.BlueGrey500,
-        //    Accent.LightBlue200,
-        //    TextShade.WHITE)
-        //: new ColorScheme(
-        //    Primary.BlueGrey800,
-        //    Primary.BlueGrey900,
-        //    Primary.BlueGrey500,
-        //    Accent.LightBlue200,
-        //    TextShade.WHITE);
-        ? new ColorScheme(
-            Primary.Teal700,
-            Primary.Teal900,
-            Primary.Teal500,
-            Accent.Teal200,
-            TextShade.WHITE)
-        : new ColorScheme(
-            Primary.Teal700,
-            Primary.Teal900,
-            Primary.Teal500,
-            Accent.Teal200,
-            TextShade.WHITE);
+    private void ApplyMaterialColorScheme() {
+        _skinManager.ColorScheme = AppColorizationService.Instance.GetMaterialColorScheme(_appSettings.MaterialColorScheme);
     }
 
     /// <summary>
@@ -1157,7 +1132,7 @@ public class MainForm : MaterialForm {
         }
 
         _skinManager.Theme = theme;
-        ApplyMaterialColorScheme(theme);
+        ApplyMaterialColorScheme();
         ApplyApplicationIcon();
 
         // ИЗМЕНЕНО: Сразу после переключения темы обновляем цвет забрала на новый
@@ -1261,7 +1236,7 @@ public class MainForm : MaterialForm {
     }
 
     private void ShowSettings() {
-        using var settingsForm = new SettingsForm(_appSettingsMaintenanceService, _appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds, _appSettings.ShowRefreshIndicator, _appSettings.MinimizeToTray, _appSettings.StartMinimized);
+        using var settingsForm = new SettingsForm(_appSettingsMaintenanceService, _appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds, _appSettings.ShowRefreshIndicator, _appSettings.MinimizeToTray, _appSettings.StartMinimized, _appSettings.MaterialColorScheme);
         if (settingsForm.ShowDialog() != DialogResult.OK) {
             return;
         }
@@ -1285,6 +1260,7 @@ public class MainForm : MaterialForm {
         _appSettings.ShowRefreshIndicator = settingsForm.ShowRefreshIndicator;
         _appSettings.MinimizeToTray = settingsForm.MinimizeToTray;
         _appSettings.StartMinimized = settingsForm.StartMinimized;
+        _appSettings.MaterialColorScheme = settingsForm.MaterialColorScheme;
         _appSettingsService.SaveSettings(_appSettings);
 
         ApplySettingsToRuntime();
@@ -1298,6 +1274,7 @@ public class MainForm : MaterialForm {
 
     private static void CopySettings(AppSettings source, AppSettings target) {
         target.IsDarkTheme = source.IsDarkTheme;
+        target.MaterialColorScheme = source.MaterialColorScheme;
         target.IsMaximized = source.IsMaximized;
         target.LinkChartPeriods = source.LinkChartPeriods;
         target.MinimizeToTray = source.MinimizeToTray;
@@ -1321,6 +1298,10 @@ public class MainForm : MaterialForm {
     }
 
     private void ApplySettingsToRuntime() {
+        _appSettings.MaterialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(_appSettings.MaterialColorScheme);
+        ApplyMaterialColorScheme();
+        ScheduleThemeReapply();
+
         ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
         MetricAxisRuleStore.SetRules(_appSettings.MetricAxisRules);
         MetricDisplaySettingsStore.SetSettings(_appSettings.MetricDisplaySettings);

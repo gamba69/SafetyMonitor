@@ -106,10 +106,11 @@ public class ThemedMessageBox : Form {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
 
-        BackColor = isLight ? Color.FromArgb(250, 250, 250) : Color.FromArgb(38, 52, 57);
-        ForeColor = isLight ? Color.Black : Color.White;
+        var palette = AppColorizationService.Instance.GetNeutralPalette(isLight);
+        BackColor = palette.FormBackground;
+        ForeColor = palette.StrongText;
 
-        _messageLabel.ForeColor = isLight ? Color.Black : Color.White;
+        _messageLabel.ForeColor = palette.StrongText;
         _iconPicture.Image?.Dispose();
         _iconPicture.Image = MaterialIcons.GetMessageBoxIcon(_icon, isLight, 72);
         _iconPicture.Visible = _iconPicture.Image != null;

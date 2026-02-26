@@ -10,6 +10,7 @@ public class AppSettings {
     public bool MinimizeToTray { get; set; }
     public bool ShowRefreshIndicator { get; set; }
     public bool StartMinimized { get; set; }
+    public string MaterialColorScheme { get; set; } = "Teal";
     public int ChartStaticModeTimeoutSeconds { get; set; }
     public double ChartStaticAggregationPresetMatchTolerancePercent { get; set; }
     public int ChartStaticAggregationTargetPointCount { get; set; }
