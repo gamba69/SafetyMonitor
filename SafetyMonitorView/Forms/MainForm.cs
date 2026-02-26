@@ -864,11 +864,11 @@ public class MainForm : MaterialForm {
     /// After the initial reveal, every LoadDashboard call immediately shows a visor,
     /// builds the new dashboard behind it, then fades the visor out.
     /// </summary>
-    private void LoadDashboard(Dashboard dashboard) {
+    private void LoadDashboard(Dashboard dashboard, bool visorAlreadyShown = false) {
         // Show visor BEFORE building the new panel — but only when the initial
         // reveal is already completed (not during the very first load from constructor).
         var isDashboardSwitch = _initialRevealCompleted;
-        if (isDashboardSwitch) {
+        if (isDashboardSwitch && !visorAlreadyShown) {
             ShowVisor();
         }
 
@@ -1062,7 +1062,7 @@ public class MainForm : MaterialForm {
     /// Schedules a deferred theme reapply. When a visor is active (theme switch),
     /// the callback calls ScheduleVisorReveal after all colors are set.
     /// </summary>
-    private void ScheduleThemeReapply() {
+    private void ScheduleThemeReapply(bool skipVisorReveal = false, bool skipDataRefresh = false) {
         if (_themeTimer != null) { _themeTimer.Stop(); _themeTimer.Dispose(); }
         _themeTimer = new System.Windows.Forms.Timer { Interval = 50 };
         _themeTimer.Tick += async (s, e) => {
@@ -1078,10 +1078,14 @@ public class MainForm : MaterialForm {
             // potentially expensive data refresh starts.
             RequestImmediateThemeRepaint();
 
-            await RefreshDashboardDataAsync();
+            if (!skipDataRefresh) {
+                await RefreshDashboardDataAsync();
+            }
 
             // If a visor is active (theme switch), reveal it now that colors are applied.
-            ScheduleVisorReveal();
+            if (!skipVisorReveal) {
+                ScheduleVisorReveal();
+            }
         };
         _themeTimer.Start();
     }
@@ -1315,9 +1319,17 @@ public class MainForm : MaterialForm {
     }
 
     private void ApplySettingsToRuntime() {
+        if (_initialRevealCompleted) {
+            ShowVisor();
+        }
+
         _appSettings.MaterialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(_appSettings.MaterialColorScheme);
         ApplyMaterialColorScheme();
-        ScheduleThemeReapply();
+
+        if (_visorForm != null && !_visorForm.IsDisposed) {
+            _visorForm.BackColor = GetVisorColor();
+            _visorForm.Refresh();
+        }
 
         ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
         MetricAxisRuleStore.SetRules(_appSettings.MetricAxisRules);
@@ -1345,9 +1357,12 @@ public class MainForm : MaterialForm {
         nextDashboard ??= _dashboards.FirstOrDefault();
 
         if (nextDashboard != null) {
-            LoadDashboard(nextDashboard);
+            // LoadDashboard performs full rebuild and controls visor reveal by itself.
+            // Avoid racing it with theme timer refresh/reveal, which can expose intermediate layout.
+            ScheduleThemeReapply(skipVisorReveal: true, skipDataRefresh: true);
+            LoadDashboard(nextDashboard, visorAlreadyShown: _visorForm != null && !_visorForm.IsDisposed);
         } else {
-            _ = RefreshDashboardDataAsync();
+            ScheduleThemeReapply();
         }
     }
 
