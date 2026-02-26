@@ -857,17 +857,39 @@ public class SettingsForm : Form {
             return;
         }
 
-        var offBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
-        var onBg = isLight ? Color.FromArgb(62, 77, 84) : Color.FromArgb(117, 132, 139);
-        var borderColor = isLight ? Color.FromArgb(196, 206, 211) : Color.FromArgb(70, 85, 92);
+        // Keep switch colors exactly aligned with ThemedButtonStyler palette:
+        // ON  -> Save (primary)
+        // OFF -> Cancel
+        var onBg = Color.FromArgb(0, 137, 123);
+        var offBg = isLight ? Color.FromArgb(189, 189, 189) : Color.FromArgb(96, 105, 109);
+        var activeBg = checkBox.Checked ? onBg : offBg;
 
-        checkBox.BackColor = checkBox.Checked ? onBg : offBg;
-        checkBox.ForeColor = checkBox.Checked ? Color.White : (isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205));
-        checkBox.FlatAppearance.BorderSize = 1;
-        checkBox.FlatAppearance.BorderColor = borderColor;
-        checkBox.FlatAppearance.MouseOverBackColor = checkBox.Checked ? onBg : offBg;
-        checkBox.FlatAppearance.MouseDownBackColor = checkBox.Checked ? onBg : offBg;
+        // Add the same subtle hover/pressed feedback users expect from action buttons.
+        var hoverBg = BlendWith(activeBg, Color.White, 0.08f);
+        var downBg = BlendWith(activeBg, Color.Black, 0.08f);
+
+        checkBox.BackColor = activeBg;
+        checkBox.ForeColor = Color.White;
+        checkBox.FlatAppearance.BorderSize = 0;
+        checkBox.FlatAppearance.BorderColor = activeBg;
+
+        // Appearance.Button uses FlatAppearance.CheckedBackColor in checked state,
+        // so we must set it explicitly to avoid color drift versus Save/Cancel.
+        checkBox.FlatAppearance.CheckedBackColor = onBg;
+        checkBox.FlatAppearance.MouseOverBackColor = hoverBg;
+        checkBox.FlatAppearance.MouseDownBackColor = downBg;
+
         checkBox.Text = checkBox.Checked ? "ON" : "OFF";
+    }
+
+    private static Color BlendWith(Color source, Color target, float amount) {
+        amount = Math.Clamp(amount, 0f, 1f);
+
+        var r = (int)Math.Round(source.R + ((target.R - source.R) * amount));
+        var g = (int)Math.Round(source.G + ((target.G - source.G) * amount));
+        var b = (int)Math.Round(source.B + ((target.B - source.B) * amount));
+
+        return Color.FromArgb(source.A, r, g, b);
     }
 
     private void LoadSettings() {
