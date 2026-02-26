@@ -86,6 +86,9 @@ public class MainForm : MaterialForm {
     // initial startup, dashboard switching and theme changes.
     private Form? _visorForm;
     private System.Windows.Forms.Timer? _visorFadeTimer;
+    private System.Windows.Forms.Timer? _visorLoaderTimer;
+    private Panel? _visorLoaderPanel;
+    private int _visorLoaderFrame;
 
     // True once the initial dashboard reveal has completed.
     // While false, LoadDashboard does NOT call QueueDashboardInitialRender —
@@ -103,6 +106,7 @@ public class MainForm : MaterialForm {
     private const int VisorFadeDurationMs = 250;
     // Timer interval between individual fade-out opacity steps.
     private const int VisorFadeStepMs = 10;
+    private const int VisorLoaderStepMs = 180;
 
     #endregion Private Fields
 
@@ -357,7 +361,70 @@ public class MainForm : MaterialForm {
             TopMost = false
         };
 
+        SetupVisorLoader(_visorForm, visorColor);
+
         _visorForm.Show(this);
+    }
+
+    private void SetupVisorLoader(Form visorForm, Color visorColor) {
+        _visorLoaderTimer?.Stop();
+        _visorLoaderTimer?.Dispose();
+        _visorLoaderTimer = null;
+        _visorLoaderPanel = null;
+
+        var loaderSize = new Size(72, 20);
+        _visorLoaderFrame = 0;
+
+        var panel = new Panel {
+            Size = loaderSize,
+            BackColor = visorColor
+        };
+
+        void centerLoader() {
+            panel.Location = new Point(
+                Math.Max(0, (visorForm.ClientSize.Width - panel.Width) / 2),
+                Math.Max(0, (visorForm.ClientSize.Height - panel.Height) / 2));
+        }
+
+        panel.Paint += (_, e) => {
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+            var squareSize = 12;
+            var spacing = 8;
+            var totalWidth = squareSize * 3 + spacing * 2;
+            var startX = Math.Max(0, (panel.Width - totalWidth) / 2);
+            var y = Math.Max(0, (panel.Height - squareSize) / 2);
+            var sequence = new[] { 0, 1, 2, 1 };
+            var activeIndex = sequence[_visorLoaderFrame % sequence.Length];
+
+            var isLightTheme = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+            var inactiveColor = isLightTheme
+                ? ControlPaint.Dark(visorColor, 0.08f)
+                : ControlPaint.Light(visorColor, 0.14f);
+            var activeColor = isLightTheme
+                ? ControlPaint.Dark(visorColor, 0.2f)
+                : ControlPaint.Light(visorColor, 0.32f);
+
+            for (int i = 0; i < 3; i++) {
+                var x = startX + i * (squareSize + spacing);
+                var rect = new Rectangle(x, y, squareSize, squareSize);
+                using var brush = new SolidBrush(i == activeIndex ? activeColor : inactiveColor);
+                e.Graphics.FillRectangle(brush, rect);
+            }
+        };
+
+        visorForm.Resize += (_, _) => centerLoader();
+        centerLoader();
+        visorForm.Controls.Add(panel);
+        panel.BringToFront();
+
+        _visorLoaderPanel = panel;
+        _visorLoaderTimer = new System.Windows.Forms.Timer { Interval = VisorLoaderStepMs };
+        _visorLoaderTimer.Tick += (_, _) => {
+            _visorLoaderFrame++;
+            _visorLoaderPanel?.Invalidate();
+        };
+        _visorLoaderTimer.Start();
     }
 
     /// <summary>
@@ -410,6 +477,12 @@ public class MainForm : MaterialForm {
         _visorFadeTimer?.Stop();
         _visorFadeTimer?.Dispose();
         _visorFadeTimer = null;
+
+        _visorLoaderTimer?.Stop();
+        _visorLoaderTimer?.Dispose();
+        _visorLoaderTimer = null;
+        _visorLoaderPanel = null;
+        _visorLoaderFrame = 0;
 
         if (_visorForm != null && !_visorForm.IsDisposed) {
             _visorForm.Close();
