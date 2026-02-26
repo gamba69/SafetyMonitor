@@ -73,7 +73,6 @@ internal static class ThemedButtonStyler {
     }
 
     private static int ResolveIconSize(Button button) {
-        // 24 logical px is visually ~2x bigger than the old compact icon set and scales with DPI.
         var scaled = ScaleLogicalPixels(button, 24);
         var maxAllowedByHeight = Math.Max(16, button.Height - ScaleLogicalPixels(button, 10));
         return Math.Clamp(scaled, 16, maxAllowedByHeight);
@@ -87,6 +86,8 @@ internal static class ThemedButtonStyler {
     private static (Color BackColor, Color ForeColor) ResolveColors(ButtonRole role, bool isLight) => role switch {
         ButtonRole.Save => (PrimaryButtonColor, Color.White),
         ButtonRole.Confirm => (PrimaryButtonColor, Color.White),
+        ButtonRole.Browse => (PrimaryButtonColor, Color.White),
+        ButtonRole.Test => (PrimaryButtonColor, Color.White),
         ButtonRole.Cancel => (isLight ? CancelButtonColorLight : CancelButtonColorDark, Color.White),
         ButtonRole.Delete => (isLight ? DeleteButtonColorLight : DeleteButtonColorDark, Color.White),
         ButtonRole.Calculate => (isLight ? CalculateButtonColorLight : CalculateButtonColorDark, Color.White),

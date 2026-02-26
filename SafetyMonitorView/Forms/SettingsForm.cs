@@ -1,3 +1,4 @@
+using FirebirdSql.Data.FirebirdClient;
 using MaterialSkin;
 using SafetyMonitorView.Services;
 using System.Runtime.InteropServices;
@@ -557,7 +558,7 @@ public class SettingsForm : Form {
             Width = 150,
             Height = 30,
             Font = normalFont,
-            Margin = new Padding(0, 18, 0, 0),
+            Margin = new Padding(0, 26, 0, 0),
             Anchor = AnchorStyles.None
         };
         _testConnectionButton.Click += TestConnectionButton_Click;
@@ -567,7 +568,7 @@ public class SettingsForm : Form {
             Text = "",
             Font = normalFont,
             AutoSize = true,
-            Margin = new Padding(0, 14, 0, 0),
+            Margin = new Padding(0, 22, 0, 0),
             Anchor = AnchorStyles.None,
             TextAlign = ContentAlignment.MiddleCenter
         };
@@ -950,12 +951,47 @@ public class SettingsForm : Form {
 
         try {
             var storage = new DataStorage.DataStorage(path);
-            _connectionStatusLabel.Text = "✅ Connection successful";
+            var info = GetFirebirdConnectionInfo(path);
+            _connectionStatusLabel.Text = $"✅ {info}";
             _connectionStatusLabel.ForeColor = GetConnectionStatusColor(isSuccess: true);
         } catch (Exception ex) {
             _connectionStatusLabel.Text = $"❌ Error: {ex.Message}";
             _connectionStatusLabel.ForeColor = GetConnectionStatusColor(isSuccess: false);
         }
+    }
+
+    private static string GetFirebirdConnectionInfo(string storageRootPath) {
+        var sampleDatabase = Directory
+            .EnumerateFiles(storageRootPath, "*.fdb", SearchOption.AllDirectories)
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault();
+
+        if (sampleDatabase is null) {
+            return "Storage path is available. Firebird probe skipped: no .fdb files found in this folder or its shard subfolders yet.";
+        }
+
+        var connectionStringBuilder = new FbConnectionStringBuilder {
+            DataSource = "localhost",
+            Database = sampleDatabase,
+            UserID = "SYSDBA",
+            Password = "masterkey",
+            Charset = "UTF8",
+            ServerType = FbServerType.Default,
+            WireCrypt = FbWireCrypt.Enabled,
+            Pooling = false
+        };
+
+        using var connection = new FbConnection(connectionStringBuilder.ToString());
+        connection.Open();
+
+        using var command = new FbCommand("SELECT RDB$GET_CONTEXT('SYSTEM', 'ENGINE_VERSION') FROM RDB$DATABASE", connection);
+        var engineVersion = Convert.ToString(command.ExecuteScalar())?.Trim();
+
+        if (string.IsNullOrWhiteSpace(engineVersion)) {
+            return $"Connected to Firebird (version not reported) using {Path.GetFileName(sampleDatabase)}.";
+        }
+
+        return $"Connected to Firebird {engineVersion} using {Path.GetFileName(sampleDatabase)}.";
     }
 
     #endregion Private Methods
