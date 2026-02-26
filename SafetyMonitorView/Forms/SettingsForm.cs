@@ -47,6 +47,7 @@ public class SettingsForm : Form {
     private static readonly string[] TabNames = { "Refresh", "Tray", "Database", "Tiles", "Aggregation", "Config" };
     private const int SettingValueColumnWidth = 120;
     private const int SettingUnitColumnWidth = 90;
+    private const int ConfigSettingValueColumnWidth = 170;
     private const int EmSetMargins = 0x00D3;
     private const int EcLeftMargin = 0x0001;
     private const int EcRightMargin = 0x0002;
@@ -770,7 +771,8 @@ public class SettingsForm : Form {
             string.Empty,
             _materialColorSchemeComboBox,
             titleFont,
-            descriptionFont), 0, 0);
+            descriptionFont,
+            ConfigSettingValueColumnWidth), 0, 0);
 
         _configColorSectionSeparator = new Panel {
             Dock = DockStyle.Top,
@@ -788,7 +790,8 @@ public class SettingsForm : Form {
             "",
             _exportSettingsButton,
             titleFont,
-            descriptionFont), 0, 2);
+            descriptionFont,
+            ConfigSettingValueColumnWidth), 0, 2);
 
         _importSettingsButton = CreateSettingsActionButton("Import...", "input_circle", normalFont);
         _importSettingsButton.Click += ImportSettingsButton_Click;
@@ -799,7 +802,8 @@ public class SettingsForm : Form {
             "",
             _importSettingsButton,
             titleFont,
-            descriptionFont), 0, 3);
+            descriptionFont,
+            ConfigSettingValueColumnWidth), 0, 3);
 
         _resetSettingsButton = CreateSettingsActionButton("Reset...", "dangerous", normalFont);
         _resetSettingsButton.Click += ResetSettingsButton_Click;
@@ -809,7 +813,8 @@ public class SettingsForm : Form {
             "",
             _resetSettingsButton,
             titleFont,
-            descriptionFont), 0, 4);
+            descriptionFont,
+            ConfigSettingValueColumnWidth), 0, 4);
         page.Controls.Add(layout);
         return page;
     }
@@ -938,7 +943,7 @@ public class SettingsForm : Form {
     }
 
 
-    private static TableLayoutPanel CreateSettingRow(string title, string description, string units, Control valueControl, Font titleFont, Font descriptionFont) {
+    private static TableLayoutPanel CreateSettingRow(string title, string description, string units, Control valueControl, Font titleFont, Font descriptionFont, int valueColumnWidth = SettingValueColumnWidth, int unitColumnWidth = SettingUnitColumnWidth) {
         var row = new TableLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Top,
@@ -947,8 +952,8 @@ public class SettingsForm : Form {
             Margin = new Padding(0, 0, 0, 16)
         };
         row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, SettingValueColumnWidth));
-        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, SettingUnitColumnWidth));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, valueColumnWidth));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, unitColumnWidth));
         row.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         row.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 

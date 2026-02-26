@@ -86,7 +86,7 @@ internal static class ThemedButtonStyler {
         ButtonRole.Save => (MaterialSkin.MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.White),
         ButtonRole.Confirm => (MaterialSkin.MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.White),
         ButtonRole.Browse => (isLight ? SecondaryButtonColorLight : SecondaryButtonColorDark, isLight ? Color.Black : Color.White),
-        ButtonRole.Test => (MaterialSkin.MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.White),
+        ButtonRole.Test => (isLight ? SecondaryButtonColorLight : SecondaryButtonColorDark, isLight ? Color.Black : Color.White),
         ButtonRole.Cancel => (isLight ? CancelButtonColorLight : CancelButtonColorDark, Color.White),
         ButtonRole.Delete => (isLight ? DeleteButtonColorLight : DeleteButtonColorDark, Color.White),
         ButtonRole.Calculate => (isLight ? CalculateButtonColorLight : CalculateButtonColorDark, Color.White),
