@@ -7,14 +7,21 @@ public sealed class AppColorizationService {
     #region Private Fields
 
     private static readonly Dictionary<string, MaterialPaletteDefinition> MaterialPalettes = new(StringComparer.OrdinalIgnoreCase) {
-        ["Teal"] = new("Teal", Primary.Teal700, Primary.Teal900, Primary.Teal500, Accent.Teal200),
         ["BlueGray"] = new("BlueGray", Primary.BlueGrey700, Primary.BlueGrey900, Primary.BlueGrey500, Accent.LightBlue200),
-        ["Amber"] = new("Amber", Primary.Amber700, Primary.Amber900, Primary.Amber500, Accent.Amber200),
-        ["Brown"] = new("Brown", Primary.Brown700, Primary.Brown900, Primary.Brown500, Accent.LightBlue200),
-        ["DeepOrange"] = new("DeepOrange", Primary.DeepOrange700, Primary.DeepOrange900, Primary.DeepOrange500, Accent.DeepOrange200),
-        ["Indigo"] = new("Indigo", Primary.Indigo700, Primary.Indigo900, Primary.Indigo500, Accent.Indigo200),
-        ["Red"] = new("Red", Primary.Red700, Primary.Red900, Primary.Red500, Accent.Red200),
-        ["Yellow"] = new("Yellow", Primary.Yellow700, Primary.Yellow900, Primary.Yellow500, Accent.Yellow200)
+        //["Teal"] = new("Teal", Primary.Teal700, Primary.Teal900, Primary.Teal500, Accent.Teal200),
+        //["Amber"] = new("Amber", Primary.Amber700, Primary.Amber900, Primary.Amber500, Accent.Amber200),
+        //["Brown"] = new("Brown", Primary.Brown700, Primary.Brown900, Primary.Brown500, Accent.LightBlue200),
+        //["DeepOrange"] = new("DeepOrange", Primary.DeepOrange700, Primary.DeepOrange900, Primary.DeepOrange500, Accent.DeepOrange200),
+        //["Indigo"] = new("Indigo", Primary.Indigo700, Primary.Indigo900, Primary.Indigo500, Accent.Indigo200),
+        //["Red"] = new("Red", Primary.Red700, Primary.Red900, Primary.Red500, Accent.Red200),
+        //["Yellow"] = new("Yellow", Primary.Yellow700, Primary.Yellow900, Primary.Yellow500, Accent.Yellow200)
+        ["Teal"] = new("Teal", Primary.Teal800, Primary.Teal900, Primary.Teal800, Accent.Teal400),
+        ["Amber"] = new("Amber", Primary.Amber800, Primary.Amber900, Primary.Amber800, Accent.Amber400),
+        ["Brown"] = new("Brown", Primary.Brown800, Primary.Brown900, Primary.Brown800, Accent.LightBlue400),
+        ["DeepOrange"] = new("DeepOrange", Primary.DeepOrange800, Primary.DeepOrange900, Primary.DeepOrange800, Accent.DeepOrange400),
+        ["Indigo"] = new("Indigo", Primary.Indigo800, Primary.Indigo900, Primary.Indigo800, Accent.Indigo400),
+        ["Red"] = new("Red", Primary.Red800, Primary.Red900, Primary.Red800, Accent.Red400),
+        ["Yellow"] = new("Yellow", Primary.Yellow800, Primary.Yellow900, Primary.Yellow800, Accent.Yellow400)
     };
 
     #endregion Private Fields
