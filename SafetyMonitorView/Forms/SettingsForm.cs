@@ -419,33 +419,98 @@ public class SettingsForm : ThemedCaptionForm {
             return;
         }
 
-        var requiredTabsWidth = 0;
+        const int minHorizontalPadding = 6;
+        const int iconAndGapWidth = TabIconSize + 12;
+        const int extraChromeWidth = 20;
+
+        var preferredWidths = new int[_tabButtons.Count];
+        var minimumWidths = new int[_tabButtons.Count];
+        var preferredTotalWidth = 0;
+        var minimumTotalWidth = 0;
+
+        for (int i = 0; i < _tabButtons.Count; i++) {
+            var button = _tabButtons[i];
+            var textWidth = TextRenderer.MeasureText(
+                button.Text,
+                button.Font,
+                new Size(int.MaxValue, int.MaxValue),
+                TextFormatFlags.SingleLine).Width;
+
+            var preferredWidth = textWidth + iconAndGapWidth + (TabButtonHorizontalPadding * 2) + extraChromeWidth;
+            var minimumWidth = textWidth + iconAndGapWidth + (minHorizontalPadding * 2) + extraChromeWidth;
+
+            preferredWidths[i] = Math.Max(preferredWidth, 96);
+            minimumWidths[i] = Math.Max(minimumWidth, 78);
+            preferredTotalWidth += preferredWidths[i];
+            minimumTotalWidth += minimumWidths[i];
+        }
+
+        var tabsHorizontalChrome = _tabSegmentPanel.Padding.Horizontal + Padding.Horizontal + 10;
+        var screenWidthLimit = (int)(Screen.FromControl(this).WorkingArea.Width * 0.95);
+        var maxClientWidth = Math.Max(682, screenWidthLimit);
+        var preferredClientWidth = Math.Min(maxClientWidth, preferredTotalWidth + tabsHorizontalChrome);
+        if (ClientSize.Width < preferredClientWidth) {
+            ClientSize = new Size(preferredClientWidth, ClientSize.Height);
+        }
+
+        var availableTabsWidth = Math.Max(1, _tabSegmentPanel.ClientSize.Width - _tabSegmentPanel.Padding.Horizontal);
+        var minimumClientWidth = Math.Max(682, minimumTotalWidth + tabsHorizontalChrome);
+        if (ClientSize.Width < minimumClientWidth) {
+            ClientSize = new Size(Math.Min(maxClientWidth, minimumClientWidth), ClientSize.Height);
+            availableTabsWidth = Math.Max(1, _tabSegmentPanel.ClientSize.Width - _tabSegmentPanel.Padding.Horizontal);
+        }
+
+        var finalWidths = new int[_tabButtons.Count];
+        if (preferredTotalWidth <= availableTabsWidth) {
+            Array.Copy(preferredWidths, finalWidths, finalWidths.Length);
+        } else if (minimumTotalWidth >= availableTabsWidth) {
+            Array.Copy(minimumWidths, finalWidths, finalWidths.Length);
+        } else {
+            var shrinkBudget = preferredTotalWidth - availableTabsWidth;
+            var totalShrinkable = preferredTotalWidth - minimumTotalWidth;
+
+            for (int i = 0; i < _tabButtons.Count; i++) {
+                var shrinkable = preferredWidths[i] - minimumWidths[i];
+                var proportionalShrink = totalShrinkable > 0
+                    ? (int)Math.Round((double)shrinkBudget * shrinkable / totalShrinkable)
+                    : 0;
+                finalWidths[i] = preferredWidths[i] - Math.Min(shrinkable, proportionalShrink);
+            }
+
+            var finalTotalWidth = 0;
+            for (int i = 0; i < finalWidths.Length; i++) {
+                finalTotalWidth += finalWidths[i];
+            }
+
+            var widthDelta = availableTabsWidth - finalTotalWidth;
+            for (int i = finalWidths.Length - 1; i >= 0 && widthDelta != 0; i--) {
+                var growRoom = preferredWidths[i] - finalWidths[i];
+                if (widthDelta > 0 && growRoom > 0) {
+                    var growBy = Math.Min(growRoom, widthDelta);
+                    finalWidths[i] += growBy;
+                    widthDelta -= growBy;
+                    continue;
+                }
+
+                if (widthDelta < 0 && finalWidths[i] > minimumWidths[i]) {
+                    var shrinkBy = Math.Min(finalWidths[i] - minimumWidths[i], -widthDelta);
+                    finalWidths[i] -= shrinkBy;
+                    widthDelta += shrinkBy;
+                }
+            }
+        }
+
         _tabButtonsLayout.SuspendLayout();
         try {
             _tabButtonsLayout.ColumnStyles.Clear();
-            foreach (var button in _tabButtons) {
-                var textWidth = TextRenderer.MeasureText(
-                    button.Text,
-                    button.Font,
-                    new Size(int.MaxValue, int.MaxValue),
-                    TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width;
-
-                var buttonWidth = textWidth
-                                  + TabIconSize
-                                  + (TabButtonHorizontalPadding * 2)
-                                  + 26;
-                buttonWidth = Math.Max(buttonWidth, 88);
-
-                _tabButtonsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, buttonWidth));
-                requiredTabsWidth += buttonWidth;
+            for (int i = 0; i < finalWidths.Length; i++) {
+                _tabButtonsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, finalWidths[i]));
+                var isNearMinimum = finalWidths[i] <= minimumWidths[i] + 2;
+                var horizontalPadding = isNearMinimum ? minHorizontalPadding : TabButtonHorizontalPadding;
+                _tabButtons[i].Padding = new Padding(horizontalPadding, 0, horizontalPadding, 0);
             }
         } finally {
             _tabButtonsLayout.ResumeLayout(true);
-        }
-
-        var requiredClientWidth = Math.Max(682, requiredTabsWidth + _tabSegmentPanel.Padding.Horizontal + Padding.Horizontal + 10);
-        if (ClientSize.Width < requiredClientWidth) {
-            ClientSize = new Size(requiredClientWidth, ClientSize.Height);
         }
     }
 
