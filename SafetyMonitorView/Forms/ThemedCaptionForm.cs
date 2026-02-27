@@ -201,7 +201,7 @@ public class ThemedCaptionForm : Form {
             return;
         }
 
-        var textColor = AppColorizationService.Instance.GetReadableTextColor(panelBackColor);
+        var textColor = GetPrimaryCaptionTextColor();
         var isDarkTheme = textColor == Color.White;
 
         _titleBarPanel.BackColor = panelBackColor;
@@ -277,6 +277,12 @@ public class ThemedCaptionForm : Form {
         var appSettings = new AppSettingsService().LoadSettings();
         var schemeName = AppColorizationService.Instance.NormalizeMaterialSchemeName(appSettings.MaterialColorScheme);
         return AppColorizationService.Instance.GetPrimaryActionColor(schemeName);
+    }
+
+    private static Color GetPrimaryCaptionTextColor() {
+        // Primary action buttons use white text for Confirm/Save in ThemedButtonStyler.
+        // Keep caption text/close glyph aligned with that visual contract.
+        return Color.White;
     }
 
     private static Color GetFrameBorderColor() {
