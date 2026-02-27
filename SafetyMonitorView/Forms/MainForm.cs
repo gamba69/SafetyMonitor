@@ -1415,6 +1415,12 @@ public class MainForm : MaterialForm {
 
         RefreshVisorColors();
 
+        // Important UX sequence for settings-based recolor:
+        // 1) visor is already raised,
+        // 2) repaint only the top header area immediately,
+        // 3) start potentially expensive dashboard rebuild behind the visor.
+        ApplyHeaderThemeImmediately();
+
         ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
         MetricAxisRuleStore.SetRules(_appSettings.MetricAxisRules);
         MetricDisplaySettingsStore.SetSettings(_appSettings.MetricDisplaySettings);
@@ -1448,6 +1454,16 @@ public class MainForm : MaterialForm {
         } else {
             ScheduleThemeReapply();
         }
+    }
+
+    private void ApplyHeaderThemeImmediately() {
+        UpdateQuickAccessPanelTheme();
+        UpdateMenuTheme();
+
+        _mainMenu?.Invalidate(true);
+        _mainMenu?.Update();
+        _quickAccessPanel?.Invalidate(true);
+        _quickAccessPanel?.Update();
     }
 
     private void PersistDashboardOrdering() {
