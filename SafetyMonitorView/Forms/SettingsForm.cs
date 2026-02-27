@@ -1282,10 +1282,10 @@ public class SettingsForm : ThemedCaptionForm {
     private static Color GetConnectionStatusColor(bool isSuccess) {
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
         if (isSuccess) {
-            return MaterialSkinManager.Instance.ColorScheme.PrimaryColor;
+            return isLight ? Color.Black : Color.White;
         }
 
-        return isLight ? Color.FromArgb(198, 40, 40) : Color.FromArgb(239, 154, 154);
+        return Color.FromArgb(220, 0, 0);
     }
 
     private void TestConnectionButton_Click(object? sender, EventArgs e) {
