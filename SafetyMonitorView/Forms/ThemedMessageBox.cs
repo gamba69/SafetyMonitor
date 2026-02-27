@@ -6,7 +6,7 @@ namespace SafetyMonitorView.Forms;
 /// <summary>
 /// Custom MessageBox with theme support (light/dark)
 /// </summary>
-public class ThemedMessageBox : Form {
+public class ThemedMessageBox : ThemedCaptionForm {
     #region Private Fields
 
     private readonly MessageBoxButtons _buttons;

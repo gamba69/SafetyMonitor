@@ -4,7 +4,7 @@ using SafetyMonitorView.Models;
 
 namespace SafetyMonitorView.Forms;
 
-public class DashboardEditorForm : Form {
+public class DashboardEditorForm : ThemedCaptionForm {
     #region Private Fields
 
     private readonly Dashboard _dashboard;

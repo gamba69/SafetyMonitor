@@ -4,7 +4,7 @@ using SafetyMonitorView.Services;
 
 namespace SafetyMonitorView.Forms;
 
-public class ValueSchemeEditorForm : Form {
+public class ValueSchemeEditorForm : ThemedCaptionForm {
     #region Private Fields
 
     private readonly ValueSchemeService _valueSchemeService;

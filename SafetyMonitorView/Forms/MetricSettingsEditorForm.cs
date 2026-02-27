@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace SafetyMonitorView.Forms;
 
-public class MetricSettingsEditorForm : Form {
+public class MetricSettingsEditorForm : ThemedCaptionForm {
 
     private Button _cancelButton = null!;
     private DataGridView _metricsGrid = null!;

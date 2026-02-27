@@ -5,7 +5,7 @@ using ColorScheme = SafetyMonitorView.Models.ColorScheme;
 
 namespace SafetyMonitorView.Forms;
 
-public class ColorSchemeEditorForm : Form {
+public class ColorSchemeEditorForm : ThemedCaptionForm {
     #region Private Fields
 
     private const int PreviewUpdateDelayMs = 1;

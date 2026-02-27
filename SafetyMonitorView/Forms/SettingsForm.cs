@@ -12,7 +12,7 @@ public enum SettingsMaintenanceAction {
     Reset,
 }
 
-public class SettingsForm : Form {
+public class SettingsForm : ThemedCaptionForm {
     #region Private Fields
 
     private Button _browseButton = null!;
@@ -267,12 +267,12 @@ public class SettingsForm : Form {
             AutoSize = false
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 0: Form header
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 0: ThemedCaptionForm header
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 1: Tab strip
         mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 2: Tab content
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 3: Save / Cancel
 
-        // ── Row 0: Form header description ──
+        // ── Row 0: ThemedCaptionForm header description ──
         var headerLabel = new Label {
             Text = "Adjust refresh, storage, and chart behavior settings; changes apply after you click Save. Use these options to balance performance, readability, and trend analysis.",
             Font = normalFont,

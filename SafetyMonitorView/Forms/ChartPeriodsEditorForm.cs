@@ -5,7 +5,7 @@ using SafetyMonitorView.Models;
 
 namespace SafetyMonitorView.Forms;
 
-public class ChartPeriodsEditorForm : Form {
+public class ChartPeriodsEditorForm : ThemedCaptionForm {
 
     #region Private Fields
 

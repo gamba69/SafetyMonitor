@@ -4,7 +4,7 @@ using SafetyMonitorView.Services;
 
 namespace SafetyMonitorView.Forms;
 
-public class AxisRulesEditorForm : Form {
+public class AxisRulesEditorForm : ThemedCaptionForm {
 
     #region Private Fields
 

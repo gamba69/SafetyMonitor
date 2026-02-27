@@ -6,7 +6,7 @@ using System.Collections;
 
 namespace SafetyMonitorView.Forms;
 
-public class ChartTileEditorForm : Form {
+public class ChartTileEditorForm : ThemedCaptionForm {
 
     #region Private Types
 

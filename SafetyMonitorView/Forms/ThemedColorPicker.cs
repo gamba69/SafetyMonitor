@@ -8,7 +8,7 @@ namespace SafetyMonitorView.Forms;
 /// hex/RGB inputs, and preview. Supports light and dark themes.
 /// Uses TableLayoutPanel for correct scaling at any DPI.
 /// </summary>
-public class ThemedColorPicker : Form {
+public class ThemedColorPicker : ThemedCaptionForm {
     #region Private Fields
 
     private const int BarWidth = 24;

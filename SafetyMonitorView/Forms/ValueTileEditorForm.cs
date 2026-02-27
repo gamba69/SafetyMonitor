@@ -4,7 +4,7 @@ using SafetyMonitorView.Services;
 
 namespace SafetyMonitorView.Forms;
 
-public class ValueTileEditorForm : Form {
+public class ValueTileEditorForm : ThemedCaptionForm {
     #region Private Fields
 
     private readonly ColorSchemeService _colorSchemeService;
