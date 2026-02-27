@@ -361,12 +361,12 @@ public class MainForm : MaterialForm {
             TopMost = false
         };
 
-        SetupVisorLoader(_visorForm, visorColor);
+        SetupVisorLoader(_visorForm);
 
         _visorForm.Show(this);
     }
 
-    private void SetupVisorLoader(Form visorForm, Color visorColor) {
+    private void SetupVisorLoader(Form visorForm) {
         _visorLoaderTimer?.Stop();
         _visorLoaderTimer?.Dispose();
         _visorLoaderTimer = null;
@@ -377,7 +377,7 @@ public class MainForm : MaterialForm {
 
         var panel = new Panel {
             Size = loaderSize,
-            BackColor = visorColor
+            BackColor = visorForm.BackColor
         };
 
         void centerLoader() {
@@ -396,6 +396,7 @@ public class MainForm : MaterialForm {
             var y = Math.Max(0, (panel.Height - squareSize) / 2);
             var sequence = new[] { 0, 1, 2, 1 };
             var activeIndex = sequence[_visorLoaderFrame % sequence.Length];
+            var visorColor = visorForm.BackColor;
 
             var isLightTheme = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
             var inactiveColor = isLightTheme
@@ -425,6 +426,22 @@ public class MainForm : MaterialForm {
             _visorLoaderPanel?.Invalidate();
         };
         _visorLoaderTimer.Start();
+    }
+
+    private void RefreshVisorColors() {
+        if (_visorForm == null || _visorForm.IsDisposed) {
+            return;
+        }
+
+        var visorColor = GetVisorColor();
+        _visorForm.BackColor = visorColor;
+
+        if (_visorLoaderPanel != null && !_visorLoaderPanel.IsDisposed) {
+            _visorLoaderPanel.BackColor = visorColor;
+            _visorLoaderPanel.Invalidate();
+        }
+
+        _visorForm.Refresh();
     }
 
     /// <summary>
@@ -1234,10 +1251,7 @@ public class MainForm : MaterialForm {
         // ИЗМЕНЕНО: Сразу после переключения темы обновляем цвет забрала на новый
         // и форсируем отрисовку (Refresh), чтобы перекрытие перекрасилось ДО того, 
         // как контролы снизу начнут тяжелый рендеринг.
-        if (_visorForm != null && !_visorForm.IsDisposed) {
-            _visorForm.BackColor = GetVisorColor();
-            _visorForm.Refresh();
-        }
+        RefreshVisorColors();
 
         // MaterialSkinManager queues multiple deferred color updates.
         // ScheduleThemeReapply reapplies our colors AFTER MSM is done,
@@ -1399,10 +1413,7 @@ public class MainForm : MaterialForm {
         _appSettings.MaterialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(_appSettings.MaterialColorScheme);
         ApplyMaterialColorScheme();
 
-        if (_visorForm != null && !_visorForm.IsDisposed) {
-            _visorForm.BackColor = GetVisorColor();
-            _visorForm.Refresh();
-        }
+        RefreshVisorColors();
 
         ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
         MetricAxisRuleStore.SetRules(_appSettings.MetricAxisRules);
