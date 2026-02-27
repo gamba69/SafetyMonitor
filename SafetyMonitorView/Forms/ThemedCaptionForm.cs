@@ -4,6 +4,7 @@ using SafetyMonitorView.Services;
 namespace SafetyMonitorView.Forms;
 
 public class ThemedCaptionForm : Form {
+    private const int CsDropshadow = 0x20000;
     private bool _useCustomTitleBar;
     private Panel? _framePanel;
     private TableLayoutPanel? _rootLayoutPanel;
@@ -14,6 +15,14 @@ public class ThemedCaptionForm : Form {
     private Label? _titleBarLabel;
     private Button? _titleBarCloseButton;
     private Padding _originalFormPadding;
+
+    protected override CreateParams CreateParams {
+        get {
+            var createParams = base.CreateParams;
+            createParams.ClassStyle |= CsDropshadow;
+            return createParams;
+        }
+    }
 
     protected override void OnHandleCreated(EventArgs e) {
         base.OnHandleCreated(e);

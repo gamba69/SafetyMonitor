@@ -20,6 +20,7 @@ internal sealed class SplashForm : Form {
     private const int SplashSectionGapPx = 10;
     private const int SplashBorderThicknessPx = 2;
     private const int ReferenceDpi = 96;
+    private const int CsDropshadow = 0x20000;
 
     private readonly Icon _appIcon;
     private readonly Color _borderColor;
@@ -62,6 +63,14 @@ internal sealed class SplashForm : Form {
     #endregion Public Constructors
 
     #region Protected Methods
+
+    protected override CreateParams CreateParams {
+        get {
+            var createParams = base.CreateParams;
+            createParams.ClassStyle |= CsDropshadow;
+            return createParams;
+        }
+    }
 
     protected override void Dispose(bool disposing) {
         if (disposing) {
