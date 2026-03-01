@@ -16,6 +16,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
     private Button _addButton = null!;
     private Button _removeButton = null!;
     private Button _calculateButton = null!;
+    private Label _targetPointsLabel = null!;
 
     private readonly List<ChartPeriodUnit> _units = [.. Enum.GetValues<ChartPeriodUnit>()];
     private static readonly (string Bucket, TimeSpan Interval)[] BucketDefinitions = [
@@ -65,12 +66,22 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             Padding = new Padding(12),
-            RowCount = 3,
+            RowCount = 4,
             ColumnCount = 1
         };
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        _targetPointsLabel = new Label {
+            Dock = DockStyle.Fill,
+            AutoSize = true,
+            Font = normal,
+            Margin = new Padding(0, 0, 0, 8),
+            Text = $"Auto aggregation target: {_autoAggregationTargetPointCount} point(s)."
+        };
+        layout.Controls.Add(_targetPointsLabel, 0, 0);
 
         _grid = new DataGridView {
             Dock = DockStyle.Fill,
@@ -103,7 +114,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         _grid.RowValidating += (_, _) => _grid.EndEdit();
         _grid.DataError += (_, e) => e.ThrowException = false;
 
-        layout.Controls.Add(_grid, 0, 0);
+        layout.Controls.Add(_grid, 0, 1);
 
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true };
         _addButton = new Button { Text = "Add", Width = 100, Height = 32 };
@@ -122,7 +133,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         };
         _calculateButton.Click += (_, _) => RecalculateAllWithConfirmation();
         buttons.Controls.AddRange([_addButton, _removeButton, _calculateButton]);
-        layout.Controls.Add(buttons, 0, 1);
+        layout.Controls.Add(buttons, 0, 2);
 
         var action = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, FlowDirection = FlowDirection.RightToLeft };
         _saveButton = new Button { Text = "Save", Width = 110, Height = 35 };
@@ -130,7 +141,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         _saveButton.Click += SaveButton_Click;
         _cancelButton.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
         action.Controls.AddRange([_saveButton, _cancelButton]);
-        layout.Controls.Add(action, 0, 2);
+        layout.Controls.Add(action, 0, 3);
 
         Controls.Add(layout);
         ClientSize = new Size(860, 520);

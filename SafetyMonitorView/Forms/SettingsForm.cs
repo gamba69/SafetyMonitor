@@ -1146,7 +1146,17 @@ public class SettingsForm : ThemedCaptionForm {
         ValueTileLookbackMinutes = (int)_valueTileLookbackMinutesNumeric.Value;
         ChartStaticTimeoutSeconds = (int)_chartStaticTimeoutNumeric.Value;
         ChartStaticAggregationPresetMatchTolerancePercent = (double)_chartStaticAggregationPresetMatchToleranceNumeric.Value;
-        ChartStaticAggregationTargetPointCount = (int)_chartStaticAggregationTargetPointsNumeric.Value;
+        var targetPointCountCandidate = (int)_chartStaticAggregationTargetPointsNumeric.Value;
+        if (targetPointCountCandidate != ChartStaticAggregationTargetPointCount) {
+            ThemedMessageBox.Show(
+                this,
+                "Changing target chart points will automatically recalculate chart period aggregations.",
+                "Recalculate period aggregations",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+        }
+
+        ChartStaticAggregationTargetPointCount = targetPointCountCandidate;
         ChartRawDataPointIntervalSeconds = (int)_chartRawDataPointIntervalSecondsNumeric.Value;
 
         DialogResult = DialogResult.OK;
