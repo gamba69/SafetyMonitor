@@ -10,6 +10,11 @@ internal static class Program {
     private const int DefaultBatchSize = 1000;
 
     private static async Task<int> Main(string[] args) {
+        if (args.Any(arg => arg is "--version" or "-v")) {
+            Console.WriteLine(GetVersionString());
+            return 0;
+        }
+
         var storagePathOption = new Option<string>("--storage-path") {
             Description = "Path to database storage root directory",
             Required = true
@@ -258,5 +263,9 @@ internal static class Program {
 
     private static double NextRange(Random random, double min, double max) {
         return min + random.NextDouble() * (max - min);
+    }
+
+    private static string GetVersionString() {
+        return $"v{SafetyMonitor.Versioning.BuildVersion.Major}.{SafetyMonitor.Versioning.BuildVersion.Minor}.{SafetyMonitor.Versioning.BuildVersion.Patch} build {SafetyMonitor.Versioning.BuildVersion.Build} {SafetyMonitor.Versioning.BuildVersion.BuildDateUtc:yyyy-MM-dd}";
     }
 }

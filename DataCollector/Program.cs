@@ -40,6 +40,11 @@ class Program {
     }
 
     static async Task<int> Main(string[] args) {
+        if (args.Any(arg => arg is "--version" or "-v")) {
+            Console.WriteLine(GetVersionString());
+            return 0;
+        }
+
         // Parse command line arguments
         var options = ParseCommandLine(args);
         if (options == null) {
@@ -420,6 +425,10 @@ class Program {
         }
 
         return errors.Count == 0;
+    }
+
+    static string GetVersionString() {
+        return $"v{SafetyMonitor.Versioning.BuildVersion.Major}.{SafetyMonitor.Versioning.BuildVersion.Minor}.{SafetyMonitor.Versioning.BuildVersion.Patch} build {SafetyMonitor.Versioning.BuildVersion.Build} {SafetyMonitor.Versioning.BuildVersion.BuildDateUtc:yyyy-MM-dd}";
     }
 
     #endregion Private Methods
