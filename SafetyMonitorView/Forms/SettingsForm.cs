@@ -24,6 +24,7 @@ public class SettingsForm : ThemedCaptionForm {
     private NumericUpDown _chartStaticTimeoutNumeric = null!;
     private NumericUpDown _chartStaticAggregationPresetMatchToleranceNumeric = null!;
     private NumericUpDown _chartStaticAggregationTargetPointsNumeric = null!;
+    private NumericUpDown _chartRawDataPointIntervalSecondsNumeric = null!;
     private NumericUpDown _refreshIntervalNumeric = null!;
     private NumericUpDown _valueTileLookbackMinutesNumeric = null!;
     private Button _saveButton = null!;
@@ -76,7 +77,7 @@ public class SettingsForm : ThemedCaptionForm {
 
     public SettingsMaintenanceAction SettingsMaintenanceAction { get; private set; }
 
-    public SettingsForm(AppSettingsMaintenanceService settingsMaintenanceService, string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, bool currentShowRefreshIndicator, bool currentMinimizeToTray, bool currentStartMinimized, string currentMaterialColorScheme) {
+    public SettingsForm(AppSettingsMaintenanceService settingsMaintenanceService, string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartRawDataPointIntervalSeconds, bool currentShowRefreshIndicator, bool currentMinimizeToTray, bool currentStartMinimized, string currentMaterialColorScheme) {
         _settingsMaintenanceService = settingsMaintenanceService;
         StoragePath = currentStoragePath;
         RefreshInterval = currentRefreshInterval;
@@ -84,6 +85,7 @@ public class SettingsForm : ThemedCaptionForm {
         ChartStaticTimeoutSeconds = currentChartStaticTimeoutSeconds;
         ChartStaticAggregationPresetMatchTolerancePercent = Math.Clamp(currentChartStaticAggregationPresetMatchTolerancePercent, 0, 100);
         ChartStaticAggregationTargetPointCount = Math.Max(2, currentChartStaticAggregationTargetPointCount);
+        ChartRawDataPointIntervalSeconds = Math.Max(1, currentChartRawDataPointIntervalSeconds);
         ShowRefreshIndicator = currentShowRefreshIndicator;
         MinimizeToTray = currentMinimizeToTray;
         StartMinimized = currentStartMinimized;
@@ -104,6 +106,7 @@ public class SettingsForm : ThemedCaptionForm {
     public int ChartStaticTimeoutSeconds { get; private set; } = 120;
     public double ChartStaticAggregationPresetMatchTolerancePercent { get; private set; } = 10;
     public int ChartStaticAggregationTargetPointCount { get; private set; } = 300;
+    public int ChartRawDataPointIntervalSeconds { get; private set; } = 3;
     public string StoragePath { get; private set; } = "";
     public bool ShowRefreshIndicator { get; private set; } = true;
     public bool MinimizeToTray { get; private set; } = false;
@@ -798,6 +801,17 @@ public class SettingsForm : ThemedCaptionForm {
             titleFont,
             descriptionFont), 0, 2);
 
+        _chartRawDataPointIntervalSecondsNumeric = CreateNumeric(1, 60, 3, normalFont);
+        layout.Controls.Add(CreateSettingRow(
+            "Raw Data Step",
+            "Expected interval between raw measurements. "
+                 + "Used in raw-data point count calculations (for example in Chart Period Presets editor). "
+                 + "Increase it if devices send data less frequently than once per second.",
+            "sec",
+            _chartRawDataPointIntervalSecondsNumeric,
+            titleFont,
+            descriptionFont), 0, 3);
+
         page.Controls.Add(layout);
         return page;
     }
@@ -1102,6 +1116,7 @@ public class SettingsForm : ThemedCaptionForm {
         _chartStaticTimeoutNumeric.Value = ChartStaticTimeoutSeconds;
         _chartStaticAggregationPresetMatchToleranceNumeric.Value = Math.Clamp((decimal)ChartStaticAggregationPresetMatchTolerancePercent, 0m, 100m);
         _chartStaticAggregationTargetPointsNumeric.Value = Math.Clamp(ChartStaticAggregationTargetPointCount, 2, 5000);
+        _chartRawDataPointIntervalSecondsNumeric.Value = Math.Clamp(ChartRawDataPointIntervalSeconds, 1, 60);
 
         if (_materialColorSchemeComboBox.Items.Count > 0) {
             var selectedItem = _materialColorSchemeComboBox
@@ -1132,6 +1147,7 @@ public class SettingsForm : ThemedCaptionForm {
         ChartStaticTimeoutSeconds = (int)_chartStaticTimeoutNumeric.Value;
         ChartStaticAggregationPresetMatchTolerancePercent = (double)_chartStaticAggregationPresetMatchToleranceNumeric.Value;
         ChartStaticAggregationTargetPointCount = (int)_chartStaticAggregationTargetPointsNumeric.Value;
+        ChartRawDataPointIntervalSeconds = (int)_chartRawDataPointIntervalSecondsNumeric.Value;
 
         DialogResult = DialogResult.OK;
         Close();

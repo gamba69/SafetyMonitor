@@ -1332,7 +1332,7 @@ public class MainForm : MaterialForm {
     private void ShowValueSchemeEditor() { using var editor = new ValueSchemeEditorForm(); editor.ShowDialog(this); }
 
     private void ShowChartPeriodPresetEditor() {
-        using var editor = new ChartPeriodsEditorForm(_appSettings.ChartPeriodPresets, _appSettings.ChartStaticAggregationTargetPointCount);
+        using var editor = new ChartPeriodsEditorForm(_appSettings.ChartPeriodPresets, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartRawDataPointIntervalSeconds);
         if (editor.ShowDialog(this) == DialogResult.OK) {
             _appSettings.ChartPeriodPresets = editor.Presets;
             _appSettingsService.SaveSettings(_appSettings);
@@ -1343,7 +1343,7 @@ public class MainForm : MaterialForm {
     }
 
     private void ShowSettings() {
-        using var settingsForm = new SettingsForm(_appSettingsMaintenanceService, _appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ShowRefreshIndicator, _appSettings.MinimizeToTray, _appSettings.StartMinimized, _appSettings.MaterialColorScheme);
+        using var settingsForm = new SettingsForm(_appSettingsMaintenanceService, _appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartRawDataPointIntervalSeconds, _appSettings.ShowRefreshIndicator, _appSettings.MinimizeToTray, _appSettings.StartMinimized, _appSettings.MaterialColorScheme);
         if (settingsForm.ShowDialog() != DialogResult.OK) {
             return;
         }
@@ -1363,6 +1363,7 @@ public class MainForm : MaterialForm {
         _appSettings.ChartStaticModeTimeoutSeconds = settingsForm.ChartStaticTimeoutSeconds;
         _appSettings.ChartStaticAggregationPresetMatchTolerancePercent = settingsForm.ChartStaticAggregationPresetMatchTolerancePercent;
         _appSettings.ChartStaticAggregationTargetPointCount = settingsForm.ChartStaticAggregationTargetPointCount;
+        _appSettings.ChartRawDataPointIntervalSeconds = settingsForm.ChartRawDataPointIntervalSeconds;
         _appSettings.ShowRefreshIndicator = settingsForm.ShowRefreshIndicator;
         _appSettings.MinimizeToTray = settingsForm.MinimizeToTray;
         _appSettings.StartMinimized = settingsForm.StartMinimized;
@@ -1389,6 +1390,7 @@ public class MainForm : MaterialForm {
         target.ChartStaticModeTimeoutSeconds = source.ChartStaticModeTimeoutSeconds;
         target.ChartStaticAggregationPresetMatchTolerancePercent = source.ChartStaticAggregationPresetMatchTolerancePercent;
         target.ChartStaticAggregationTargetPointCount = source.ChartStaticAggregationTargetPointCount;
+        target.ChartRawDataPointIntervalSeconds = source.ChartRawDataPointIntervalSeconds;
         target.LastDashboardId = source.LastDashboardId;
         target.RefreshInterval = source.RefreshInterval;
         target.ValueTileLookbackMinutes = source.ValueTileLookbackMinutes;

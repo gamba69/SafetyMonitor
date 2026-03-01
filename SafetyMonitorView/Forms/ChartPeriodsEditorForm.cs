@@ -8,6 +8,7 @@ namespace SafetyMonitorView.Forms;
 public class ChartPeriodsEditorForm : ThemedCaptionForm {
     private readonly List<ChartPeriodPresetDefinition> _presets;
     private readonly int _autoAggregationTargetPointCount;
+    private readonly int _rawDataPointIntervalSeconds;
 
     private DataGridView _grid = null!;
     private Button _saveButton = null!;
@@ -33,7 +34,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
     ];
     private static readonly string[] Buckets = [.. BucketDefinitions.Select(x => x.Bucket)];
 
-    public ChartPeriodsEditorForm(IEnumerable<ChartPeriodPresetDefinition> presets, int autoAggregationTargetPointCount) {
+    public ChartPeriodsEditorForm(IEnumerable<ChartPeriodPresetDefinition> presets, int autoAggregationTargetPointCount, int rawDataPointIntervalSeconds) {
         _presets = [.. presets.Select(p => new ChartPeriodPresetDefinition {
             Uid = p.Uid,
             Name = p.Name,
@@ -42,6 +43,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
             AggregationInterval = p.AggregationInterval
         })];
         _autoAggregationTargetPointCount = Math.Max(2, autoAggregationTargetPointCount);
+        _rawDataPointIntervalSeconds = Math.Max(1, rawDataPointIntervalSeconds);
 
         InitializeComponent();
         FormIconHelper.Apply(this, MaterialIcons.MenuViewChartPeriods);
@@ -84,7 +86,17 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Name", HeaderText = "Preset", FillWeight = 34 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Value", HeaderText = "Value", FillWeight = 14 });
         _grid.Columns.Add(new DataGridViewComboBoxColumn { Name = "Unit", HeaderText = "Unit", FillWeight = 16, DataSource = _units });
-        _grid.Columns.Add(new DataGridViewComboBoxColumn { Name = "Aggregation", HeaderText = "Aggregation", FillWeight = 36, DataSource = Buckets });
+        _grid.Columns.Add(new DataGridViewComboBoxColumn { Name = "Aggregation", HeaderText = "Aggregation", FillWeight = 28, DataSource = Buckets });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn {
+            Name = "Points",
+            HeaderText = "Points",
+            FillWeight = 16,
+            ReadOnly = true,
+            SortMode = DataGridViewColumnSortMode.NotSortable,
+            DefaultCellStyle = new DataGridViewCellStyle {
+                Alignment = DataGridViewContentAlignment.MiddleRight
+            }
+        });
         _grid.EditingControlShowing += Grid_EditingControlShowing;
         _grid.CellValueChanged += Grid_CellValueChanged;
         _grid.CurrentCellDirtyStateChanged += Grid_CurrentCellDirtyStateChanged;
@@ -98,7 +110,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         _removeButton = new Button { Text = "Delete", Width = 100, Height = 32 };
         _calculateButton = new Button { Text = "Auto...", Width = 120, Height = 32 };
         _addButton.Click += (_, _) => {
-            var rowIndex = _grid.Rows.Add(Guid.NewGuid().ToString("N"), "Custom", 1, ChartPeriodUnit.Hours, "1m");
+            var rowIndex = _grid.Rows.Add(Guid.NewGuid().ToString("N"), "Custom", 1, ChartPeriodUnit.Hours, "1m", string.Empty);
             if (rowIndex >= 0 && rowIndex < _grid.Rows.Count) {
                 UpdateRowAggregationOptions(_grid.Rows[rowIndex], showWarningIfAdjusted: false);
             }
@@ -185,7 +197,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
     private void LoadPresets() {
         _grid.Rows.Clear();
         foreach (var p in _presets) {
-            var rowIndex = _grid.Rows.Add(p.Uid, p.Name, p.Value, p.Unit, BucketFromInterval(p.AggregationInterval));
+            var rowIndex = _grid.Rows.Add(p.Uid, p.Name, p.Value, p.Unit, BucketFromInterval(p.AggregationInterval), string.Empty);
             if (rowIndex >= 0 && rowIndex < _grid.Rows.Count) {
                 UpdateRowAggregationOptions(_grid.Rows[rowIndex], showWarningIfAdjusted: false);
             }
@@ -288,7 +300,9 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
             return;
         }
 
-        UpdateRowAggregationOptions(_grid.Rows[e.RowIndex], showWarningIfAdjusted: columnName == "Aggregation");
+        var row = _grid.Rows[e.RowIndex];
+        UpdateRowAggregationOptions(row, showWarningIfAdjusted: columnName == "Aggregation");
+        UpdateRowPoints(row);
     }
 
     private void UpdateRowAggregationOptions(DataGridViewRow row, bool showWarningIfAdjusted) {
@@ -298,6 +312,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
 
         if (!TryBuildDuration(row, out var duration)) {
             aggregationCell.DataSource = Buckets;
+            UpdateRowPoints(row);
             return;
         }
 
@@ -306,6 +321,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
 
         var currentBucket = row.Cells["Aggregation"].Value?.ToString() ?? string.Empty;
         if (allowedBuckets.Contains(currentBucket, StringComparer.OrdinalIgnoreCase)) {
+            UpdateRowPoints(row);
             return;
         }
 
@@ -320,6 +336,25 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning);
         }
+
+        UpdateRowPoints(row);
+    }
+
+    private void UpdateRowPoints(DataGridViewRow row) {
+        if (row.IsNewRow || row.Cells["Points"] is not DataGridViewTextBoxCell pointsCell) {
+            return;
+        }
+
+        if (!TryBuildDuration(row, out var duration)) {
+            pointsCell.Value = string.Empty;
+            return;
+        }
+
+        var bucket = row.Cells["Aggregation"].Value?.ToString() ?? string.Empty;
+        var interval = IntervalFromBucket(bucket);
+        var effectiveInterval = interval > TimeSpan.Zero ? interval : TimeSpan.FromSeconds(_rawDataPointIntervalSeconds);
+        var points = Math.Max(1, (int)Math.Ceiling(duration.TotalSeconds / effectiveInterval.TotalSeconds));
+        pointsCell.Value = points;
     }
 
     private bool TryBuildDuration(DataGridViewRow row, out TimeSpan duration) {
@@ -381,8 +416,8 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         }
     }
 
-    private static string BucketFromInterval(TimeSpan interval) {
-        if (interval <= TimeSpan.FromSeconds(3)) return "raw";
+    private string BucketFromInterval(TimeSpan interval) {
+        if (interval <= TimeSpan.FromSeconds(_rawDataPointIntervalSeconds)) return "raw";
         if (interval <= TimeSpan.FromSeconds(10)) return "10s";
         if (interval <= TimeSpan.FromSeconds(30)) return "30s";
         if (interval <= TimeSpan.FromMinutes(1)) return "1m";
