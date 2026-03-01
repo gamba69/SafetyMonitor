@@ -1314,7 +1314,7 @@ public class MainForm : MaterialForm {
     }
 
     private void ShowAbout() {
-        var message = "SafetyMonitorView v1.0" + Environment.NewLine + "ASCOM Alpaca" + Environment.NewLine + "Safety Monitor Dashboard" + Environment.NewLine + "©2026 DreamSky Observatory";
+        var message = "SafetyMonitorView v1.0" + Environment.NewLine + "ASCOM Alpaca Safety Monitor Dashboard" + Environment.NewLine + "©2026 DreamSky Observatory, Igor K. Dulevich (gamba69)";
         ThemedMessageBox.Show(this, message, "About SafetyMonitorView", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
