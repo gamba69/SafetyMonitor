@@ -88,6 +88,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         _grid.EditingControlShowing += Grid_EditingControlShowing;
         _grid.CellValueChanged += Grid_CellValueChanged;
         _grid.CurrentCellDirtyStateChanged += Grid_CurrentCellDirtyStateChanged;
+        _grid.RowValidating += (_, _) => _grid.EndEdit();
         _grid.DataError += (_, e) => e.ThrowException = false;
 
         layout.Controls.Add(_grid, 0, 0);
@@ -195,7 +196,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         foreach (DataGridViewRow row in _grid.Rows) {
             if (row.IsNewRow) continue;
             if (!double.TryParse(row.Cells["Value"].Value?.ToString(), out var value) || value <= 0) continue;
-            var unit = row.Cells["Unit"].Value is ChartPeriodUnit u ? u : ChartPeriodUnit.Hours;
+            var unit = GetUnitValue(row);
             var duration = ChartAggregationHelper.BuildPeriodDuration(value, unit);
             row.Cells["Aggregation"].Value = GetOptimalBucket(duration);
             UpdateRowAggregationOptions(row, showWarningIfAdjusted: false);
@@ -219,7 +220,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
                 return;
             }
 
-            var unit = row.Cells["Unit"].Value is ChartPeriodUnit u ? u : ChartPeriodUnit.Hours;
+            var unit = GetUnitValue(row);
             var duration = ChartAggregationHelper.BuildPeriodDuration(value, unit);
             var bucket = row.Cells["Aggregation"].Value?.ToString() ?? "1m";
             if (!IsBucketWithinAllowedRange(bucket, duration)) {
@@ -312,9 +313,24 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
             return false;
         }
 
-        var unit = row.Cells["Unit"].Value is ChartPeriodUnit u ? u : ChartPeriodUnit.Hours;
+        var unit = GetUnitValue(row);
         duration = ChartAggregationHelper.BuildPeriodDuration(value, unit);
         return duration > TimeSpan.Zero;
+    }
+
+    private static ChartPeriodUnit GetUnitValue(DataGridViewRow row) {
+        var rawValue = row.Cells["Unit"].Value;
+        if (rawValue is ChartPeriodUnit unit) {
+            return unit;
+        }
+
+        if (rawValue is string unitText
+            && Enum.TryParse<ChartPeriodUnit>(unitText, ignoreCase: true, out var parsed)
+            && Enum.IsDefined(parsed)) {
+            return parsed;
+        }
+
+        return ChartPeriodUnit.Hours;
     }
 
     private bool IsBucketWithinAllowedRange(string bucket, TimeSpan duration) {
