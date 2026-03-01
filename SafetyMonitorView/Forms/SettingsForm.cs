@@ -766,6 +766,18 @@ public class SettingsForm : ThemedCaptionForm {
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
+        _chartStaticAggregationTargetPointsNumeric = CreateNumeric(2, 5000, 300, normalFont);
+        layout.Controls.Add(CreateSettingRow(
+            "Target Chart Points",
+            "If no preset match is found, the app computes a custom aggregation interval from the selected time span. "
+                 + "This value is the target number of points on the chart after aggregation. "
+                 + "Smaller numbers reduce rendering load and improve readability for very long periods, but may hide short spikes. "
+                 + "Larger numbers preserve more detail but can make dense charts harder to read and slower to draw.",
+            "points",
+            _chartStaticAggregationTargetPointsNumeric,
+            titleFont,
+            descriptionFont), 0, 1);
+
         _chartStaticAggregationPresetMatchToleranceNumeric = new NumericUpDown {
             Width = SettingValueColumnWidth,
             Minimum = 0,
@@ -786,18 +798,6 @@ public class SettingsForm : ThemedCaptionForm {
                  + "Lower values make matching stricter and force custom interval calculation more often.",
             "%",
             _chartStaticAggregationPresetMatchToleranceNumeric,
-            titleFont,
-            descriptionFont), 0, 1);
-
-        _chartStaticAggregationTargetPointsNumeric = CreateNumeric(2, 5000, 300, normalFont);
-        layout.Controls.Add(CreateSettingRow(
-            "Target Chart Points",
-            "If no preset match is found, the app computes a custom aggregation interval from the selected time span. "
-                 + "This value is the target number of points on the chart after aggregation. "
-                 + "Smaller numbers reduce rendering load and improve readability for very long periods, but may hide short spikes. "
-                 + "Larger numbers preserve more detail but can make dense charts harder to read and slower to draw.",
-            "points",
-            _chartStaticAggregationTargetPointsNumeric,
             titleFont,
             descriptionFont), 0, 2);
 
