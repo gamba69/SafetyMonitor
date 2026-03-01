@@ -221,55 +221,96 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         var headerPanel = new TableLayoutPanel {
             Dock = DockStyle.Top,
             ColumnCount = 2,
-            RowCount = 3,
+            RowCount = 2,
             AutoSize = true,
             Margin = new Padding(0, 0, 0, 6)
         };
-        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 22F));
         headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        headerPanel.Cursor = Cursors.Hand;
 
         var headerLabel = new Label {
             Text = "Configure value schemes that transform metric values into descriptive text labels for value tiles and chart inspector.",
             Font = titleFont,
             AutoSize = true,
             MaximumSize = new Size(810, 0),
-            Margin = new Padding(0, 0, 0, 8)
+            Margin = new Padding(0),
+            Cursor = Cursors.Hand
         };
         headerPanel.Controls.Add(headerLabel, 0, 0);
-        headerPanel.SetColumnSpan(headerLabel, 2);
 
-        var rangesLabel = new Label {
+        var detailsToggle = new PictureBox {
+            Size = new Size(22, 22),
+            SizeMode = PictureBoxSizeMode.CenterImage,
+            Cursor = Cursors.Hand,
+            Margin = new Padding(0),
+            Dock = DockStyle.Top
+        };
+        headerPanel.Controls.Add(detailsToggle, 1, 0);
+
+        var bulletPanel = new TableLayoutPanel {
+            Dock = DockStyle.Top,
+            ColumnCount = 2,
+            RowCount = 2,
+            AutoSize = true,
+            Margin = new Padding(0)
+        };
+        bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        bulletPanel.Controls.Add(new Label {
             Text = "• Stops define threshold values (compared as ≤).",
             Font = normalFont,
             AutoSize = true,
             Margin = new Padding(0, 0, 12, 2)
-        };
-        var textLabel = new Label {
+        }, 0, 0);
+        bulletPanel.Controls.Add(new Label {
             Text = "• Text is the label shown when value matches the stop.",
             Font = normalFont,
             AutoSize = true,
             Margin = new Padding(0, 0, 0, 2)
-        };
-        var descriptionLabel = new Label {
+        }, 1, 0);
+        bulletPanel.Controls.Add(new Label {
             Text = "• Description is shown in legends/tooltips for readability.",
             Font = normalFont,
             AutoSize = true,
             Margin = new Padding(0, 0, 0, 8)
-        };
-        var previewLabel = new Label {
+        }, 0, 1);
+        bulletPanel.Controls.Add(new Label {
             Text = "• Preview shows how the scheme will map values.",
             Font = normalFont,
             AutoSize = true,
             Margin = new Padding(0, 0, 0, 8)
-        };
+        }, 1, 1);
 
-        headerPanel.Controls.Add(rangesLabel, 0, 1);
-        headerPanel.Controls.Add(textLabel, 1, 1);
-        headerPanel.Controls.Add(descriptionLabel, 0, 2);
-        headerPanel.Controls.Add(previewLabel, 1, 2);
+        headerPanel.Controls.Add(bulletPanel, 0, 1);
+        headerPanel.SetColumnSpan(bulletPanel, 2);
+
+        var detailsExpanded = false;
+        void UpdateDetailsToggle() {
+            bulletPanel.Visible = detailsExpanded;
+            detailsToggle.Image?.Dispose();
+            detailsToggle.Image = MaterialIcons.GetIcon(detailsExpanded ? "keyboard_double_arrow_up" : "keyboard_double_arrow_down", headerLabel.ForeColor, 20);
+        }
+
+        void ToggleDetails() {
+            detailsExpanded = !detailsExpanded;
+            UpdateDetailsToggle();
+        }
+
+        detailsToggle.Click += (_, _) => ToggleDetails();
+        headerLabel.Click += (_, _) => ToggleDetails();
+        headerPanel.MouseClick += (_, e) => {
+            if (e.Y <= headerLabel.Bottom) {
+                ToggleDetails();
+            }
+        };
+        headerLabel.ForeColorChanged += (_, _) => UpdateDetailsToggle();
+        UpdateDetailsToggle();
 
         const int editorFieldLabelWidth = 56;
         const int sortModeFieldWidth = 298;

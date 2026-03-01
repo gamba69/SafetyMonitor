@@ -54,65 +54,109 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         var headerPanel = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 4,
+            RowCount = 2,
             AutoSize = true,
             Margin = new Padding(0, 0, 0, 12)
         };
-        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 22F));
         headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        headerPanel.Cursor = Cursors.Hand;
 
         var headerLabel = new Label {
             AutoSize = true,
-            Margin = new Padding(0, 0, 0, 8),
+            Margin = new Padding(0),
             MaximumSize = new Size(860, 0),
             Text = "Configure per-metric display settings. Metric list is fixed and cannot be changed.",
             Font = CreateSafeFont("Segoe UI", 10f, FontStyle.Bold)
         };
         headerPanel.Controls.Add(headerLabel, 0, 0);
-        headerPanel.SetColumnSpan(headerLabel, 2);
+
+        var detailsToggle = new PictureBox {
+            Size = new Size(22, 22),
+            SizeMode = PictureBoxSizeMode.CenterImage,
+            Cursor = Cursors.Hand,
+            Margin = new Padding(0),
+            Dock = DockStyle.Top
+        };
+        headerPanel.Controls.Add(detailsToggle, 1, 0);
 
         const int headerDescriptionMaxWidth = 400;
+        var bulletPanel = new TableLayoutPanel {
+            Dock = DockStyle.Top,
+            ColumnCount = 2,
+            RowCount = 3,
+            AutoSize = true,
+            Margin = new Padding(0)
+        };
+        bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        headerPanel.Controls.Add(new Label {
+        bulletPanel.Controls.Add(new Label {
             Text = "• Decimals: number of digits after decimal point (0..10).",
             Font = normalFont,
             AutoSize = true,
             MaximumSize = new Size(headerDescriptionMaxWidth, 0),
             Margin = new Padding(0, 0, 12, 2)
-        }, 0, 1);
-        headerPanel.Controls.Add(new Label {
+        }, 0, 0);
+        bulletPanel.Controls.Add(new Label {
             Text = "• Hide zeroes: if enabled, zero values are shown as empty text instead of 0/0.0.",
             Font = normalFont,
             AutoSize = true,
             MaximumSize = new Size(headerDescriptionMaxWidth, 0),
             Margin = new Padding(0, 0, 0, 2)
-        }, 1, 1);
-        headerPanel.Controls.Add(new Label {
+        }, 1, 0);
+        bulletPanel.Controls.Add(new Label {
             Text = "• Invert Y: flips chart Y-axis direction for this metric.",
             Font = normalFont,
             AutoSize = true,
             MaximumSize = new Size(headerDescriptionMaxWidth, 0),
             Margin = new Padding(0, 0, 12, 0)
-        }, 0, 2);
-        headerPanel.Controls.Add(new Label {
+        }, 0, 1);
+        bulletPanel.Controls.Add(new Label {
             Text = "• Tray name: short alias shown in tray/compact displays.",
             Font = normalFont,
             AutoSize = true,
             MaximumSize = new Size(headerDescriptionMaxWidth, 0),
             Margin = new Padding(0)
-        }, 1, 2);
-        headerPanel.Controls.Add(new Label {
+        }, 1, 1);
+        bulletPanel.Controls.Add(new Label {
             Text = "• Tray scheme: optional value-scheme text mapping used in tray tooltip.",
             Font = normalFont,
             AutoSize = true,
             MaximumSize = new Size(860, 0),
             Margin = new Padding(0, 8, 0, 0)
-        }, 0, 3);
-        headerPanel.SetColumnSpan(headerPanel.Controls[^1], 2);
+        }, 0, 2);
+        bulletPanel.SetColumnSpan(bulletPanel.Controls[^1], 2);
+
+        headerPanel.Controls.Add(bulletPanel, 0, 1);
+        headerPanel.SetColumnSpan(bulletPanel, 2);
+
+        var detailsExpanded = false;
+        void UpdateDetailsToggle() {
+            bulletPanel.Visible = detailsExpanded;
+            detailsToggle.Image?.Dispose();
+            detailsToggle.Image = MaterialIcons.GetIcon(detailsExpanded ? "keyboard_double_arrow_up" : "keyboard_double_arrow_down", headerLabel.ForeColor, 20);
+        }
+
+        void ToggleDetails() {
+            detailsExpanded = !detailsExpanded;
+            UpdateDetailsToggle();
+        }
+
+        detailsToggle.Click += (_, _) => ToggleDetails();
+        headerLabel.Click += (_, _) => ToggleDetails();
+        headerPanel.MouseClick += (_, e) => {
+            if (e.Y <= headerLabel.Bottom) {
+                ToggleDetails();
+            }
+        };
+        headerLabel.ForeColorChanged += (_, _) => UpdateDetailsToggle();
+        UpdateDetailsToggle();
 
         root.Controls.Add(headerPanel, 0, 0);
 
