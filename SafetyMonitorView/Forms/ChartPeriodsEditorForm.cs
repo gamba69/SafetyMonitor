@@ -96,7 +96,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true };
         _addButton = new Button { Text = "Add", Width = 100, Height = 32 };
         _removeButton = new Button { Text = "Delete", Width = 100, Height = 32 };
-        _calculateButton = new Button { Text = "Auto", Width = 120, Height = 32 };
+        _calculateButton = new Button { Text = "Auto...", Width = 120, Height = 32 };
         _addButton.Click += (_, _) => {
             var rowIndex = _grid.Rows.Add(Guid.NewGuid().ToString("N"), "Custom", 1, ChartPeriodUnit.Hours, "1m");
             if (rowIndex >= 0 && rowIndex < _grid.Rows.Count) {
@@ -108,7 +108,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
                 if (!row.IsNewRow) _grid.Rows.Remove(row);
             }
         };
-        _calculateButton.Click += (_, _) => RecalculateAll();
+        _calculateButton.Click += (_, _) => RecalculateAllWithConfirmation();
         buttons.Controls.AddRange([_addButton, _removeButton, _calculateButton]);
         layout.Controls.Add(buttons, 0, 1);
 
@@ -201,6 +201,21 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
             row.Cells["Aggregation"].Value = GetOptimalBucket(duration);
             UpdateRowAggregationOptions(row, showWarningIfAdjusted: false);
         }
+    }
+
+    private void RecalculateAllWithConfirmation() {
+        var decision = ThemedMessageBox.Show(
+            this,
+            "All aggregations will be recalculated.",
+            "Recalculate aggregations",
+            MessageBoxButtons.OKCancel,
+            MessageBoxIcon.Warning);
+
+        if (decision != DialogResult.OK) {
+            return;
+        }
+
+        RecalculateAll();
     }
 
     private void SaveButton_Click(object? sender, EventArgs e) {
