@@ -596,14 +596,15 @@ public class MainForm : MaterialForm {
 
     private static string GetIconNameForMenuItem(string text) {
         return text switch {
-            "Settings" => MaterialIcons.MenuFileSettings,
+            "Settings..." => MaterialIcons.MenuFileSettings,
             "Exit" => MaterialIcons.MenuFileExitApp,
+            "Restore" => "open_in_full",
             "Theme" => MaterialIcons.MenuViewTheme,
             "Light" => MaterialIcons.ThemeLightMode,
             "Dark" => MaterialIcons.ThemeDarkMode,
             "About" => MaterialIcons.MenuHelpAbout,
             "New Dashboard" => MaterialIcons.DashboardCreateNew,
-            "Edit Current..." => MaterialIcons.DashboardEditCurrent,
+            "Edit current..." => MaterialIcons.DashboardEditCurrent,
             "Duplicate Current" => MaterialIcons.DashboardDuplicateCurrent,
             "Delete Current" => MaterialIcons.DashboardDeleteCurrent,
             "Manage Dashboards..." => MaterialIcons.DashboardManage,
@@ -1541,8 +1542,25 @@ public class MainForm : MaterialForm {
         var iconColor = isLight ? Color.Black : Color.White;
         _mainMenu.BackColor = isLight ? Color.FromArgb(250, 250, 250) : Color.FromArgb(35, 47, 52);
         UpdateMenuItemsIcons(_mainMenu.Items, iconColor);
+        UpdateTrayMenuIcons(iconColor);
         if (_mainMenu.Items.Count > 1) { var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1]; UpdateDashboardMenu(dashboardMenu); }
         _mainMenu.Refresh();
+    }
+
+    private void UpdateTrayMenuIcons(Color iconColor) {
+        var trayMenu = _trayIcon?.ContextMenuStrip;
+        if (trayMenu == null) { return; }
+
+        foreach (var item in trayMenu.Items.OfType<ToolStripMenuItem>()) {
+            var iconName = GetIconNameForMenuItem(item.Text);
+            if (string.IsNullOrEmpty(iconName)) {
+                continue;
+            }
+
+            item.Image?.Dispose();
+            item.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize);
+            item.ImageScaling = ToolStripItemImageScaling.None;
+        }
     }
 
     private void UpdateQuickAccessPanelTheme() {
