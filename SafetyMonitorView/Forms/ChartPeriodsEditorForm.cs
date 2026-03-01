@@ -140,7 +140,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 35 };
         _saveButton.Click += SaveButton_Click;
         _cancelButton.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
-        action.Controls.AddRange([_saveButton, _cancelButton]);
+        action.Controls.AddRange([_cancelButton, _saveButton]);
         layout.Controls.Add(action, 0, 3);
 
         Controls.Add(layout);
