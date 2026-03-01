@@ -17,7 +17,21 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
     private Button _calculateButton = null!;
 
     private readonly List<ChartPeriodUnit> _units = [.. Enum.GetValues<ChartPeriodUnit>()];
-    private static readonly string[] Buckets = ["raw", "10s", "30s", "1m", "5m", "15m", "1h", "4h", "12h", "1d", "3d", "1w"];
+    private static readonly (string Bucket, TimeSpan Interval)[] BucketDefinitions = [
+        ("raw", TimeSpan.Zero),
+        ("10s", TimeSpan.FromSeconds(10)),
+        ("30s", TimeSpan.FromSeconds(30)),
+        ("1m", TimeSpan.FromMinutes(1)),
+        ("5m", TimeSpan.FromMinutes(5)),
+        ("15m", TimeSpan.FromMinutes(15)),
+        ("1h", TimeSpan.FromHours(1)),
+        ("4h", TimeSpan.FromHours(4)),
+        ("12h", TimeSpan.FromHours(12)),
+        ("1d", TimeSpan.FromDays(1)),
+        ("3d", TimeSpan.FromDays(3)),
+        ("1w", TimeSpan.FromDays(7))
+    ];
+    private static readonly string[] Buckets = [.. BucketDefinitions.Select(x => x.Bucket)];
 
     public ChartPeriodsEditorForm(IEnumerable<ChartPeriodPresetDefinition> presets, int autoAggregationTargetPointCount) {
         _presets = [.. presets.Select(p => new ChartPeriodPresetDefinition {
@@ -72,6 +86,8 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         _grid.Columns.Add(new DataGridViewComboBoxColumn { Name = "Unit", HeaderText = "Unit", FillWeight = 16, DataSource = _units });
         _grid.Columns.Add(new DataGridViewComboBoxColumn { Name = "Aggregation", HeaderText = "Aggregation", FillWeight = 36, DataSource = Buckets });
         _grid.EditingControlShowing += Grid_EditingControlShowing;
+        _grid.CellValueChanged += Grid_CellValueChanged;
+        _grid.CurrentCellDirtyStateChanged += Grid_CurrentCellDirtyStateChanged;
         _grid.DataError += (_, e) => e.ThrowException = false;
 
         layout.Controls.Add(_grid, 0, 0);
@@ -80,7 +96,12 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         _addButton = new Button { Text = "Add", Width = 100, Height = 32 };
         _removeButton = new Button { Text = "Delete", Width = 100, Height = 32 };
         _calculateButton = new Button { Text = "Auto", Width = 120, Height = 32 };
-        _addButton.Click += (_, _) => _grid.Rows.Add(Guid.NewGuid().ToString("N"), "Custom", 1, ChartPeriodUnit.Hours, "1m");
+        _addButton.Click += (_, _) => {
+            var rowIndex = _grid.Rows.Add(Guid.NewGuid().ToString("N"), "Custom", 1, ChartPeriodUnit.Hours, "1m");
+            if (rowIndex >= 0 && rowIndex < _grid.Rows.Count) {
+                UpdateRowAggregationOptions(_grid.Rows[rowIndex], showWarningIfAdjusted: false);
+            }
+        };
         _removeButton.Click += (_, _) => {
             foreach (DataGridViewRow row in _grid.SelectedRows) {
                 if (!row.IsNewRow) _grid.Rows.Remove(row);
@@ -163,7 +184,10 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
     private void LoadPresets() {
         _grid.Rows.Clear();
         foreach (var p in _presets) {
-            _grid.Rows.Add(p.Uid, p.Name, p.Value, p.Unit, BucketFromInterval(p.AggregationInterval));
+            var rowIndex = _grid.Rows.Add(p.Uid, p.Name, p.Value, p.Unit, BucketFromInterval(p.AggregationInterval));
+            if (rowIndex >= 0 && rowIndex < _grid.Rows.Count) {
+                UpdateRowAggregationOptions(_grid.Rows[rowIndex], showWarningIfAdjusted: false);
+            }
         }
     }
 
@@ -173,13 +197,14 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
             if (!double.TryParse(row.Cells["Value"].Value?.ToString(), out var value) || value <= 0) continue;
             var unit = row.Cells["Unit"].Value is ChartPeriodUnit u ? u : ChartPeriodUnit.Hours;
             var duration = ChartAggregationHelper.BuildPeriodDuration(value, unit);
-            var target = Math.Max(1, (int)Math.Ceiling(duration.TotalSeconds / _autoAggregationTargetPointCount));
-            row.Cells["Aggregation"].Value = BucketFromInterval(TimeSpan.FromSeconds(target));
+            row.Cells["Aggregation"].Value = GetOptimalBucket(duration);
+            UpdateRowAggregationOptions(row, showWarningIfAdjusted: false);
         }
     }
 
     private void SaveButton_Click(object? sender, EventArgs e) {
         var output = new List<ChartPeriodPresetDefinition>();
+        var adjustedPresetNames = new List<string>();
         foreach (DataGridViewRow row in _grid.Rows) {
             if (row.IsNewRow) continue;
             var uid = row.Cells["Uid"].Value?.ToString();
@@ -195,7 +220,16 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
             }
 
             var unit = row.Cells["Unit"].Value is ChartPeriodUnit u ? u : ChartPeriodUnit.Hours;
+            var duration = ChartAggregationHelper.BuildPeriodDuration(value, unit);
             var bucket = row.Cells["Aggregation"].Value?.ToString() ?? "1m";
+            if (!IsBucketWithinAllowedRange(bucket, duration)) {
+                bucket = GetOptimalBucket(duration);
+                row.Cells["Aggregation"].Value = bucket;
+                adjustedPresetNames.Add(name);
+            }
+
+            UpdateRowAggregationOptions(row, showWarningIfAdjusted: false);
+
             output.Add(new ChartPeriodPresetDefinition {
                 Uid = string.IsNullOrWhiteSpace(uid) ? Guid.NewGuid().ToString("N") : uid,
                 Name = name,
@@ -205,9 +239,107 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
             });
         }
 
+        if (adjustedPresetNames.Count > 0) {
+            var affected = string.Join(", ", adjustedPresetNames.Distinct(StringComparer.OrdinalIgnoreCase));
+            ThemedMessageBox.Show(
+                this,
+                $"Aggregation was changed to the optimal value for preset(s): {affected}.\nAllowed range is from optimal -1 to optimal +2 bucket(s).",
+                "Aggregation adjusted",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+        }
+
         Presets = output;
         DialogResult = DialogResult.OK;
         Close();
+    }
+
+    private void Grid_CurrentCellDirtyStateChanged(object? sender, EventArgs e) {
+        if (_grid.IsCurrentCellDirty) {
+            _grid.CommitEdit(DataGridViewDataErrorContexts.Commit);
+        }
+    }
+
+    private void Grid_CellValueChanged(object? sender, DataGridViewCellEventArgs e) {
+        if (e.RowIndex < 0 || e.RowIndex >= _grid.Rows.Count) {
+            return;
+        }
+
+        var columnName = _grid.Columns[e.ColumnIndex].Name;
+        if (!string.Equals(columnName, "Value", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(columnName, "Unit", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(columnName, "Aggregation", StringComparison.OrdinalIgnoreCase)) {
+            return;
+        }
+
+        UpdateRowAggregationOptions(_grid.Rows[e.RowIndex], showWarningIfAdjusted: columnName == "Aggregation");
+    }
+
+    private void UpdateRowAggregationOptions(DataGridViewRow row, bool showWarningIfAdjusted) {
+        if (row.IsNewRow || row.Cells["Aggregation"] is not DataGridViewComboBoxCell aggregationCell) {
+            return;
+        }
+
+        if (!TryBuildDuration(row, out var duration)) {
+            aggregationCell.DataSource = Buckets;
+            return;
+        }
+
+        var allowedBuckets = GetAllowedBuckets(duration);
+        aggregationCell.DataSource = allowedBuckets;
+
+        var currentBucket = row.Cells["Aggregation"].Value?.ToString() ?? string.Empty;
+        if (allowedBuckets.Contains(currentBucket, StringComparer.OrdinalIgnoreCase)) {
+            return;
+        }
+
+        var optimalBucket = GetOptimalBucket(duration);
+        row.Cells["Aggregation"].Value = optimalBucket;
+
+        if (showWarningIfAdjusted) {
+            ThemedMessageBox.Show(
+                this,
+                "Selected aggregation is outside the allowed range (optimal -1 to optimal +2). Value was reset to the optimal aggregation.",
+                "Aggregation adjusted",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+        }
+    }
+
+    private bool TryBuildDuration(DataGridViewRow row, out TimeSpan duration) {
+        duration = TimeSpan.Zero;
+        if (!double.TryParse(row.Cells["Value"].Value?.ToString(), out var value) || value <= 0) {
+            return false;
+        }
+
+        var unit = row.Cells["Unit"].Value is ChartPeriodUnit u ? u : ChartPeriodUnit.Hours;
+        duration = ChartAggregationHelper.BuildPeriodDuration(value, unit);
+        return duration > TimeSpan.Zero;
+    }
+
+    private bool IsBucketWithinAllowedRange(string bucket, TimeSpan duration) {
+        if (string.IsNullOrWhiteSpace(bucket)) {
+            return false;
+        }
+
+        return GetAllowedBuckets(duration).Contains(bucket, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private string[] GetAllowedBuckets(TimeSpan duration) {
+        var optimalIndex = GetOptimalBucketIndex(duration);
+        var minIndex = Math.Max(0, optimalIndex - 1);
+        var maxIndex = Math.Min(BucketDefinitions.Length - 1, optimalIndex + 2);
+        return BucketDefinitions[minIndex..(maxIndex + 1)].Select(x => x.Bucket).ToArray();
+    }
+
+    private string GetOptimalBucket(TimeSpan duration) => BucketDefinitions[GetOptimalBucketIndex(duration)].Bucket;
+
+    private int GetOptimalBucketIndex(TimeSpan duration) {
+        var target = Math.Max(1, (int)Math.Ceiling(duration.TotalSeconds / _autoAggregationTargetPointCount));
+        var targetInterval = TimeSpan.FromSeconds(target);
+        var optimalBucket = BucketFromInterval(targetInterval);
+        var foundIndex = Array.FindIndex(BucketDefinitions, x => string.Equals(x.Bucket, optimalBucket, StringComparison.OrdinalIgnoreCase));
+        return foundIndex >= 0 ? foundIndex : 0;
     }
 
     private static Font CreateSafeFont(string familyName, float emSize, FontStyle style = FontStyle.Regular) {
