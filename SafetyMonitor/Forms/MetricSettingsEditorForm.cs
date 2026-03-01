@@ -188,7 +188,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
             DisplayStyle = DataGridViewComboBoxDisplayStyle.DropDownButton,
             FlatStyle = FlatStyle.Popup
         };
-        traySchemeColumn.Items.AddRange(_trayValueSchemeNames.Cast<object>().ToArray());
+        traySchemeColumn.Items.AddRange([.. _trayValueSchemeNames.Cast<object>()]);
         _metricsGrid.Columns.Add(traySchemeColumn);
 
         foreach (DataGridViewColumn column in _metricsGrid.Columns) {
@@ -232,7 +232,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         }
     }
 
-    private static IEnumerable<MetricType> GetOrderedMetricsForGrid(IReadOnlyDictionary<MetricType, MetricDisplaySetting> settingsByMetric) {
+    private static IEnumerable<MetricType> GetOrderedMetricsForGrid(Dictionary<MetricType, MetricDisplaySetting> settingsByMetric) {
         return Enum
             .GetValues<MetricType>()
             .OrderByDescending(metric => settingsByMetric.TryGetValue(metric, out var setting) && !string.IsNullOrWhiteSpace(setting.TrayName))
@@ -295,7 +295,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         foreach (var rowState in rowStates) {
             _metricsGrid.Rows.Add(
                 rowState.Metric.GetDisplayName(),
-                rowState.Decimals,
+                rowState.Decimals!,
                 rowState.HideZeroes,
                 rowState.InvertY,
                 rowState.TrayName,

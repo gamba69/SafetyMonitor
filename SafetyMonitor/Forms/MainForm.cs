@@ -1552,7 +1552,7 @@ public class MainForm : MaterialForm {
         if (trayMenu == null) { return; }
 
         foreach (var item in trayMenu.Items.OfType<ToolStripMenuItem>()) {
-            var iconName = GetIconNameForMenuItem(item.Text);
+            var iconName = GetIconNameForMenuItem(item.Text!);
             if (string.IsNullOrEmpty(iconName)) {
                 continue;
             }

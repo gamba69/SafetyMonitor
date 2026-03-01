@@ -20,7 +20,6 @@ public class DataService {
     // Cross-tile chart data cache — avoids duplicate DB queries when multiple
     // ChartTiles share the same period / aggregation function within one refresh cycle.
     private readonly Lock _chartSnapshotLock = new();
-    private bool _isChartSnapshotActive;
     private DateTime? _chartSnapshotNow;
     private Dictionary<(DateTime, DateTime, TimeSpan?, AggregationFunction?), List<ObservingData>>? _chartSnapshotCache;
 
@@ -176,7 +175,6 @@ public class DataService {
     /// </summary>
     public IDisposable BeginChartDataSnapshot() {
         lock (_chartSnapshotLock) {
-            _isChartSnapshotActive = true;
             _chartSnapshotNow = DateTime.UtcNow;
             _chartSnapshotCache = [];
         }
@@ -227,7 +225,6 @@ public class DataService {
 
     private void EndChartDataSnapshot() {
         lock (_chartSnapshotLock) {
-            _isChartSnapshotActive = false;
             _chartSnapshotNow = null;
             _chartSnapshotCache = null;
         }
