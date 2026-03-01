@@ -678,7 +678,7 @@ public class MainForm : MaterialForm {
         var iconColor = isLight ? Color.Black : Color.White;
 
         var fileMenu = new ToolStripMenuItem("File");
-        fileMenu.DropDownItems.Add(CreateMenuItem("Settings", MaterialIcons.MenuFileSettings, iconColor, (s, e) => ShowSettings()));
+        fileMenu.DropDownItems.Add(CreateMenuItem("Settings...", MaterialIcons.MenuFileSettings, iconColor, (s, e) => ShowSettings()));
         fileMenu.DropDownItems.Add(new ToolStripSeparator());
         fileMenu.DropDownItems.Add(CreateMenuItem("Exit", MaterialIcons.MenuFileExitApp, iconColor, (s, e) => Close()));
 
