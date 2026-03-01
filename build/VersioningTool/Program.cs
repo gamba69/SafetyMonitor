@@ -214,7 +214,7 @@ using System.Reflection;
 
 namespace SafetyMonitor.Versioning;
 
-public static class BuildVersion
+internal static class BuildVersion
 {
     public const int Major = {{version.Major}};
     public const int Minor = {{version.Minor}};
