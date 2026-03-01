@@ -62,6 +62,7 @@ public class ChartTile : Panel {
     private readonly List<SeriesHoverSnapshot> _hoverSeries = [];
     private bool _inspectorActive;
     private bool _staticModePaused;
+    private int _lastHorizontalPointCount;
     private const int HeaderControlHeight = 28;
 
     private sealed class SeriesHoverSnapshot {
@@ -159,6 +160,8 @@ public class ChartTile : Panel {
         _plot.Plot.Axes.Left.Label.Text = string.Empty;
 
         if (_config.MetricAggregations.Count == 0) {
+            _lastHorizontalPointCount = 0;
+            UpdateAggregationInfoLabel(ResolveAggregationInterval());
             _plot.Plot.Title("No metrics configured");
             ApplyThemeColors();
             RememberCurrentXAxisLimits();
@@ -218,6 +221,7 @@ public class ChartTile : Panel {
 
         var hasVisibleSeries = false;
         var metricsWithData = new HashSet<MetricType>();
+        var horizontalPoints = new HashSet<double>();
 
         // Cache DB results per AggregationFunction to avoid duplicate queries.
         // The DB returns all columns in each row, so the same result set can be
@@ -250,6 +254,9 @@ public class ChartTile : Panel {
             }
             var validTimes = validData.Select(x => x.Time).ToArray();
             var validValues = validData.Select(x => x.Value).ToArray();
+            foreach (var time in validTimes) {
+                horizontalPoints.Add(time);
+            }
             var scatter = _plot.Plot.Add.Scatter(validTimes, validValues);
             hasVisibleSeries = true;
             metricsWithData.Add(agg.Metric);
@@ -277,6 +284,9 @@ public class ChartTile : Panel {
                 ValueSchemeName = agg.ValueSchemeName ?? string.Empty
             });
         }
+
+        _lastHorizontalPointCount = horizontalPoints.Count;
+        UpdateAggregationInfoLabel(aggregationInterval);
 
         _plot.Plot.Axes.DateTimeTicksBottom();
 
@@ -1729,6 +1739,12 @@ public class ChartTile : Panel {
         _aggregationInfoTextBox.SelectionColor = color;
         _aggregationInfoTextBox.SelectionFont = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular);
         _aggregationInfoTextBox.AppendText($" {valueText}");
+        _aggregationInfoTextBox.SelectionColor = color;
+        _aggregationInfoTextBox.SelectionFont = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Bold);
+        _aggregationInfoTextBox.AppendText("  P:");
+        _aggregationInfoTextBox.SelectionColor = color;
+        _aggregationInfoTextBox.SelectionFont = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular);
+        _aggregationInfoTextBox.AppendText($" {_lastHorizontalPointCount}");
         _aggregationInfoTextBox.SelectionStart = 0;
         _aggregationInfoTextBox.SelectionLength = 0;
     }
