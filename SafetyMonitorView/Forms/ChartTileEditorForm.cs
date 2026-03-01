@@ -118,23 +118,22 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         ForeColor = _inputForeColor;
 
         // DataGridView special handling
-        _metricsGrid.BackgroundColor = isLight ? Color.White : Color.FromArgb(35, 47, 52);
-        _metricsGrid.DefaultCellStyle.BackColor = _inputBackColor;
+        _metricsGrid.BackgroundColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
+        _metricsGrid.DefaultCellStyle.BackColor = _metricsGrid.BackgroundColor;
         _metricsGrid.DefaultCellStyle.ForeColor = _inputForeColor;
-        var darkSelectionColor = Color.FromArgb(0, 121, 107);
-        _metricsGrid.DefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(33, 150, 243) : darkSelectionColor;
-        _metricsGrid.DefaultCellStyle.SelectionForeColor = Color.White;
-        _metricsGrid.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(53, 70, 76);
+        _metricsGrid.DefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(225, 245, 254) : Color.FromArgb(56, 78, 84);
+        _metricsGrid.DefaultCellStyle.SelectionForeColor = _inputForeColor;
+        _metricsGrid.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(238, 238, 238) : Color.FromArgb(55, 71, 79);
         _metricsGrid.ColumnHeadersDefaultCellStyle.ForeColor = _inputForeColor;
         _metricsGrid.ColumnHeadersDefaultCellStyle.SelectionBackColor = _metricsGrid.ColumnHeadersDefaultCellStyle.BackColor;
         _metricsGrid.ColumnHeadersDefaultCellStyle.SelectionForeColor = _inputForeColor;
         _metricsGrid.EnableHeadersVisualStyles = false;
-        _metricsGrid.GridColor = isLight ? Color.LightGray : Color.FromArgb(70, 90, 98);
+        _metricsGrid.GridColor = isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(60, 75, 80);
 
         foreach (var comboBoxColumn in _metricsGrid.Columns.OfType<DataGridViewComboBoxColumn>()) {
-            comboBoxColumn.FlatStyle = FlatStyle.Flat;
+            comboBoxColumn.FlatStyle = FlatStyle.Popup;
             comboBoxColumn.DisplayStyle = DataGridViewComboBoxDisplayStyle.DropDownButton;
-            comboBoxColumn.DefaultCellStyle.BackColor = _inputBackColor;
+            comboBoxColumn.DefaultCellStyle.BackColor = _metricsGrid.DefaultCellStyle.BackColor;
             comboBoxColumn.DefaultCellStyle.ForeColor = _inputForeColor;
             comboBoxColumn.DefaultCellStyle.SelectionBackColor = _metricsGrid.DefaultCellStyle.SelectionBackColor;
             comboBoxColumn.DefaultCellStyle.SelectionForeColor = _metricsGrid.DefaultCellStyle.SelectionForeColor;
