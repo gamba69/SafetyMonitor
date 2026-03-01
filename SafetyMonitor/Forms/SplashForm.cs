@@ -177,7 +177,7 @@ internal sealed class SplashForm : Form {
         detailsLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         var copyrightCaptionLabel = new Label {
-            Text = "©2026",
+            Text = $"©{AppBuildInfoHelper.CopyrightYear}",
             AutoSize = true,
             Anchor = AnchorStyles.Top | AnchorStyles.Left,
             TextAlign = ContentAlignment.TopLeft,
@@ -210,7 +210,7 @@ internal sealed class SplashForm : Form {
         };
 
         var versionValueLabel = new Label {
-            Text = "0.9.0-preview",
+            Text = AppBuildInfoHelper.ProductVersionWithBuild + Environment.NewLine + AppBuildInfoHelper.BuildDateDisplay,
             AutoSize = true,
             Anchor = AnchorStyles.Top | AnchorStyles.Left,
             TextAlign = ContentAlignment.TopLeft,
