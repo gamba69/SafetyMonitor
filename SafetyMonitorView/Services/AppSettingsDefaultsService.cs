@@ -15,7 +15,6 @@ public static class AppSettingsDefaultsService {
             ChartStaticModeTimeoutSeconds = 120,
             ChartStaticAggregationPresetMatchTolerancePercent = 10,
             ChartStaticAggregationTargetPointCount = 300,
-            ChartAggregationRoundingSeconds = 1,
             LastDashboardId = null,
             RefreshInterval = 5,
             ValueTileLookbackMinutes = 60,
@@ -45,7 +44,6 @@ public static class AppSettingsDefaultsService {
         loaded.ValueTileLookbackMinutes = loaded.ValueTileLookbackMinutes <= 0 ? defaults.ValueTileLookbackMinutes : loaded.ValueTileLookbackMinutes;
         loaded.ChartStaticModeTimeoutSeconds = loaded.ChartStaticModeTimeoutSeconds <= 0 ? defaults.ChartStaticModeTimeoutSeconds : loaded.ChartStaticModeTimeoutSeconds;
         loaded.ChartStaticAggregationTargetPointCount = loaded.ChartStaticAggregationTargetPointCount <= 0 ? defaults.ChartStaticAggregationTargetPointCount : loaded.ChartStaticAggregationTargetPointCount;
-        loaded.ChartAggregationRoundingSeconds = loaded.ChartAggregationRoundingSeconds <= 0 ? defaults.ChartAggregationRoundingSeconds : loaded.ChartAggregationRoundingSeconds;
         loaded.ChartStaticAggregationPresetMatchTolerancePercent = loaded.ChartStaticAggregationPresetMatchTolerancePercent <= 0 ? defaults.ChartStaticAggregationPresetMatchTolerancePercent : loaded.ChartStaticAggregationPresetMatchTolerancePercent;
         loaded.StoragePath ??= string.Empty;
         loaded.MaterialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(loaded.MaterialColorScheme);

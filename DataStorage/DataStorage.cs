@@ -3,578 +3,797 @@ using DataStorage.Models;
 using FirebirdSql.Data.FirebirdClient;
 using System.Collections.Concurrent;
 using System.Data;
+using System.Globalization;
+using System.Text;
 
-namespace DataStorage {
+namespace DataStorage;
 
-    /// <summary>
-    /// Sharded data storage for ASCOM ObservingConditions and SafetyMonitor data
-    /// </summary>
-    public class DataStorage {
+public class DataStorage {
 
-        #region Private Fields
+    private const string DbExt = ".fdb";
+    private readonly string _root;
+    private readonly string _user;
+    private readonly string _password;
 
-        private const string DatabaseFileExtension = ".fdb";
-        private const string TableName = "METEO_DATA";
-        private const string InsertSql = @"INSERT INTO METEO_DATA (
-                            CREATED_AT,     CLOUD_COVER,    DEW_POINT,          HUMIDITY,   PRESSURE,       RAIN_RATE, 
-                            SKY_BRIGHTNESS, SKY_QUALITY,    SKY_TEMPERATURE,    STAR_FWHM,  TEMPERATURE,    WIND_DIRECTION, 
-                            WIND_GUST,      WIND_SPEED,     IS_SAFE,            NOTES) 
-                        VALUES (
-                            @Timestamp,     @CloudCover,    @DewPoint,          @Humidity,  @Pressure,      @RainRate, 
-                            @SkyBrightness, @SkyQuality,    @SkyTemperature,    @StarFwhm,  @Temperature,   @WindDirection, 
-                            @WindGust,      @WindSpeed,     @IsSafeInt,         @Notes
-                        )";
-        private readonly string _password;
-        private readonly string _storageRootPath;
-        private readonly string _userName;
+    private readonly ConcurrentDictionary<string, byte> _ensuredRawDbs = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, byte> _ensuredMonthlyAggDbs = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, byte> _ensuredYearAggDbs = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, byte> _ensuredRawTables = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, byte> _ensuredAggTables = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, string> MergeAggSqlCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, string> UpsertAggSqlCache = new(StringComparer.OrdinalIgnoreCase);
 
-        #endregion Private Fields
+    private sealed class BucketState {
+        public double[] Sum { get; } = new double[Metrics.Length];
+        public int[] Count { get; } = new int[Metrics.Length];
+        public double?[] Min { get; } = new double?[Metrics.Length];
+        public double?[] Max { get; } = new double?[Metrics.Length];
+        public double?[] First { get; } = new double?[Metrics.Length];
+        public double?[] Last { get; } = new double?[Metrics.Length];
+    }
 
-        #region Public Constructors
+    public readonly record struct AggregationRecalcProgress(
+        int ProcessedBuckets,
+        int TotalBuckets,
+        string Level,
+        DateTime BucketTimestamp);
 
-        /// <summary>
-        /// Initialize sharded data storage
-        /// </summary>
-        /// <param name="storageRootPath">Root directory for storing database shards</param>
-        /// <param name="userName">FireBird user name (default: SYSDBA)</param>
-        /// <param name="password">FireBird password (default: masterkey)</param>
-        public DataStorage(string storageRootPath, string? userName = null, string? password = null) {
-            if (string.IsNullOrWhiteSpace(storageRootPath)) {
-                throw new ArgumentException("Storage root path cannot be null or empty", nameof(storageRootPath));
-            }
+    private sealed record MetricDef(string Name, FbDbType RawType, string RawSqlType, string AggSqlType);
+    private static readonly MetricDef[] Metrics = [
+        new("CLOUD_COVER", FbDbType.SmallInt, "SMALLINT", "DOUBLE PRECISION"),
+        new("IS_SAFE", FbDbType.SmallInt, "SMALLINT", "DOUBLE PRECISION"),
+        new("DEW_POINT", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
+        new("HUMIDITY", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
+        new("PRESSURE", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
+        new("SKY_BRIGHTNESS", FbDbType.Double, "DOUBLE PRECISION", "DOUBLE PRECISION"),
+        new("RAIN_RATE", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
+        new("SKY_QUALITY", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
+        new("SKY_TEMPERATURE", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
+        new("STAR_FWHM", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
+        new("TEMPERATURE", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
+        new("WIND_DIRECTION", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
+        new("WIND_GUST", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
+        new("WIND_SPEED", FbDbType.Float, "FLOAT", "DOUBLE PRECISION")
+    ];
 
-            _storageRootPath = storageRootPath;
-            _userName = string.IsNullOrWhiteSpace(userName) ? "SYSDBA" : userName;
-            _password = string.IsNullOrWhiteSpace(password) ? "masterkey" : password;
+    private static readonly (string Name, TimeSpan Span, bool Monthly)[] Levels = [
+        ("RAW", TimeSpan.FromSeconds(3), true),
+        ("10S", TimeSpan.FromSeconds(10), true),
+        ("30S", TimeSpan.FromSeconds(30), true),
+        ("1M", TimeSpan.FromMinutes(1), true),
+        ("5M", TimeSpan.FromMinutes(5), true),
+        ("15M", TimeSpan.FromMinutes(15), true),
+        ("1H", TimeSpan.FromHours(1), false),
+        ("4H", TimeSpan.FromHours(4), false),
+        ("12H", TimeSpan.FromHours(12), false),
+        ("1D", TimeSpan.FromDays(1), false),
+        ("3D", TimeSpan.FromDays(3), false),
+        ("1W", TimeSpan.FromDays(7), false)
+    ];
 
-            // Ensure root directory exists
-            if (!Directory.Exists(_storageRootPath)) {
-                Directory.CreateDirectory(_storageRootPath);
-            }
+    public DataStorage(string storageRootPath, string? userName = null, string? password = null) {
+        if (string.IsNullOrWhiteSpace(storageRootPath)) {
+            throw new ArgumentException("Storage root path cannot be null or empty", nameof(storageRootPath));
         }
 
-        #endregion Public Constructors
+        _root = storageRootPath;
+        _user = string.IsNullOrWhiteSpace(userName) ? "SYSDBA" : userName;
+        _password = string.IsNullOrWhiteSpace(password) ? "masterkey" : password;
+        Directory.CreateDirectory(_root);
+    }
 
-        #region Public Methods
+    public void AddData(ObservingData data) {
+        ArgumentNullException.ThrowIfNull(data);
+        AddDataBatch([data]);
+    }
 
-        /// <summary>
-        /// Add observing data to storage
-        /// </summary>
-        /// <param name="data">Data to store</param>
-        public void AddData(ObservingData data) {
-            ArgumentNullException.ThrowIfNull(data);
-
-            AddDataBatch([data]);
+    public void AddRawDataBatch(IReadOnlyCollection<ObservingData> batch) {
+        ArgumentNullException.ThrowIfNull(batch);
+        if (batch.Count == 0) {
+            return;
         }
 
-        /// <summary>
-        /// Add observing data to storage in batch mode
-        /// </summary>
-        /// <param name="dataBatch">Records to store</param>
-        public void AddDataBatch(IReadOnlyCollection<ObservingData> dataBatch) {
-            ArgumentNullException.ThrowIfNull(dataBatch);
+        var normalized = batch
+            .Select(x => new { Data = x, Ts = FloorToSecond(x.Timestamp) })
+            .GroupBy(x => new DateTime(x.Ts.Year, x.Ts.Month, 1));
 
-            if (dataBatch.Count == 0) {
-                return;
+        foreach (var monthGroup in normalized) {
+            var ts = monthGroup.Key;
+            var rawDb = GetRawDbPath(ts);
+            EnsureRawDatabase(rawDb);
+
+            using var rawConn = new FbConnection(GetConnectionString(rawDb));
+            rawConn.Open();
+            using var rawTx = rawConn.BeginTransaction();
+
+            const string insertSql = @"INSERT INTO METEO_RAW (
+CREATED_AT,CLOUD_COVER,IS_SAFE,DEW_POINT,HUMIDITY,PRESSURE,SKY_BRIGHTNESS,RAIN_RATE,SKY_QUALITY,SKY_TEMPERATURE,STAR_FWHM,TEMPERATURE,WIND_DIRECTION,WIND_GUST,WIND_SPEED
+) VALUES (
+@CreatedAt,@CloudCover,@IsSafeInt,@DewPoint,@Humidity,@Pressure,@SkyBrightness,@RainRate,@SkyQuality,@SkyTemperature,@StarFwhm,@Temperature,@WindDirection,@WindGust,@WindSpeed
+)";
+
+            var rows = monthGroup.Select(item => CreateRawMergeParams(item.Data, item.Ts)).ToList();
+            rawConn.Execute(insertSql, rows, rawTx);
+            rawTx.Commit();
+        }
+    }
+
+    public void AddDataBatch(IReadOnlyCollection<ObservingData> batch) {
+        ArgumentNullException.ThrowIfNull(batch);
+        if (batch.Count == 0) {
+            return;
+        }
+
+        var normalized = batch
+            .Select(x => new { Data = x, Ts = FloorToSecond(x.Timestamp) })
+            .GroupBy(x => new DateTime(x.Ts.Year, x.Ts.Month, 1));
+
+        foreach (var monthGroup in normalized) {
+            var ts = monthGroup.Key;
+            var rawDb = GetRawDbPath(ts);
+            var monthAggDb = GetMonthlyAggDbPath(ts);
+            var yearAggDb = GetYearAggDbPath(ts.Year);
+
+            EnsureRawDatabase(rawDb);
+            EnsureMonthlyAggDatabase(monthAggDb);
+            EnsureYearAggDatabase(yearAggDb);
+
+            using var rawConn = new FbConnection(GetConnectionString(rawDb));
+            using var monthAggConn = new FbConnection(GetConnectionString(monthAggDb));
+            using var yearAggConn = new FbConnection(GetConnectionString(yearAggDb));
+            rawConn.Open(); monthAggConn.Open(); yearAggConn.Open();
+            using var rawTx = rawConn.BeginTransaction();
+            using var monthTx = monthAggConn.BeginTransaction();
+            using var yearTx = yearAggConn.BeginTransaction();
+
+            var materialized = monthGroup.ToList();
+
+            // Batch raw MERGE calls in one Dapper execution pass
+            var rawRows = materialized.Select(item => CreateRawMergeParams(item.Data, item.Ts)).ToList();
+            if (rawRows.Count > 0) {
+                rawConn.Execute(MergeRawSql, rawRows, rawTx);
             }
 
-            var dataByDatabase = dataBatch.GroupBy(data => GetDatabasePath(data.Timestamp));
+            // Batch aggregation MERGE calls per level (significantly reduces overhead)
+            foreach (var level in Levels.Skip(1)) {
+                var aggRows = materialized
+                    .Select(item => CreateAggMergeParams(item.Data, AlignToBucket(item.Ts, level.Name)))
+                    .ToList();
 
-            foreach (var databaseGroup in dataByDatabase) {
-                var dbPath = databaseGroup.Key;
-                EnsureDatabaseExists(dbPath);
-
-                using var connection = new FbConnection(GetConnectionString(dbPath));
-                connection.Open();
-
-                using var transaction = connection.BeginTransaction();
-                using var command = CreateInsertCommand(connection, transaction);
-
-                foreach (var data in databaseGroup) {
-                    data.Id = 0;
-
-                    command.Parameters["@Timestamp"].Value = data.Timestamp;
-                    command.Parameters["@CloudCover"].Value = DbValue(data.CloudCover);
-                    command.Parameters["@DewPoint"].Value = DbValue(data.DewPoint);
-                    command.Parameters["@Humidity"].Value = DbValue(data.Humidity);
-                    command.Parameters["@Pressure"].Value = DbValue(data.Pressure);
-                    command.Parameters["@RainRate"].Value = DbValue(data.RainRate);
-                    command.Parameters["@SkyBrightness"].Value = DbValue(data.SkyBrightness);
-                    command.Parameters["@SkyQuality"].Value = DbValue(data.SkyQuality);
-                    command.Parameters["@SkyTemperature"].Value = DbValue(data.SkyTemperature);
-                    command.Parameters["@StarFwhm"].Value = DbValue(data.StarFwhm);
-                    command.Parameters["@Temperature"].Value = DbValue(data.Temperature);
-                    command.Parameters["@WindDirection"].Value = DbValue(data.WindDirection);
-                    command.Parameters["@WindGust"].Value = DbValue(data.WindGust);
-                    command.Parameters["@WindSpeed"].Value = DbValue(data.WindSpeed);
-                    command.Parameters["@IsSafeInt"].Value = DbValue(data.IsSafeInt);
-                    command.Parameters["@Notes"].Value = DbValue(data.Notes);
-
-                    command.ExecuteNonQuery();
+                if (aggRows.Count == 0) {
+                    continue;
                 }
 
-                transaction.Commit();
+                var targetConn = level.Monthly ? monthAggConn : yearAggConn;
+                var targetTx = level.Monthly ? monthTx : yearTx;
+                var sql = MergeAggSqlCache.GetOrAdd(level.Name, BuildMergeAggSql);
+                targetConn.Execute(sql, aggRows, targetTx);
+            }
+
+            rawTx.Commit();
+            monthTx.Commit();
+            yearTx.Commit();
+        }
+    }
+
+    public List<ObservingData> GetData(DateTime startTime, DateTime endTime, TimeSpan? slotDuration = null, AggregationFunction aggregationFunction = AggregationFunction.Average) {
+        if (endTime < startTime) {
+            throw new ArgumentException("End time must be greater than or equal to start time");
+        }
+
+        if (slotDuration is null) {
+            return GetRawData(startTime, endTime);
+        }
+
+        var level = MapSlotDuration(slotDuration.Value);
+        if (level == "RAW") {
+            return GetRawData(startTime, endTime);
+        }
+
+        return GetAggregatedData(startTime, endTime, level, slotDuration.Value, aggregationFunction);
+    }
+
+    public int DeleteData(DateTime startTime, DateTime endTime) {
+        if (endTime < startTime) {
+            throw new ArgumentException("End time must be greater than or equal to start time");
+        }
+
+        var deleted = 0;
+        for (var d = new DateTime(startTime.Year, startTime.Month, 1); d <= endTime; d = d.AddMonths(1)) {
+            var db = GetRawDbPath(d);
+            if (!File.Exists(db)) {
+                continue;
+            }
+
+            using var conn = new FbConnection(GetConnectionString(db));
+            conn.Open();
+            deleted += conn.Execute("DELETE FROM METEO_RAW WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime", new { startTime, endTime });
+        }
+
+        return deleted;
+    }
+
+    public ObservingData? GetLatestData(DateTime endTime, TimeSpan maxLookback) {
+        if (maxLookback <= TimeSpan.Zero) {
+            throw new ArgumentException("Max lookback must be positive", nameof(maxLookback));
+        }
+
+        var start = endTime - maxLookback;
+        for (var month = new DateTime(endTime.Year, endTime.Month, 1); month >= new DateTime(start.Year, start.Month, 1); month = month.AddMonths(-1)) {
+            var db = GetRawDbPath(month);
+            if (!File.Exists(db)) {
+                continue;
+            }
+
+            using var conn = new FbConnection(GetConnectionString(db));
+            conn.Open();
+            const string sql = @"SELECT CREATED_AT AS ""Timestamp"", CLOUD_COVER AS CloudCover, DEW_POINT AS DewPoint, HUMIDITY AS Humidity, PRESSURE AS Pressure,
+RAIN_RATE AS RainRate, SKY_BRIGHTNESS AS SkyBrightness, SKY_QUALITY AS SkyQuality, SKY_TEMPERATURE AS SkyTemperature, STAR_FWHM AS StarFwhm,
+TEMPERATURE AS Temperature, WIND_DIRECTION AS WindDirection, WIND_GUST AS WindGust, WIND_SPEED AS WindSpeed, CAST(IS_SAFE AS INTEGER) AS IsSafeInt
+FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CREATED_AT DESC ROWS 1";
+            var row = conn.QueryFirstOrDefault<ObservingData>(sql, new { start, endTime });
+            if (row != null) {
+                return row;
             }
         }
 
-        /// <summary>
-        /// Get data for a specific time range with optional aggregation
-        /// </summary>
-        /// <param name="startTime">Start of time range (inclusive)</param>
-        /// <param name="endTime">End of time range (inclusive)</param>
-        /// <param name="slotDuration">Duration of each time slot for aggregation (null for raw data)</param>
-        /// <param name="aggregationFunction">Function to use for aggregation (only used if slotDuration is specified)</param>
-        /// <returns>List of observing data (raw or aggregated) sorted by timestamp</returns>
-        public List<ObservingData> GetData(
-            DateTime startTime,
-            DateTime endTime,
-            TimeSpan? slotDuration = null,
-            AggregationFunction aggregationFunction = AggregationFunction.Average) {
-            if (endTime < startTime) {
-                throw new ArgumentException("End time must be greater than or equal to start time");
-            }
+        return null;
+    }
 
-            if (slotDuration.HasValue && slotDuration.Value <= TimeSpan.Zero) {
-                throw new ArgumentException("Slot duration must be positive");
-            }
-
-            // If no aggregation requested, return raw data
-            if (!slotDuration.HasValue) {
-                return GetRawData(startTime, endTime);
-            }
-
-            // Aggregate data using SQL
-            return GetAggregatedData(startTime, endTime, slotDuration.Value, aggregationFunction);
+    public void RecalculateAggregations(DateTime startTime, DateTime endTime, Action<AggregationRecalcProgress>? progress = null, int upsertBatchSize = 1000) {
+        if (endTime < startTime) {
+            throw new ArgumentException("End time must be greater than or equal to start time");
         }
 
-        /// <summary>
-        /// Delete data in specified time range (inclusive)
-        /// </summary>
-        /// <param name="startTime">Start of time range (inclusive)</param>
-        /// <param name="endTime">End of time range (inclusive)</param>
-        /// <returns>Number of deleted records</returns>
-        public int DeleteData(DateTime startTime, DateTime endTime) {
-            if (endTime < startTime) {
-                throw new ArgumentException("End time must be greater than or equal to start time");
-            }
+        var raw = GetRawData(startTime, endTime);
+        if (raw.Count == 0) {
+            return;
+        }
 
-            var deletedRecords = 0;
+        upsertBatchSize = Math.Max(1, upsertBatchSize);
 
-            var currentDate = new DateTime(startTime.Year, startTime.Month, 1);
-            var endDate = new DateTime(endTime.Year, endTime.Month, 1);
+        var levels = Levels.Skip(1).ToList();
+        var totalBuckets = levels.Sum(level => CountBucketsInRange(startTime, endTime, level.Name));
+        var totalSteps = (levels.Count * raw.Count) + totalBuckets;
+        var processedSteps = 0;
 
-            while (currentDate <= endDate) {
-                var dbPath = GetDatabasePath(currentDate);
+        foreach (var level in levels) {
+            var states = new Dictionary<DateTime, BucketState>();
 
-                if (File.Exists(dbPath)) {
-                    using var connection = new FbConnection(GetConnectionString(dbPath));
-                    connection.Open();
+            for (var idx = 0; idx < raw.Count; idx++) {
+                var row = raw[idx];
+                var ts = FloorToSecond(row.Timestamp);
+                var bucket = AlignToBucket(ts, level.Name);
 
-                    const string sql = @"
-                        DELETE FROM METEO_DATA
-                        WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime";
-
-                    deletedRecords += connection.Execute(sql, new { startTime, endTime });
+                if (!states.TryGetValue(bucket, out var state)) {
+                    state = new BucketState();
+                    states[bucket] = state;
                 }
 
-                currentDate = currentDate.AddMonths(1);
+                AggregateRow(state, row);
+
+                processedSteps++;
+                if ((processedSteps % 500) == 0 || idx == raw.Count - 1) {
+                    progress?.Invoke(new AggregationRecalcProgress(processedSteps, totalSteps, level.Name, bucket));
+                }
             }
 
-            return deletedRecords;
-        }
-
-        /// <summary>
-        /// Returns the latest record in reverse chronological order that is not newer than <paramref name="endTime"/>
-        /// and not older than <paramref name="maxLookback"/>.
-        /// </summary>
-        public ObservingData? GetLatestData(DateTime endTime, TimeSpan maxLookback) {
-            if (maxLookback <= TimeSpan.Zero) {
-                throw new ArgumentException("Max lookback must be positive", nameof(maxLookback));
+            if (states.Count == 0) {
+                continue;
             }
 
-            var startTime = endTime - maxLookback;
-            var currentMonth = new DateTime(endTime.Year, endTime.Month, 1);
-            var startMonth = new DateTime(startTime.Year, startTime.Month, 1);
+            var startBucket = AlignToBucket(startTime, level.Name);
+            var endBucket = AlignToBucket(endTime, level.Name);
 
-            while (currentMonth >= startMonth) {
-                var dbPath = GetDatabasePath(currentMonth);
-                if (File.Exists(dbPath)) {
-                    using var connection = new FbConnection(GetConnectionString(dbPath));
-                    connection.Open();
+            states[startBucket] = BuildSingleBucketState(LoadRawBucket(level.Name, startBucket));
+            if (endBucket != startBucket) {
+                states[endBucket] = BuildSingleBucketState(LoadRawBucket(level.Name, endBucket));
+            }
 
-                    const string sql = @"
-                        SELECT
-                            CREATED_AT      AS ""Timestamp"",
-                            CLOUD_COVER     AS CloudCover,
-                            DEW_POINT       AS DewPoint,
-                            HUMIDITY        AS Humidity,
-                            PRESSURE        AS Pressure,
-                            RAIN_RATE       AS RainRate,
-                            SKY_BRIGHTNESS  AS SkyBrightness,
-                            SKY_QUALITY     AS SkyQuality,
-                            SKY_TEMPERATURE AS SkyTemperature,
-                            STAR_FWHM       AS StarFwhm,
-                            TEMPERATURE     AS Temperature,
-                            WIND_DIRECTION  AS WindDirection,
-                            WIND_GUST       AS WindGust,
-                            WIND_SPEED      AS WindSpeed,
-                            IS_SAFE         AS IsSafeInt,
-                            NOTES           AS Notes
-                        FROM METEO_DATA
-                        WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime
-                        ORDER BY CREATED_AT DESC
-                        OFFSET 0 ROWS FETCH FIRST 1 ROWS ONLY";
+            var byDb = states.GroupBy(x => level.Monthly ? GetMonthlyAggDbPath(x.Key) : GetYearAggDbPath(x.Key.Year));
 
-                    var latest = connection.QueryFirstOrDefault<ObservingData>(sql, new { startTime, endTime });
-                    if (latest != null) {
-                        return latest;
+            foreach (var dbGroup in byDb) {
+                var dbPath = dbGroup.Key;
+                if (level.Monthly) {
+                    EnsureMonthlyAggDatabase(dbPath);
+                } else {
+                    EnsureYearAggDatabase(dbPath);
+                }
+
+                using var conn = new FbConnection(GetConnectionString(dbPath));
+                conn.Open();
+                using var tx = conn.BeginTransaction();
+
+                conn.Execute($"DELETE FROM METEO_AGG_{level.Name} WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime", new { startTime, endTime }, tx);
+
+                var upsertSql = UpsertAggSqlCache.GetOrAdd(level.Name, BuildUpsertAggSql);
+                var orderedBuckets = dbGroup.OrderBy(x => x.Key).ToList();
+
+                for (var offset = 0; offset < orderedBuckets.Count; offset += upsertBatchSize) {
+                    var chunk = orderedBuckets.Skip(offset).Take(upsertBatchSize).ToList();
+                    var rows = chunk.Select(x => CreateAggUpsertParams(x.Key, x.Value)).ToList();
+                    conn.Execute(upsertSql, rows, tx);
+
+                    foreach (var bucket in chunk) {
+                        processedSteps++;
+                        progress?.Invoke(new AggregationRecalcProgress(processedSteps, totalSteps, level.Name, bucket.Key));
                     }
                 }
 
-                currentMonth = currentMonth.AddMonths(-1);
-            }
-
-            return null;
-        }
-
-        #endregion Public Methods
-
-        #region Private Methods
-
-        /// <summary>
-        /// Build query for First and Last aggregation functions
-        /// </summary>
-        /// <remarks>
-        /// SlotSeconds is interpolated directly into SQL because Firebird does not allow
-        /// parameters in GROUP BY/PARTITION BY expressions - they must be constants at prepare time.
-        /// </remarks>
-        private static string BuildFirstLastQuery(AggregationFunction function, long slotSeconds) {
-            string orderDirection = function == AggregationFunction.First ? "ASC" : "DESC";
-
-            // Use ROW_NUMBER to find first/last record in each slot by timestamp
-            return $@"
-                WITH RankedData AS (
-                    SELECT 
-                        *,
-                        CAST(DATEDIFF(SECOND, TIMESTAMP '1970-01-01 00:00:00', CREATED_AT) / {slotSeconds} AS BIGINT) as TimeSlot,
-                        ROW_NUMBER() OVER (
-                            PARTITION BY CAST(DATEDIFF(SECOND, TIMESTAMP '1970-01-01 00:00:00', CREATED_AT) / {slotSeconds} AS BIGINT) 
-                            ORDER BY CREATED_AT {orderDirection}
-                        ) as RowNum
-                    FROM METEO_DATA
-                    WHERE CREATED_AT >= @StartTime AND CREATED_AT <= @EndTime
-                )
-                SELECT 
-                    MIN(CREATED_AT) as ""Timestamp"",
-                    MAX(CREATED_AT) as TimestampEnd,
-                    COUNT(*) as RecordCount,
-                    MAX(CASE WHEN RowNum = 1 THEN CLOUD_COVER END) as CloudCover,
-                    MAX(CASE WHEN RowNum = 1 THEN DEW_POINT END) as DewPoint,
-                    MAX(CASE WHEN RowNum = 1 THEN HUMIDITY END) as Humidity,
-                    MAX(CASE WHEN RowNum = 1 THEN PRESSURE END) as Pressure,
-                    MAX(CASE WHEN RowNum = 1 THEN RAIN_RATE END) as RainRate,
-                    MAX(CASE WHEN RowNum = 1 THEN SKY_BRIGHTNESS END) as SkyBrightness,
-                    MAX(CASE WHEN RowNum = 1 THEN SKY_QUALITY END) as SkyQuality,
-                    MAX(CASE WHEN RowNum = 1 THEN SKY_TEMPERATURE END) as SkyTemperature,
-                    MAX(CASE WHEN RowNum = 1 THEN STAR_FWHM END) as StarFwhm,
-                    MAX(CASE WHEN RowNum = 1 THEN TEMPERATURE END) as Temperature,
-                    MAX(CASE WHEN RowNum = 1 THEN WIND_DIRECTION END) as WindDirection,
-                    MAX(CASE WHEN RowNum = 1 THEN WIND_GUST END) as WindGust,
-                    MAX(CASE WHEN RowNum = 1 THEN WIND_SPEED END) as WindSpeed,
-                    SUM(CASE WHEN IS_SAFE = 1 THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(IS_SAFE), 0) as SafePercentage
-                FROM RankedData
-                GROUP BY TimeSlot
-                ORDER BY ""Timestamp""
-            ";
-        }
-
-        private static object DbValue(object? value) => value ?? DBNull.Value;
-
-        private static FbCommand CreateInsertCommand(FbConnection connection, FbTransaction transaction) {
-            var command = new FbCommand(InsertSql, connection, transaction);
-
-            command.Parameters.Add("@Timestamp", FbDbType.TimeStamp);
-            command.Parameters.Add("@CloudCover", FbDbType.Double);
-            command.Parameters.Add("@DewPoint", FbDbType.Double);
-            command.Parameters.Add("@Humidity", FbDbType.Double);
-            command.Parameters.Add("@Pressure", FbDbType.Double);
-            command.Parameters.Add("@RainRate", FbDbType.Double);
-            command.Parameters.Add("@SkyBrightness", FbDbType.Double);
-            command.Parameters.Add("@SkyQuality", FbDbType.Double);
-            command.Parameters.Add("@SkyTemperature", FbDbType.Double);
-            command.Parameters.Add("@StarFwhm", FbDbType.Double);
-            command.Parameters.Add("@Temperature", FbDbType.Double);
-            command.Parameters.Add("@WindDirection", FbDbType.Double);
-            command.Parameters.Add("@WindGust", FbDbType.Double);
-            command.Parameters.Add("@WindSpeed", FbDbType.Double);
-            command.Parameters.Add("@IsSafeInt", FbDbType.Integer);
-            command.Parameters.Add("@Notes", FbDbType.VarChar);
-
-            command.Prepare();
-
-            return command;
-        }
-
-        /// <summary>
-        /// Build query for standard aggregation functions (AVG, MIN, MAX, SUM, COUNT)
-        /// </summary>
-        /// <remarks>
-        /// SlotSeconds is interpolated directly into SQL because Firebird does not allow
-        /// parameters in GROUP BY expressions - they must be constants at prepare time.
-        /// </remarks>
-        private static string BuildStandardAggregationQuery(AggregationFunction function, long slotSeconds) {
-            string sqlFunc = function switch {
-                AggregationFunction.Average => "AVG",
-                AggregationFunction.Minimum => "MIN",
-                AggregationFunction.Maximum => "MAX",
-                AggregationFunction.Sum => "SUM",
-                AggregationFunction.Count => "COUNT",
-                _ => throw new ArgumentException($"Unknown aggregation function: {function}")
-            };
-
-            return $@"
-                SELECT 
-                    MIN(CREATED_AT) as ""Timestamp"",
-                    MAX(CREATED_AT) as TimestampEnd,
-                    COUNT(*) as RecordCount,
-                    {sqlFunc}(CLOUD_COVER) as CloudCover,
-                    {sqlFunc}(DEW_POINT) as DewPoint,
-                    {sqlFunc}(HUMIDITY) as Humidity,
-                    {sqlFunc}(PRESSURE) as Pressure,
-                    {sqlFunc}(RAIN_RATE) as RainRate,
-                    {sqlFunc}(SKY_BRIGHTNESS) as SkyBrightness,
-                    {sqlFunc}(SKY_QUALITY) as SkyQuality,
-                    {sqlFunc}(SKY_TEMPERATURE) as SkyTemperature,
-                    {sqlFunc}(STAR_FWHM) as StarFwhm,
-                    {sqlFunc}(TEMPERATURE) as Temperature,
-                    {sqlFunc}(WIND_DIRECTION) as WindDirection,
-                    {sqlFunc}(WIND_GUST) as WindGust,
-                    {sqlFunc}(WIND_SPEED) as WindSpeed,
-                    SUM(CASE WHEN IS_SAFE = 1 THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(IS_SAFE), 0) as SafePercentage
-                FROM METEO_DATA
-                WHERE CREATED_AT >= @StartTime AND CREATED_AT <= @EndTime
-                GROUP BY CAST(DATEDIFF(SECOND, TIMESTAMP '1970-01-01 00:00:00', CREATED_AT) / {slotSeconds} AS BIGINT)
-                ORDER BY ""Timestamp""
-            ";
-        }
-
-        /// <summary>
-        /// Create database and table if they don't exist
-        /// </summary>
-        private void EnsureDatabaseExists(string dbPath) {
-            var directory = Path.GetDirectoryName(dbPath);
-            if (!Directory.Exists(directory)) {
-                Directory.CreateDirectory(directory!);
-            }
-
-            if (!File.Exists(dbPath)) {
-                // Create database with FireBird 5 on localhost
-                var csb = new FbConnectionStringBuilder {
-                    DataSource = "localhost",
-                    Database = dbPath,
-                    UserID = _userName,
-                    Password = _password,
-                    ServerType = FbServerType.Default,
-                    Charset = "UTF8",
-                    WireCrypt = FbWireCrypt.Enabled,
-                    Pooling = false
-                };
-
-                FbConnection.CreateDatabase(csb.ToString());
-
-                // Create table with IDENTITY column (FireBird 5 auto-increment)
-                using var connection = new FbConnection(GetConnectionString(dbPath));
-                connection.Open();
-
-                // Create table
-                using (var command = connection.CreateCommand()) {
-                    command.CommandText = @"CREATE TABLE METEO_DATA (
-                        ID BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                        CREATED_AT TIMESTAMP NOT NULL,
-                        CLOUD_COVER DOUBLE PRECISION,
-                        DEW_POINT DOUBLE PRECISION,
-                        HUMIDITY DOUBLE PRECISION,
-                        PRESSURE DOUBLE PRECISION,
-                        RAIN_RATE DOUBLE PRECISION,
-                        SKY_BRIGHTNESS DOUBLE PRECISION,
-                        SKY_QUALITY DOUBLE PRECISION,
-                        SKY_TEMPERATURE DOUBLE PRECISION,
-                        STAR_FWHM DOUBLE PRECISION,
-                        TEMPERATURE DOUBLE PRECISION,
-                        WIND_DIRECTION DOUBLE PRECISION,
-                        WIND_GUST DOUBLE PRECISION,
-                        WIND_SPEED DOUBLE PRECISION,
-                        IS_SAFE INTEGER,
-                        NOTES VARCHAR(1000)
-                        )";
-                    command.ExecuteNonQuery();
-                }
-
-                // Create index
-                using (var command = connection.CreateCommand()) {
-                    command.CommandText = "CREATE INDEX IDX_CREATED_AT ON METEO_DATA(CREATED_AT)";
-                    command.ExecuteNonQuery();
-                }
+                tx.Commit();
             }
         }
 
-        /// <summary>
-        /// Get aggregated data using Dapper for better performance and type safety
-        /// </summary>
-        private List<ObservingData> GetAggregatedData(
-            DateTime startTime,
-            DateTime endTime,
-            TimeSpan slotDuration,
-            AggregationFunction aggregationFunction) {
-            var slotSeconds = (long)slotDuration.TotalSeconds;
+    }
 
-            // Collect all existing shard paths for the requested range
-            var shardPaths = CollectShardPaths(startTime, endTime);
-
-            if (shardPaths.Count == 0) {
-                return [];
+    private static void AggregateRow(BucketState state, ObservingData row) {
+        for (var i = 0; i < Metrics.Length; i++) {
+            var value = GetMetricValue(row, i);
+            if (!value.HasValue) {
+                continue;
             }
 
-            // Build the query once — it is identical for every shard
-            string query;
-            if (aggregationFunction == AggregationFunction.First ||
-                aggregationFunction == AggregationFunction.Last) {
-                query = BuildFirstLastQuery(aggregationFunction, slotSeconds);
-            } else {
-                query = BuildStandardAggregationQuery(aggregationFunction, slotSeconds);
-            }
+            var v = value.Value;
+            state.Sum[i] += v;
+            state.Count[i] += 1;
+            state.Min[i] = !state.Min[i].HasValue || v < state.Min[i] ? v : state.Min[i];
+            state.Max[i] = !state.Max[i].HasValue || v > state.Max[i] ? v : state.Max[i];
+            state.First[i] ??= v;
+            state.Last[i] = v;
+        }
+    }
 
-            // Single shard — no parallelism overhead
-            if (shardPaths.Count == 1) {
-                using var connection = new FbConnection(GetConnectionString(shardPaths[0]));
-                connection.Open();
-                return [.. connection.Query<ObservingData>(
-                    query,
-                    new { StartTime = startTime, EndTime = endTime }
-                ).OrderBy(d => d.Timestamp)];
-            }
-
-            // Multiple shards — query in parallel
-            var bag = new ConcurrentBag<ObservingData>();
-            var queryParams = new { StartTime = startTime, EndTime = endTime };
-
-            Parallel.ForEach(shardPaths, dbPath => {
-                using var connection = new FbConnection(GetConnectionString(dbPath));
-                connection.Open();
-
-                var aggregatedData = connection.Query<ObservingData>(query, queryParams);
-                foreach (var item in aggregatedData) {
-                    bag.Add(item);
-                }
-            });
-
-            return [.. bag.OrderBy(d => d.Timestamp)];
+    private BucketState BuildSingleBucketState(IEnumerable<ObservingData> bucketRows) {
+        var state = new BucketState();
+        foreach (var row in bucketRows) {
+            AggregateRow(state, row);
         }
 
-        /// <summary>
-        /// Get connection string for a database
-        /// </summary>
-        private string GetConnectionString(string dbPath) {
-            var builder = new FbConnectionStringBuilder {
-                DataSource = "localhost",
-                Database = dbPath,
-                UserID = _userName,
-                Password = _password,
-                ServerType = FbServerType.Default,
-                Charset = "UTF8",
-                WireCrypt = FbWireCrypt.Enabled,
-                Pooling = true
-            };
+        return state;
+    }
 
-            return builder.ToString();
+    private IEnumerable<ObservingData> LoadRawBucket(string levelName, DateTime bucketStart) {
+        var span = Levels.First(x => x.Name == levelName).Span;
+        var bucketEnd = bucketStart.Add(span).AddSeconds(-1);
+        return GetRawData(bucketStart, bucketEnd);
+    }
+
+    private static int CountBucketsInRange(DateTime startTime, DateTime endTime, string levelName) {
+        var startBucket = AlignToBucket(startTime, levelName);
+        var endBucket = AlignToBucket(endTime, levelName);
+        var span = Levels.First(x => x.Name == levelName).Span;
+        var ticks = span.Ticks;
+        if (ticks <= 0) {
+            return 0;
         }
 
-        /// <summary>
-        /// Collect existing shard file paths that cover the requested time range
-        /// </summary>
-        private List<string> CollectShardPaths(DateTime startTime, DateTime endTime) {
-            var paths = new List<string>();
-            var currentDate = new DateTime(startTime.Year, startTime.Month, 1);
-            var endDate = new DateTime(endTime.Year, endTime.Month, 1);
+        return (int)(((endBucket - startBucket).Ticks / ticks) + 1);
+    }
 
-            while (currentDate <= endDate) {
-                var dbPath = GetDatabasePath(currentDate);
-                if (File.Exists(dbPath)) {
-                    paths.Add(dbPath);
-                }
-                currentDate = currentDate.AddMonths(1);
+    private static double? GetMetricValue(ObservingData row, int metricIndex) {
+        return metricIndex switch {
+            0 => row.CloudCover,
+            1 => row.IsSafeInt,
+            2 => row.DewPoint,
+            3 => row.Humidity,
+            4 => row.Pressure,
+            5 => row.SkyBrightness,
+            6 => row.RainRate,
+            7 => row.SkyQuality,
+            8 => row.SkyTemperature,
+            9 => row.StarFwhm,
+            10 => row.Temperature,
+            11 => row.WindDirection,
+            12 => row.WindGust,
+            13 => row.WindSpeed,
+            _ => null
+        };
+    }
+
+    private static string BuildUpsertAggSql(string level) {
+        var columns = new List<string> { "CREATED_AT" };
+        foreach (var m in Metrics) {
+            columns.AddRange([$"{m.Name}_SUM", $"{m.Name}_COUNT", $"{m.Name}_AVG", $"{m.Name}_MIN", $"{m.Name}_MAX", $"{m.Name}_FIRST", $"{m.Name}_LAST"]);
+        }
+
+        var values = new List<string> { "@CreatedAt" };
+        foreach (var m in Metrics) {
+            values.AddRange([$"@{m.Name}_SUM", $"@{m.Name}_COUNT", $"@{m.Name}_AVG", $"@{m.Name}_MIN", $"@{m.Name}_MAX", $"@{m.Name}_FIRST", $"@{m.Name}_LAST"]);
+        }
+
+        return $"UPDATE OR INSERT INTO METEO_AGG_{level} ({string.Join(",", columns)}) VALUES ({string.Join(",", values)}) MATCHING (CREATED_AT)";
+    }
+
+    private static DynamicParameters CreateAggUpsertParams(DateTime bucketTs, BucketState state) {
+        var p = new DynamicParameters();
+        p.Add("CreatedAt", bucketTs, DbType.DateTime);
+
+        for (var i = 0; i < Metrics.Length; i++) {
+            var m = Metrics[i].Name;
+            var count = state.Count[i];
+            var sum = state.Sum[i];
+            var avg = count > 0 ? sum / count : (double?)null;
+
+            p.Add($"{m}_SUM", count > 0 ? sum : (double?)null, DbType.Double);
+            p.Add($"{m}_COUNT", count, DbType.Int32);
+            p.Add($"{m}_AVG", avg, DbType.Double);
+            p.Add($"{m}_MIN", state.Min[i], DbType.Double);
+            p.Add($"{m}_MAX", state.Max[i], DbType.Double);
+            p.Add($"{m}_FIRST", state.First[i], DbType.Double);
+            p.Add($"{m}_LAST", state.Last[i], DbType.Double);
+        }
+
+        return p;
+    }
+
+    private static DateTime FloorToSecond(DateTime ts) => new(ts.Year, ts.Month, ts.Day, ts.Hour, ts.Minute, ts.Second, ts.Kind);
+
+    private static DateTime AlignToBucket(DateTime ts, string level) {
+        if (level == "3D") {
+            var anchor = new DateTime(2000, 1, 1, 0, 0, 0, ts.Kind);
+            var daySpan = (int)Math.Floor((ts.Date - anchor.Date).TotalDays / 3d) * 3;
+            return anchor.AddDays(daySpan);
+        }
+
+        if (level == "1W") {
+            var date = ts.Date;
+            var delta = ((int)date.DayOfWeek + 6) % 7;
+            return date.AddDays(-delta);
+        }
+
+        var span = Levels.First(x => x.Name == level).Span;
+        var seconds = (long)span.TotalSeconds;
+        var unix = new DateTimeOffset(ts).ToUnixTimeSeconds();
+        var aligned = unix - (unix % seconds);
+        return DateTimeOffset.FromUnixTimeSeconds(aligned).UtcDateTime;
+    }
+
+    private const string MergeRawSql = @"MERGE INTO METEO_RAW t
+USING (SELECT CAST(@CreatedAt AS TIMESTAMP) CREATED_AT FROM RDB$DATABASE) s
+ON (t.CREATED_AT = s.CREATED_AT)
+WHEN MATCHED THEN UPDATE SET
+    CLOUD_COVER = @CloudCover,
+    IS_SAFE = @IsSafeInt,
+    DEW_POINT = @DewPoint,
+    HUMIDITY = @Humidity,
+    PRESSURE = @Pressure,
+    SKY_BRIGHTNESS = @SkyBrightness,
+    RAIN_RATE = @RainRate,
+    SKY_QUALITY = @SkyQuality,
+    SKY_TEMPERATURE = @SkyTemperature,
+    STAR_FWHM = @StarFwhm,
+    TEMPERATURE = @Temperature,
+    WIND_DIRECTION = @WindDirection,
+    WIND_GUST = @WindGust,
+    WIND_SPEED = @WindSpeed
+WHEN NOT MATCHED THEN INSERT (
+    CREATED_AT,CLOUD_COVER,IS_SAFE,DEW_POINT,HUMIDITY,PRESSURE,SKY_BRIGHTNESS,RAIN_RATE,SKY_QUALITY,SKY_TEMPERATURE,STAR_FWHM,TEMPERATURE,WIND_DIRECTION,WIND_GUST,WIND_SPEED
+) VALUES (
+    @CreatedAt,@CloudCover,@IsSafeInt,@DewPoint,@Humidity,@Pressure,@SkyBrightness,@RainRate,@SkyQuality,@SkyTemperature,@StarFwhm,@Temperature,@WindDirection,@WindGust,@WindSpeed
+)";
+
+    private static object CreateRawMergeParams(ObservingData d, DateTime ts) {
+        return new {
+            CreatedAt = ts,
+            CloudCover = d.CloudCover is null ? (short?)null : Convert.ToInt16(Math.Round(d.CloudCover.Value)),
+            IsSafeInt = d.IsSafeInt is null ? (short?)null : Convert.ToInt16(d.IsSafeInt.Value),
+            DewPoint = d.DewPoint,
+            Humidity = d.Humidity,
+            Pressure = d.Pressure,
+            SkyBrightness = d.SkyBrightness,
+            RainRate = d.RainRate,
+            SkyQuality = d.SkyQuality,
+            SkyTemperature = d.SkyTemperature,
+            StarFwhm = d.StarFwhm,
+            Temperature = d.Temperature,
+            WindDirection = d.WindDirection,
+            WindGust = d.WindGust,
+            WindSpeed = d.WindSpeed
+        };
+    }
+
+    private static DynamicParameters CreateAggMergeParams(ObservingData d, DateTime bucketTs) {
+        var p = new DynamicParameters();
+        p.Add("CreatedAt", bucketTs, DbType.DateTime);
+        AddMetricParams(p, d);
+        return p;
+    }
+
+    private static void AddMetricParams(DynamicParameters p, ObservingData d) {
+        p.Add("CLOUD_COVER", d.CloudCover, DbType.Double);
+        p.Add("IS_SAFE", d.IsSafeInt is null ? null : Convert.ToDouble(d.IsSafeInt.Value, CultureInfo.InvariantCulture), DbType.Double);
+        p.Add("DEW_POINT", d.DewPoint, DbType.Double);
+        p.Add("HUMIDITY", d.Humidity, DbType.Double);
+        p.Add("PRESSURE", d.Pressure, DbType.Double);
+        p.Add("SKY_BRIGHTNESS", d.SkyBrightness, DbType.Double);
+        p.Add("RAIN_RATE", d.RainRate, DbType.Double);
+        p.Add("SKY_QUALITY", d.SkyQuality, DbType.Double);
+        p.Add("SKY_TEMPERATURE", d.SkyTemperature, DbType.Double);
+        p.Add("STAR_FWHM", d.StarFwhm, DbType.Double);
+        p.Add("TEMPERATURE", d.Temperature, DbType.Double);
+        p.Add("WIND_DIRECTION", d.WindDirection, DbType.Double);
+        p.Add("WIND_GUST", d.WindGust, DbType.Double);
+        p.Add("WIND_SPEED", d.WindSpeed, DbType.Double);
+    }
+
+    private static string BuildMergeAggSql(string level) {
+        var sb = new StringBuilder();
+        sb.AppendLine($"MERGE INTO METEO_AGG_{level} t");
+        sb.AppendLine("USING (SELECT CAST(@CreatedAt AS TIMESTAMP) CREATED_AT FROM RDB$DATABASE) s");
+        sb.AppendLine("ON (t.CREATED_AT = s.CREATED_AT)");
+        sb.AppendLine("WHEN MATCHED THEN UPDATE SET");
+
+        var updates = new List<string>();
+        foreach (var m in Metrics) {
+            updates.Add($"{m.Name}_SUM = COALESCE(t.{m.Name}_SUM, 0) + COALESCE(@{m.Name}, 0)");
+            updates.Add($"{m.Name}_COUNT = COALESCE(t.{m.Name}_COUNT, 0) + CASE WHEN @{m.Name} IS NULL THEN 0 ELSE 1 END");
+            updates.Add($"{m.Name}_AVG = CASE WHEN (COALESCE(t.{m.Name}_COUNT, 0) + CASE WHEN @{m.Name} IS NULL THEN 0 ELSE 1 END)=0 THEN NULL ELSE (COALESCE(t.{m.Name}_SUM,0)+COALESCE(@{m.Name},0))/(COALESCE(t.{m.Name}_COUNT, 0) + CASE WHEN @{m.Name} IS NULL THEN 0 ELSE 1 END) END");
+            updates.Add($"{m.Name}_MIN = CASE WHEN @{m.Name} IS NULL THEN t.{m.Name}_MIN WHEN t.{m.Name}_MIN IS NULL OR @{m.Name} < t.{m.Name}_MIN THEN @{m.Name} ELSE t.{m.Name}_MIN END");
+            updates.Add($"{m.Name}_MAX = CASE WHEN @{m.Name} IS NULL THEN t.{m.Name}_MAX WHEN t.{m.Name}_MAX IS NULL OR @{m.Name} > t.{m.Name}_MAX THEN @{m.Name} ELSE t.{m.Name}_MAX END");
+            updates.Add($"{m.Name}_FIRST = COALESCE(t.{m.Name}_FIRST, @{m.Name})");
+            updates.Add($"{m.Name}_LAST = CASE WHEN @{m.Name} IS NULL THEN t.{m.Name}_LAST ELSE @{m.Name} END");
+        }
+
+        sb.AppendLine(string.Join(",\n", updates));
+        sb.AppendLine("WHEN NOT MATCHED THEN INSERT (");
+
+        var cols = new List<string> { "CREATED_AT" };
+        foreach (var m in Metrics) {
+            cols.AddRange([$"{m.Name}_SUM", $"{m.Name}_COUNT", $"{m.Name}_AVG", $"{m.Name}_MIN", $"{m.Name}_MAX", $"{m.Name}_FIRST", $"{m.Name}_LAST"]);
+        }
+
+        sb.AppendLine(string.Join(",", cols));
+        sb.AppendLine(") VALUES (");
+
+        var vals = new List<string> { "@CreatedAt" };
+        foreach (var m in Metrics) {
+            vals.AddRange([
+                $"COALESCE(@{m.Name}, 0)",
+                $"CASE WHEN @{m.Name} IS NULL THEN 0 ELSE 1 END",
+                $"@{m.Name}",
+                $"@{m.Name}",
+                $"@{m.Name}",
+                $"@{m.Name}",
+                $"@{m.Name}"
+            ]);
+        }
+
+        sb.AppendLine(string.Join(",", vals));
+        sb.AppendLine(")");
+        return sb.ToString();
+    }
+
+    private List<ObservingData> GetRawData(DateTime startTime, DateTime endTime) {
+        var bags = new ConcurrentBag<ObservingData>();
+        var shards = EnumerateMonths(startTime, endTime).Select(GetRawDbPath).Where(File.Exists).ToList();
+        const string sql = @"SELECT CREATED_AT AS ""Timestamp"", CLOUD_COVER AS CloudCover, DEW_POINT AS DewPoint, HUMIDITY AS Humidity, PRESSURE AS Pressure,
+RAIN_RATE AS RainRate, SKY_BRIGHTNESS AS SkyBrightness, SKY_QUALITY AS SkyQuality, SKY_TEMPERATURE AS SkyTemperature, STAR_FWHM AS StarFwhm,
+TEMPERATURE AS Temperature, WIND_DIRECTION AS WindDirection, WIND_GUST AS WindGust, WIND_SPEED AS WindSpeed, CAST(IS_SAFE AS INTEGER) AS IsSafeInt
+FROM METEO_RAW WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT ASC";
+
+        Parallel.ForEach(shards, db => {
+            using var conn = new FbConnection(GetConnectionString(db));
+            conn.Open();
+            foreach (var r in conn.Query<ObservingData>(sql, new { startTime, endTime })) {
+                bags.Add(r);
+            }
+        });
+
+        return [.. bags.OrderBy(x => x.Timestamp)];
+    }
+
+    private List<ObservingData> GetAggregatedData(DateTime startTime, DateTime endTime, string level, TimeSpan slotDuration, AggregationFunction func) {
+        string suffix = func switch {
+            AggregationFunction.Average => "AVG",
+            AggregationFunction.Minimum => "MIN",
+            AggregationFunction.Maximum => "MAX",
+            AggregationFunction.First => "FIRST",
+            AggregationFunction.Last => "LAST",
+            AggregationFunction.Sum => "SUM",
+            AggregationFunction.Count => "COUNT",
+            _ => "AVG"
+        };
+
+        string cloud = suffix == "COUNT" ? "CAST(CLOUD_COVER_COUNT AS DOUBLE PRECISION)" : $"CLOUD_COVER_{suffix}";
+        string dew = suffix == "COUNT" ? "CAST(DEW_POINT_COUNT AS DOUBLE PRECISION)" : $"DEW_POINT_{suffix}";
+        string humidity = suffix == "COUNT" ? "CAST(HUMIDITY_COUNT AS DOUBLE PRECISION)" : $"HUMIDITY_{suffix}";
+        string pressure = suffix == "COUNT" ? "CAST(PRESSURE_COUNT AS DOUBLE PRECISION)" : $"PRESSURE_{suffix}";
+        string rain = suffix == "COUNT" ? "CAST(RAIN_RATE_COUNT AS DOUBLE PRECISION)" : $"RAIN_RATE_{suffix}";
+        string skyB = suffix == "COUNT" ? "CAST(SKY_BRIGHTNESS_COUNT AS DOUBLE PRECISION)" : $"SKY_BRIGHTNESS_{suffix}";
+        string skyQ = suffix == "COUNT" ? "CAST(SKY_QUALITY_COUNT AS DOUBLE PRECISION)" : $"SKY_QUALITY_{suffix}";
+        string skyT = suffix == "COUNT" ? "CAST(SKY_TEMPERATURE_COUNT AS DOUBLE PRECISION)" : $"SKY_TEMPERATURE_{suffix}";
+        string fwhm = suffix == "COUNT" ? "CAST(STAR_FWHM_COUNT AS DOUBLE PRECISION)" : $"STAR_FWHM_{suffix}";
+        string temp = suffix == "COUNT" ? "CAST(TEMPERATURE_COUNT AS DOUBLE PRECISION)" : $"TEMPERATURE_{suffix}";
+        string windD = suffix == "COUNT" ? "CAST(WIND_DIRECTION_COUNT AS DOUBLE PRECISION)" : $"WIND_DIRECTION_{suffix}";
+        string windG = suffix == "COUNT" ? "CAST(WIND_GUST_COUNT AS DOUBLE PRECISION)" : $"WIND_GUST_{suffix}";
+        string windS = suffix == "COUNT" ? "CAST(WIND_SPEED_COUNT AS DOUBLE PRECISION)" : $"WIND_SPEED_{suffix}";
+        string safe = suffix == "COUNT" ? "CAST(IS_SAFE_COUNT AS DOUBLE PRECISION)" : $"IS_SAFE_{suffix}";
+
+        var table = $"METEO_AGG_{level}";
+        var sql = $@"SELECT CREATED_AT AS ""Timestamp"", {cloud} AS CloudCover, {dew} AS DewPoint, {humidity} AS Humidity, {pressure} AS Pressure,
+{rain} AS RainRate, {skyB} AS SkyBrightness, {skyQ} AS SkyQuality, {skyT} AS SkyTemperature, {fwhm} AS StarFwhm,
+{temp} AS Temperature, {windD} AS WindDirection, {windG} AS WindGust, {windS} AS WindSpeed,
+CAST({safe} AS INTEGER) AS IsSafeInt FROM {table}
+WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
+
+        var bag = new ConcurrentBag<ObservingData>();
+
+        var shards = level is "10S" or "30S" or "1M" or "5M" or "15M"
+            ? EnumerateMonths(startTime, endTime).Select(GetMonthlyAggDbPath).Where(File.Exists).ToList()
+            : EnumerateYears(startTime, endTime).Select(GetYearAggDbPath).Where(File.Exists).ToList();
+
+        Parallel.ForEach(shards, db => {
+            using var conn = new FbConnection(GetConnectionString(db));
+            conn.Open();
+            foreach (var r in conn.Query<ObservingData>(sql, new { startTime, endTime })) {
+                r.TimestampEnd = r.Timestamp + slotDuration;
+                r.RecordCount = 1;
+                r.SafePercentage = r.IsSafeInt;
+                bag.Add(r);
+            }
+        });
+
+        return [.. bag.OrderBy(x => x.Timestamp)];
+    }
+
+    private static string MapSlotDuration(TimeSpan slotDuration) {
+        if (slotDuration <= TimeSpan.FromSeconds(3)) return "RAW";
+        if (slotDuration <= TimeSpan.FromSeconds(10)) return "10S";
+        if (slotDuration <= TimeSpan.FromSeconds(30)) return "30S";
+        if (slotDuration <= TimeSpan.FromMinutes(1)) return "1M";
+        if (slotDuration <= TimeSpan.FromMinutes(5)) return "5M";
+        if (slotDuration <= TimeSpan.FromMinutes(15)) return "15M";
+        if (slotDuration <= TimeSpan.FromHours(1)) return "1H";
+        if (slotDuration <= TimeSpan.FromHours(4)) return "4H";
+        if (slotDuration <= TimeSpan.FromHours(12)) return "12H";
+        if (slotDuration <= TimeSpan.FromDays(1)) return "1D";
+        if (slotDuration <= TimeSpan.FromDays(3)) return "3D";
+        return "1W";
+    }
+
+    private IEnumerable<DateTime> EnumerateMonths(DateTime start, DateTime end) {
+        for (var d = new DateTime(start.Year, start.Month, 1); d <= end; d = d.AddMonths(1)) {
+            yield return d;
+        }
+    }
+
+    private IEnumerable<int> EnumerateYears(DateTime start, DateTime end) {
+        for (var y = start.Year; y <= end.Year; y++) {
+            yield return y;
+        }
+    }
+
+    private string GetRawDbPath(DateTime date) => Path.Combine(_root, date.Year.ToString(CultureInfo.InvariantCulture), $"{date:MM}_RAW{DbExt}");
+    private string GetMonthlyAggDbPath(DateTime date) => Path.Combine(_root, date.Year.ToString(CultureInfo.InvariantCulture), $"{date:MM}_AGG{DbExt}");
+    private string GetYearAggDbPath(int year) => Path.Combine(_root, $"{year}_AGG{DbExt}");
+
+    private string GetConnectionString(string dbPath) {
+        var csb = new FbConnectionStringBuilder {
+            DataSource = "localhost",
+            Database = dbPath,
+            UserID = _user,
+            Password = _password,
+            ServerType = FbServerType.Default,
+            Charset = "UTF8",
+            WireCrypt = FbWireCrypt.Enabled,
+            Pooling = true
+        };
+        return csb.ToString();
+    }
+
+    private void EnsureRawDatabase(string path) {
+        if (!_ensuredRawDbs.TryAdd(path, 0)) {
+            return;
+        }
+
+        EnsureDb(path);
+
+        var schemaKey = $"{path}|METEO_RAW";
+        if (!_ensuredRawTables.TryAdd(schemaKey, 0)) {
+            return;
+        }
+
+        using var conn = new FbConnection(GetConnectionString(path));
+        conn.Open();
+
+        if (!TableExists(conn, "METEO_RAW")) {
+            conn.Execute(@"CREATE TABLE METEO_RAW (
+CREATED_AT TIMESTAMP NOT NULL PRIMARY KEY,
+CLOUD_COVER SMALLINT,
+IS_SAFE SMALLINT,
+DEW_POINT FLOAT,
+HUMIDITY FLOAT,
+PRESSURE FLOAT,
+SKY_BRIGHTNESS DOUBLE PRECISION,
+RAIN_RATE FLOAT,
+SKY_QUALITY FLOAT,
+SKY_TEMPERATURE FLOAT,
+STAR_FWHM FLOAT,
+TEMPERATURE FLOAT,
+WIND_DIRECTION FLOAT,
+WIND_GUST FLOAT,
+WIND_SPEED FLOAT
+)");
+        }
+
+        if (!IndexExists(conn, "IDX_METEO_RAW_CREATED_AT")) {
+            conn.Execute("CREATE INDEX IDX_METEO_RAW_CREATED_AT ON METEO_RAW(CREATED_AT)");
+        }
+    }
+
+    private void EnsureMonthlyAggDatabase(string path) {
+        if (!_ensuredMonthlyAggDbs.TryAdd(path, 0)) {
+            return;
+        }
+
+        EnsureDb(path);
+        using var conn = new FbConnection(GetConnectionString(path));
+        conn.Open();
+        foreach (var level in Levels.Where(x => x.Monthly && x.Name != "RAW")) {
+            EnsureAggTable(conn, path, level.Name);
+        }
+    }
+
+    private void EnsureYearAggDatabase(string path) {
+        if (!_ensuredYearAggDbs.TryAdd(path, 0)) {
+            return;
+        }
+
+        EnsureDb(path);
+        using var conn = new FbConnection(GetConnectionString(path));
+        conn.Open();
+        foreach (var level in Levels.Where(x => !x.Monthly)) {
+            EnsureAggTable(conn, path, level.Name);
+        }
+    }
+
+    private void EnsureDb(string path) {
+        var dir = Path.GetDirectoryName(path)!;
+        Directory.CreateDirectory(dir);
+        if (File.Exists(path)) {
+            return;
+        }
+
+        var cs = GetConnectionString(path);
+        FbConnection.CreateDatabase(cs, 32768, true, false);
+    }
+
+    private void EnsureAggTable(FbConnection conn, string dbPath, string level) {
+        var tableName = $"METEO_AGG_{level}";
+        var indexName = $"IDX_METEO_AGG_{level}_CREATED_AT";
+        var schemaKey = $"{dbPath}|{tableName}";
+
+        if (!_ensuredAggTables.TryAdd(schemaKey, 0)) {
+            return;
+        }
+
+        if (!TableExists(conn, tableName)) {
+            var columns = new List<string> { "CREATED_AT TIMESTAMP NOT NULL PRIMARY KEY" };
+            foreach (var m in Metrics) {
+                columns.Add($"{m.Name}_SUM DOUBLE PRECISION");
+                columns.Add($"{m.Name}_COUNT INTEGER");
+                columns.Add($"{m.Name}_AVG {m.AggSqlType}");
+                columns.Add($"{m.Name}_MIN {m.AggSqlType}");
+                columns.Add($"{m.Name}_MAX {m.AggSqlType}");
+                columns.Add($"{m.Name}_FIRST {m.AggSqlType}");
+                columns.Add($"{m.Name}_LAST {m.AggSqlType}");
             }
 
-            return paths;
+            conn.Execute($"CREATE TABLE {tableName} ({string.Join(",", columns)})");
         }
 
-        /// <summary>
-        /// Get database file path for a specific date
-        /// </summary>
-        private string GetDatabasePath(DateTime date) {
-            var yearFolder = Path.Combine(_storageRootPath, date.Year.ToString());
-            var dbFileName = $"{date:MM}{DatabaseFileExtension}";
-            return Path.Combine(yearFolder, dbFileName);
+        if (!IndexExists(conn, indexName)) {
+            conn.Execute($"CREATE INDEX {indexName} ON {tableName}(CREATED_AT)");
         }
-        /// <summary>
-        /// Get raw data from database shards
-        /// </summary>
-        private List<ObservingData> GetRawData(DateTime startTime, DateTime endTime) {
-            // Collect all existing shard paths for the requested range
-            var shardPaths = CollectShardPaths(startTime, endTime);
+    }
 
-            if (shardPaths.Count == 0) {
-                return [];
-            }
+    private static bool TableExists(FbConnection conn, string tableName) {
+        const string sql = @"SELECT 1 FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = @TableName AND COALESCE(RDB$SYSTEM_FLAG, 0) = 0";
+        return conn.ExecuteScalar<int?>(sql, new { TableName = tableName.ToUpperInvariant() }).HasValue;
+    }
 
-            const string sql = @"
-                        SELECT 
-                            CREATED_AT      AS ""Timestamp"", 
-                            CLOUD_COVER     AS CloudCover, 
-                            DEW_POINT       AS DewPoint, 
-                            HUMIDITY        AS Humidity, 
-                            PRESSURE        AS Pressure, 
-                            RAIN_RATE       AS RainRate, 
-                            SKY_BRIGHTNESS  AS SkyBrightness, 
-                            SKY_QUALITY     AS SkyQuality, 
-                            SKY_TEMPERATURE AS SkyTemperature, 
-                            STAR_FWHM       AS StarFwhm, 
-                            TEMPERATURE     AS Temperature, 
-                            WIND_DIRECTION  AS WindDirection, 
-                            WIND_GUST       AS WindGust, 
-                            WIND_SPEED      AS WindSpeed, 
-                            IS_SAFE         AS IsSafeInt, 
-                            NOTES           AS Notes
-                        FROM METEO_DATA 
-                        WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime
-                        ORDER BY CREATED_AT ASC";
-
-            // Single shard — no parallelism overhead
-            if (shardPaths.Count == 1) {
-                using var connection = new FbConnection(GetConnectionString(shardPaths[0]));
-                connection.Open();
-                return [.. connection
-                    .Query<ObservingData>(sql, new { startTime, endTime })
-                    .OrderBy(d => d.Timestamp)];
-            }
-
-            // Multiple shards — query in parallel
-            var bag = new ConcurrentBag<ObservingData>();
-            var queryParams = new { startTime, endTime };
-
-            Parallel.ForEach(shardPaths, dbPath => {
-                using var connection = new FbConnection(GetConnectionString(dbPath));
-                connection.Open();
-
-                var data = connection.Query<ObservingData>(sql, queryParams);
-                foreach (var item in data) {
-                    bag.Add(item);
-                }
-            });
-
-            return [.. bag.OrderBy(d => d.Timestamp)];
-        }
-
-        #endregion Private Methods
+    private static bool IndexExists(FbConnection conn, string indexName) {
+        const string sql = @"SELECT 1 FROM RDB$INDICES WHERE RDB$INDEX_NAME = @IndexName";
+        return conn.ExecuteScalar<int?>(sql, new { IndexName = indexName.ToUpperInvariant() }).HasValue;
     }
 }

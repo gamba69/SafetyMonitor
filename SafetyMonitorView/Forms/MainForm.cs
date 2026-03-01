@@ -986,8 +986,7 @@ public class MainForm : MaterialForm {
                 dashboard, _dataService,
                 _appSettings.ChartStaticModeTimeoutSeconds,
                 _appSettings.ChartStaticAggregationPresetMatchTolerancePercent,
-                _appSettings.ChartStaticAggregationTargetPointCount,
-                _appSettings.ChartAggregationRoundingSeconds) {
+                _appSettings.ChartStaticAggregationTargetPointCount) {
                 Dock = DockStyle.Fill,
                 Visible = false
             };
@@ -1333,7 +1332,7 @@ public class MainForm : MaterialForm {
     private void ShowValueSchemeEditor() { using var editor = new ValueSchemeEditorForm(); editor.ShowDialog(this); }
 
     private void ShowChartPeriodPresetEditor() {
-        using var editor = new ChartPeriodsEditorForm(_appSettings.ChartPeriodPresets, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds);
+        using var editor = new ChartPeriodsEditorForm(_appSettings.ChartPeriodPresets, _appSettings.ChartStaticAggregationTargetPointCount);
         if (editor.ShowDialog(this) == DialogResult.OK) {
             _appSettings.ChartPeriodPresets = editor.Presets;
             _appSettingsService.SaveSettings(_appSettings);
@@ -1344,7 +1343,7 @@ public class MainForm : MaterialForm {
     }
 
     private void ShowSettings() {
-        using var settingsForm = new SettingsForm(_appSettingsMaintenanceService, _appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds, _appSettings.ShowRefreshIndicator, _appSettings.MinimizeToTray, _appSettings.StartMinimized, _appSettings.MaterialColorScheme);
+        using var settingsForm = new SettingsForm(_appSettingsMaintenanceService, _appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ShowRefreshIndicator, _appSettings.MinimizeToTray, _appSettings.StartMinimized, _appSettings.MaterialColorScheme);
         if (settingsForm.ShowDialog() != DialogResult.OK) {
             return;
         }
@@ -1364,7 +1363,6 @@ public class MainForm : MaterialForm {
         _appSettings.ChartStaticModeTimeoutSeconds = settingsForm.ChartStaticTimeoutSeconds;
         _appSettings.ChartStaticAggregationPresetMatchTolerancePercent = settingsForm.ChartStaticAggregationPresetMatchTolerancePercent;
         _appSettings.ChartStaticAggregationTargetPointCount = settingsForm.ChartStaticAggregationTargetPointCount;
-        _appSettings.ChartAggregationRoundingSeconds = settingsForm.ChartAggregationRoundingSeconds;
         _appSettings.ShowRefreshIndicator = settingsForm.ShowRefreshIndicator;
         _appSettings.MinimizeToTray = settingsForm.MinimizeToTray;
         _appSettings.StartMinimized = settingsForm.StartMinimized;
@@ -1391,7 +1389,6 @@ public class MainForm : MaterialForm {
         target.ChartStaticModeTimeoutSeconds = source.ChartStaticModeTimeoutSeconds;
         target.ChartStaticAggregationPresetMatchTolerancePercent = source.ChartStaticAggregationPresetMatchTolerancePercent;
         target.ChartStaticAggregationTargetPointCount = source.ChartStaticAggregationTargetPointCount;
-        target.ChartAggregationRoundingSeconds = source.ChartAggregationRoundingSeconds;
         target.LastDashboardId = source.LastDashboardId;
         target.RefreshInterval = source.RefreshInterval;
         target.ValueTileLookbackMinutes = source.ValueTileLookbackMinutes;
@@ -1432,7 +1429,7 @@ public class MainForm : MaterialForm {
         _refreshTimer?.Interval = _appSettings.RefreshInterval * 1000;
         _trayRefreshTimer?.Interval = _appSettings.RefreshInterval * 1000;
         _dashboardPanel?.SetChartStaticModeTimeoutSeconds(_appSettings.ChartStaticModeTimeoutSeconds);
-        _dashboardPanel?.SetChartStaticAggregationOptions(_appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartAggregationRoundingSeconds);
+        _dashboardPanel?.SetChartStaticAggregationOptions(_appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount);
         _refreshIndicatorIcon.Visible = _appSettings.ShowRefreshIndicator;
         _refreshIndicatorTimeLabel.Visible = _appSettings.ShowRefreshIndicator;
         RefreshQuickAccessLayout();

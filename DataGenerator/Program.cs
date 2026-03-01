@@ -147,7 +147,7 @@ internal static class Program {
             batch.Add(data);
 
             if (batch.Count >= batchSize) {
-                storage.AddDataBatch(batch);
+                storage.AddRawDataBatch(batch);
                 batch.Clear();
             }
 
@@ -158,10 +158,19 @@ internal static class Program {
         }
 
         if (batch.Count > 0) {
-            storage.AddDataBatch(batch);
+            storage.AddRawDataBatch(batch);
         }
 
         Console.WriteLine();
+        Console.WriteLine("Starting aggregation recalculation...");
+        var recalcStopwatch = Stopwatch.StartNew();
+        storage.RecalculateAggregations(startTime, endTime.Value, progress => {
+            var percent = progress.TotalBuckets <= 0 ? 100d : (progress.ProcessedBuckets * 100d / progress.TotalBuckets);
+            var eta = CalculateRemainingTime(recalcStopwatch.Elapsed, progress.ProcessedBuckets, progress.TotalBuckets);
+            Console.Write($"\rRecalc {progress.ProcessedBuckets}/{progress.TotalBuckets} ({percent:0.0}%). Level: {progress.Level}. ETA: {FormatDuration(eta)}   ");
+        }, options.BatchSize);
+        Console.WriteLine();
+
 
         Console.WriteLine($"Generated {total} records from {startTime:O} to {endTime:O}.");
         return Task.FromResult(0);

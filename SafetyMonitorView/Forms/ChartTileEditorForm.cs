@@ -256,6 +256,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
             HeaderText = "Agg.",
             FillWeight = 22,
             DataSource = Enum.GetValues<AggregationFunction>()
+                .Where(f => f != AggregationFunction.Sum && f != AggregationFunction.Count)
                 .Select(f => new { Value = f, Display = f.ToString() })
                 .ToList(),
             DisplayMember = "Display",

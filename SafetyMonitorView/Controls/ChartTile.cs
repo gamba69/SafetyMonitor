@@ -37,7 +37,6 @@ public class ChartTile : Panel {
     private TimeSpan _staticModeTimeout = TimeSpan.FromMinutes(2);
     private double _staticAggregationPresetMatchTolerancePercent = 10;
     private int _staticAggregationTargetPointCount = 300;
-    private int _aggregationRoundingSeconds = 1;
     private DateTime _lastChartInteractionUtc = DateTime.MinValue;
     private double? _lastXAxisMin;
     private double? _lastXAxisMax;
@@ -372,10 +371,9 @@ public class ChartTile : Panel {
             : timeout;
     }
 
-    public void SetStaticAggregationSettings(double presetMatchTolerancePercent, int targetPointCount, int roundingSeconds) {
+    public void SetStaticAggregationSettings(double presetMatchTolerancePercent, int targetPointCount) {
         _staticAggregationPresetMatchTolerancePercent = Math.Clamp(presetMatchTolerancePercent, 0, 100);
         _staticAggregationTargetPointCount = Math.Max(2, targetPointCount);
-        _aggregationRoundingSeconds = Math.Max(1, roundingSeconds);
 
         UpdateAggregationInfoLabel(ResolveAggregationInterval());
 
@@ -1707,8 +1705,7 @@ public class ChartTile : Panel {
             _staticAggregationPresetMatchTolerancePercent,
             _staticAggregationTargetPointCount,
             _periodPresets.Select(p => (p.Duration, p.AggregationInterval)),
-            applyPeriodMatching: true,
-            roundingStepSeconds: _aggregationRoundingSeconds);
+            applyPeriodMatching: true);
     }
 
     private void UpdateAggregationInfoLabel(TimeSpan? interval) {

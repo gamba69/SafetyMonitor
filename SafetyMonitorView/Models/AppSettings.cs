@@ -14,7 +14,6 @@ public class AppSettings {
     public int ChartStaticModeTimeoutSeconds { get; set; }
     public double ChartStaticAggregationPresetMatchTolerancePercent { get; set; }
     public int ChartStaticAggregationTargetPointCount { get; set; }
-    public int ChartAggregationRoundingSeconds { get; set; }
 
     // Dashboard settings
     public Guid? LastDashboardId { get; set; }

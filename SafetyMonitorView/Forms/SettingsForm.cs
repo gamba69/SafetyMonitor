@@ -24,7 +24,6 @@ public class SettingsForm : ThemedCaptionForm {
     private NumericUpDown _chartStaticTimeoutNumeric = null!;
     private NumericUpDown _chartStaticAggregationPresetMatchToleranceNumeric = null!;
     private NumericUpDown _chartStaticAggregationTargetPointsNumeric = null!;
-    private NumericUpDown _chartAggregationRoundingSecondsNumeric = null!;
     private NumericUpDown _refreshIntervalNumeric = null!;
     private NumericUpDown _valueTileLookbackMinutesNumeric = null!;
     private Button _saveButton = null!;
@@ -77,7 +76,7 @@ public class SettingsForm : ThemedCaptionForm {
 
     public SettingsMaintenanceAction SettingsMaintenanceAction { get; private set; }
 
-    public SettingsForm(AppSettingsMaintenanceService settingsMaintenanceService, string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartAggregationRoundingSeconds, bool currentShowRefreshIndicator, bool currentMinimizeToTray, bool currentStartMinimized, string currentMaterialColorScheme) {
+    public SettingsForm(AppSettingsMaintenanceService settingsMaintenanceService, string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, bool currentShowRefreshIndicator, bool currentMinimizeToTray, bool currentStartMinimized, string currentMaterialColorScheme) {
         _settingsMaintenanceService = settingsMaintenanceService;
         StoragePath = currentStoragePath;
         RefreshInterval = currentRefreshInterval;
@@ -85,7 +84,6 @@ public class SettingsForm : ThemedCaptionForm {
         ChartStaticTimeoutSeconds = currentChartStaticTimeoutSeconds;
         ChartStaticAggregationPresetMatchTolerancePercent = Math.Clamp(currentChartStaticAggregationPresetMatchTolerancePercent, 0, 100);
         ChartStaticAggregationTargetPointCount = Math.Max(2, currentChartStaticAggregationTargetPointCount);
-        ChartAggregationRoundingSeconds = Math.Max(1, currentChartAggregationRoundingSeconds);
         ShowRefreshIndicator = currentShowRefreshIndicator;
         MinimizeToTray = currentMinimizeToTray;
         StartMinimized = currentStartMinimized;
@@ -106,7 +104,6 @@ public class SettingsForm : ThemedCaptionForm {
     public int ChartStaticTimeoutSeconds { get; private set; } = 120;
     public double ChartStaticAggregationPresetMatchTolerancePercent { get; private set; } = 10;
     public int ChartStaticAggregationTargetPointCount { get; private set; } = 300;
-    public int ChartAggregationRoundingSeconds { get; private set; } = 1;
     public string StoragePath { get; private set; } = "";
     public bool ShowRefreshIndicator { get; private set; } = true;
     public bool MinimizeToTray { get; private set; } = false;
@@ -801,18 +798,6 @@ public class SettingsForm : ThemedCaptionForm {
             titleFont,
             descriptionFont), 0, 2);
 
-        _chartAggregationRoundingSecondsNumeric = CreateNumeric(1, 3600, 1, normalFont);
-        layout.Controls.Add(CreateSettingRow(
-            "Aggregation Rounding Step",
-            "After calculating a custom interval, the app rounds it to a clean multiple of this step (in seconds). "
-                 + "Rounding stabilizes interval selection and avoids tiny differences between similar ranges (for example 59s vs 61s). "
-                 + "Use smaller steps for finer control and maximum accuracy. "
-                 + "Use larger steps for more predictable, stable intervals and easier cross-chart comparison.",
-            "seconds",
-            _chartAggregationRoundingSecondsNumeric,
-            titleFont,
-            descriptionFont), 0, 3);
-
         page.Controls.Add(layout);
         return page;
     }
@@ -1117,7 +1102,6 @@ public class SettingsForm : ThemedCaptionForm {
         _chartStaticTimeoutNumeric.Value = ChartStaticTimeoutSeconds;
         _chartStaticAggregationPresetMatchToleranceNumeric.Value = Math.Clamp((decimal)ChartStaticAggregationPresetMatchTolerancePercent, 0m, 100m);
         _chartStaticAggregationTargetPointsNumeric.Value = Math.Clamp(ChartStaticAggregationTargetPointCount, 2, 5000);
-        _chartAggregationRoundingSecondsNumeric.Value = Math.Clamp(ChartAggregationRoundingSeconds, 1, 3600);
 
         if (_materialColorSchemeComboBox.Items.Count > 0) {
             var selectedItem = _materialColorSchemeComboBox
@@ -1148,7 +1132,6 @@ public class SettingsForm : ThemedCaptionForm {
         ChartStaticTimeoutSeconds = (int)_chartStaticTimeoutNumeric.Value;
         ChartStaticAggregationPresetMatchTolerancePercent = (double)_chartStaticAggregationPresetMatchToleranceNumeric.Value;
         ChartStaticAggregationTargetPointCount = (int)_chartStaticAggregationTargetPointsNumeric.Value;
-        ChartAggregationRoundingSeconds = (int)_chartAggregationRoundingSecondsNumeric.Value;
 
         DialogResult = DialogResult.OK;
         Close();
