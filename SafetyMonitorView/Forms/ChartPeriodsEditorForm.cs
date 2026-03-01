@@ -71,6 +71,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Value", HeaderText = "Value", FillWeight = 14 });
         _grid.Columns.Add(new DataGridViewComboBoxColumn { Name = "Unit", HeaderText = "Unit", FillWeight = 16, DataSource = _units });
         _grid.Columns.Add(new DataGridViewComboBoxColumn { Name = "Aggregation", HeaderText = "Aggregation", FillWeight = 36, DataSource = Buckets });
+        _grid.EditingControlShowing += Grid_EditingControlShowing;
         _grid.DataError += (_, e) => e.ThrowException = false;
 
         layout.Controls.Add(_grid, 0, 0);
@@ -102,13 +103,61 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
     }
 
     private void ApplyTheme() {
-        var light = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
-        BackColor = light ? Color.White : Color.FromArgb(38, 52, 57);
-        ForeColor = light ? Color.Black : Color.White;
-        _grid.BackgroundColor = light ? Color.White : Color.FromArgb(46, 61, 66);
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        BackColor = isLight ? Color.FromArgb(250, 250, 250) : Color.FromArgb(38, 52, 57);
+        ForeColor = isLight ? Color.Black : Color.White;
+
+        _grid.BackgroundColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
         _grid.DefaultCellStyle.BackColor = _grid.BackgroundColor;
         _grid.DefaultCellStyle.ForeColor = ForeColor;
+        _grid.DefaultCellStyle.SelectionBackColor = isLight ? Color.FromArgb(225, 245, 254) : Color.FromArgb(56, 78, 84);
+        _grid.DefaultCellStyle.SelectionForeColor = ForeColor;
+        _grid.ColumnHeadersDefaultCellStyle.BackColor = isLight ? Color.FromArgb(238, 238, 238) : Color.FromArgb(55, 71, 79);
+        _grid.ColumnHeadersDefaultCellStyle.ForeColor = ForeColor;
+        _grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = _grid.ColumnHeadersDefaultCellStyle.BackColor;
+        _grid.ColumnHeadersDefaultCellStyle.SelectionForeColor = _grid.ColumnHeadersDefaultCellStyle.ForeColor;
         _grid.EnableHeadersVisualStyles = false;
+        _grid.GridColor = isLight ? Color.FromArgb(220, 220, 220) : Color.FromArgb(60, 75, 80);
+
+        ApplyComboColumnTheme("Unit");
+        ApplyComboColumnTheme("Aggregation");
+
+        ApplyThemeRecursive(this, isLight);
+    }
+
+    private void ApplyComboColumnTheme(string columnName) {
+        if (_grid.Columns[columnName] is not DataGridViewComboBoxColumn comboColumn) {
+            return;
+        }
+
+        comboColumn.FlatStyle = FlatStyle.Popup;
+        comboColumn.DisplayStyle = DataGridViewComboBoxDisplayStyle.DropDownButton;
+        comboColumn.DefaultCellStyle.BackColor = _grid.DefaultCellStyle.BackColor;
+        comboColumn.DefaultCellStyle.ForeColor = _grid.DefaultCellStyle.ForeColor;
+        comboColumn.DefaultCellStyle.SelectionBackColor = _grid.DefaultCellStyle.SelectionBackColor;
+        comboColumn.DefaultCellStyle.SelectionForeColor = _grid.DefaultCellStyle.SelectionForeColor;
+    }
+
+    private void Grid_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e) {
+        if (_grid.CurrentCell?.OwningColumn is not DataGridViewComboBoxColumn || e.Control is not ComboBox comboBox) {
+            return;
+        }
+
+        comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+        comboBox.Font = CreateSafeFont(comboBox.Font.FontFamily.Name, comboBox.Font.Size, comboBox.Font.Style);
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        ThemedComboBoxStyler.Apply(comboBox, isLight);
+    }
+
+    private static void ApplyThemeRecursive(Control parent, bool isLight) {
+        foreach (Control control in parent.Controls) {
+            InteractiveCursorStyler.Apply(control);
+            if (control is Button button) {
+                ThemedButtonStyler.Apply(button, isLight);
+            }
+
+            ApplyThemeRecursive(control, isLight);
+        }
     }
 
     private void LoadPresets() {
