@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)build/generated/BuildVersion.g.cs')">
+    <Compile Include="$(MSBuildThisFileDirectory)build/generated/BuildVersion.g.cs"
+             Link="Versioning/BuildVersion.g.cs" />
+  </ItemGroup>
+</Project>

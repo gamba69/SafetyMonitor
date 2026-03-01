@@ -362,3 +362,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Shared versioning artifacts
+build/generated/
+build/version.state.lock

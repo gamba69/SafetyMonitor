@@ -1,0 +1,9 @@
+<Project>
+  <Target Name="UpdateSharedVersionInfo"
+          BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildProjectName)' == 'DataStorage'">
+    <Exec
+      WorkingDirectory="$(MSBuildThisFileDirectory)"
+      Command='dotnet run --project "$(MSBuildThisFileDirectory)build/VersioningTool/VersioningTool.csproj"' />
+  </Target>
+</Project>
