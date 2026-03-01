@@ -16,6 +16,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
     private Button _addButton = null!;
     private Button _removeButton = null!;
     private Button _calculateButton = null!;
+    private Label _headerLabel = null!;
     private Label _targetPointsLabel = null!;
 
     private readonly List<ChartPeriodUnit> _units = [.. Enum.GetValues<ChartPeriodUnit>()];
@@ -61,6 +62,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         MaximizeBox = false;
         ShowInTaskbar = false;
 
+        var titleFont = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold);
         var normal = CreateSafeFont("Segoe UI", 9f, FontStyle.Regular);
 
         var layout = new TableLayoutPanel {
@@ -74,14 +76,72 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
+        var headerPanel = new TableLayoutPanel {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 5,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 8)
+        };
+        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        _headerLabel = new Label {
+            Text = "Configure chart period presets used by chart tiles. Each row defines a named period and the aggregation bucket that should be applied.",
+            Font = titleFont,
+            AutoSize = true,
+            MaximumSize = new Size(810, 0),
+            Margin = new Padding(0, 0, 0, 6)
+        };
+        headerPanel.Controls.Add(_headerLabel, 0, 0);
+        headerPanel.SetColumnSpan(_headerLabel, 2);
+
         _targetPointsLabel = new Label {
             Dock = DockStyle.Fill,
             AutoSize = true,
+            MaximumSize = new Size(810, 0),
             Font = normal,
             Margin = new Padding(0, 0, 0, 8),
             Text = $"Auto aggregation target: {_autoAggregationTargetPointCount} point(s)."
         };
-        layout.Controls.Add(_targetPointsLabel, 0, 0);
+        headerPanel.Controls.Add(_targetPointsLabel, 0, 1);
+        headerPanel.SetColumnSpan(_targetPointsLabel, 2);
+
+        headerPanel.Controls.Add(new Label {
+            Text = "• Preset: display name shown in the chart period selector.",
+            Font = normal,
+            AutoSize = true,
+            MaximumSize = new Size(390, 0),
+            Margin = new Padding(0, 0, 12, 2)
+        }, 0, 2);
+        headerPanel.Controls.Add(new Label {
+            Text = "• Value + Unit: duration of the period (for example 6 Hours).",
+            Font = normal,
+            AutoSize = true,
+            MaximumSize = new Size(390, 0),
+            Margin = new Padding(0, 0, 0, 2)
+        }, 1, 2);
+        headerPanel.Controls.Add(new Label {
+            Text = "• Aggregation: bucket size used for chart data grouping.",
+            Font = normal,
+            AutoSize = true,
+            MaximumSize = new Size(390, 0),
+            Margin = new Padding(0, 0, 12, 0)
+        }, 0, 3);
+        headerPanel.Controls.Add(new Label {
+            Text = "• Points: expected number of points for the selected aggregation.",
+            Font = normal,
+            AutoSize = true,
+            MaximumSize = new Size(390, 0),
+            Margin = new Padding(0)
+        }, 1, 3);
+
+        layout.Controls.Add(headerPanel, 0, 0);
 
         _grid = new DataGridView {
             Dock = DockStyle.Fill,
