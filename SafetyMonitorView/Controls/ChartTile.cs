@@ -1696,17 +1696,21 @@ public class ChartTile : Panel {
         if (_isStaticMode && _config.CustomPeriodDuration.HasValue && _config.CustomPeriodDuration.Value > TimeSpan.Zero) {
             var staticInterval = ResolveStaticAggregationInterval(_config.CustomPeriodDuration.Value);
             _config.CustomAggregationInterval = staticInterval;
-            return staticInterval;
+            return staticInterval > TimeSpan.Zero ? staticInterval : null;
         }
 
         var preset = _periodPresets.FirstOrDefault(p => string.Equals(p.Uid, _config.PeriodPresetUid, StringComparison.Ordinal));
-        if (!string.IsNullOrWhiteSpace(preset.Uid) && preset.AggregationInterval > TimeSpan.Zero) {
+        if (!string.IsNullOrWhiteSpace(preset.Uid)) {
             _config.CustomAggregationInterval = preset.AggregationInterval;
-            return preset.AggregationInterval;
+            return preset.AggregationInterval > TimeSpan.Zero ? preset.AggregationInterval : null;
         }
 
         var legacyInterval = _config.CustomAggregationInterval;
-        return legacyInterval ?? DataService.GetRecommendedAggregationInterval(_config.Period);
+        if (legacyInterval.HasValue) {
+            return legacyInterval.Value > TimeSpan.Zero ? legacyInterval : null;
+        }
+
+        return DataService.GetRecommendedAggregationInterval(_config.Period);
     }
 
     private TimeSpan ResolveStaticAggregationInterval(TimeSpan range) {
@@ -1725,9 +1729,7 @@ public class ChartTile : Panel {
 
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
         var color = isLight ? Color.Black : Color.White;
-        var valueText = interval.HasValue
-            ? interval.Value.ToString(@"hh\:mm\:ss")
-            : "raw";
+        var valueText = ChartAggregationHelper.FormatAggregationLabel(interval);
 
         _aggregationInfoTextBox.Clear();
         _aggregationInfoTextBox.SelectionStart = 0;

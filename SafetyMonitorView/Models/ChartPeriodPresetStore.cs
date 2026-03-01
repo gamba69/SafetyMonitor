@@ -36,7 +36,9 @@ public static class ChartPeriodPresetStore {
                 var period = MapDurationToPeriod(duration);
                 var aggregationInterval = def.AggregationInterval > TimeSpan.Zero
                     ? def.AggregationInterval
-                    : GetRecommendedAggregationInterval(duration);
+                    : def.AggregationInterval == TimeSpan.Zero
+                        ? TimeSpan.Zero
+                        : GetRecommendedAggregationInterval(duration);
                 return new ChartPeriodPreset(def.Uid, def.Name, duration, period, aggregationInterval);
             })
             .ToList();
@@ -141,7 +143,9 @@ public static class ChartPeriodPresetStore {
                     Unit = unit,
                     AggregationInterval = preset.AggregationInterval > TimeSpan.Zero
                         ? preset.AggregationInterval
-                        : GetRecommendedAggregationInterval(preset.ToTimeSpan())
+                        : preset.AggregationInterval == TimeSpan.Zero
+                            ? TimeSpan.Zero
+                            : GetRecommendedAggregationInterval(preset.ToTimeSpan())
                 });
             }
         }
