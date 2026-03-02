@@ -245,8 +245,30 @@ internal static class Program {
         var dayProgress = Math.Abs(hour - 12) / Math.Max(0.1, daylightHours / 2.0);
         var solarElevationFactor = Math.Clamp(1 - Math.Pow(dayProgress, 1.8), 0, 1);
 
-        var cloudCoverBase = 45 + 15 * Math.Sin(2 * Math.PI * dayOfYear / 14.0 + 1.2) + 20 * Math.Sin(2 * Math.PI * dayOfYear / 4.0 + hour / 12.0);
-        var cloudCover = Math.Clamp(cloudCoverBase + NextRange(random, -18, 18), 0, 100);
+        var continuousDays = timestamp.Ticks / (double)TimeSpan.TicksPerDay;
+        var longPeriodWave = Math.Sin(2 * Math.PI * continuousDays / 13.7 + 0.9);
+        var mediumPeriodWave = Math.Sin(2 * Math.PI * continuousDays / 6.2 + 2.1);
+        var synopticRegime = 0.6 * longPeriodWave + 0.4 * mediumPeriodWave;
+
+        var persistentOvercast = synopticRegime > 0.74
+            ? 93 + 7 * Math.Sin(2 * Math.PI * continuousDays / 2.6 + 0.2)
+            : 0;
+        var persistentClear = synopticRegime < -0.78
+            ? 4 + 6 * (0.5 + 0.5 * Math.Sin(2 * Math.PI * continuousDays / 2.8 + 1.7))
+            : 0;
+
+        var cloudCoverBase = 48 + 20 * synopticRegime;
+        var intradayCloudSwings = 16 * Math.Sin(2 * Math.PI * hour / 5.8 + dayOfYear * 0.17)
+            + 11 * Math.Sin(2 * Math.PI * hour / 2.3 + dayOfYear * 0.11 + 0.7);
+        var cloudCover = cloudCoverBase + intradayCloudSwings + NextRange(random, -6, 6);
+
+        if (persistentOvercast > 0) {
+            cloudCover = 0.82 * persistentOvercast + 0.18 * cloudCover;
+        } else if (persistentClear > 0) {
+            cloudCover = 0.84 * persistentClear + 0.16 * cloudCover;
+        }
+
+        cloudCover = Math.Clamp(cloudCover, 0, 100);
 
         var cloudOpacity = cloudCover / 100.0;
         var cloudLightLoss = 1 - 0.85 * cloudOpacity;
@@ -257,14 +279,15 @@ internal static class Program {
 
         var seasonalAvgTemp = 6 + 15 * solarPhase;
         var dailyTempSwing = 3 + 6 * Math.Max(0, solarPhase);
-        var temperature = seasonalAvgTemp + dailyTempSwing * diurnalPhase - 4.5 * cloudOpacity + 1.2 * harmonic + NextRange(random, -1.4, 1.4);
+        var rainSeasonStrength = Math.Clamp((synopticRegime + 0.25) / 1.25, 0, 1);
+        var temperature = seasonalAvgTemp + dailyTempSwing * diurnalPhase - 7.2 * cloudOpacity + 1.2 * harmonic + NextRange(random, -1.1, 1.1);
         temperature = Math.Clamp(temperature, -35, 38);
 
         var pressureTrend = 1015 + 9 * Math.Sin(2 * Math.PI * dayOfYear / 9.0 + hour / 8.0) + 7 * Math.Sin(2 * Math.PI * dayOfYear / 3.7 + 2.1);
         var pressure = Math.Clamp(pressureTrend - 12 * cloudOpacity + NextRange(random, -2.5, 2.5), 970, 1045);
 
-        var humidityBase = 55 + 25 * cloudOpacity - 0.9 * (temperature - 5) + 8 * (1 - solarElevationFactor);
-        var humidity = Math.Clamp(humidityBase + NextRange(random, -7, 7), 18, 100);
+        var humidityBase = 50 + 32 * cloudOpacity - 0.75 * (temperature - 5) + 9 * (1 - solarElevationFactor);
+        var humidity = Math.Clamp(humidityBase + NextRange(random, -5, 5), 18, 100);
 
         var dewSpread = Math.Clamp(12 - humidity / 9.0 + NextRange(random, -1.2, 1.2), 0.5, 16);
         var dewPoint = temperature - dewSpread;
@@ -273,10 +296,17 @@ internal static class Program {
         var windSpeed = Math.Clamp(windSpeedBase + NextRange(random, -1.2, 1.4), 0, 24);
         var windGust = Math.Clamp(windSpeed + 0.4 + 0.6 * windSpeed + NextRange(random, 0, 3), windSpeed, 35);
 
-        var rainProbability = Math.Clamp(0.03 + 0.55 * Math.Pow(cloudOpacity, 1.6) + 0.18 * (humidity / 100.0), 0, 0.9);
+        var seasonalRainChance = 0.02 + 0.5 * rainSeasonStrength * Math.Pow(cloudOpacity, 1.7);
+        var rainEventOscillation = 0.45 + 0.55 * (0.5 + 0.5 * Math.Sin(2 * Math.PI * hour / 9.5 + continuousDays * 0.21));
+        var rainProbability = Math.Clamp(seasonalRainChance * rainEventOscillation + 0.12 * (humidity / 100.0), 0, 0.5);
         var rainRate = random.NextDouble() < rainProbability
-            ? Math.Max(0, NextRange(random, 0.05, 4.5) * (0.6 + cloudOpacity) * (humidity / 100.0))
+            ? Math.Max(0, NextRange(random, 0.05, 7.2) * (0.5 + 0.7 * cloudOpacity) * (humidity / 100.0))
             : 0;
+
+        if (rainRate > 0) {
+            temperature = Math.Clamp(temperature - (1.3 + 3.8 * Math.Min(rainRate / 7.2, 1.0)), -35, 38);
+            humidity = Math.Clamp(humidity + 8 + 14 * Math.Min(rainRate / 7.2, 1.0), 18, 100);
+        }
 
         var skyTemperature = Math.Clamp(temperature - 14 - 24 * (1 - cloudOpacity) + NextRange(random, -2.5, 2.5), -60, 18);
         var skyQuality = Math.Clamp(21.9 - 2.2 * solarElevationFactor - 1.4 * cloudOpacity + NextRange(random, -0.25, 0.2), 16, 22);
