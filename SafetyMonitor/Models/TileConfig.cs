@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 namespace SafetyMonitor.Models;
 
 public enum ChartPeriod { Last15Minutes, LastHour, Last6Hours, Last24Hours, Last7Days, Last30Days, Custom }
+public enum ValueTileDisplayMode { ValueOnly, TextOnly, TextAndValue }
 
 public enum TileType { Value, Chart }
 [JsonDerivedType(typeof(ValueTileConfig), typeDiscriminator: "value")]
@@ -29,6 +30,7 @@ public class ValueTileConfig : TileConfig {
     public string IconName { get; set; } = "";
     public string IconColorSchemeName { get; set; } = "";
     public MetricType Metric { get; set; }
+    public ValueTileDisplayMode DisplayMode { get; set; } = ValueTileDisplayMode.TextOnly;
     public bool ShowIcon { get; set; } = true;
     public bool ShowUnit { get; set; } = true;
     public override TileType Type => TileType.Value;

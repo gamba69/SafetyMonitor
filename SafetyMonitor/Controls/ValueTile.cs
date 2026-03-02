@@ -26,9 +26,11 @@ public class ValueTile : Panel {
     private PictureBox? _iconBox;
     private bool _initialized;
     private Label? _titleLabel;
+    private Label? _textLabel;
     private Label? _unitLabel;
     private Label? _valueLabel;
     private const float MinTitleFontSize = 10f;
+    private const float MinTextFontSize = 11f;
     private const float MinValueFontSize = 10f;
     private const int HorizontalFitPadding = 8;
 
@@ -63,7 +65,7 @@ public class ValueTile : Panel {
     #region Public Methods
 
     public void RefreshData() {
-        if (_valueLabel == null) {
+        if (_valueLabel == null || _textLabel == null) {
             return;
         }
 
@@ -72,18 +74,17 @@ public class ValueTile : Panel {
             _currentValue = _config.Metric.GetValue(latestData);
             if (_currentValue.HasValue) {
                 var transformedText = _valueScheme?.GetText(_currentValue.Value);
-                if (transformedText != null) {
-                    _valueLabel.Text = transformedText;
-                } else {
-                    _valueLabel.Text = MetricDisplaySettingsStore.FormatMetricValue(_config.Metric, _currentValue.Value);
-                }
+                var formattedValue = MetricDisplaySettingsStore.FormatMetricValue(_config.Metric, _currentValue.Value);
+                UpdateDisplayedTexts(formattedValue, transformedText);
                 ApplyColorScheme();
             } else {
                 _valueLabel.Text = " ?";
+                _textLabel.Text = "";
                 ResetColors();
             }
         } else {
             _valueLabel.Text = " ?";
+            _textLabel.Text = "";
             ResetColors();
         }
 
@@ -159,7 +160,7 @@ public class ValueTile : Panel {
     /// These colors are always the same regardless of whether data is present.
     /// </summary>
     private void ApplyThemeColors() {
-        if (_titleLabel == null || _valueLabel == null || _unitLabel == null || _iconBox == null) {
+        if (_titleLabel == null || _textLabel == null || _valueLabel == null || _unitLabel == null || _iconBox == null) {
             return;
         }
 
@@ -169,11 +170,13 @@ public class ValueTile : Panel {
         BackColor = isLight ? Color.White : Color.FromArgb(35, 47, 52);
         _titleLabel.BackColor = Color.Transparent;
         _valueLabel.BackColor = Color.Transparent;
+        _textLabel.BackColor = Color.Transparent;
         _unitLabel.BackColor = Color.Transparent;
         _iconBox.BackColor = Color.Transparent;
 
         var primaryColor = isLight ? Color.Black : Color.White;
         _titleLabel.ForeColor = primaryColor;
+        _textLabel.ForeColor = primaryColor;
         _unitLabel.ForeColor = primaryColor;
 
         if (_currentValue.HasValue && _iconColorScheme != null) {
@@ -184,7 +187,7 @@ public class ValueTile : Panel {
     }
 
     private void ApplyColorScheme() {
-        if (_titleLabel == null || _valueLabel == null || _unitLabel == null || _iconBox == null) {
+        if (_titleLabel == null || _textLabel == null || _valueLabel == null || _unitLabel == null || _iconBox == null) {
             return;
         }
 
@@ -230,6 +233,14 @@ public class ValueTile : Panel {
             BackColor = Color.Transparent
         };
 
+        _textLabel = new Label {
+            Text = "",
+            AutoSize = false,
+            TextAlign = ContentAlignment.BottomLeft,
+            BackColor = Color.Transparent,
+            Visible = false
+        };
+
         // Unit: small, bottom-right
         _unitLabel = new Label {
             Text = _config.Metric.GetUnit(),
@@ -241,6 +252,7 @@ public class ValueTile : Panel {
 
         Controls.Add(_titleLabel);
         Controls.Add(_iconBox);
+        Controls.Add(_textLabel);
         Controls.Add(_valueLabel);
         Controls.Add(_unitLabel);
 
@@ -265,12 +277,39 @@ public class ValueTile : Panel {
             : valueSchemes.FirstOrDefault(s => s.Name == _config.ValueSchemeName);
     }
 
+    private void UpdateDisplayedTexts(string formattedValue, string? transformedText) {
+        if (_textLabel == null || _valueLabel == null) {
+            return;
+        }
+
+        var hasTransformedText = !string.IsNullOrWhiteSpace(transformedText);
+
+        switch (_config.DisplayMode) {
+            case ValueTileDisplayMode.ValueOnly:
+                _textLabel.Text = "";
+                _textLabel.Visible = false;
+                _valueLabel.Text = formattedValue;
+                break;
+            case ValueTileDisplayMode.TextAndValue:
+                _textLabel.Text = hasTransformedText ? transformedText! : "";
+                _textLabel.Visible = hasTransformedText;
+                _valueLabel.Text = formattedValue;
+                break;
+            case ValueTileDisplayMode.TextOnly:
+            default:
+                _textLabel.Text = "";
+                _textLabel.Visible = false;
+                _valueLabel.Text = hasTransformedText ? transformedText! : formattedValue;
+                break;
+        }
+    }
+
     private void OnTileResize(object? sender, EventArgs e) {
         UpdateLayout();
     }
 
     private void ResetColors() {
-        if (_titleLabel == null || _valueLabel == null || _unitLabel == null || _iconBox == null) {
+        if (_titleLabel == null || _textLabel == null || _valueLabel == null || _unitLabel == null || _iconBox == null) {
             return;
         }
 
@@ -385,12 +424,19 @@ public class ValueTile : Panel {
         UpdateFont(_valueLabel, "Segoe UI", currentSize, FontStyle.Bold);
     }
 
+
+    private int GetLogicalFontHeight(Font font) {
+        var points = font?.SizeInPoints > 0 ? font.SizeInPoints : SystemFonts.DefaultFont.SizeInPoints;
+        var pixels = points * DeviceDpi / 72f;
+        return Math.Max(1, (int)Math.Ceiling(pixels));
+    }
+
     private void UpdateLayout() {
         if (!_initialized || Width <= 0 || Height <= 0) {
             return;
         }
 
-        if (_titleLabel == null || _valueLabel == null || _unitLabel == null || _iconBox == null) {
+        if (_titleLabel == null || _textLabel == null || _valueLabel == null || _unitLabel == null || _iconBox == null) {
             return;
         }
 
@@ -403,10 +449,12 @@ public class ValueTile : Panel {
         // Font sizes proportional to tile size
         var titleFontSize = Math.Max(MinTitleFontSize, Math.Min(14f, minDimension * 0.09f));
         var valueFontSize = Math.Max(14f, Math.Min(48f, minDimension * 0.28f));
+        var textFontSize = Math.Max(MinTextFontSize, Math.Min(20f, titleFontSize + 2f));
         var unitFontSize = Math.Max(8f, Math.Min(14f, minDimension * 0.09f));
 
         // Update fonts
         UpdateFont(_titleLabel, "Segoe UI", titleFontSize, FontStyle.Bold);
+        UpdateFont(_textLabel, "Segoe UI", textFontSize, FontStyle.Bold);
         UpdateFont(_valueLabel, "Segoe UI", valueFontSize, FontStyle.Bold);
         UpdateFont(_unitLabel, "Segoe UI", unitFontSize, FontStyle.Regular);
 
@@ -427,7 +475,23 @@ public class ValueTile : Panel {
 
         // Value: bottom-left, takes more space
         var valueWidth = _config.ShowUnit ? (int)(contentWidth * 0.84) : contentWidth;
-        _valueLabel.SetBounds(Padding.Left, Padding.Top + halfHeight - 10, valueWidth, halfHeight + 10);
+        var showTextAboveValue = _config.DisplayMode == ValueTileDisplayMode.TextAndValue && !string.IsNullOrWhiteSpace(_textLabel.Text);
+        var valueTop = Padding.Top + halfHeight - 10;
+        var valueHeight = halfHeight + 10;
+        if (showTextAboveValue) {
+            var textHeight = Math.Max(20, GetLogicalFontHeight(_textLabel.Font) + 6);
+            _textLabel.SetBounds(Padding.Left, valueTop - textHeight, valueWidth, textHeight);
+            _textLabel.Visible = true;
+            _textLabel.BringToFront();
+
+            // Reserve full text row so value label never overlaps and hides text.
+            valueTop += textHeight;
+            valueHeight = Math.Max(24, valueHeight - textHeight);
+        } else {
+            _textLabel.Visible = false;
+        }
+
+        _valueLabel.SetBounds(Padding.Left, valueTop, valueWidth, valueHeight);
         FitValueFontToWidth(valueWidth, valueFontSize);
 
         // Unit: bottom-right quadrant
@@ -469,6 +533,30 @@ public class ValueTile : Panel {
             UpdateLayout();
             ViewSettingsChanged?.Invoke(this);
         }));
+        contextMenu.Items.Add(new ToolStripSeparator());
+        var valueOnlyItem = CreateMenuItem("Value Only", MaterialIcons.ValueMenuSouthEast, (_, _) => {
+            _config.DisplayMode = ValueTileDisplayMode.ValueOnly;
+            RefreshData();
+            ViewSettingsChanged?.Invoke(this);
+        });
+        valueOnlyItem.Checked = _config.DisplayMode == ValueTileDisplayMode.ValueOnly;
+        contextMenu.Items.Add(valueOnlyItem);
+
+        var textOnlyItem = CreateMenuItem("Text Only", MaterialIcons.ValueMenuNorthEast, (_, _) => {
+            _config.DisplayMode = ValueTileDisplayMode.TextOnly;
+            RefreshData();
+            ViewSettingsChanged?.Invoke(this);
+        });
+        textOnlyItem.Checked = _config.DisplayMode == ValueTileDisplayMode.TextOnly;
+        contextMenu.Items.Add(textOnlyItem);
+
+        var textAndValueItem = CreateMenuItem("Text + Value", MaterialIcons.CommonEdit, (_, _) => {
+            _config.DisplayMode = ValueTileDisplayMode.TextAndValue;
+            RefreshData();
+            ViewSettingsChanged?.Invoke(this);
+        });
+        textAndValueItem.Checked = _config.DisplayMode == ValueTileDisplayMode.TextAndValue;
+        contextMenu.Items.Add(textAndValueItem);
 
         InteractiveCursorStyler.Apply(contextMenu.Items);
     }
