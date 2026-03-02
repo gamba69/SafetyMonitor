@@ -19,6 +19,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
             Decimals = s.Decimals,
             HideZeroes = s.HideZeroes,
             InvertY = s.InvertY,
+            LogY = s.LogY,
             TrayName = s.TrayName,
             TrayValueSchemeName = s.TrayValueSchemeName
         })];
@@ -86,12 +87,13 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         var bulletPanel = new TableLayoutPanel {
             Dock = DockStyle.Top,
             ColumnCount = 2,
-            RowCount = 3,
+            RowCount = 4,
             AutoSize = true,
             Margin = new Padding(0)
         };
         bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
         bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -118,19 +120,26 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
             Margin = new Padding(0, 0, 12, 0)
         }, 0, 1);
         bulletPanel.Controls.Add(new Label {
+            Text = "• Log Y: enables logarithmic chart Y-axis for this metric.",
+            Font = normalFont,
+            AutoSize = true,
+            MaximumSize = new Size(headerDescriptionMaxWidth, 0),
+            Margin = new Padding(0, 0, 0, 0)
+        }, 1, 1);
+        bulletPanel.Controls.Add(new Label {
             Text = "• Tray name: short alias shown in tray/compact displays.",
             Font = normalFont,
             AutoSize = true,
             MaximumSize = new Size(headerDescriptionMaxWidth, 0),
             Margin = new Padding(0)
-        }, 1, 1);
+        }, 0, 2);
         bulletPanel.Controls.Add(new Label {
             Text = "• Tray scheme: optional value-scheme text mapping used in tray tooltip.",
             Font = normalFont,
             AutoSize = true,
             MaximumSize = new Size(860, 0),
             Margin = new Padding(0, 8, 0, 0)
-        }, 0, 2);
+        }, 0, 3);
         bulletPanel.SetColumnSpan(bulletPanel.Controls[^1], 2);
 
         headerPanel.Controls.Add(bulletPanel, 0, 1);
@@ -177,7 +186,8 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Metric", HeaderText = "Metric", FillWeight = 34, ReadOnly = true, MinimumWidth = 180 });
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Decimals", HeaderText = "Decimals", FillWeight = 12, MinimumWidth = 90 });
         _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "HideZeroes", HeaderText = "Hide zeroes", FillWeight = 16, MinimumWidth = 110 });
-        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "InvertY", HeaderText = "Invert Y", FillWeight = 13, MinimumWidth = 100 });
+        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "InvertY", HeaderText = "Inv Y", FillWeight = 11, MinimumWidth = 90, ToolTipText = "Invert Y" });
+        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "LogY", HeaderText = "Log Y", FillWeight = 11, MinimumWidth = 90, ToolTipText = "Logarithmic Y" });
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "TrayName", HeaderText = "Tray name", FillWeight = 19, MinimumWidth = 120 });
 
         var traySchemeColumn = new DataGridViewComboBoxColumn {
@@ -228,7 +238,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         var map = _settings.ToDictionary(s => s.Metric, s => s);
         foreach (var metric in GetOrderedMetricsForGrid(map)) {
             var s = map.TryGetValue(metric, out var found) ? found : new MetricDisplaySetting { Metric = metric };
-            _metricsGrid.Rows.Add(metric.GetDisplayName(), Math.Max(0, s.Decimals), s.HideZeroes, s.InvertY, s.TrayName, NormalizeTrayValueScheme(s.TrayValueSchemeName));
+            _metricsGrid.Rows.Add(metric.GetDisplayName(), Math.Max(0, s.Decimals), s.HideZeroes, s.InvertY, s.LogY, s.TrayName, NormalizeTrayValueScheme(s.TrayValueSchemeName));
         }
     }
 
@@ -274,6 +284,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
                 Decimals = row.Cells["Decimals"].Value,
                 HideZeroes = row.Cells["HideZeroes"].Value is true,
                 InvertY = row.Cells["InvertY"].Value is true,
+                LogY = row.Cells["LogY"].Value is true,
                 TrayName = row.Cells["TrayName"].Value?.ToString() ?? string.Empty,
                 TrayScheme = NormalizeTrayValueScheme(row.Cells["TrayValueScheme"].Value?.ToString())
             })
@@ -283,6 +294,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
                 state.Decimals,
                 state.HideZeroes,
                 state.InvertY,
+                state.LogY,
                 state.TrayName,
                 state.TrayScheme
             })
@@ -298,6 +310,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
                 rowState.Decimals!,
                 rowState.HideZeroes,
                 rowState.InvertY,
+                rowState.LogY,
                 rowState.TrayName,
                 rowState.TrayScheme);
         }
@@ -352,6 +365,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
                 Decimals = Math.Clamp(decimals, 0, 10),
                 HideZeroes = row.Cells["HideZeroes"].Value is true,
                 InvertY = row.Cells["InvertY"].Value is true,
+                LogY = row.Cells["LogY"].Value is true,
                 TrayName = row.Cells["TrayName"].Value?.ToString() ?? string.Empty,
                 TrayValueSchemeName = NormalizeTrayValueScheme(row.Cells["TrayValueScheme"].Value?.ToString())
             });

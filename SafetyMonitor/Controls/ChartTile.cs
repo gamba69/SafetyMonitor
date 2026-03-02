@@ -182,6 +182,7 @@ public class ChartTile : Panel {
         bool useMultipleAxes = distinctMetrics.Count > 1;
         var axisMap = new Dictionary<MetricType, ScottPlot.IYAxis>();
         var axisStyleMap = new Dictionary<MetricType, (string LabelText, ScottPlot.Color Color)>();
+        var hasLogYAxis = distinctMetrics.Any(metric => MetricDisplaySettingsStore.GetSettingOrDefault(metric).LogY);
 
         if (useMultipleAxes) {
             for (int i = 0; i < distinctMetrics.Count; i++) {
@@ -241,23 +242,31 @@ public class ChartTile : Panel {
             if (data.Count == 0) {
                 continue;
             }
+            var displaySetting = MetricDisplaySettingsStore.GetSettingOrDefault(agg.Metric);
             var timestamps = data.Select(d => DateTime.SpecifyKind(d.Timestamp, DateTimeKind.Utc)
                 .ToLocalTime()
                 .ToOADate()).ToArray();
             var values = data.Select(d => agg.Metric.GetValue(d) ?? double.NaN).ToArray();
+            var plotValues = values
+                .Select(value => displaySetting.LogY
+                    ? (value > 0d ? Math.Log10(value) : double.NaN)
+                    : value)
+                .ToArray();
             var validData = timestamps
-                .Zip(values, (t, v) => new { Time = t, Value = v })
-                .Where(x => !double.IsNaN(x.Value))
+                .Zip(values, (time, rawValue) => new { Time = time, RawValue = rawValue })
+                .Zip(plotValues, (item, plotValue) => new { item.Time, item.RawValue, PlotValue = plotValue })
+                .Where(x => !double.IsNaN(x.PlotValue))
                 .ToArray();
             if (validData.Length == 0) {
                 continue;
             }
             var validTimes = validData.Select(x => x.Time).ToArray();
-            var validValues = validData.Select(x => x.Value).ToArray();
+            var validPlotValues = validData.Select(x => x.PlotValue).ToArray();
+            var validRawValues = validData.Select(x => x.RawValue).ToArray();
             foreach (var time in validTimes) {
                 horizontalPoints.Add(time);
             }
-            var scatter = _plot.Plot.Add.Scatter(validTimes, validValues);
+            var scatter = _plot.Plot.Add.Scatter(validTimes, validPlotValues);
             hasVisibleSeries = true;
             metricsWithData.Add(agg.Metric);
             scatter.LegendText = agg.Label;
@@ -280,7 +289,7 @@ public class ChartTile : Panel {
                 Metric = agg.Metric,
                 SeriesColor = agg.GetColorForTheme(isLightTheme),
                 Xs = validTimes,
-                Ys = validValues,
+                Ys = validRawValues,
                 ValueSchemeName = agg.ValueSchemeName ?? string.Empty
             });
         }
@@ -319,6 +328,12 @@ public class ChartTile : Panel {
             _plot.Plot.Grid.MajorLineColor = ScottPlot.Color.FromColor(
                 isLight ? Color.LightGray : Color.FromArgb(53, 70, 76));
             _plot.Plot.Grid.MajorLineWidth = 1;
+
+            if (hasLogYAxis) {
+                _plot.Plot.Grid.MinorLineColor = ScottPlot.Color.FromColor(
+                    isLight ? Color.FromArgb(55, 0, 0, 0) : Color.FromArgb(45, 255, 255, 255));
+                _plot.Plot.Grid.MinorLineWidth = 1;
+            }
         } else {
             _plot.Plot.HideGrid();
         }
@@ -1614,14 +1629,16 @@ public class ChartTile : Panel {
         }
 
         foreach (var (metric, yAxis) in axisMap) {
+            var displaySetting = MetricDisplaySettingsStore.GetSettingOrDefault(metric);
+            ConfigureAxisTicksForLogY(yAxis, displaySetting.LogY);
+            SetAxisInversion(yAxis, displaySetting.InvertY);
+
             var rule = MetricAxisRuleStore.GetRule(metric);
             if (rule == null) {
                 continue;
             }
 
-            var displaySetting = MetricDisplaySettingsStore.GetSettingOrDefault(metric);
             var xAxis = _plot.Plot.Axes.Bottom;
-            SetAxisInversion(yAxis, displaySetting.InvertY);
 
             if (rule.MinBoundary.HasValue && rule.MaxBoundary.HasValue) {
                 _plot.Plot.Axes.Rules.Add(
@@ -1663,6 +1680,22 @@ public class ChartTile : Panel {
         }
     }
 
+
+
+    private static void ConfigureAxisTicksForLogY(ScottPlot.IYAxis axis, bool useLogarithmicScale) {
+        if (useLogarithmicScale) {
+            var tickGen = new ScottPlot.TickGenerators.NumericAutomatic {
+                MinorTickGenerator = new ScottPlot.TickGenerators.LogMinorTickGenerator(),
+                IntegerTicksOnly = false,
+                LabelFormatter = y => Math.Pow(10, y).ToString("N1")
+            };
+
+            axis.TickGenerator = tickGen;
+            return;
+        }
+
+        axis.TickGenerator = new ScottPlot.TickGenerators.NumericAutomatic();
+    }
 
     private static void SetAxisInversion(object axis, bool isInverted) {
         var axisType = axis.GetType();
