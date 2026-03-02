@@ -9,7 +9,7 @@ public static class MetricDisplaySettingsStore {
     public static IReadOnlyList<MetricDisplaySetting> Settings => _settings;
 
     public static MetricDisplaySetting GetSettingOrDefault(MetricType metric) {
-        return _settings.FirstOrDefault(s => s.Metric == metric) ?? new MetricDisplaySetting { Metric = metric };
+        return _settings.FirstOrDefault(s => s.Metric == metric) ?? CreateDefaultSetting(metric);
     }
 
     public static string FormatMetricValue(MetricType metric, double value) {
@@ -45,10 +45,29 @@ public static class MetricDisplaySettingsStore {
                 continue;
             }
 
-            loadedSettings.Add(new MetricDisplaySetting { Metric = metric });
+            loadedSettings.Add(CreateDefaultSetting(metric));
         }
 
         _settings = [.. loadedSettings.OrderBy(s => (int)s.Metric)];
         SettingsChanged?.Invoke();
+    }
+
+    private static MetricDisplaySetting CreateDefaultSetting(MetricType metric) {
+        return new MetricDisplaySetting {
+            Metric = metric,
+            TrayValueSchemeName = metric switch {
+                MetricType.Temperature => "Temperature Status",
+                MetricType.Humidity => "Humidity Status",
+                MetricType.Pressure => "Pressure Status",
+                MetricType.CloudCover => "Cloud Cover Status",
+                MetricType.SkyBrightness => "Sky Brightness Status",
+                MetricType.SkyQuality => "Sky Quality Status",
+                MetricType.RainRate => "Rain Rate Status",
+                MetricType.WindSpeed => "Wind Speed Status",
+                MetricType.WindGust => "Wind Gust Status",
+                MetricType.IsSafe => "Safety Status",
+                _ => string.Empty
+            }
+        };
     }
 }

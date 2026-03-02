@@ -595,8 +595,11 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
                 g.DrawLine(sepPen, segRect.X, segRect.Y, segRect.X, segRect.Bottom);
             }
 
-            var textLabel = sorted[i].Text;
-            var valueLabel = $"{comparisonSymbol}{sorted[i].Value}";
+            var rawTextLabel = sorted[i].Text;
+            var rawValueLabel = $"{comparisonSymbol}{sorted[i].Value}";
+            var labelMaxWidth = Math.Max(6f, segRect.Width - 4f);
+            var textLabel = TruncateForWidth(g, rawTextLabel, previewFont, labelMaxWidth);
+            var valueLabel = TruncateForWidth(g, rawValueLabel, smallFont, labelMaxWidth);
             using var textBrush = new SolidBrush(textColor);
 
             var textSize = g.MeasureString(textLabel, previewFont);
@@ -612,6 +615,35 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
 
         previewFont.Dispose();
         smallFont.Dispose();
+    }
+
+    private static string TruncateForWidth(Graphics graphics, string text, Font font, float maxWidth) {
+        const string ellipsis = "…";
+        if (string.IsNullOrEmpty(text)) {
+            return string.Empty;
+        }
+
+        if (graphics.MeasureString(text, font).Width <= maxWidth) {
+            return text;
+        }
+
+        if (graphics.MeasureString(ellipsis, font).Width > maxWidth) {
+            return ellipsis;
+        }
+
+        var low = 0;
+        var high = text.Length;
+        while (low < high) {
+            var mid = (low + high + 1) / 2;
+            var candidate = text[..mid] + ellipsis;
+            if (graphics.MeasureString(candidate, font).Width <= maxWidth) {
+                low = mid;
+            } else {
+                high = mid - 1;
+            }
+        }
+
+        return low <= 0 ? ellipsis : text[..low] + ellipsis;
     }
 
     private ValueScheme ReadSchemeFromEditor() {
