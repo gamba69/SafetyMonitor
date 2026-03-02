@@ -146,9 +146,11 @@ internal static class Program {
         var stopwatch = Stopwatch.StartNew();
         var batch = new List<ObservingData>(batchSize);
 
+        var rainTimeline = new RainTimeline(random, startTime);
+
         var total = 0;
         for (var timestamp = startTime; timestamp <= endTime; timestamp = timestamp.Add(interval)) {
-            var data = GenerateData(timestamp, random);
+            var data = GenerateData(timestamp, random, rainTimeline);
             batch.Add(data);
 
             if (batch.Count >= batchSize) {
@@ -232,7 +234,7 @@ internal static class Program {
         return null;
     }
 
-    private static ObservingData GenerateData(DateTime timestamp, Random random) {
+    private static ObservingData GenerateData(DateTime timestamp, Random random, RainTimeline rainTimeline) {
         var dayOfYear = timestamp.DayOfYear;
         var solarPhase = Math.Sin(2 * Math.PI * (dayOfYear - 81) / 365.2422); // + летом, - зимой
         var daylightHours = 12 + 4 * solarPhase;
@@ -297,11 +299,7 @@ internal static class Program {
         var windGust = Math.Clamp(windSpeed + 0.4 + 0.6 * windSpeed + NextRange(random, 0, 3), windSpeed, 35);
 
         var seasonalRainChance = 0.02 + 0.5 * rainSeasonStrength * Math.Pow(cloudOpacity, 1.7);
-        var rainEventOscillation = 0.45 + 0.55 * (0.5 + 0.5 * Math.Sin(2 * Math.PI * hour / 9.5 + continuousDays * 0.21));
-        var rainProbability = Math.Clamp(seasonalRainChance * rainEventOscillation + 0.12 * (humidity / 100.0), 0, 0.5);
-        var rainRate = random.NextDouble() < rainProbability
-            ? Math.Max(0, NextRange(random, 0.05, 7.2) * (0.5 + 0.7 * cloudOpacity) * (humidity / 100.0))
-            : 0;
+        var rainRate = rainTimeline.GetRainRate(timestamp, seasonalRainChance, humidity, cloudOpacity);
 
         if (rainRate > 0) {
             temperature = Math.Clamp(temperature - (1.3 + 3.8 * Math.Min(rainRate / 7.2, 1.0)), -35, 38);
@@ -341,6 +339,58 @@ internal static class Program {
 
     private static double NextRange(Random random, double min, double max) {
         return min + random.NextDouble() * (max - min);
+    }
+
+    private sealed class RainTimeline {
+        private readonly Random _random;
+        private DateTime _phaseStartedAt;
+        private DateTime _phaseEndsAt;
+        private bool _isRaining;
+        private double _eventPeakRate;
+
+        public RainTimeline(Random random, DateTime startTime) {
+            _random = random;
+            _phaseStartedAt = startTime;
+            _phaseEndsAt = startTime;
+        }
+
+        public double GetRainRate(DateTime timestamp, double seasonalRainChance, double humidity, double cloudOpacity) {
+            AdvancePhase(timestamp, seasonalRainChance, humidity, cloudOpacity);
+
+            if (!_isRaining) {
+                return 0;
+            }
+
+            var phaseDurationHours = Math.Max((_phaseEndsAt - _phaseStartedAt).TotalHours, 0.01);
+            var phaseProgress = Math.Clamp((timestamp - _phaseStartedAt).TotalHours / phaseDurationHours, 0, 1);
+            var envelope = Math.Sin(Math.PI * phaseProgress);
+            var withinEventVariation = 0.7 + 0.35 * (0.5 + 0.5 * Math.Sin(2 * Math.PI * phaseProgress * 3.2 + 0.8));
+            var microBursts = 1 + NextRange(_random, -0.12, 0.22);
+            var humidityFactor = Math.Clamp(humidity / 100.0, 0.55, 1.0);
+            var cloudFactor = 0.45 + 0.75 * cloudOpacity;
+            var rainRate = _eventPeakRate * envelope * withinEventVariation * microBursts * humidityFactor * cloudFactor;
+
+            return Math.Clamp(rainRate, 0, 9.5);
+        }
+
+        private void AdvancePhase(DateTime timestamp, double seasonalRainChance, double humidity, double cloudOpacity) {
+            while (timestamp >= _phaseEndsAt) {
+                _phaseStartedAt = _phaseEndsAt;
+                _isRaining = !_isRaining;
+
+                if (_isRaining) {
+                    var rainBoost = Math.Clamp(0.4 + 1.8 * seasonalRainChance + 0.25 * (humidity / 100.0) + 0.4 * cloudOpacity, 0.35, 1.9);
+                    var rainDurationHours = NextRange(_random, 0.6, 2.6) * rainBoost;
+                    _phaseEndsAt = _phaseStartedAt.AddHours(rainDurationHours);
+                    _eventPeakRate = NextRange(_random, 0.8, 7.2) * (0.45 + rainBoost);
+                } else {
+                    var dryBias = Math.Clamp(1.8 - 2.4 * seasonalRainChance - 0.4 * cloudOpacity, 0.55, 2.2);
+                    var dryDurationHours = NextRange(_random, 1.0, 20.0) * dryBias;
+                    _phaseEndsAt = _phaseStartedAt.AddHours(dryDurationHours);
+                    _eventPeakRate = 0;
+                }
+            }
+        }
     }
 
     private static string GetVersionString() {
