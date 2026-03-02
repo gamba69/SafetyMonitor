@@ -5,7 +5,10 @@ namespace SafetyMonitor.Forms;
 
 public class ThemedCaptionForm : Form {
     private const int CsDropshadow = 0x20000;
+    private readonly ThemeWindowControlPalette _windowControlPalette = AppColorizationService.Instance.GetWindowControlPalette();
     private bool _useCustomTitleBar;
+    private bool _isCloseButtonHovered;
+    private bool _isCloseButtonPressed;
     private Panel? _framePanel;
     private TableLayoutPanel? _rootLayoutPanel;
     private Panel? _titleBarPanel;
@@ -165,6 +168,31 @@ public class ThemedCaptionForm : Form {
             UseVisualStyleBackColor = false
         };
         _titleBarCloseButton.FlatAppearance.BorderSize = 0;
+        _titleBarCloseButton.MouseEnter += (_, _) => {
+            _isCloseButtonHovered = true;
+            UpdateCloseButtonVisualState();
+        };
+        _titleBarCloseButton.MouseLeave += (_, _) => {
+            _isCloseButtonHovered = false;
+            _isCloseButtonPressed = false;
+            UpdateCloseButtonVisualState();
+        };
+        _titleBarCloseButton.MouseDown += (_, e) => {
+            if (e.Button != MouseButtons.Left) {
+                return;
+            }
+
+            _isCloseButtonPressed = true;
+            UpdateCloseButtonVisualState();
+        };
+        _titleBarCloseButton.MouseUp += (_, e) => {
+            if (e.Button != MouseButtons.Left) {
+                return;
+            }
+
+            _isCloseButtonPressed = false;
+            UpdateCloseButtonVisualState();
+        };
         _titleBarCloseButton.Click += (_, _) => Close();
 
         _titleBarLayoutPanel.Controls.Add(_titleBarIcon, 0, 0);
@@ -211,20 +239,35 @@ public class ThemedCaptionForm : Form {
         }
 
         var textColor = GetPrimaryCaptionTextColor();
-        var isDarkTheme = textColor == Color.White;
 
         _titleBarPanel.BackColor = panelBackColor;
         _titleBarLabel.ForeColor = textColor;
-        _titleBarCloseButton.BackColor = panelBackColor;
-        _titleBarCloseButton.ForeColor = textColor;
-        _titleBarCloseButton.FlatAppearance.MouseOverBackColor = isDarkTheme
-            ? ControlPaint.Light(panelBackColor, 0.12f)
-            : ControlPaint.Dark(panelBackColor, 0.08f);
-        _titleBarCloseButton.FlatAppearance.MouseDownBackColor = isDarkTheme
-            ? ControlPaint.Light(panelBackColor, 0.22f)
-            : ControlPaint.Dark(panelBackColor, 0.16f);
+        _titleBarCloseButton.FlatAppearance.MouseOverBackColor = _windowControlPalette.CloseButtonHoverBackground;
+        _titleBarCloseButton.FlatAppearance.MouseDownBackColor = _windowControlPalette.CloseButtonPressedBackground;
+        UpdateCloseButtonVisualState();
 
         _framePanel?.Invalidate();
+    }
+
+    private void UpdateCloseButtonVisualState() {
+        if (_titleBarCloseButton == null || _titleBarPanel == null) {
+            return;
+        }
+
+        if (_isCloseButtonPressed) {
+            _titleBarCloseButton.BackColor = _windowControlPalette.CloseButtonPressedBackground;
+            _titleBarCloseButton.ForeColor = _windowControlPalette.CloseButtonActiveForeground;
+            return;
+        }
+
+        if (_isCloseButtonHovered) {
+            _titleBarCloseButton.BackColor = _windowControlPalette.CloseButtonHoverBackground;
+            _titleBarCloseButton.ForeColor = _windowControlPalette.CloseButtonActiveForeground;
+            return;
+        }
+
+        _titleBarCloseButton.BackColor = _titleBarPanel.BackColor;
+        _titleBarCloseButton.ForeColor = GetPrimaryCaptionTextColor();
     }
 
     private void UpdateCustomTitleBarScaling() {

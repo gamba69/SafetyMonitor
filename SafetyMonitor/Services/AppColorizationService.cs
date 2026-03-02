@@ -91,6 +91,13 @@ public sealed class AppColorizationService {
                 Color.White);
     }
 
+    public ThemeWindowControlPalette GetWindowControlPalette() {
+        return new ThemeWindowControlPalette(
+            CloseButtonHoverBackground: Color.FromArgb(232, 17, 35),
+            CloseButtonPressedBackground: Color.FromArgb(139, 10, 20),
+            CloseButtonActiveForeground: Color.White);
+    }
+
     #endregion Public Methods
 
     #region Private Constructors
@@ -111,3 +118,8 @@ public sealed record ThemeNeutralPalette(
     Color Border,
     Color Text,
     Color StrongText);
+
+public sealed record ThemeWindowControlPalette(
+    Color CloseButtonHoverBackground,
+    Color CloseButtonPressedBackground,
+    Color CloseButtonActiveForeground);
