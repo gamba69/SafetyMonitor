@@ -165,6 +165,7 @@ public class DashboardEditorForm : ThemedCaptionForm {
 
         var titleFont = new Font("Segoe UI", 10f, FontStyle.Bold);
         var normalFont = new Font("Segoe UI", 10f);
+        var italicFont = new Font("Segoe UI", 10f, FontStyle.Italic);
 
         // Main layout
         var mainLayout = new TableLayoutPanel {
@@ -198,7 +199,7 @@ public class DashboardEditorForm : ThemedCaptionForm {
         });
         descriptionPanel.Controls.Add(new Label {
             Text = "Move tiles by dragging them on the grid, and resize them by dragging their right or bottom edge directly in this editor.",
-            Font = normalFont,
+            Font = italicFont,
             AutoSize = true,
             MaximumSize = new Size(1080, 0),
             Margin = new Padding(0)

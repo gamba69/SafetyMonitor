@@ -50,7 +50,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         return panel;
     }
 
-    private static Panel CreateDescriptionSection(string title, string[] details, Font titleFont, Font textFont, int maxWidth) {
+    private static Panel CreateDescriptionSection(string title, string? subtitle, string[] details, Font titleFont, Font textFont, int maxWidth) {
         var headerPanel = new TableLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -72,6 +72,18 @@ public class ValueTileEditorForm : ThemedCaptionForm {
             Margin = new Padding(0)
         };
         headerPanel.Controls.Add(headerLabel, 0, 0);
+
+        Label? subtitleLabel = null;
+        if (!string.IsNullOrWhiteSpace(subtitle)) {
+            subtitleLabel = new Label {
+                Text = subtitle,
+                Font = CreateSafeFont(textFont.FontFamily.Name, textFont.Size, FontStyle.Italic),
+                AutoSize = true,
+                MaximumSize = new Size(maxWidth, 0),
+                Margin = new Padding(0, 2, 0, 0)
+            };
+            headerPanel.Controls.Add(subtitleLabel, 0, 1);
+        }
 
         var detailsToggle = new PictureBox {
             Size = new Size(22, 22),
@@ -144,14 +156,28 @@ public class ValueTileEditorForm : ThemedCaptionForm {
             UpdateDetailsToggle();
         }
 
+        void WireToggleClick(Control control) {
+            control.Click += (_, _) => ToggleDetails();
+            foreach (Control child in control.Controls) {
+                WireToggleClick(child);
+            }
+        }
+
         detailsToggle.Click += (_, _) => ToggleDetails();
         headerLabel.Click += (_, _) => ToggleDetails();
+        if (subtitleLabel != null) {
+            subtitleLabel.Click += (_, _) => ToggleDetails();
+        }
+        WireToggleClick(bulletPanel);
         headerPanel.MouseClick += (_, e) => {
             if (e.Y <= headerLabel.Bottom) {
                 ToggleDetails();
             }
         };
         headerLabel.ForeColorChanged += (_, _) => UpdateDetailsToggle();
+        if (subtitleLabel != null) {
+            subtitleLabel.ForeColorChanged += (_, _) => UpdateDetailsToggle();
+        }
         UpdateDetailsToggle();
 
         return headerPanel;
@@ -258,12 +284,12 @@ public class ValueTileEditorForm : ThemedCaptionForm {
 
         var descriptionSection = CreateDescriptionSection(
             "Configure value tile content and appearance",
+            "Resize the tile in Dashboard Editor by dragging tile borders.",
             [
                 "Set the tile title and choose the displayed metric.",
                 "Pick color schemes for value and icon.",
                 "Choose an optional text value scheme.",
-                "Toggle icon and unit visibility for the tile.",
-                "Resize the tile in Dashboard Editor by dragging tile borders."
+                "Toggle icon and unit visibility for the tile."
             ],
             titleFont,
             normalFont,

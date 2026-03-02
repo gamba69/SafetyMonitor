@@ -66,7 +66,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         return panel;
     }
 
-    private static Panel CreateDescriptionSection(string title, string[] details, Font titleFont, Font textFont, int maxWidth) {
+    private static Panel CreateDescriptionSection(string title, string? subtitle, string[] details, Font titleFont, Font textFont, int maxWidth) {
         var headerPanel = new TableLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -88,6 +88,18 @@ public class ChartTileEditorForm : ThemedCaptionForm {
             Margin = new Padding(0)
         };
         headerPanel.Controls.Add(headerLabel, 0, 0);
+
+        Label? subtitleLabel = null;
+        if (!string.IsNullOrWhiteSpace(subtitle)) {
+            subtitleLabel = new Label {
+                Text = subtitle,
+                Font = new Font(textFont, FontStyle.Italic),
+                AutoSize = true,
+                MaximumSize = new Size(maxWidth, 0),
+                Margin = new Padding(0, 2, 0, 0)
+            };
+            headerPanel.Controls.Add(subtitleLabel, 0, 1);
+        }
 
         var detailsToggle = new PictureBox {
             Size = new Size(22, 22),
@@ -160,14 +172,28 @@ public class ChartTileEditorForm : ThemedCaptionForm {
             UpdateDetailsToggle();
         }
 
+        void WireToggleClick(Control control) {
+            control.Click += (_, _) => ToggleDetails();
+            foreach (Control child in control.Controls) {
+                WireToggleClick(child);
+            }
+        }
+
         detailsToggle.Click += (_, _) => ToggleDetails();
         headerLabel.Click += (_, _) => ToggleDetails();
+        if (subtitleLabel != null) {
+            subtitleLabel.Click += (_, _) => ToggleDetails();
+        }
+        WireToggleClick(bulletPanel);
         headerPanel.MouseClick += (_, e) => {
             if (e.Y <= headerLabel.Bottom) {
                 ToggleDetails();
             }
         };
         headerLabel.ForeColorChanged += (_, _) => UpdateDetailsToggle();
+        if (subtitleLabel != null) {
+            subtitleLabel.ForeColorChanged += (_, _) => UpdateDetailsToggle();
+        }
         UpdateDetailsToggle();
 
         return headerPanel;
@@ -317,12 +343,12 @@ public class ChartTileEditorForm : ThemedCaptionForm {
 
         var descriptionSection = CreateDescriptionSection(
             "Configure chart tile content and behavior",
+            "Resize the tile in Dashboard Editor by dragging tile borders.",
             [
                 "Set the tile title shown in the dashboard.",
                 "Add one or more metrics and choose aggregation/line settings.",
                 "Select a chart period preset used for loading data.",
-                "Enable or disable legend, grid, and inspector.",
-                "Resize the tile in Dashboard Editor by dragging tile borders."
+                "Enable or disable legend, grid, and inspector."
             ],
             titleFont,
             normalFont,
