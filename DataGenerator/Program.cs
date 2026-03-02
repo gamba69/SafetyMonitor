@@ -233,28 +233,76 @@ internal static class Program {
     }
 
     private static ObservingData GenerateData(DateTime timestamp, Random random) {
-        var temperature = NextRange(random, -10, 25);
-        var humidity = NextRange(random, 20, 95);
-        var cloudCover = NextRange(random, 0, 100);
-        var windSpeed = NextRange(random, 0, 15);
-        var rainRate = random.NextDouble() < 0.1 ? NextRange(random, 0.2, 5) : 0;
+        var dayOfYear = timestamp.DayOfYear;
+        var solarPhase = Math.Sin(2 * Math.PI * (dayOfYear - 81) / 365.2422); // + летом, - зимой
+        var daylightHours = 12 + 4 * solarPhase;
+        var hour = timestamp.TimeOfDay.TotalHours;
+        var solarNoonOffset = 14;
+        var diurnalPhase = Math.Cos(2 * Math.PI * (hour - solarNoonOffset) / 24.0);
+        var harmonic = Math.Sin(2 * Math.PI * hour / 8.0 + dayOfYear * 0.06) + 0.5 * Math.Sin(2 * Math.PI * hour / 3.2 + dayOfYear * 0.04);
 
-        var isSafe = rainRate < 0.1 && windSpeed < 12 && cloudCover < 70;
+        var clearSkyPeakLux = 22000 + Math.Max(0, solarPhase) * 58000;
+        var dayProgress = Math.Abs(hour - 12) / Math.Max(0.1, daylightHours / 2.0);
+        var solarElevationFactor = Math.Clamp(1 - Math.Pow(dayProgress, 1.8), 0, 1);
+
+        var cloudCoverBase = 45 + 15 * Math.Sin(2 * Math.PI * dayOfYear / 14.0 + 1.2) + 20 * Math.Sin(2 * Math.PI * dayOfYear / 4.0 + hour / 12.0);
+        var cloudCover = Math.Clamp(cloudCoverBase + NextRange(random, -18, 18), 0, 100);
+
+        var cloudOpacity = cloudCover / 100.0;
+        var cloudLightLoss = 1 - 0.85 * cloudOpacity;
+        var backgroundNightLux = 0.0001 + 0.03 * NextRange(random, 0.0, 1.0);
+        var skyBrightness = backgroundNightLux + clearSkyPeakLux * solarElevationFactor * cloudLightLoss;
+        skyBrightness *= 1 + 0.03 * harmonic + NextRange(random, -0.05, 0.05);
+        skyBrightness = Math.Clamp(skyBrightness, 0.0001, 80000);
+
+        var seasonalAvgTemp = 6 + 15 * solarPhase;
+        var dailyTempSwing = 3 + 6 * Math.Max(0, solarPhase);
+        var temperature = seasonalAvgTemp + dailyTempSwing * diurnalPhase - 4.5 * cloudOpacity + 1.2 * harmonic + NextRange(random, -1.4, 1.4);
+        temperature = Math.Clamp(temperature, -35, 38);
+
+        var pressureTrend = 1015 + 9 * Math.Sin(2 * Math.PI * dayOfYear / 9.0 + hour / 8.0) + 7 * Math.Sin(2 * Math.PI * dayOfYear / 3.7 + 2.1);
+        var pressure = Math.Clamp(pressureTrend - 12 * cloudOpacity + NextRange(random, -2.5, 2.5), 970, 1045);
+
+        var humidityBase = 55 + 25 * cloudOpacity - 0.9 * (temperature - 5) + 8 * (1 - solarElevationFactor);
+        var humidity = Math.Clamp(humidityBase + NextRange(random, -7, 7), 18, 100);
+
+        var dewSpread = Math.Clamp(12 - humidity / 9.0 + NextRange(random, -1.2, 1.2), 0.5, 16);
+        var dewPoint = temperature - dewSpread;
+
+        var windSpeedBase = 1.5 + 5 * (1 - solarElevationFactor) + 4 * cloudOpacity + 1.8 * Math.Abs(Math.Sin(2 * Math.PI * dayOfYear / 2.8));
+        var windSpeed = Math.Clamp(windSpeedBase + NextRange(random, -1.2, 1.4), 0, 24);
+        var windGust = Math.Clamp(windSpeed + 0.4 + 0.6 * windSpeed + NextRange(random, 0, 3), windSpeed, 35);
+
+        var rainProbability = Math.Clamp(0.03 + 0.55 * Math.Pow(cloudOpacity, 1.6) + 0.18 * (humidity / 100.0), 0, 0.9);
+        var rainRate = random.NextDouble() < rainProbability
+            ? Math.Max(0, NextRange(random, 0.05, 4.5) * (0.6 + cloudOpacity) * (humidity / 100.0))
+            : 0;
+
+        var skyTemperature = Math.Clamp(temperature - 14 - 24 * (1 - cloudOpacity) + NextRange(random, -2.5, 2.5), -60, 18);
+        var skyQuality = Math.Clamp(21.9 - 2.2 * solarElevationFactor - 1.4 * cloudOpacity + NextRange(random, -0.25, 0.2), 16, 22);
+        var starFwhm = Math.Clamp(1.2 + 0.08 * windSpeed + 0.02 * humidity + 1.3 * cloudOpacity + NextRange(random, -0.2, 0.35), 1, 8);
+
+        var windDirection = (dayOfYear * 0.7 + hour * 12 + 40 * Math.Sin(2 * Math.PI * dayOfYear / 6.0) + NextRange(random, -35, 35)) % 360;
+        if (windDirection < 0) {
+            windDirection += 360;
+        }
+
+        var isSafe = rainRate < 0.1 && windSpeed < 12 && windGust < 18 && cloudCover < 80 && humidity < 92;
 
         return new ObservingData {
             Timestamp = timestamp,
             CloudCover = cloudCover,
-            DewPoint = temperature - NextRange(random, 0, 10),
+            DewPoint = dewPoint,
             Humidity = humidity,
-            Pressure = NextRange(random, 990, 1035),
+            Pressure = pressure,
             RainRate = rainRate,
-            SkyBrightness = NextRange(random, 0, 500),
-            SkyQuality = NextRange(random, 16, 22),
-            SkyTemperature = NextRange(random, -30, 10),
-            StarFwhm = NextRange(random, 1, 6),
+            SkyBrightness = skyBrightness,
+            SkyQuality = skyQuality,
+            SkyTemperature = skyTemperature,
+            StarFwhm = starFwhm,
             Temperature = temperature,
-            WindDirection = NextRange(random, 0, 360),
-            WindGust = windSpeed + NextRange(random, 0, 8),
+            WindDirection = windDirection,
+            WindGust = windGust,
             WindSpeed = windSpeed,
             IsSafe = isSafe,
             Notes = "generated"
