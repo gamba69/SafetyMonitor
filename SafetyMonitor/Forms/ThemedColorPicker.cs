@@ -187,8 +187,10 @@ public class ThemedColorPicker : ThemedCaptionForm {
         var panel = new FlowLayoutPanel {
             FlowDirection = FlowDirection.RightToLeft,
             Dock = DockStyle.Fill,
-            AutoSize = true,
-            Margin = new Padding(0, 10, 0, 0),
+            AutoSize = false,
+            Height = 45,
+            Padding = new Padding(0, 5, 0, 0),
+            Margin = new Padding(0),
             WrapContents = false
         };
 
@@ -233,7 +235,8 @@ public class ThemedColorPicker : ThemedCaptionForm {
             ColumnCount = 2,
             RowCount = 8,
             Margin = Padding.Empty,
-            AutoSize = true
+            AutoSize = false,
+            MinimumSize = new Size(280, 0)
         };
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -254,7 +257,9 @@ public class ThemedColorPicker : ThemedCaptionForm {
             MaxLength = 6,
             CharacterCasing = CharacterCasing.Upper,
             Font = new Font("Consolas", 10f),
-            Margin = new Padding(3, 3, 0, 6)
+            Margin = new Padding(0, 3, 0, 6),
+            AutoSize = false,
+            Height = 32
         };
         _hexBox.TextChanged += HexBox_Changed;
         panel.Controls.Add(_hexBox, 1, row);
@@ -290,7 +295,9 @@ public class ThemedColorPicker : ThemedCaptionForm {
             Value = (int)(_brightness * 100),
             TickStyle = TickStyle.None,
             BackColor = _formBg,
-            Margin = new Padding(0, 3, 0, 6)
+            Margin = new Padding(0, 3, 0, 6),
+            AutoSize = false,
+            Height = 32
         };
         _brightnessSlider.ValueChanged += BrightnessSlider_Changed;
         panel.Controls.Add(_brightnessSlider, 1, row);
@@ -317,7 +324,9 @@ public class ThemedColorPicker : ThemedCaptionForm {
         previewRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         previewRow.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        previewRow.Controls.Add(MakeLabel("Old:"), 0, 0);
+        var oldLabel = MakeLabel("Old:");
+        oldLabel.Margin = new Padding(0, 6, 8, 3);
+        previewRow.Controls.Add(oldLabel, 0, 0);
         _previewOld = new Panel {
             Dock = DockStyle.Fill,
             BackColor = SelectedColor,
@@ -326,7 +335,9 @@ public class ThemedColorPicker : ThemedCaptionForm {
         };
         previewRow.Controls.Add(_previewOld, 1, 0);
 
-        previewRow.Controls.Add(MakeLabel("New:"), 2, 0);
+        var newLabel = MakeLabel("New:");
+        newLabel.Margin = new Padding(8, 6, 8, 3);
+        previewRow.Controls.Add(newLabel, 2, 0);
         _previewNew = new Panel {
             Dock = DockStyle.Fill,
             BackColor = SelectedColor,
@@ -410,12 +421,12 @@ public class ThemedColorPicker : ThemedCaptionForm {
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterParent;
         ShowInTaskbar = false;
-        AutoSize = true;
-        AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        MinimumSize = new Size(620, 380);
+        ClientSize = new Size(620, 400);
         BackColor = _formBg;
         ForeColor = _fg;
         Font = new Font("Segoe UI", 9.5f);
-        Padding = new Padding(15);
+        Padding = new Padding(12);
 
         _wheelSize = 220;
         _barHeight = 220;
@@ -428,25 +439,25 @@ public class ThemedColorPicker : ThemedCaptionForm {
             ColumnCount = 1,
             RowCount = 2,
             Margin = Padding.Empty,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink
+            AutoSize = false
         };
-        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
         // ============================================================
         //  Content: 3 columns — [wheel] [brightness bar] [controls]
         // ============================================================
         var content = new TableLayoutPanel {
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Fill,
+            AutoSize = false,
             ColumnCount = 3,
             RowCount = 1,
-            Margin = Padding.Empty
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
         };
-        content.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        content.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        content.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, _wheelSize + 10));
+        content.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, BarWidth + 15));
         content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         content.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
@@ -507,7 +518,9 @@ public class ThemedColorPicker : ThemedCaptionForm {
             BackColor = _inputBg,
             ForeColor = _fg,
             BorderStyle = BorderStyle.FixedSingle,
-            Margin = new Padding(3, 3, 0, 4)
+            Margin = new Padding(0, 3, 0, 4),
+            AutoSize = false,
+            Height = 32
         };
     }
 
