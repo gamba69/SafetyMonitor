@@ -66,6 +66,113 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         return panel;
     }
 
+    private static Panel CreateDescriptionSection(string title, string[] details, Font titleFont, Font textFont, int maxWidth) {
+        var headerPanel = new TableLayoutPanel {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 2,
+            Margin = new Padding(0, 0, 0, 10),
+            Cursor = Cursors.Hand
+        };
+        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+        headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 22F));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        var headerLabel = new Label {
+            Text = title,
+            Font = titleFont,
+            AutoSize = true,
+            MaximumSize = new Size(maxWidth, 0),
+            Margin = new Padding(0)
+        };
+        headerPanel.Controls.Add(headerLabel, 0, 0);
+
+        var detailsToggle = new PictureBox {
+            Size = new Size(22, 22),
+            SizeMode = PictureBoxSizeMode.CenterImage,
+            Cursor = Cursors.Hand,
+            Margin = new Padding(0),
+            Dock = DockStyle.Top
+        };
+        headerPanel.Controls.Add(detailsToggle, 1, 0);
+
+        var bulletPanel = new TableLayoutPanel {
+            AutoSize = true,
+            Dock = DockStyle.Top,
+            ColumnCount = 2,
+            RowCount = (details.Length + 1) / 2,
+            Margin = new Padding(0, 4, 0, 0)
+        };
+        bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+
+        var detailColumnWidth = Math.Max(120, maxWidth / 2 - 10);
+        var detailTextWidth = Math.Max(80, detailColumnWidth - 14);
+        for (var index = 0; index < details.Length; index++) {
+            var row = index / 2;
+            var column = index % 2;
+            if (row >= bulletPanel.RowStyles.Count) {
+                bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            }
+
+            var itemPanel = new TableLayoutPanel {
+                AutoSize = true,
+                ColumnCount = 2,
+                RowCount = 1,
+                Margin = column == 0 ? new Padding(0, 0, 12, 2) : new Padding(0, 0, 0, 2)
+            };
+            itemPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 14F));
+            itemPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            itemPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            var bulletLabel = new Label {
+                Text = "•",
+                Font = textFont,
+                AutoSize = true,
+                Margin = new Padding(0)
+            };
+            var textLabel = new Label {
+                Text = details[index],
+                Font = textFont,
+                AutoSize = true,
+                MaximumSize = new Size(detailTextWidth, 0),
+                Margin = new Padding(0)
+            };
+
+            itemPanel.Controls.Add(bulletLabel, 0, 0);
+            itemPanel.Controls.Add(textLabel, 1, 0);
+            bulletPanel.Controls.Add(itemPanel, column, row);
+        }
+        headerPanel.Controls.Add(bulletPanel, 0, 1);
+        headerPanel.SetColumnSpan(bulletPanel, 2);
+
+        var detailsExpanded = false;
+        void UpdateDetailsToggle() {
+            bulletPanel.Visible = detailsExpanded;
+            detailsToggle.Image?.Dispose();
+            detailsToggle.Image = MaterialIcons.GetIcon(detailsExpanded ? "keyboard_double_arrow_up" : "keyboard_double_arrow_down", headerLabel.ForeColor, 20);
+        }
+
+        void ToggleDetails() {
+            detailsExpanded = !detailsExpanded;
+            UpdateDetailsToggle();
+        }
+
+        detailsToggle.Click += (_, _) => ToggleDetails();
+        headerLabel.Click += (_, _) => ToggleDetails();
+        headerPanel.MouseClick += (_, e) => {
+            if (e.Y <= headerLabel.Bottom) {
+                ToggleDetails();
+            }
+        };
+        headerLabel.ForeColorChanged += (_, _) => UpdateDetailsToggle();
+        UpdateDetailsToggle();
+
+        return headerPanel;
+    }
+
     private void AddMetricButton_Click(object? sender, EventArgs e) {
         var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, null!, 2.0f, false, 0.5f, false, "(None)");
         _metricsGrid.Rows[newRow].Tag = GenerateUniqueMetricColors();
@@ -208,15 +315,19 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Options row
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 7: Buttons
 
-        var descriptionLabel = new Label {
-            Text = "Use this form to configure chart tile content: title, metrics, period, and display options.\n" +
-                   "Tile size is edited in the Dashboard Editor by dragging tile borders on the grid.",
-            Font = normalFont,
-            AutoSize = true,
-            MaximumSize = new Size(710, 0),
-            Margin = new Padding(0, 0, 0, 10)
-        };
-        mainLayout.Controls.Add(descriptionLabel, 0, 0);
+        var descriptionSection = CreateDescriptionSection(
+            "Configure chart tile content and behavior",
+            [
+                "Set the tile title shown in the dashboard.",
+                "Add one or more metrics and choose aggregation/line settings.",
+                "Select a chart period preset used for loading data.",
+                "Enable or disable legend, grid, and inspector.",
+                "Resize the tile in Dashboard Editor by dragging tile borders."
+            ],
+            titleFont,
+            normalFont,
+            710);
+        mainLayout.Controls.Add(descriptionSection, 0, 0);
 
         // Row 1: Title
         var titlePanel = CreateLabeledControl("Title:", _titleTextBox = new TextBox { Font = normalFont, Dock = DockStyle.Fill }, titleFont);

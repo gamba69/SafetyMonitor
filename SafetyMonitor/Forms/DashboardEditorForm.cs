@@ -181,15 +181,29 @@ public class DashboardEditorForm : ThemedCaptionForm {
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Spacer
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Save/Cancel buttons
 
-        var descriptionLabel = new Label {
-            Text = "Use this editor to configure the dashboard name, grid, and tile set.\n" +
-                   "Move tiles by dragging them on the grid, and resize them by dragging their right or bottom edge directly in this editor.",
+        var descriptionPanel = new FlowLayoutPanel {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            Margin = new Padding(0, 0, 0, 12)
+        };
+        descriptionPanel.Controls.Add(new Label {
+            Text = "Use this editor to configure the dashboard name, grid, and tile set.",
+            Font = titleFont,
+            AutoSize = true,
+            MaximumSize = new Size(1080, 0),
+            Margin = new Padding(0, 0, 0, 2)
+        });
+        descriptionPanel.Controls.Add(new Label {
+            Text = "Move tiles by dragging them on the grid, and resize them by dragging their right or bottom edge directly in this editor.",
             Font = normalFont,
             AutoSize = true,
             MaximumSize = new Size(1080, 0),
-            Margin = new Padding(0, 0, 0, 12)
-        };
-        mainLayout.Controls.Add(descriptionLabel, 0, 0);
+            Margin = new Padding(0)
+        });
+        mainLayout.Controls.Add(descriptionPanel, 0, 0);
 
         // Row 1: Settings row (Name, Grid Size, Quick Access)
         var settingsPanel = new FlowLayoutPanel {
