@@ -316,8 +316,8 @@ public class ValueTileEditorForm : ThemedCaptionForm {
 
         _displayModeComboBox = new ComboBox { Font = normalFont, Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
         _displayModeComboBox.Items.AddRange([
-            "Value",
-            "Text from value scheme",
+            "Value Only",
+            "Text Only",
             "Text + Value"
         ]);
         var displayModePanel = CreateLabeledControl("Display mode:", _displayModeComboBox, titleFont);

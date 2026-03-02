@@ -558,7 +558,7 @@ public class ValueTile : Panel {
             ViewSettingsChanged?.Invoke(this);
         }));
         contextMenu.Items.Add(new ToolStripSeparator());
-        var valueOnlyItem = CreateMenuItem("Value Only", MaterialIcons.ValueMenuSouthEast, (_, _) => {
+        var valueOnlyItem = CreateMenuItem("Value Only", MaterialIcons.ValueDisplay123, (_, _) => {
             _config.DisplayMode = ValueTileDisplayMode.ValueOnly;
             RefreshData();
             ViewSettingsChanged?.Invoke(this);
@@ -566,7 +566,7 @@ public class ValueTile : Panel {
         valueOnlyItem.Checked = _config.DisplayMode == ValueTileDisplayMode.ValueOnly;
         contextMenu.Items.Add(valueOnlyItem);
 
-        var textOnlyItem = CreateMenuItem("Text Only", MaterialIcons.ValueMenuNorthEast, (_, _) => {
+        var textOnlyItem = CreateMenuItem("Text Only", MaterialIcons.ValueDisplayAbc, (_, _) => {
             _config.DisplayMode = ValueTileDisplayMode.TextOnly;
             RefreshData();
             ViewSettingsChanged?.Invoke(this);
@@ -574,7 +574,7 @@ public class ValueTile : Panel {
         textOnlyItem.Checked = _config.DisplayMode == ValueTileDisplayMode.TextOnly;
         contextMenu.Items.Add(textOnlyItem);
 
-        var textAndValueItem = CreateMenuItem("Text + Value", MaterialIcons.CommonEdit, (_, _) => {
+        var textAndValueItem = CreateMenuItem("Text + Value", MaterialIcons.ValueDisplayShortText, (_, _) => {
             _config.DisplayMode = ValueTileDisplayMode.TextAndValue;
             RefreshData();
             ViewSettingsChanged?.Invoke(this);
