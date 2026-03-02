@@ -83,64 +83,52 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         };
         headerPanel.Controls.Add(detailsToggle, 1, 0);
 
-        const int headerDescriptionMaxWidth = 400;
+        const int visualDetailsColumnCount = 2;
+        const int detailsColumnCount = visualDetailsColumnCount * 2;
+        var details = new[] {
+            "Decimals: number of digits after decimal point (0..10).",
+            "Hide zeroes: if enabled, zero values are shown as empty text instead of 0/0.0.",
+            "Invert Y: flips chart Y-axis direction for this metric.",
+            "Log Y: enables logarithmic chart Y-axis for this metric.",
+            "Tray name: short alias shown in tray/compact displays.",
+            "Tray scheme: optional value-scheme text mapping used in tray tooltip."
+        };
         var bulletPanel = new TableLayoutPanel {
             Dock = DockStyle.Top,
-            ColumnCount = 2,
-            RowCount = 4,
+            ColumnCount = detailsColumnCount,
+            RowCount = (details.Length + visualDetailsColumnCount - 1) / visualDetailsColumnCount,
             AutoSize = true,
             Margin = new Padding(0)
         };
+        bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 14F));
         bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 14F));
         bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-        bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        bulletPanel.Controls.Add(new Label {
-            Text = "• Decimals: number of digits after decimal point (0..10).",
-            Font = normalFont,
-            AutoSize = true,
-            MaximumSize = new Size(headerDescriptionMaxWidth, 0),
-            Margin = new Padding(0, 0, 12, 2)
-        }, 0, 0);
-        bulletPanel.Controls.Add(new Label {
-            Text = "• Hide zeroes: if enabled, zero values are shown as empty text instead of 0/0.0.",
-            Font = normalFont,
-            AutoSize = true,
-            MaximumSize = new Size(headerDescriptionMaxWidth, 0),
-            Margin = new Padding(0, 0, 0, 2)
-        }, 1, 0);
-        bulletPanel.Controls.Add(new Label {
-            Text = "• Invert Y: flips chart Y-axis direction for this metric.",
-            Font = normalFont,
-            AutoSize = true,
-            MaximumSize = new Size(headerDescriptionMaxWidth, 0),
-            Margin = new Padding(0, 0, 12, 0)
-        }, 0, 1);
-        bulletPanel.Controls.Add(new Label {
-            Text = "• Log Y: enables logarithmic chart Y-axis for this metric.",
-            Font = normalFont,
-            AutoSize = true,
-            MaximumSize = new Size(headerDescriptionMaxWidth, 0),
-            Margin = new Padding(0, 0, 0, 0)
-        }, 1, 1);
-        bulletPanel.Controls.Add(new Label {
-            Text = "• Tray name: short alias shown in tray/compact displays.",
-            Font = normalFont,
-            AutoSize = true,
-            MaximumSize = new Size(headerDescriptionMaxWidth, 0),
-            Margin = new Padding(0)
-        }, 0, 2);
-        bulletPanel.Controls.Add(new Label {
-            Text = "• Tray scheme: optional value-scheme text mapping used in tray tooltip.",
-            Font = normalFont,
-            AutoSize = true,
-            MaximumSize = new Size(860, 0),
-            Margin = new Padding(0, 8, 0, 0)
-        }, 0, 3);
-        bulletPanel.SetColumnSpan(bulletPanel.Controls[^1], 2);
+        var detailColumnWidth = Math.Max(120, 810 / visualDetailsColumnCount - 24);
+        for (var index = 0; index < details.Length; index++) {
+            var row = index / visualDetailsColumnCount;
+            var visualColumn = index % visualDetailsColumnCount;
+            var bulletColumn = visualColumn * 2;
+            var textColumn = bulletColumn + 1;
+            if (row >= bulletPanel.RowStyles.Count) {
+                bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            }
+
+            bulletPanel.Controls.Add(new Label {
+                Text = "•",
+                Font = normalFont,
+                AutoSize = true,
+                Margin = new Padding(0, 0, 0, 2)
+            }, bulletColumn, row);
+            bulletPanel.Controls.Add(new Label {
+                Text = details[index],
+                Font = normalFont,
+                AutoSize = true,
+                MaximumSize = new Size(detailColumnWidth, 0),
+                Margin = visualColumn == 0 ? new Padding(0, 0, 12, 2) : new Padding(0, 0, 0, 2)
+            }, textColumn, row);
+        }
 
         headerPanel.Controls.Add(bulletPanel, 0, 1);
         headerPanel.SetColumnSpan(bulletPanel, 2);

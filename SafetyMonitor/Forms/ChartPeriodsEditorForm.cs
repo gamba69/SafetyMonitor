@@ -120,46 +120,50 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         headerPanel.Controls.Add(_targetPointsLabel, 0, 1);
         headerPanel.SetColumnSpan(_targetPointsLabel, 2);
 
+        const int visualDetailsColumnCount = 2;
+        const int detailsColumnCount = visualDetailsColumnCount * 2;
+        var details = new[] {
+            "Preset: display name shown in the chart period selector.",
+            "Value + Unit: duration of the period (for example 6 Hours).",
+            "Aggregation: bucket size used for chart data grouping.",
+            "Points: expected number of points for the selected aggregation."
+        };
         var bulletPanel = new TableLayoutPanel {
             Dock = DockStyle.Top,
-            ColumnCount = 2,
-            RowCount = 2,
+            ColumnCount = detailsColumnCount,
+            RowCount = (details.Length + visualDetailsColumnCount - 1) / visualDetailsColumnCount,
             AutoSize = true,
             Margin = new Padding(0)
         };
+        bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 14F));
         bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 14F));
         bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-        bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        bulletPanel.Controls.Add(new Label {
-            Text = "• Preset: display name shown in the chart period selector.",
-            Font = normal,
-            AutoSize = true,
-            MaximumSize = new Size(390, 0),
-            Margin = new Padding(0, 0, 12, 2)
-        }, 0, 0);
-        bulletPanel.Controls.Add(new Label {
-            Text = "• Value + Unit: duration of the period (for example 6 Hours).",
-            Font = normal,
-            AutoSize = true,
-            MaximumSize = new Size(390, 0),
-            Margin = new Padding(0, 0, 0, 2)
-        }, 1, 0);
-        bulletPanel.Controls.Add(new Label {
-            Text = "• Aggregation: bucket size used for chart data grouping.",
-            Font = normal,
-            AutoSize = true,
-            MaximumSize = new Size(390, 0),
-            Margin = new Padding(0, 0, 12, 0)
-        }, 0, 1);
-        bulletPanel.Controls.Add(new Label {
-            Text = "• Points: expected number of points for the selected aggregation.",
-            Font = normal,
-            AutoSize = true,
-            MaximumSize = new Size(390, 0),
-            Margin = new Padding(0)
-        }, 1, 1);
+        var detailColumnWidth = Math.Max(120, 810 / visualDetailsColumnCount - 24);
+        for (var index = 0; index < details.Length; index++) {
+            var row = index / visualDetailsColumnCount;
+            var visualColumn = index % visualDetailsColumnCount;
+            var bulletColumn = visualColumn * 2;
+            var textColumn = bulletColumn + 1;
+            if (row >= bulletPanel.RowStyles.Count) {
+                bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            }
+
+            bulletPanel.Controls.Add(new Label {
+                Text = "•",
+                Font = normal,
+                AutoSize = true,
+                Margin = new Padding(0, 0, 0, 2)
+            }, bulletColumn, row);
+            bulletPanel.Controls.Add(new Label {
+                Text = details[index],
+                Font = normal,
+                AutoSize = true,
+                MaximumSize = new Size(detailColumnWidth, 0),
+                Margin = visualColumn == 0 ? new Padding(0, 0, 12, 2) : new Padding(0, 0, 0, 2)
+            }, textColumn, row);
+        }
 
         headerPanel.Controls.Add(bulletPanel, 0, 2);
         headerPanel.SetColumnSpan(bulletPanel, 2);

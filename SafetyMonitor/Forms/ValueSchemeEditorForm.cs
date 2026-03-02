@@ -250,42 +250,50 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         };
         headerPanel.Controls.Add(detailsToggle, 1, 0);
 
+        const int visualDetailsColumnCount = 2;
+        const int detailsColumnCount = visualDetailsColumnCount * 2;
+        var details = new[] {
+            "Stops define threshold values (compared as ≤).",
+            "Text is the label shown when value matches the stop.",
+            "Description is shown in legends/tooltips for readability.",
+            "Preview shows how the scheme will map values."
+        };
         var bulletPanel = new TableLayoutPanel {
             Dock = DockStyle.Top,
-            ColumnCount = 2,
-            RowCount = 2,
+            ColumnCount = detailsColumnCount,
+            RowCount = (details.Length + visualDetailsColumnCount - 1) / visualDetailsColumnCount,
             AutoSize = true,
             Margin = new Padding(0)
         };
+        bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 14F));
         bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+        bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 14F));
         bulletPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-        bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        bulletPanel.Controls.Add(new Label {
-            Text = "• Stops define threshold values (compared as ≤).",
-            Font = normalFont,
-            AutoSize = true,
-            Margin = new Padding(0, 0, 12, 2)
-        }, 0, 0);
-        bulletPanel.Controls.Add(new Label {
-            Text = "• Text is the label shown when value matches the stop.",
-            Font = normalFont,
-            AutoSize = true,
-            Margin = new Padding(0, 0, 0, 2)
-        }, 1, 0);
-        bulletPanel.Controls.Add(new Label {
-            Text = "• Description is shown in legends/tooltips for readability.",
-            Font = normalFont,
-            AutoSize = true,
-            Margin = new Padding(0, 0, 0, 8)
-        }, 0, 1);
-        bulletPanel.Controls.Add(new Label {
-            Text = "• Preview shows how the scheme will map values.",
-            Font = normalFont,
-            AutoSize = true,
-            Margin = new Padding(0, 0, 0, 8)
-        }, 1, 1);
+        var detailColumnWidth = Math.Max(120, 810 / visualDetailsColumnCount - 24);
+        for (var index = 0; index < details.Length; index++) {
+            var row = index / visualDetailsColumnCount;
+            var visualColumn = index % visualDetailsColumnCount;
+            var bulletColumn = visualColumn * 2;
+            var textColumn = bulletColumn + 1;
+            if (row >= bulletPanel.RowStyles.Count) {
+                bulletPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            }
+
+            bulletPanel.Controls.Add(new Label {
+                Text = "•",
+                Font = normalFont,
+                AutoSize = true,
+                Margin = new Padding(0, 0, 0, 2)
+            }, bulletColumn, row);
+            bulletPanel.Controls.Add(new Label {
+                Text = details[index],
+                Font = normalFont,
+                AutoSize = true,
+                MaximumSize = new Size(detailColumnWidth, 0),
+                Margin = visualColumn == 0 ? new Padding(0, 0, 12, 2) : new Padding(0, 0, 0, 2)
+            }, textColumn, row);
+        }
 
         headerPanel.Controls.Add(bulletPanel, 0, 1);
         headerPanel.SetColumnSpan(bulletPanel, 2);
