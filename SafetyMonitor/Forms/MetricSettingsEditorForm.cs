@@ -171,18 +171,18 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
             ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing
         };
 
-        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Metric", HeaderText = "Metric", FillWeight = 34, ReadOnly = true, MinimumWidth = 180 });
-        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Decimals", HeaderText = "Decimals", FillWeight = 12, MinimumWidth = 90 });
-        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "HideZeroes", HeaderText = "Hide zeroes", FillWeight = 16, MinimumWidth = 110 });
-        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "InvertY", HeaderText = "Inv Y", FillWeight = 11, MinimumWidth = 90, ToolTipText = "Invert Y" });
-        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "LogY", HeaderText = "Log Y", FillWeight = 11, MinimumWidth = 90, ToolTipText = "Logarithmic Y" });
-        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "TrayName", HeaderText = "Tray name", FillWeight = 19, MinimumWidth = 120 });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Metric", HeaderText = "Metric", FillWeight = 34, ReadOnly = true, MinimumWidth = 150 });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Decimals", HeaderText = "Decimals", FillWeight = 12, MinimumWidth = 70 });
+        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "HideZeroes", HeaderText = "Hide zeroes", FillWeight = 16, MinimumWidth = 95 });
+        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "InvertY", HeaderText = "Inv Y", FillWeight = 11, MinimumWidth = 70, ToolTipText = "Invert Y" });
+        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "LogY", HeaderText = "Log Y", FillWeight = 11, MinimumWidth = 70, ToolTipText = "Logarithmic Y" });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "TrayName", HeaderText = "Tray name", FillWeight = 19, MinimumWidth = 110 });
 
         var traySchemeColumn = new DataGridViewComboBoxColumn {
             Name = "TrayValueScheme",
             HeaderText = "Tray scheme",
             FillWeight = 16,
-            MinimumWidth = 150,
+            MinimumWidth = 130,
             DisplayStyle = DataGridViewComboBoxDisplayStyle.DropDownButton,
             FlatStyle = FlatStyle.Popup
         };
