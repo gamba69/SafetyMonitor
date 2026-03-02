@@ -33,6 +33,7 @@ public class ValueTileConfig : TileConfig {
     public ValueTileDisplayMode DisplayMode { get; set; } = ValueTileDisplayMode.TextOnly;
     public bool ShowIcon { get; set; } = true;
     public bool ShowUnit { get; set; } = true;
+    public string TextColorSchemeName { get; set; } = "";
     public override TileType Type => TileType.Value;
     public string ValueSchemeName { get; set; } = "";
 

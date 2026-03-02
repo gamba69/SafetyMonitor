@@ -20,6 +20,7 @@ public class ValueTile : Panel {
     private ContextMenuStrip? _contextMenu;
     private ColorScheme? _colorScheme;
     private ColorScheme? _iconColorScheme;
+    private ColorScheme? _textColorScheme;
     private ValueScheme? _valueScheme;
     private Color _currentIconColor = Color.Transparent;
     private double? _currentValue;
@@ -202,6 +203,17 @@ public class ValueTile : Panel {
             var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
             _valueLabel.ForeColor = isLight ? Color.Black : Color.White;
         }
+
+        if (_currentValue.HasValue && _textColorScheme != null && HasTransformedTextForCurrentValue()) {
+            var textColor = _textColorScheme.GetColor(_currentValue.Value);
+            if (_textLabel.Visible) {
+                _textLabel.ForeColor = textColor;
+            }
+
+            if (_config.DisplayMode == ValueTileDisplayMode.TextOnly) {
+                _valueLabel.ForeColor = textColor;
+            }
+        }
     }
 
     private static Color GetContrastColor(Color bg) {
@@ -271,6 +283,9 @@ public class ValueTile : Panel {
         _iconColorScheme = string.IsNullOrEmpty(_config.IconColorSchemeName)
             ? null
             : schemes.FirstOrDefault(s => s.Name == _config.IconColorSchemeName);
+        _textColorScheme = string.IsNullOrEmpty(_config.TextColorSchemeName)
+            ? null
+            : schemes.FirstOrDefault(s => s.Name == _config.TextColorSchemeName);
         var valueSchemes = _valueSchemeService.LoadSchemes();
         _valueScheme = string.IsNullOrEmpty(_config.ValueSchemeName)
             ? null
@@ -302,6 +317,15 @@ public class ValueTile : Panel {
                 _valueLabel.Text = hasTransformedText ? transformedText! : formattedValue;
                 break;
         }
+    }
+
+    private bool HasTransformedTextForCurrentValue() {
+        if (!_currentValue.HasValue || _valueScheme == null) {
+            return false;
+        }
+
+        var transformedText = _valueScheme.GetText(_currentValue.Value);
+        return !string.IsNullOrWhiteSpace(transformedText);
     }
 
     private void OnTileResize(object? sender, EventArgs e) {

@@ -13,6 +13,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
     private Button _cancelButton = null!;
     private ComboBox _colorSchemeComboBox = null!;
     private ComboBox _iconColorSchemeComboBox = null!;
+    private ComboBox _textColorSchemeComboBox = null!;
     private ComboBox _valueSchemeComboBox = null!;
     private ComboBox _metricComboBox = null!;
     private ComboBox _displayModeComboBox = null!;
@@ -226,6 +227,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         // Refresh combo after editor closes
         RefreshColorSchemeCombo();
         RefreshIconColorSchemeCombo();
+        RefreshTextColorSchemeCombo();
     }
 
     private void EditValueSchemesButton_Click(object? sender, EventArgs e) {
@@ -290,7 +292,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
             [
                 "Set the tile title and choose the displayed metric.",
                 "Choose whether to show value, scheme text, or both.",
-                "Pick color schemes for value and icon.",
+                "Pick color schemes for value, text and icon.",
                 "Choose an optional text value scheme.",
                 "Toggle icon and unit visibility for the tile."
             ],
@@ -324,22 +326,30 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         // Row 3: Value scheme + Icon scheme + Scheme editor
         _colorSchemeComboBox = new ComboBox { Font = normalFont, Width = 170, DropDownStyle = ComboBoxStyle.DropDownList };
         _iconColorSchemeComboBox = new ComboBox { Font = normalFont, Width = 170, DropDownStyle = ComboBoxStyle.DropDownList };
+        _textColorSchemeComboBox = new ComboBox { Font = normalFont, Width = 170, DropDownStyle = ComboBoxStyle.DropDownList };
         _valueSchemeComboBox = new ComboBox { Font = normalFont, Width = 170, DropDownStyle = ComboBoxStyle.DropDownList };
         RefreshColorSchemeCombo();
         RefreshIconColorSchemeCombo();
+        RefreshTextColorSchemeCombo();
         RefreshValueSchemeCombo();
 
         var valueSchemePanel = new Panel { AutoSize = true, Margin = new Padding(0, 0, 10, 0) };
-        var valueSchemeLabel = new Label { Text = "Color value scheme:", Font = titleFont, AutoSize = true, Location = new Point(0, 0) };
+        var valueSchemeLabel = new Label { Text = "Value color:", Font = titleFont, AutoSize = true, Location = new Point(0, 0) };
         _colorSchemeComboBox.Location = new Point(0, valueSchemeLabel.Bottom + 5);
         valueSchemePanel.Controls.Add(valueSchemeLabel);
         valueSchemePanel.Controls.Add(_colorSchemeComboBox);
 
         var iconSchemePanel = new Panel { AutoSize = true, Margin = new Padding(0, 0, 10, 0) };
-        var iconSchemeLabel = new Label { Text = "Color icon scheme:", Font = titleFont, AutoSize = true, Location = new Point(0, 0) };
+        var iconSchemeLabel = new Label { Text = "Icon color:", Font = titleFont, AutoSize = true, Location = new Point(0, 0) };
         _iconColorSchemeComboBox.Location = new Point(0, iconSchemeLabel.Bottom + 5);
         iconSchemePanel.Controls.Add(iconSchemeLabel);
         iconSchemePanel.Controls.Add(_iconColorSchemeComboBox);
+
+        var textSchemeColorPanel = new Panel { AutoSize = true, Margin = new Padding(0, 0, 10, 0) };
+        var textSchemeColorLabel = new Label { Text = "Text color:", Font = titleFont, AutoSize = true, Location = new Point(0, 0) };
+        _textColorSchemeComboBox.Location = new Point(0, textSchemeColorLabel.Bottom + 5);
+        textSchemeColorPanel.Controls.Add(textSchemeColorLabel);
+        textSchemeColorPanel.Controls.Add(_textColorSchemeComboBox);
 
         _editSchemesButton = new Button { Text = "Color schemes...", Width = 160, Height = 30, Font = normalFont, Margin = new Padding(0, 24, 0, 0), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft };
         _editSchemesButton.Click += EditSchemesButton_Click;
@@ -350,9 +360,9 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         schemesPanel.Controls.Add(_editSchemesButton);
         mainLayout.Controls.Add(schemesPanel, 0, 4);
 
-        // Row 4: Text value scheme
+        // Row 4: Text value + text color + value scheme editor
         var textSchemePanel = new Panel { AutoSize = true, Margin = new Padding(0, 0, 10, 0) };
-        var textSchemeLabel = new Label { Text = "Text value scheme:", Font = titleFont, AutoSize = true, Location = new Point(0, 0) };
+        var textSchemeLabel = new Label { Text = "Text value:", Font = titleFont, AutoSize = true, Location = new Point(0, 0) };
         _valueSchemeComboBox.Location = new Point(0, textSchemeLabel.Bottom + 5);
         textSchemePanel.Controls.Add(textSchemeLabel);
         textSchemePanel.Controls.Add(_valueSchemeComboBox);
@@ -362,6 +372,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
 
         var valueSchemesPanel = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Top, WrapContents = false, Margin = new Padding(0, 0, 0, 5) };
         valueSchemesPanel.Controls.Add(textSchemePanel);
+        valueSchemesPanel.Controls.Add(textSchemeColorPanel);
         valueSchemesPanel.Controls.Add(_editValueSchemesButton);
 
         var iconPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 10, 0, 5) };
@@ -408,10 +419,17 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         _showUnitCheckBox.Checked = _config.ShowUnit;
 
         if (string.IsNullOrEmpty(_config.IconColorSchemeName)) {
-            _iconColorSchemeComboBox.SelectedIndex = 0; // "(Theme)"
+            _iconColorSchemeComboBox.SelectedIndex = 0; // "(None)"
         } else {
             var iconSchemeIndex = _iconColorSchemeComboBox.Items.IndexOf(_config.IconColorSchemeName);
             _iconColorSchemeComboBox.SelectedIndex = iconSchemeIndex >= 0 ? iconSchemeIndex : 0;
+        }
+
+        if (string.IsNullOrEmpty(_config.TextColorSchemeName)) {
+            _textColorSchemeComboBox.SelectedIndex = 0; // "(None)"
+        } else {
+            var textSchemeColorIndex = _textColorSchemeComboBox.Items.IndexOf(_config.TextColorSchemeName);
+            _textColorSchemeComboBox.SelectedIndex = textSchemeColorIndex >= 0 ? textSchemeColorIndex : 0;
         }
 
         if (string.IsNullOrEmpty(_config.ValueSchemeName)) {
@@ -446,7 +464,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
     private void RefreshIconColorSchemeCombo() {
         var currentSelection = _iconColorSchemeComboBox.SelectedItem?.ToString();
         _iconColorSchemeComboBox.Items.Clear();
-        _iconColorSchemeComboBox.Items.Add("(Theme)");
+        _iconColorSchemeComboBox.Items.Add("(None)");
         foreach (var scheme in _colorSchemeService.LoadSchemes()) {
             _iconColorSchemeComboBox.Items.Add(scheme.Name);
         }
@@ -454,6 +472,20 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         if (currentSelection != null) {
             var idx = _iconColorSchemeComboBox.Items.IndexOf(currentSelection);
             _iconColorSchemeComboBox.SelectedIndex = idx >= 0 ? idx : 0;
+        }
+    }
+
+    private void RefreshTextColorSchemeCombo() {
+        var currentSelection = _textColorSchemeComboBox.SelectedItem?.ToString();
+        _textColorSchemeComboBox.Items.Clear();
+        _textColorSchemeComboBox.Items.Add("(None)");
+        foreach (var scheme in _colorSchemeService.LoadSchemes()) {
+            _textColorSchemeComboBox.Items.Add(scheme.Name);
+        }
+
+        if (currentSelection != null) {
+            var idx = _textColorSchemeComboBox.Items.IndexOf(currentSelection);
+            _textColorSchemeComboBox.SelectedIndex = idx >= 0 ? idx : 0;
         }
     }
 
@@ -477,7 +509,9 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         var selectedScheme = _colorSchemeComboBox.SelectedItem?.ToString();
         _config.ColorSchemeName = selectedScheme == "(None)" ? "" : (selectedScheme ?? "");
         var selectedIconScheme = _iconColorSchemeComboBox.SelectedItem?.ToString();
-        _config.IconColorSchemeName = selectedIconScheme == "(Theme)" ? "" : (selectedIconScheme ?? "");
+        _config.IconColorSchemeName = selectedIconScheme == "(None)" ? "" : (selectedIconScheme ?? "");
+        var selectedTextColorScheme = _textColorSchemeComboBox.SelectedItem?.ToString();
+        _config.TextColorSchemeName = selectedTextColorScheme == "(None)" ? "" : (selectedTextColorScheme ?? "");
         var selectedValueScheme = _valueSchemeComboBox.SelectedItem?.ToString();
         _config.ValueSchemeName = selectedValueScheme == "(None)" ? "" : (selectedValueScheme ?? "");
         _config.DisplayMode = _displayModeComboBox.SelectedIndex switch {
