@@ -1687,7 +1687,11 @@ public class ChartTile : Panel {
             var tickGen = new ScottPlot.TickGenerators.NumericAutomatic {
                 MinorTickGenerator = new ScottPlot.TickGenerators.LogMinorTickGenerator(),
                 IntegerTicksOnly = false,
-                LabelFormatter = y => Math.Pow(10, y).ToString("N1")
+                LabelFormatter = y => {
+                    var linearValue = Math.Pow(10, y);
+                    var fractionDigits = GetLogYAxisFractionDigits(axis, linearValue);
+                    return linearValue.ToString($"N{fractionDigits}");
+                }
             };
 
             axis.TickGenerator = tickGen;
@@ -1695,6 +1699,132 @@ public class ChartTile : Panel {
         }
 
         axis.TickGenerator = new ScottPlot.TickGenerators.NumericAutomatic();
+    }
+
+    private static int GetLogYAxisFractionDigits(ScottPlot.IYAxis axis, double linearValue) {
+        var safeLinearValue = double.IsFinite(linearValue) && linearValue > 0 ? linearValue : 1d;
+        var minVisibleValue = TryGetVisibleLogYAxisMinValue(axis, out var axisMinValue)
+            ? axisMinValue
+            : safeLinearValue;
+        var visibleSpan = TryGetVisibleLogYAxisSpan(axis, out var axisSpan)
+            ? axisSpan
+            : double.PositiveInfinity;
+
+        var minValueDigits = GetDigitsBySmallestValue(minVisibleValue);
+        var spanDigits = GetDigitsByRange(visibleSpan);
+
+        return Math.Clamp(Math.Max(minValueDigits, spanDigits), 0, 8);
+    }
+
+    private static int GetDigitsBySmallestValue(double minValue) {
+        if (!double.IsFinite(minValue) || minValue <= 0) {
+            return 0;
+        }
+
+        if (minValue >= 1) {
+            return 0;
+        }
+
+        return (int)Math.Ceiling(-Math.Log10(minValue));
+    }
+
+    private static int GetDigitsByRange(double span) {
+        if (!double.IsFinite(span) || span <= 0) {
+            return 0;
+        }
+
+        if (span > 1) {
+            return 0;
+        }
+
+        return (int)Math.Ceiling(-Math.Log10(span));
+    }
+
+    private static bool TryGetVisibleLogYAxisMinValue(ScottPlot.IYAxis axis, out double minValue) {
+        minValue = 0;
+        if (!TryGetVisibleLogYAxisBounds(axis, out var minExp, out _)) {
+            return false;
+        }
+
+        minValue = Math.Pow(10, minExp);
+        return double.IsFinite(minValue) && minValue > 0;
+    }
+
+    private static bool TryGetVisibleLogYAxisSpan(ScottPlot.IYAxis axis, out double span) {
+        span = 0;
+        if (!TryGetVisibleLogYAxisBounds(axis, out var minExp, out var maxExp)) {
+            return false;
+        }
+
+        var minValue = Math.Pow(10, minExp);
+        var maxValue = Math.Pow(10, maxExp);
+        if (!double.IsFinite(minValue) || !double.IsFinite(maxValue) || maxValue < minValue) {
+            return false;
+        }
+
+        span = maxValue - minValue;
+        return double.IsFinite(span) && span >= 0;
+    }
+
+    private static bool TryGetVisibleLogYAxisBounds(ScottPlot.IYAxis axis, out double minExp, out double maxExp) {
+        minExp = 0;
+        maxExp = 0;
+
+        var axisType = axis.GetType();
+        var getLimitsMethod = axisType.GetMethod("GetLimits", Type.EmptyTypes);
+        if (getLimitsMethod != null) {
+            var limits = getLimitsMethod.Invoke(axis, null);
+            if (limits != null
+                && TryGetNumericValue(limits, "Bottom", out minExp)
+                && TryGetNumericValue(limits, "Top", out maxExp)) {
+                return maxExp >= minExp;
+            }
+        }
+
+        if (TryGetNumericValue(axis, "Min", out minExp) && TryGetNumericValue(axis, "Max", out maxExp)) {
+            return maxExp >= minExp;
+        }
+
+        return false;
+    }
+
+    private static bool TryGetNumericValue(object source, string memberName, out double value) {
+        value = 0;
+        var sourceType = source.GetType();
+
+        var property = sourceType.GetProperty(memberName);
+        if (property != null) {
+            var rawValue = property.GetValue(source);
+            if (TryConvertToDouble(rawValue, out value)) {
+                return true;
+            }
+        }
+
+        var field = sourceType.GetField(memberName);
+        if (field != null) {
+            var rawValue = field.GetValue(source);
+            if (TryConvertToDouble(rawValue, out value)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryConvertToDouble(object? rawValue, out double value) {
+        value = 0;
+        if (rawValue == null) {
+            return false;
+        }
+
+        return rawValue switch {
+            double d when double.IsFinite(d) => (value = d) == d,
+            float f when float.IsFinite(f) => (value = f) == f,
+            int i => (value = i) == i,
+            long l => (value = l) == l,
+            decimal m => (value = (double)m) == (double)m,
+            _ => false
+        };
     }
 
     private static void SetAxisInversion(object axis, bool isInverted) {
