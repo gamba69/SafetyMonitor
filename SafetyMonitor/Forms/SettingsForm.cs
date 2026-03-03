@@ -1245,7 +1245,8 @@ public class SettingsForm : ThemedCaptionForm {
 
         using var dialog = new OpenFileDialog {
             Filter = "ZIP archive (*.zip)|*.zip",
-            Title = "Import settings"
+            Title = "Import settings",
+            InitialDirectory = Path.GetDirectoryName(_settingsMaintenanceService.GetDefaultBackupFilePath())
         };
 
         if (dialog.ShowDialog(this) != DialogResult.OK) {
