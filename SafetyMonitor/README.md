@@ -267,11 +267,11 @@ C:\Users\YourName\AppData\Roaming\SafetyMonitor\settings.json
   "WindowHeight": 900,
   "WindowX": 100,
   "WindowY": 100,
-  "IsMaximized": false,
-  "IsDarkTheme": false,
+  "IsMaximized": true,
+  "IsDarkTheme": true,
   "LastDashboardId": "guid-here",
   "StoragePath": "C:\\AlpacaData",
-  "RefreshInterval": 5
+  "RefreshInterval": 10
 }
 ```
 

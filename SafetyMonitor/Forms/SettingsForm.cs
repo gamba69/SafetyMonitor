@@ -101,11 +101,11 @@ public class SettingsForm : ThemedCaptionForm {
 
     #region Public Properties
 
-    public int RefreshInterval { get; private set; } = 5;
-    public int ValueTileLookbackMinutes { get; private set; } = 60;
+    public int RefreshInterval { get; private set; } = 10;
+    public int ValueTileLookbackMinutes { get; private set; } = 360;
     public int ChartStaticTimeoutSeconds { get; private set; } = 120;
-    public double ChartStaticAggregationPresetMatchTolerancePercent { get; private set; } = 10;
-    public int ChartStaticAggregationTargetPointCount { get; private set; } = 300;
+    public double ChartStaticAggregationPresetMatchTolerancePercent { get; private set; } = 30;
+    public int ChartStaticAggregationTargetPointCount { get; private set; } = 800;
     public int ChartRawDataPointIntervalSeconds { get; private set; } = 3;
     public string StoragePath { get; private set; } = "";
     public bool ShowRefreshIndicator { get; private set; } = true;
