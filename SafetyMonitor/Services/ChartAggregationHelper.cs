@@ -18,6 +18,23 @@ public static class ChartAggregationHelper {
         TimeSpan.FromDays(7)
     ];
 
+    private static readonly (TimeSpan Interval, string Label)[] AggregationLabels = [
+        (TimeSpan.Zero, "raw"),
+        (TimeSpan.FromSeconds(10), "10s"),
+        (TimeSpan.FromSeconds(30), "30s"),
+        (TimeSpan.FromMinutes(1), "1m"),
+        (TimeSpan.FromMinutes(5), "5m"),
+        (TimeSpan.FromMinutes(15), "15m"),
+        (TimeSpan.FromHours(1), "1h"),
+        (TimeSpan.FromHours(4), "4h"),
+        (TimeSpan.FromHours(12), "12h"),
+        (TimeSpan.FromDays(1), "1d"),
+        (TimeSpan.FromDays(3), "3d"),
+        (TimeSpan.FromDays(7), "1w")
+    ];
+
+    public static IReadOnlyList<TimeSpan> SupportedAggregationIntervals => AggregationLabels.Select(x => x.Interval).ToArray();
+
     public static TimeSpan CalculateAutomaticAggregationInterval(
         TimeSpan range,
         double presetMatchTolerancePercent,
@@ -74,24 +91,19 @@ public static class ChartAggregationHelper {
             return "raw";
         }
 
-        var value = interval.Value;
-        if (value.TotalSeconds < 60 && Math.Abs(value.TotalSeconds - Math.Round(value.TotalSeconds)) < 0.001) {
-            return $"{Math.Round(value.TotalSeconds):0}s";
+        var normalizedInterval = NormalizeAggregationInterval(interval.Value);
+        return AggregationLabels.First(x => x.Interval == normalizedInterval).Label;
+    }
+
+    public static TimeSpan NormalizeAggregationInterval(TimeSpan interval) {
+        if (interval <= TimeSpan.Zero) {
+            return TimeSpan.Zero;
         }
 
-        if (value.TotalMinutes < 60 && Math.Abs(value.TotalMinutes - Math.Round(value.TotalMinutes)) < 0.001) {
-            return $"{Math.Round(value.TotalMinutes):0}m";
-        }
-
-        if (value.TotalHours < 24 && Math.Abs(value.TotalHours - Math.Round(value.TotalHours)) < 0.001) {
-            return $"{Math.Round(value.TotalHours):0}h";
-        }
-
-        if (Math.Abs(value.TotalDays - Math.Round(value.TotalDays)) < 0.001) {
-            return $"{Math.Round(value.TotalDays):0}d";
-        }
-
-        return value.ToString(@"hh\:mm\:ss");
+        return SupportedAggregationIntervals
+            .Where(x => x > TimeSpan.Zero)
+            .OrderBy(x => Math.Abs((x - interval).TotalSeconds))
+            .First();
     }
 
     public static TimeSpan BuildPeriodDuration(double value, ChartPeriodUnit unit) {

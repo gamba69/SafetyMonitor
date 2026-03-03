@@ -1,3 +1,5 @@
+using SafetyMonitor.Services;
+
 namespace SafetyMonitor.Models;
 
 public readonly record struct ChartPeriodPreset(
@@ -70,7 +72,7 @@ public static class ChartPeriodPresetStore {
                 var duration = def.ToTimeSpan();
                 var period = MapDurationToPeriod(duration);
                 var aggregationInterval = def.AggregationInterval > TimeSpan.Zero
-                    ? def.AggregationInterval
+                    ? ChartAggregationHelper.NormalizeAggregationInterval(def.AggregationInterval)
                     : def.AggregationInterval == TimeSpan.Zero
                         ? TimeSpan.Zero
                         : GetRecommendedAggregationInterval(duration);
@@ -177,7 +179,7 @@ public static class ChartPeriodPresetStore {
                     Value = preset.Value,
                     Unit = unit,
                     AggregationInterval = preset.AggregationInterval > TimeSpan.Zero
-                        ? preset.AggregationInterval
+                        ? ChartAggregationHelper.NormalizeAggregationInterval(preset.AggregationInterval)
                         : preset.AggregationInterval == TimeSpan.Zero
                             ? TimeSpan.Zero
                             : GetRecommendedAggregationInterval(preset.ToTimeSpan())
@@ -216,6 +218,10 @@ public static class ChartPeriodPresetStore {
         var intervalSeconds = Math.Max(1, (int)Math.Ceiling(duration.TotalSeconds / targetPointCount));
         var rawInterval = TimeSpan.FromSeconds(rawDataPointIntervalSeconds);
         var generated = TimeSpan.FromSeconds(intervalSeconds);
-        return generated <= rawInterval ? TimeSpan.Zero : generated;
+        if (generated <= rawInterval) {
+            return TimeSpan.Zero;
+        }
+
+        return ChartAggregationHelper.NormalizeAggregationInterval(generated);
     }
 }
