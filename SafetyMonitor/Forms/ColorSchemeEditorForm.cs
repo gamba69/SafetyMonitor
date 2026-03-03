@@ -142,12 +142,6 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
             return;
         }
 
-        if (ColorSchemeService.IsBuiltIn(_currentScheme.Name)) {
-            ThemedMessageBox.Show(this, "Built-in color schemes cannot be deleted.\nYou can duplicate it and modify the copy.",
-                "Cannot Delete", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
-        }
-
         if (ThemedMessageBox.Show(this, $"Delete color scheme \"{_currentScheme.Name}\"?",
                 "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) {
             return;
@@ -513,7 +507,7 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
     private void LoadSchemeToEditor(ColorScheme scheme) {
         _isLoading = true;
         _nameTextBox.Text = scheme.Name;
-        _nameTextBox.ReadOnly = ColorSchemeService.IsBuiltIn(scheme.Name);
+        _nameTextBox.ReadOnly = false;
         _gradientButton.Checked = scheme.IsGradient;
         _solidButton.Checked = !scheme.IsGradient;
 
@@ -539,6 +533,7 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
 
         var scheme = new ColorScheme {
             Name = name,
+            IsGradient = true,
             Stops = [
                 new() { Value = 25, Color = Color.Green, Description = "Normal" },
                 new() { Value = 50, Color = Color.Yellow, Description = "Warning" },
@@ -680,7 +675,7 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         }
 
         // If renaming, delete old file
-        if (_currentScheme.Name != scheme.Name && !ColorSchemeService.IsBuiltIn(_currentScheme.Name)) {
+        if (_currentScheme.Name != scheme.Name) {
             _colorSchemeService.DeleteScheme(_currentScheme.Name);
         }
 

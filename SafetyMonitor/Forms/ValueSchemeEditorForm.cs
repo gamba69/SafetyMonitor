@@ -137,12 +137,6 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
             return;
         }
 
-        if (ValueSchemeService.IsBuiltIn(_currentScheme.Name)) {
-            ThemedMessageBox.Show(this, "Built-in value schemes cannot be deleted.\nYou can duplicate it and modify the copy.",
-                "Cannot Delete", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
-        }
-
         if (ThemedMessageBox.Show(this, $"Delete value scheme \"{_currentScheme.Name}\"?",
                 "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) {
             return;
@@ -489,7 +483,7 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
     private void LoadSchemeToEditor(ValueScheme scheme) {
         _isLoading = true;
         _nameTextBox.Text = scheme.Name;
-        _nameTextBox.ReadOnly = ValueSchemeService.IsBuiltIn(scheme.Name);
+        _nameTextBox.ReadOnly = false;
         _descendingButton.Checked = scheme.Descending;
         _ascendingButton.Checked = !scheme.Descending;
 
@@ -709,7 +703,7 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
             return false;
         }
 
-        if (_currentScheme.Name != scheme.Name && !ValueSchemeService.IsBuiltIn(_currentScheme.Name)) {
+        if (_currentScheme.Name != scheme.Name) {
             _valueSchemeService.DeleteScheme(_currentScheme.Name);
         }
 

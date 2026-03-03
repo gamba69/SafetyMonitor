@@ -62,20 +62,6 @@ public class ColorJsonConverter : JsonConverter<Color> {
 public class ColorSchemeService {
     #region Private Fields
 
-    // Names of built-in schemes that can't be deleted
-    private static readonly HashSet<string> BuiltInNames = [
-        "Safety",
-        "Temperature",
-        "Humidity",
-        "Pressure",
-        "Wind Speed",
-        "Wind Gust",
-        "Cloud Cover",
-        "Sky Brightness",
-        "Sky Quality",
-        "Rain Rate"
-    ];
-
     private readonly JsonSerializerOptions _jsonOptions;
     private readonly string _schemesPath;
 
@@ -93,13 +79,13 @@ public class ColorSchemeService {
             WriteIndented = true,
             Converters = { new ColorJsonConverter() }
         };
+
+        EnsureDefaultSchemesExist();
     }
 
     #endregion Public Constructors
 
     #region Public Methods
-
-    public static bool IsBuiltIn(string name) => BuiltInNames.Contains(name);
 
     public static string GetDefaultSchemeName(MetricType metric) => metric switch {
         MetricType.IsSafe => "Safety",
@@ -124,32 +110,14 @@ public class ColorSchemeService {
     }
 
     public List<ColorScheme> LoadSchemes() {
-        var schemes = new List<ColorScheme>
-        {
-            CreateSafetyScheme(),
-            CreateTemperatureScheme(),
-            CreateHumidityScheme(),
-            CreatePressureScheme(),
-            CreateWindSpeedScheme(),
-            CreateWindGustScheme(),
-            CreateCloudCoverScheme(),
-            CreateSkyBrightnessScheme(),
-            CreateSkyQualityScheme(),
-            CreateRainRateScheme()
-        };
+        var schemes = new List<ColorScheme>();
 
         foreach (var file in Directory.GetFiles(_schemesPath, "*.json")) {
             try {
                 var json = File.ReadAllText(file);
                 var scheme = JsonSerializer.Deserialize<ColorScheme>(json, _jsonOptions);
                 if (scheme != null) {
-                    // If user saved over a built-in name, replace the built-in
-                    var existing = schemes.FindIndex(s => s.Name == scheme.Name);
-                    if (existing >= 0) {
-                        schemes[existing] = scheme;
-                    } else {
-                        schemes.Add(scheme);
-                    }
+                    schemes.Add(scheme);
                 }
             } catch { }
         }
@@ -167,8 +135,35 @@ public class ColorSchemeService {
 
     #region Private Methods
 
+    private void EnsureDefaultSchemesExist() {
+        foreach (var scheme in GetDefaultSchemes()) {
+            var safeName = string.Join("_", scheme.Name.Split(Path.GetInvalidFileNameChars()));
+            var path = Path.Combine(_schemesPath, $"{safeName}.json");
+            if (File.Exists(path)) {
+                continue;
+            }
+
+            var json = JsonSerializer.Serialize(scheme, _jsonOptions);
+            File.WriteAllText(path, json);
+        }
+    }
+
+    private static IEnumerable<ColorScheme> GetDefaultSchemes() {
+        yield return CreateSafetyScheme();
+        yield return CreateTemperatureScheme();
+        yield return CreateHumidityScheme();
+        yield return CreatePressureScheme();
+        yield return CreateWindSpeedScheme();
+        yield return CreateWindGustScheme();
+        yield return CreateCloudCoverScheme();
+        yield return CreateSkyBrightnessScheme();
+        yield return CreateSkyQualityScheme();
+        yield return CreateRainRateScheme();
+    }
+
     private static ColorScheme CreateSafetyScheme() => new() {
         Name = "Safety",
+        IsGradient = true,
         Stops =
         [
             new() { Value = 0, Color = Color.Red, Description = "Unsafe" },
@@ -178,6 +173,7 @@ public class ColorSchemeService {
 
     private static ColorScheme CreateCloudCoverScheme() => new() {
         Name = "Cloud Cover",
+        IsGradient = true,
         Stops =
         [
             new() { Value = 10, Color = Color.LightGreen, Description = "Clear" },
@@ -189,6 +185,7 @@ public class ColorSchemeService {
 
     private static ColorScheme CreateHumidityScheme() => new() {
         Name = "Humidity",
+        IsGradient = true,
         Stops =
         [
             new() { Value = 30, Color = Color.Orange, Description = "Very dry" },
@@ -217,6 +214,7 @@ public class ColorSchemeService {
     };
     private static ColorScheme CreateWindSpeedScheme() => new() {
         Name = "Wind Speed",
+        IsGradient = true,
         Stops =
         [
             new() { Value = 2, Color = Color.Green, Description = "Calm" },
@@ -229,6 +227,7 @@ public class ColorSchemeService {
 
     private static ColorScheme CreatePressureScheme() => new() {
         Name = "Pressure",
+        IsGradient = true,
         Stops =
         [
             new() { Value = 985, Color = Color.OrangeRed, Description = "Very low" },
@@ -254,6 +253,7 @@ public class ColorSchemeService {
 
     private static ColorScheme CreateSkyQualityScheme() => new() {
         Name = "Sky Quality",
+        IsGradient = true,
         Stops =
         [
             new() { Value = 18.5, Color = Color.OrangeRed, Description = "Poor" },
@@ -266,6 +266,7 @@ public class ColorSchemeService {
 
     private static ColorScheme CreateRainRateScheme() => new() {
         Name = "Rain Rate",
+        IsGradient = true,
         Stops =
         [
             new() { Value = 0, Color = Color.LightGreen, Description = "Dry" },
@@ -278,6 +279,7 @@ public class ColorSchemeService {
 
     private static ColorScheme CreateWindGustScheme() => new() {
         Name = "Wind Gust",
+        IsGradient = true,
         Stops =
         [
             new() { Value = 2, Color = Color.LightGreen, Description = "Light" },

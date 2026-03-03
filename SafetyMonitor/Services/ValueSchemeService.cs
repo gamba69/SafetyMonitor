@@ -6,19 +6,6 @@ namespace SafetyMonitor.Services;
 public class ValueSchemeService {
     #region Private Fields
 
-    private static readonly HashSet<string> BuiltInNames = [
-        "Safety Status",
-        "Temperature Status",
-        "Humidity Status",
-        "Pressure Status",
-        "Cloud Cover Status",
-        "Sky Brightness Status",
-        "Sky Quality Status",
-        "Rain Rate Status",
-        "Wind Speed Status",
-        "Wind Gust Status"
-    ];
-
     private readonly JsonSerializerOptions _jsonOptions;
     private readonly string _schemesPath;
 
@@ -35,13 +22,13 @@ public class ValueSchemeService {
         _jsonOptions = new JsonSerializerOptions {
             WriteIndented = true
         };
+
+        EnsureDefaultSchemesExist();
     }
 
     #endregion Public Constructors
 
     #region Public Methods
-
-    public static bool IsBuiltIn(string name) => BuiltInNames.Contains(name);
 
     public static string GetDefaultSchemeName(MetricType metric) => metric switch {
         MetricType.Temperature => "Temperature Status",
@@ -66,31 +53,14 @@ public class ValueSchemeService {
     }
 
     public List<ValueScheme> LoadSchemes() {
-        var schemes = new List<ValueScheme>
-        {
-            CreateSafetyStatusScheme(),
-            CreateTemperatureScheme(),
-            CreateHumidityScheme(),
-            CreatePressureScheme(),
-            CreateCloudCoverScheme(),
-            CreateSkyBrightnessScheme(),
-            CreateSkyQualityScheme(),
-            CreateRainRateScheme(),
-            CreateWindSpeedScheme(),
-            CreateWindGustScheme()
-        };
+        var schemes = new List<ValueScheme>();
 
         foreach (var file in Directory.GetFiles(_schemesPath, "*.json")) {
             try {
                 var json = File.ReadAllText(file);
                 var scheme = JsonSerializer.Deserialize<ValueScheme>(json, _jsonOptions);
                 if (scheme != null) {
-                    var existing = schemes.FindIndex(s => s.Name == scheme.Name);
-                    if (existing >= 0) {
-                        schemes[existing] = scheme;
-                    } else {
-                        schemes.Add(scheme);
-                    }
+                    schemes.Add(scheme);
                 }
             } catch { }
         }
@@ -108,6 +78,32 @@ public class ValueSchemeService {
     #endregion Public Methods
 
     #region Private Methods
+
+    private void EnsureDefaultSchemesExist() {
+        foreach (var scheme in GetDefaultSchemes()) {
+            var safeName = string.Join("_", scheme.Name.Split(Path.GetInvalidFileNameChars()));
+            var path = Path.Combine(_schemesPath, $"{safeName}.json");
+            if (File.Exists(path)) {
+                continue;
+            }
+
+            var json = JsonSerializer.Serialize(scheme, _jsonOptions);
+            File.WriteAllText(path, json);
+        }
+    }
+
+    private static IEnumerable<ValueScheme> GetDefaultSchemes() {
+        yield return CreateSafetyStatusScheme();
+        yield return CreateTemperatureScheme();
+        yield return CreateHumidityScheme();
+        yield return CreatePressureScheme();
+        yield return CreateCloudCoverScheme();
+        yield return CreateSkyBrightnessScheme();
+        yield return CreateSkyQualityScheme();
+        yield return CreateRainRateScheme();
+        yield return CreateWindSpeedScheme();
+        yield return CreateWindGustScheme();
+    }
 
     private static ValueScheme CreateSafetyStatusScheme() => new() {
         Name = "Safety Status",
