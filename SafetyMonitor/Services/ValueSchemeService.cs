@@ -43,6 +43,20 @@ public class ValueSchemeService {
 
     public static bool IsBuiltIn(string name) => BuiltInNames.Contains(name);
 
+    public static string GetDefaultSchemeName(MetricType metric) => metric switch {
+        MetricType.Temperature => "Temperature Status",
+        MetricType.Humidity => "Humidity Status",
+        MetricType.Pressure => "Pressure Status",
+        MetricType.CloudCover => "Cloud Cover Status",
+        MetricType.SkyBrightness => "Sky Brightness Status",
+        MetricType.SkyQuality => "Sky Quality Status",
+        MetricType.RainRate => "Rain Rate Status",
+        MetricType.WindSpeed => "Wind Speed Status",
+        MetricType.WindGust => "Wind Gust Status",
+        MetricType.IsSafe => "Safety Status",
+        _ => string.Empty
+    };
+
     public void DeleteScheme(string name) {
         var safeName = string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
         var path = Path.Combine(_schemesPath, $"{safeName}.json");

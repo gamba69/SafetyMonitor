@@ -1,3 +1,5 @@
+using SafetyMonitor.Services;
+
 namespace SafetyMonitor.Models;
 
 public static class MetricDisplaySettingsStore {
@@ -55,19 +57,7 @@ public static class MetricDisplaySettingsStore {
     private static MetricDisplaySetting CreateDefaultSetting(MetricType metric) {
         return new MetricDisplaySetting {
             Metric = metric,
-            TrayValueSchemeName = metric switch {
-                MetricType.Temperature => "Temperature Status",
-                MetricType.Humidity => "Humidity Status",
-                MetricType.Pressure => "Pressure Status",
-                MetricType.CloudCover => "Cloud Cover Status",
-                MetricType.SkyBrightness => "Sky Brightness Status",
-                MetricType.SkyQuality => "Sky Quality Status",
-                MetricType.RainRate => "Rain Rate Status",
-                MetricType.WindSpeed => "Wind Speed Status",
-                MetricType.WindGust => "Wind Gust Status",
-                MetricType.IsSafe => "Safety Status",
-                _ => string.Empty
-            }
+            TrayValueSchemeName = ValueSchemeService.GetDefaultSchemeName(metric)
         };
     }
 }

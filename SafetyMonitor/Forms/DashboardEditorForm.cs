@@ -65,6 +65,8 @@ public class DashboardEditorForm : ThemedCaptionForm {
             ? new ValueTileConfig {
                 Title = "New Value",
                 Metric = MetricType.Temperature,
+                ColorSchemeName = ColorSchemeService.GetDefaultSchemeName(MetricType.Temperature),
+                ValueSchemeName = ValueSchemeService.GetDefaultSchemeName(MetricType.Temperature),
                 Row = 0,
                 Column = 0
             }

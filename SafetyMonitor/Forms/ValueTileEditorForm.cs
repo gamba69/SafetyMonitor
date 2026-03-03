@@ -23,6 +23,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
     private CheckBox _showIconCheckBox = null!;
     private CheckBox _showUnitCheckBox = null!;
     private TextBox _titleTextBox = null!;
+    private MetricType? _lastMetricForSchemeDefaults;
 
     #endregion Private Fields
 
@@ -331,6 +332,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
 
         var metricPanel = CreateLabeledControl("Metric:", _metricComboBox, titleFont);
         mainLayout.Controls.Add(metricPanel, 0, 2);
+        _metricComboBox.SelectedIndexChanged += MetricComboBox_SelectedIndexChanged;
 
         _displayModeComboBox = new ComboBox { Font = normalFont, Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
         _displayModeComboBox.Items.AddRange([
@@ -427,6 +429,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
     private void LoadConfig() {
         _titleTextBox.Text = _config.Title;
         _metricComboBox.SelectedIndex = (int)_config.Metric;
+        ApplyMetricDefaultSchemes(_config.Metric, force: true);
 
         if (string.IsNullOrEmpty(_config.ColorSchemeName)) {
             _colorSchemeComboBox.SelectedIndex = 0; // "(None)"
@@ -520,6 +523,49 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         if (currentSelection != null) {
             var idx = _valueSchemeComboBox.Items.IndexOf(currentSelection);
             _valueSchemeComboBox.SelectedIndex = idx >= 0 ? idx : 0;
+        }
+    }
+
+    private void MetricComboBox_SelectedIndexChanged(object? sender, EventArgs e) {
+        if (_metricComboBox.SelectedIndex < 0 || _metricComboBox.SelectedIndex >= Enum.GetValues<MetricType>().Length) {
+            return;
+        }
+
+        ApplyMetricDefaultSchemes((MetricType)_metricComboBox.SelectedIndex);
+    }
+
+    private void ApplyMetricDefaultSchemes(MetricType metric, bool force = false) {
+        var previousMetric = _lastMetricForSchemeDefaults;
+        ApplyDefaultToCombo(_colorSchemeComboBox, ColorSchemeService.GetDefaultSchemeName(metric), previousMetric, ColorSchemeService.GetDefaultSchemeName, force);
+        ApplyDefaultToCombo(_iconColorSchemeComboBox, ColorSchemeService.GetDefaultSchemeName(metric), previousMetric, ColorSchemeService.GetDefaultSchemeName, force);
+        ApplyDefaultToCombo(_textColorSchemeComboBox, ColorSchemeService.GetDefaultSchemeName(metric), previousMetric, ColorSchemeService.GetDefaultSchemeName, force);
+        ApplyDefaultToCombo(_valueSchemeComboBox, ValueSchemeService.GetDefaultSchemeName(metric), previousMetric, ValueSchemeService.GetDefaultSchemeName, force);
+        _lastMetricForSchemeDefaults = metric;
+    }
+
+    private static void ApplyDefaultToCombo(
+        ComboBox comboBox,
+        string defaultName,
+        MetricType? previousMetric,
+        Func<MetricType, string> defaultResolver,
+        bool force) {
+        if (string.IsNullOrEmpty(defaultName)) {
+            return;
+        }
+
+        var selected = comboBox.SelectedItem?.ToString();
+        var canAutoReplace = force
+            || string.IsNullOrEmpty(selected)
+            || selected == "(None)"
+            || (previousMetric.HasValue && string.Equals(selected, defaultResolver(previousMetric.Value), StringComparison.Ordinal));
+
+        if (!canAutoReplace) {
+            return;
+        }
+
+        var defaultIndex = comboBox.Items.IndexOf(defaultName);
+        if (defaultIndex >= 0) {
+            comboBox.SelectedIndex = defaultIndex;
         }
     }
 

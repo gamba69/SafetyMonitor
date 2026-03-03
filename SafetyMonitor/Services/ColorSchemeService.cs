@@ -63,7 +63,18 @@ public class ColorSchemeService {
     #region Private Fields
 
     // Names of built-in schemes that can't be deleted
-    private static readonly HashSet<string> BuiltInNames = ["Temperature", "Humidity", "Wind Speed", "Cloud Cover"];
+    private static readonly HashSet<string> BuiltInNames = [
+        "Safety",
+        "Temperature",
+        "Humidity",
+        "Pressure",
+        "Wind Speed",
+        "Wind Gust",
+        "Cloud Cover",
+        "Sky Brightness",
+        "Sky Quality",
+        "Rain Rate"
+    ];
 
     private readonly JsonSerializerOptions _jsonOptions;
     private readonly string _schemesPath;
@@ -90,6 +101,20 @@ public class ColorSchemeService {
 
     public static bool IsBuiltIn(string name) => BuiltInNames.Contains(name);
 
+    public static string GetDefaultSchemeName(MetricType metric) => metric switch {
+        MetricType.IsSafe => "Safety",
+        MetricType.Temperature => "Temperature",
+        MetricType.Humidity => "Humidity",
+        MetricType.Pressure => "Pressure",
+        MetricType.CloudCover => "Cloud Cover",
+        MetricType.SkyBrightness => "Sky Brightness",
+        MetricType.SkyQuality => "Sky Quality",
+        MetricType.RainRate => "Rain Rate",
+        MetricType.WindSpeed => "Wind Speed",
+        MetricType.WindGust => "Wind Gust",
+        _ => string.Empty
+    };
+
     public void DeleteScheme(string name) {
         var safeName = string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
         var path = Path.Combine(_schemesPath, $"{safeName}.json");
@@ -101,10 +126,16 @@ public class ColorSchemeService {
     public List<ColorScheme> LoadSchemes() {
         var schemes = new List<ColorScheme>
         {
+            CreateSafetyScheme(),
             CreateTemperatureScheme(),
             CreateHumidityScheme(),
+            CreatePressureScheme(),
             CreateWindSpeedScheme(),
-            CreateCloudCoverScheme()
+            CreateWindGustScheme(),
+            CreateCloudCoverScheme(),
+            CreateSkyBrightnessScheme(),
+            CreateSkyQualityScheme(),
+            CreateRainRateScheme()
         };
 
         foreach (var file in Directory.GetFiles(_schemesPath, "*.json")) {
@@ -135,6 +166,15 @@ public class ColorSchemeService {
     #endregion Public Methods
 
     #region Private Methods
+
+    private static ColorScheme CreateSafetyScheme() => new() {
+        Name = "Safety",
+        Stops =
+        [
+            new() { Value = 0, Color = Color.Red, Description = "Unsafe" },
+            new() { Value = 100, Color = Color.LightGreen, Description = "Safe" }
+        ]
+    };
 
     private static ColorScheme CreateCloudCoverScheme() => new() {
         Name = "Cloud Cover",
@@ -184,6 +224,67 @@ public class ColorSchemeService {
             new() { Value = 10, Color = Color.Yellow, Description = "Moderate" },
             new() { Value = 15, Color = Color.Orange, Description = "Strong" },
             new() { Value = 20, Color = Color.Red, Description = "Very strong" }
+        ]
+    };
+
+    private static ColorScheme CreatePressureScheme() => new() {
+        Name = "Pressure",
+        Stops =
+        [
+            new() { Value = 985, Color = Color.OrangeRed, Description = "Very low" },
+            new() { Value = 1000, Color = Color.Gold, Description = "Low" },
+            new() { Value = 1015, Color = Color.LightGreen, Description = "Normal" },
+            new() { Value = 1030, Color = Color.SteelBlue, Description = "High" },
+            new() { Value = 1045, Color = Color.MediumPurple, Description = "Very high" }
+        ]
+    };
+
+    private static ColorScheme CreateSkyBrightnessScheme() => new() {
+        Name = "Sky Brightness",
+        IsGradient = true,
+        Stops =
+        [
+            new() { Value = 0, Color = Color.FromArgb(15, 23, 42), Description = "Dark night" },
+            new() { Value = 1, Color = Color.FromArgb(30, 58, 138), Description = "Night" },
+            new() { Value = 50, Color = Color.FromArgb(59, 130, 246), Description = "Dusk" },
+            new() { Value = 1000, Color = Color.FromArgb(253, 224, 71), Description = "Twilight" },
+            new() { Value = 20000, Color = Color.FromArgb(255, 255, 255), Description = "Daylight" }
+        ]
+    };
+
+    private static ColorScheme CreateSkyQualityScheme() => new() {
+        Name = "Sky Quality",
+        Stops =
+        [
+            new() { Value = 18.5, Color = Color.OrangeRed, Description = "Poor" },
+            new() { Value = 19.5, Color = Color.Gold, Description = "Fair" },
+            new() { Value = 20.5, Color = Color.LightGreen, Description = "Good" },
+            new() { Value = 21.5, Color = Color.DeepSkyBlue, Description = "Excellent" },
+            new() { Value = 22.5, Color = Color.MediumPurple, Description = "Outstanding" }
+        ]
+    };
+
+    private static ColorScheme CreateRainRateScheme() => new() {
+        Name = "Rain Rate",
+        Stops =
+        [
+            new() { Value = 0, Color = Color.LightGreen, Description = "Dry" },
+            new() { Value = 0.001, Color = Color.LightSkyBlue, Description = "Drizzle" },
+            new() { Value = 2, Color = Color.DodgerBlue, Description = "Rain" },
+            new() { Value = 6, Color = Color.Blue, Description = "Heavy rain" },
+            new() { Value = 15, Color = Color.DarkBlue, Description = "Downpour" }
+        ]
+    };
+
+    private static ColorScheme CreateWindGustScheme() => new() {
+        Name = "Wind Gust",
+        Stops =
+        [
+            new() { Value = 2, Color = Color.LightGreen, Description = "Light" },
+            new() { Value = 5, Color = Color.YellowGreen, Description = "Breeze" },
+            new() { Value = 8, Color = Color.Gold, Description = "Gusty" },
+            new() { Value = 12, Color = Color.Orange, Description = "Strong gust" },
+            new() { Value = 20, Color = Color.Red, Description = "Severe gust" }
         ]
     };
 
