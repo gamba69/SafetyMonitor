@@ -237,6 +237,7 @@ public class DashboardPanel : TableLayoutPanel {
 
     private void OnChartPeriodChanged(ChartTile source, string periodPresetUid) {
         if (!_linkChartPeriods) {
+            DashboardChanged?.Invoke();
             return;
         }
 
@@ -244,8 +245,11 @@ public class DashboardPanel : TableLayoutPanel {
             if (ReferenceEquals(chartTile, source)) {
                 continue;
             }
+
             chartTile.SetPeriodPreset(periodPresetUid);
         }
+
+        DashboardChanged?.Invoke();
     }
 
 

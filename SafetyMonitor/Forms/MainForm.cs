@@ -124,7 +124,7 @@ public class MainForm : MaterialForm {
         // Load settings BEFORE initializing UI
         _appSettings = _appSettingsService.LoadSettings();
         if (_appSettings.ChartPeriodPresets == null || _appSettings.ChartPeriodPresets.Count == 0) {
-            _appSettings.ChartPeriodPresets = ChartPeriodPresetStore.CreateDefaultPresets();
+            _appSettings.ChartPeriodPresets = ChartPeriodPresetStore.CreateDefaultPresets(_appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartRawDataPointIntervalSeconds);
         }
         ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
         MetricAxisRuleStore.SetRules(_appSettings.MetricAxisRules);

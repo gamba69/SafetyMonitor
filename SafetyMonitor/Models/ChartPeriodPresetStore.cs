@@ -9,20 +9,55 @@ public readonly record struct ChartPeriodPreset(
 
 public static class ChartPeriodPresetStore {
 
+    private const int DefaultTargetPointCount = 300;
+    private const int DefaultRawDataPointIntervalSeconds = 3;
+    private static readonly (string Uid, string Name, double Value, ChartPeriodUnit Unit)[] DefaultPresetDefinitions = [
+        ("preset-15-minutes", "15 Minutes", 15, ChartPeriodUnit.Minutes),
+        ("preset-1-hour", "1 Hour", 1, ChartPeriodUnit.Hours),
+        ("preset-2-hours", "2 Hours", 2, ChartPeriodUnit.Hours),
+        ("preset-3-hours", "3 Hours", 3, ChartPeriodUnit.Hours),
+        ("preset-6-hours", "6 Hours", 6, ChartPeriodUnit.Hours),
+        ("preset-1-day", "1 Day", 1, ChartPeriodUnit.Days),
+        ("preset-2-days", "2 Days", 2, ChartPeriodUnit.Days),
+        ("preset-3-days", "3 Days", 3, ChartPeriodUnit.Days),
+        ("preset-1-week", "1 Week", 1, ChartPeriodUnit.Weeks),
+        ("preset-2-weeks", "2 Weeks", 2, ChartPeriodUnit.Weeks),
+        ("preset-1-month", "1 Month", 1, ChartPeriodUnit.Months),
+        ("preset-2-months", "2 Months", 2, ChartPeriodUnit.Months),
+        ("preset-3-months", "3 Months", 3, ChartPeriodUnit.Months),
+        ("preset-6-months", "6 Months", 6, ChartPeriodUnit.Months),
+        ("preset-1-year", "1 Year", 12, ChartPeriodUnit.Months),
+        ("preset-2-years", "2 Years", 24, ChartPeriodUnit.Months),
+        ("preset-3-years", "3 Years", 36, ChartPeriodUnit.Months)
+    ];
+
     private static List<ChartPeriodPresetDefinition> _presets = CreateDefaultPresets();
 
     public static event Action? PresetsChanged;
 
     public static IReadOnlyList<ChartPeriodPresetDefinition> PresetDefinitions => _presets;
 
-    public static List<ChartPeriodPresetDefinition> CreateDefaultPresets() => [
-        new ChartPeriodPresetDefinition { Uid = "preset-15-minutes", Name = "15 Minutes", Value = 15, Unit = ChartPeriodUnit.Minutes, AggregationInterval = TimeSpan.FromSeconds(30) },
-        new ChartPeriodPresetDefinition { Uid = "preset-1-hour", Name = "1 Hour", Value = 1, Unit = ChartPeriodUnit.Hours, AggregationInterval = TimeSpan.FromMinutes(1) },
-        new ChartPeriodPresetDefinition { Uid = "preset-6-hours", Name = "6 Hours", Value = 6, Unit = ChartPeriodUnit.Hours, AggregationInterval = TimeSpan.FromMinutes(5) },
-        new ChartPeriodPresetDefinition { Uid = "preset-24-hours", Name = "24 Hours", Value = 24, Unit = ChartPeriodUnit.Hours, AggregationInterval = TimeSpan.FromMinutes(15) },
-        new ChartPeriodPresetDefinition { Uid = "preset-7-days", Name = "7 Days", Value = 7, Unit = ChartPeriodUnit.Days, AggregationInterval = TimeSpan.FromHours(1) },
-        new ChartPeriodPresetDefinition { Uid = "preset-30-days", Name = "30 Days", Value = 30, Unit = ChartPeriodUnit.Days, AggregationInterval = TimeSpan.FromHours(6) }
-    ];
+    public static List<ChartPeriodPresetDefinition> CreateDefaultPresets(
+        int targetPointCount = DefaultTargetPointCount,
+        int rawDataPointIntervalSeconds = DefaultRawDataPointIntervalSeconds) {
+        var safeTargetPointCount = Math.Max(2, targetPointCount);
+        var safeRawDataPointIntervalSeconds = Math.Max(1, rawDataPointIntervalSeconds);
+
+        return [.. DefaultPresetDefinitions.Select(def => {
+            var duration = new ChartPeriodPresetDefinition {
+                Value = def.Value,
+                Unit = def.Unit
+            }.ToTimeSpan();
+
+            return new ChartPeriodPresetDefinition {
+                Uid = def.Uid,
+                Name = def.Name,
+                Value = def.Value,
+                Unit = def.Unit,
+                AggregationInterval = CalculateDefaultAggregationInterval(duration, safeTargetPointCount, safeRawDataPointIntervalSeconds)
+            };
+        })];
+    }
 
     public static void SetPresets(IEnumerable<ChartPeriodPresetDefinition>? presets) {
         _presets = NormalizePresets(presets);
@@ -63,7 +98,7 @@ public static class ChartPeriodPresetStore {
             return presets[0];
         }
 
-        return new ChartPeriodPreset("preset-24-hours", "24 Hours", TimeSpan.FromHours(24), ChartPeriod.Last24Hours, TimeSpan.FromMinutes(15));
+        return new ChartPeriodPreset("preset-1-day", "1 Day", TimeSpan.FromDays(1), ChartPeriod.Last24Hours, TimeSpan.FromMinutes(15));
     }
 
     public static string FormatDuration(TimeSpan duration) {
@@ -175,5 +210,12 @@ public static class ChartPeriodPresetStore {
         }
 
         return TimeSpan.FromHours(6);
+    }
+
+    private static TimeSpan CalculateDefaultAggregationInterval(TimeSpan duration, int targetPointCount, int rawDataPointIntervalSeconds) {
+        var intervalSeconds = Math.Max(1, (int)Math.Ceiling(duration.TotalSeconds / targetPointCount));
+        var rawInterval = TimeSpan.FromSeconds(rawDataPointIntervalSeconds);
+        var generated = TimeSpan.FromSeconds(intervalSeconds);
+        return generated <= rawInterval ? TimeSpan.Zero : generated;
     }
 }

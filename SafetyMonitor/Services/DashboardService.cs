@@ -24,6 +24,7 @@ public class DashboardService {
 
     #region Public Methods
     public void DeleteDashboard(Dashboard dashboard) {
+        EnsureConfigDirectoryExists();
         var path = Path.Combine(_configDirectory, $"{dashboard.Id}.json");
         if (File.Exists(path)) {
             File.Delete(path);
@@ -45,6 +46,7 @@ public class DashboardService {
     }
 
     public List<Dashboard> LoadDashboards() {
+        EnsureConfigDirectoryExists();
         var dashboards = new List<Dashboard>();
         try {
             foreach (var file in Directory.GetFiles(_configDirectory, "*.json")) {
@@ -68,8 +70,13 @@ public class DashboardService {
     }
 
     public void SaveDashboard(Dashboard dashboard) {
+        EnsureConfigDirectoryExists();
         dashboard.ModifiedAt = DateTime.Now;
         File.WriteAllText(Path.Combine(_configDirectory, $"{dashboard.Id}.json"), JsonSerializer.Serialize(dashboard, _jsonOptions));
+    }
+
+    private void EnsureConfigDirectoryExists() {
+        Directory.CreateDirectory(_configDirectory);
     }
 
     #endregion Public Methods

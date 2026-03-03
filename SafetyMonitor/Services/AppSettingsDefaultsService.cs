@@ -19,7 +19,7 @@ public static class AppSettingsDefaultsService {
             LastDashboardId = null,
             RefreshInterval = 5,
             ValueTileLookbackMinutes = 60,
-            ChartPeriodPresets = ChartPeriodPresetStore.CreateDefaultPresets(),
+            ChartPeriodPresets = ChartPeriodPresetStore.CreateDefaultPresets(300, 3),
             MetricAxisRules = [],
             MetricDisplaySettings = [],
             StoragePath = string.Empty,
@@ -36,7 +36,6 @@ public static class AppSettingsDefaultsService {
             return defaults;
         }
 
-        loaded.ChartPeriodPresets = loaded.ChartPeriodPresets?.Count > 0 ? loaded.ChartPeriodPresets : defaults.ChartPeriodPresets;
         loaded.MetricAxisRules ??= defaults.MetricAxisRules;
         loaded.MetricDisplaySettings ??= defaults.MetricDisplaySettings;
         loaded.WindowWidth = loaded.WindowWidth <= 0 ? defaults.WindowWidth : loaded.WindowWidth;
@@ -47,6 +46,9 @@ public static class AppSettingsDefaultsService {
         loaded.ChartStaticAggregationTargetPointCount = loaded.ChartStaticAggregationTargetPointCount <= 0 ? defaults.ChartStaticAggregationTargetPointCount : loaded.ChartStaticAggregationTargetPointCount;
         loaded.ChartStaticAggregationPresetMatchTolerancePercent = loaded.ChartStaticAggregationPresetMatchTolerancePercent <= 0 ? defaults.ChartStaticAggregationPresetMatchTolerancePercent : loaded.ChartStaticAggregationPresetMatchTolerancePercent;
         loaded.ChartRawDataPointIntervalSeconds = loaded.ChartRawDataPointIntervalSeconds <= 0 ? defaults.ChartRawDataPointIntervalSeconds : loaded.ChartRawDataPointIntervalSeconds;
+        loaded.ChartPeriodPresets = loaded.ChartPeriodPresets?.Count > 0
+            ? loaded.ChartPeriodPresets
+            : ChartPeriodPresetStore.CreateDefaultPresets(loaded.ChartStaticAggregationTargetPointCount, loaded.ChartRawDataPointIntervalSeconds);
         loaded.StoragePath ??= string.Empty;
         loaded.MaterialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(loaded.MaterialColorScheme);
 
