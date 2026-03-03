@@ -710,23 +710,12 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
         conn.Open();
 
         if (!TableExists(conn, "METEO_RAW")) {
-            conn.Execute(@"CREATE TABLE METEO_RAW (
-CREATED_AT TIMESTAMP NOT NULL PRIMARY KEY,
-CLOUD_COVER SMALLINT,
-IS_SAFE SMALLINT,
-DEW_POINT FLOAT,
-HUMIDITY FLOAT,
-PRESSURE FLOAT,
-SKY_BRIGHTNESS DOUBLE PRECISION,
-RAIN_RATE FLOAT,
-SKY_QUALITY FLOAT,
-SKY_TEMPERATURE FLOAT,
-STAR_FWHM FLOAT,
-TEMPERATURE FLOAT,
-WIND_DIRECTION FLOAT,
-WIND_GUST FLOAT,
-WIND_SPEED FLOAT
-)");
+            var columns = new List<string> { "CREATED_AT TIMESTAMP NOT NULL PRIMARY KEY" };
+            foreach (var metric in Metrics) {
+                columns.Add($"{metric.Name} {metric.RawSqlType}");
+            }
+
+            conn.Execute($"CREATE TABLE METEO_RAW ({string.Join(",", columns)})");
         }
 
         if (!IndexExists(conn, "IDX_METEO_RAW_CREATED_AT")) {
@@ -781,16 +770,12 @@ WIND_SPEED FLOAT
         }
 
         if (!TableExists(conn, tableName)) {
-            var columns = new List<string> { "CREATED_AT TIMESTAMP NOT NULL PRIMARY KEY" };
-            foreach (var m in Metrics) {
-                columns.Add($"{m.Name}_SUM DOUBLE PRECISION");
-                columns.Add($"{m.Name}_COUNT INTEGER");
-                columns.Add($"{m.Name}_AVG {m.AggSqlType}");
-                columns.Add($"{m.Name}_MIN {m.AggSqlType}");
-                columns.Add($"{m.Name}_MAX {m.AggSqlType}");
-                columns.Add($"{m.Name}_FIRST {m.AggSqlType}");
-                columns.Add($"{m.Name}_LAST {m.AggSqlType}");
-            }
+            var requiredColumns = BuildAggTableRequiredColumns();
+            var columns = requiredColumns
+                .Select(column => string.Equals(column.Key, "CREATED_AT", StringComparison.OrdinalIgnoreCase)
+                    ? "CREATED_AT TIMESTAMP NOT NULL PRIMARY KEY"
+                    : $"{column.Key} {column.Value}")
+                .ToList();
 
             conn.Execute($"CREATE TABLE {tableName} ({string.Join(",", columns)})");
         }
@@ -912,23 +897,7 @@ WIND_SPEED FLOAT
                 new TableSchemaExpectation(
                     "METEO_RAW",
                     "IDX_METEO_RAW_CREATED_AT",
-                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
-                        ["CREATED_AT"] = "TIMESTAMP",
-                        ["CLOUD_COVER"] = "SMALLINT",
-                        ["IS_SAFE"] = "SMALLINT",
-                        ["DEW_POINT"] = "FLOAT",
-                        ["HUMIDITY"] = "FLOAT",
-                        ["PRESSURE"] = "FLOAT",
-                        ["SKY_BRIGHTNESS"] = "DOUBLE PRECISION",
-                        ["RAIN_RATE"] = "FLOAT",
-                        ["SKY_QUALITY"] = "FLOAT",
-                        ["SKY_TEMPERATURE"] = "FLOAT",
-                        ["STAR_FWHM"] = "FLOAT",
-                        ["TEMPERATURE"] = "FLOAT",
-                        ["WIND_DIRECTION"] = "FLOAT",
-                        ["WIND_GUST"] = "FLOAT",
-                        ["WIND_SPEED"] = "FLOAT"
-                    })
+                    BuildRawTableRequiredColumns())
             ];
         }
 
@@ -945,9 +914,19 @@ WIND_SPEED FLOAT
     }
 
     private static List<TableSchemaExpectation> BuildAggTableSchemas(IEnumerable<string> levels) {
+        var requiredColumns = BuildAggTableRequiredColumns();
+
+        return [.. levels.Select(level => new TableSchemaExpectation(
+            $"METEO_AGG_{level}",
+            $"IDX_METEO_AGG_{level}_CREATED_AT",
+            new Dictionary<string, string>(requiredColumns, StringComparer.OrdinalIgnoreCase)))];
+    }
+
+    private static Dictionary<string, string> BuildAggTableRequiredColumns() {
         var requiredColumns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
             ["CREATED_AT"] = "TIMESTAMP"
         };
+
         foreach (var metric in Metrics) {
             requiredColumns[$"{metric.Name}_SUM"] = "DOUBLE PRECISION";
             requiredColumns[$"{metric.Name}_COUNT"] = "INTEGER";
@@ -958,10 +937,19 @@ WIND_SPEED FLOAT
             requiredColumns[$"{metric.Name}_LAST"] = metric.AggSqlType;
         }
 
-        return [.. levels.Select(level => new TableSchemaExpectation(
-            $"METEO_AGG_{level}",
-            $"IDX_METEO_AGG_{level}_CREATED_AT",
-            new Dictionary<string, string>(requiredColumns, StringComparer.OrdinalIgnoreCase)))];
+        return requiredColumns;
+    }
+
+    private static Dictionary<string, string> BuildRawTableRequiredColumns() {
+        var requiredColumns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+            ["CREATED_AT"] = "TIMESTAMP"
+        };
+
+        foreach (var metric in Metrics) {
+            requiredColumns[metric.Name] = metric.RawSqlType;
+        }
+
+        return requiredColumns;
     }
 
     private static Dictionary<string, string> GetTableColumns(FbConnection conn, string tableName) {
