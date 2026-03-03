@@ -14,6 +14,10 @@ public static class MetricDisplaySettingsStore {
         return _settings.FirstOrDefault(s => s.Metric == metric) ?? CreateDefaultSetting(metric);
     }
 
+    public static MetricDisplaySetting GetDefaultSetting(MetricType metric) {
+        return CreateDefaultSetting(metric);
+    }
+
     public static string FormatMetricValue(MetricType metric, double value) {
         var setting = GetSettingOrDefault(metric);
         var decimals = Math.Max(0, setting.Decimals);
@@ -55,9 +59,69 @@ public static class MetricDisplaySettingsStore {
     }
 
     private static MetricDisplaySetting CreateDefaultSetting(MetricType metric) {
-        return new MetricDisplaySetting {
+        var setting = new MetricDisplaySetting {
             Metric = metric,
-            TrayValueSchemeName = ValueSchemeService.GetDefaultSchemeName(metric)
+            TrayValueSchemeName = metric == MetricType.IsSafe
+                ? ValueSchemeService.GetDefaultSchemeName(metric)
+                : string.Empty
         };
+
+        switch (metric) {
+            case MetricType.Temperature:
+                setting.Decimals = 1;
+                setting.TrayName = "T";
+                break;
+            case MetricType.Humidity:
+                setting.Decimals = 0;
+                setting.TrayName = "H";
+                break;
+            case MetricType.DewPoint:
+                setting.Decimals = 1;
+                setting.TrayName = "D";
+                break;
+            case MetricType.CloudCover:
+                setting.Decimals = 0;
+                setting.TrayName = "C";
+                break;
+            case MetricType.SkyQuality:
+                setting.Decimals = 1;
+                setting.InvertY = true;
+                setting.TrayName = "S";
+                break;
+            case MetricType.RainRate:
+                setting.Decimals = 2;
+                setting.TrayName = "R";
+                break;
+            case MetricType.WindSpeed:
+                setting.Decimals = 1;
+                setting.TrayName = "W";
+                break;
+            case MetricType.IsSafe:
+                setting.Decimals = 0;
+                setting.TrayName = "S";
+                break;
+            case MetricType.Pressure:
+                setting.Decimals = 0;
+                break;
+            case MetricType.SkyTemperature:
+                setting.Decimals = 1;
+                break;
+            case MetricType.SkyBrightness:
+                setting.Decimals = 4;
+                setting.HideZeroes = true;
+                setting.LogY = true;
+                break;
+            case MetricType.WindGust:
+                setting.Decimals = 1;
+                break;
+            case MetricType.WindDirection:
+                setting.Decimals = 0;
+                break;
+            case MetricType.StarFwhm:
+                setting.Decimals = 2;
+                break;
+        }
+
+        return setting;
     }
 }

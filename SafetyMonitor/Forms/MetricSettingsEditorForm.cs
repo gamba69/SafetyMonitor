@@ -226,7 +226,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
             _metricsGrid.Rows.Clear();
         var map = _settings.ToDictionary(s => s.Metric, s => s);
         foreach (var metric in GetOrderedMetricsForGrid(map)) {
-            var s = map.TryGetValue(metric, out var found) ? found : new MetricDisplaySetting { Metric = metric };
+            var s = map.TryGetValue(metric, out var found) ? found : MetricDisplaySettingsStore.GetDefaultSetting(metric);
             _metricsGrid.Rows.Add(metric.GetDisplayName(), Math.Max(0, s.Decimals), s.HideZeroes, s.InvertY, s.LogY, s.TrayName, NormalizeTrayValueScheme(s.TrayValueSchemeName));
         }
     }
@@ -234,7 +234,12 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
     private static IEnumerable<MetricType> GetOrderedMetricsForGrid(Dictionary<MetricType, MetricDisplaySetting> settingsByMetric) {
         return Enum
             .GetValues<MetricType>()
-            .OrderByDescending(metric => settingsByMetric.TryGetValue(metric, out var setting) && !string.IsNullOrWhiteSpace(setting.TrayName))
+            .OrderByDescending(metric => {
+                var setting = settingsByMetric.TryGetValue(metric, out var existing)
+                    ? existing
+                    : MetricDisplaySettingsStore.GetDefaultSetting(metric);
+                return !string.IsNullOrWhiteSpace(setting.TrayName);
+            })
             .ThenBy(metric => (int)metric);
     }
 
