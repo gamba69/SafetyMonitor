@@ -95,6 +95,27 @@ public static class ChartAggregationHelper {
         return AggregationLabels.First(x => x.Interval == normalizedInterval).Label;
     }
 
+    public static bool TryParseAggregationLabel(string? label, out TimeSpan interval) {
+        interval = TimeSpan.Zero;
+        if (string.IsNullOrWhiteSpace(label)) {
+            return false;
+        }
+
+        var normalizedLabel = label.Trim();
+        var knownLabel = AggregationLabels.FirstOrDefault(x => string.Equals(x.Label, normalizedLabel, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrEmpty(knownLabel.Label)) {
+            interval = knownLabel.Interval;
+            return true;
+        }
+
+        if (TimeSpan.TryParse(normalizedLabel, out var parsedTimeSpan)) {
+            interval = NormalizeAggregationInterval(parsedTimeSpan);
+            return true;
+        }
+
+        return false;
+    }
+
     public static TimeSpan NormalizeAggregationInterval(TimeSpan interval) {
         if (interval <= TimeSpan.Zero) {
             return TimeSpan.Zero;

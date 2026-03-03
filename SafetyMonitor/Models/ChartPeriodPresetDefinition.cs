@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using SafetyMonitor.Services;
+
 namespace SafetyMonitor.Models;
 
 public enum ChartPeriodUnit {
@@ -13,6 +16,7 @@ public class ChartPeriodPresetDefinition {
     public string Name { get; set; } = "";
     public double Value { get; set; } = 1;
     public ChartPeriodUnit Unit { get; set; } = ChartPeriodUnit.Hours;
+    [JsonConverter(typeof(ChartAggregationIntervalJsonConverter))]
     public TimeSpan AggregationInterval { get; set; } = TimeSpan.FromMinutes(1);
 
     public TimeSpan ToTimeSpan() {
