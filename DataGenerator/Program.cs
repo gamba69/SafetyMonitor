@@ -147,10 +147,11 @@ internal static class Program {
         var batch = new List<ObservingData>(batchSize);
 
         var rainTimeline = new RainTimeline(random, startTime);
+        var humidityTimeline = new HumidityTimeline(random);
 
         var total = 0;
         for (var timestamp = startTime; timestamp <= endTime; timestamp = timestamp.Add(interval)) {
-            var data = GenerateData(timestamp, random, rainTimeline);
+            var data = GenerateData(timestamp, random, rainTimeline, humidityTimeline);
             batch.Add(data);
 
             if (batch.Count >= batchSize) {
@@ -234,7 +235,7 @@ internal static class Program {
         return null;
     }
 
-    private static ObservingData GenerateData(DateTime timestamp, Random random, RainTimeline rainTimeline) {
+    private static ObservingData GenerateData(DateTime timestamp, Random random, RainTimeline rainTimeline, HumidityTimeline humidityTimeline) {
         var dayOfYear = timestamp.DayOfYear;
         var solarPhase = Math.Sin(2 * Math.PI * (dayOfYear - 81) / 365.2422); // + летом, - зимой
         var daylightHours = 12 + 4 * solarPhase;
@@ -288,23 +289,36 @@ internal static class Program {
         var pressureTrend = 1015 + 9 * Math.Sin(2 * Math.PI * dayOfYear / 9.0 + hour / 8.0) + 7 * Math.Sin(2 * Math.PI * dayOfYear / 3.7 + 2.1);
         var pressure = Math.Clamp(pressureTrend - 12 * cloudOpacity + NextRange(random, -2.5, 2.5), 970, 1045);
 
-        var humidityBase = 50 + 32 * cloudOpacity - 0.75 * (temperature - 5) + 9 * (1 - solarElevationFactor);
-        var humidity = Math.Clamp(humidityBase + NextRange(random, -5, 5), 18, 100);
-
-        var dewSpread = Math.Clamp(12 - humidity / 9.0 + NextRange(random, -1.2, 1.2), 0.5, 16);
-        var dewPoint = temperature - dewSpread;
+        var humidityBase = 48 + 26 * cloudOpacity - 0.7 * (temperature - 5) + 6 * (1 - solarElevationFactor);
+        var humidityForRain = Math.Clamp(humidityBase + NextRange(random, -2.5, 2.5), 35, 75);
 
         var windSpeedBase = 1.5 + 5 * (1 - solarElevationFactor) + 4 * cloudOpacity + 1.8 * Math.Abs(Math.Sin(2 * Math.PI * dayOfYear / 2.8));
         var windSpeed = Math.Clamp(windSpeedBase + NextRange(random, -1.2, 1.4), 0, 24);
         var windGust = Math.Clamp(windSpeed + 0.4 + 0.6 * windSpeed + NextRange(random, 0, 3), windSpeed, 35);
 
         var seasonalRainChance = 0.02 + 0.5 * rainSeasonStrength * Math.Pow(cloudOpacity, 1.7);
-        var rainRate = rainTimeline.GetRainRate(timestamp, seasonalRainChance, humidity, cloudOpacity);
+        var rainRate = rainTimeline.GetRainRate(timestamp, seasonalRainChance, humidityForRain, cloudOpacity);
+
+        var humidityMin = rainRate > 0.05 ? 55 : 40;
+        var humidityMax = rainRate > 0.05 ? 85 : 72;
+        var humidityTarget = humidityBase + NextRange(random, -2.5, 2.5);
+        if (rainRate > 0) {
+            humidityTarget += 8 + 12 * Math.Min(rainRate / 7.2, 1.0);
+        }
+
+        var humidity = humidityTimeline.Next(timestamp, humidityTarget, humidityMin, humidityMax);
 
         if (rainRate > 0) {
             temperature = Math.Clamp(temperature - (1.3 + 3.8 * Math.Min(rainRate / 7.2, 1.0)), -35, 38);
-            humidity = Math.Clamp(humidity + 8 + 14 * Math.Min(rainRate / 7.2, 1.0), 18, 100);
+            humidity = humidityTimeline.Next(
+                timestamp,
+                humidity + 2 + 5 * Math.Min(rainRate / 7.2, 1.0),
+                55,
+                85);
         }
+
+        var dewSpread = Math.Clamp(12 - humidity / 9.0 + NextRange(random, -1.2, 1.2), 0.5, 16);
+        var dewPoint = temperature - dewSpread;
 
         var skyTemperature = Math.Clamp(temperature - 14 - 24 * (1 - cloudOpacity) + NextRange(random, -2.5, 2.5), -60, 18);
         var skyQuality = Math.Clamp(21.9 - 2.2 * solarElevationFactor - 1.4 * cloudOpacity + NextRange(random, -0.25, 0.2), 16, 22);
@@ -390,6 +404,39 @@ internal static class Program {
                     _eventPeakRate = 0;
                 }
             }
+        }
+    }
+
+    private sealed class HumidityTimeline {
+        private readonly Random _random;
+        private bool _initialized;
+        private double _lastHumidity;
+        private DateTime _lastTimestamp;
+
+        public HumidityTimeline(Random random) {
+            _random = random;
+        }
+
+        public double Next(DateTime timestamp, double target, double min, double max) {
+            var clampedTarget = Math.Clamp(target, min, max);
+
+            if (!_initialized) {
+                _initialized = true;
+                _lastTimestamp = timestamp;
+                _lastHumidity = clampedTarget;
+                return _lastHumidity;
+            }
+
+            var hours = Math.Max((timestamp - _lastTimestamp).TotalHours, 1.0 / 60.0);
+            _lastTimestamp = timestamp;
+
+            var maxDelta = Math.Clamp(2.8 * hours, 0.6, 4.0);
+            var desiredDelta = clampedTarget - _lastHumidity;
+            var delta = Math.Clamp(desiredDelta, -maxDelta, maxDelta);
+            var localNoise = NextRange(_random, -0.35, 0.35);
+
+            _lastHumidity = Math.Clamp(_lastHumidity + delta + localNoise, min, max);
+            return _lastHumidity;
         }
     }
 
