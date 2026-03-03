@@ -502,21 +502,23 @@ public class ValueTile : Panel {
         var showTextAboveValue = _config.DisplayMode == ValueTileDisplayMode.TextAndValue && !string.IsNullOrWhiteSpace(_textLabel.Text);
         var valueTop = Padding.Top + halfHeight - 10;
         var valueHeight = halfHeight + 10;
+        const int textToValueGap = 12;
+
+        _valueLabel.SetBounds(Padding.Left, valueTop, valueWidth, valueHeight);
+        _valueLabel.TextAlign = ContentAlignment.BottomLeft;
+        FitValueFontToWidth(valueWidth, valueFontSize);
+
         if (showTextAboveValue) {
             var textHeight = Math.Max(20, GetLogicalFontHeight(_textLabel.Font) + 6);
-            _textLabel.SetBounds(Padding.Left, valueTop - textHeight, valueWidth, textHeight);
+            var valueTextHeight = GetLogicalFontHeight(_valueLabel.Font);
+            var valueTextTop = valueTop + valueHeight - valueTextHeight;
+            var textTop = Math.Max(Padding.Top, valueTextTop - textHeight - textToValueGap);
+            _textLabel.SetBounds(Padding.Left, textTop, valueWidth, textHeight);
             _textLabel.Visible = true;
             _textLabel.BringToFront();
-
-            // Reserve full text row so value label never overlaps and hides text.
-            valueTop += textHeight;
-            valueHeight = Math.Max(24, valueHeight - textHeight);
         } else {
             _textLabel.Visible = false;
         }
-
-        _valueLabel.SetBounds(Padding.Left, valueTop, valueWidth, valueHeight);
-        FitValueFontToWidth(valueWidth, valueFontSize);
 
         // Unit: bottom-right quadrant
         var unitStartX = Padding.Left + valueWidth;
