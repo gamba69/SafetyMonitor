@@ -53,20 +53,20 @@ public class DataStorage {
 
     private sealed record MetricDef(string Name, FbDbType RawType, string RawSqlType, string AggSqlType);
     private static readonly MetricDef[] Metrics = [
-        new("CLOUD_COVER", FbDbType.SmallInt, "SMALLINT", "DOUBLE PRECISION"),
-        new("IS_SAFE", FbDbType.SmallInt, "SMALLINT", "DOUBLE PRECISION"),
-        new("DEW_POINT", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
-        new("HUMIDITY", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
-        new("PRESSURE", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
+        new("CLOUD_COVER", FbDbType.SmallInt, "SMALLINT", "FLOAT"),
+        new("IS_SAFE", FbDbType.SmallInt, "SMALLINT", "FLOAT"),
+        new("DEW_POINT", FbDbType.Float, "FLOAT", "FLOAT"),
+        new("HUMIDITY", FbDbType.Float, "FLOAT", "FLOAT"),
+        new("PRESSURE", FbDbType.Float, "FLOAT", "FLOAT"),
         new("SKY_BRIGHTNESS", FbDbType.Double, "DOUBLE PRECISION", "DOUBLE PRECISION"),
-        new("RAIN_RATE", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
-        new("SKY_QUALITY", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
-        new("SKY_TEMPERATURE", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
-        new("STAR_FWHM", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
-        new("TEMPERATURE", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
-        new("WIND_DIRECTION", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
-        new("WIND_GUST", FbDbType.Float, "FLOAT", "DOUBLE PRECISION"),
-        new("WIND_SPEED", FbDbType.Float, "FLOAT", "DOUBLE PRECISION")
+        new("RAIN_RATE", FbDbType.Float, "FLOAT", "FLOAT"),
+        new("SKY_QUALITY", FbDbType.Float, "FLOAT", "FLOAT"),
+        new("SKY_TEMPERATURE", FbDbType.Float, "FLOAT", "FLOAT"),
+        new("STAR_FWHM", FbDbType.Float, "FLOAT", "FLOAT"),
+        new("TEMPERATURE", FbDbType.Float, "FLOAT", "FLOAT"),
+        new("WIND_DIRECTION", FbDbType.Float, "FLOAT", "FLOAT"),
+        new("WIND_GUST", FbDbType.Float, "FLOAT", "FLOAT"),
+        new("WIND_SPEED", FbDbType.Float, "FLOAT", "FLOAT")
     ];
 
     private static readonly (string Name, TimeSpan Span, bool Monthly)[] Levels = [
@@ -877,9 +877,17 @@ WIND_SPEED FLOAT
                     }
 
                     var actualColumns = GetTableColumns(conn, schema.TableName);
-                    foreach (var requiredColumn in schema.RequiredColumns) {
-                        if (!actualColumns.Contains(requiredColumn)) {
+                    foreach (var requiredColumn in schema.RequiredColumns.Keys) {
+                        if (!actualColumns.ContainsKey(requiredColumn)) {
                             result.Issues.Add(new(StorageValidationIssueSeverity.Error, $"Missing column {requiredColumn} in table {schema.TableName} ({Path.GetFileName(file)})."));
+                            continue;
+                        }
+
+                        var expectedType = schema.RequiredColumns[requiredColumn];
+                        var actualType = actualColumns[requiredColumn];
+                        if (!string.Equals(actualType, expectedType, StringComparison.OrdinalIgnoreCase)) {
+                            result.Issues.Add(new(StorageValidationIssueSeverity.Error,
+                                $"Invalid type for column {requiredColumn} in table {schema.TableName} ({Path.GetFileName(file)}). Expected {expectedType}, got {actualType}."));
                         }
                     }
 
@@ -895,7 +903,7 @@ WIND_SPEED FLOAT
         return result;
     }
 
-    private sealed record TableSchemaExpectation(string TableName, string IndexName, HashSet<string> RequiredColumns);
+    private sealed record TableSchemaExpectation(string TableName, string IndexName, Dictionary<string, string> RequiredColumns);
 
     private static List<TableSchemaExpectation> GetRequiredTableSchemasForFile(string filePath, string storageRootPath) {
         var fileName = Path.GetFileName(filePath);
@@ -904,23 +912,23 @@ WIND_SPEED FLOAT
                 new TableSchemaExpectation(
                     "METEO_RAW",
                     "IDX_METEO_RAW_CREATED_AT",
-                    [
-                        "CREATED_AT",
-                        "CLOUD_COVER",
-                        "IS_SAFE",
-                        "DEW_POINT",
-                        "HUMIDITY",
-                        "PRESSURE",
-                        "SKY_BRIGHTNESS",
-                        "RAIN_RATE",
-                        "SKY_QUALITY",
-                        "SKY_TEMPERATURE",
-                        "STAR_FWHM",
-                        "TEMPERATURE",
-                        "WIND_DIRECTION",
-                        "WIND_GUST",
-                        "WIND_SPEED"
-                    ])
+                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+                        ["CREATED_AT"] = "TIMESTAMP",
+                        ["CLOUD_COVER"] = "SMALLINT",
+                        ["IS_SAFE"] = "SMALLINT",
+                        ["DEW_POINT"] = "FLOAT",
+                        ["HUMIDITY"] = "FLOAT",
+                        ["PRESSURE"] = "FLOAT",
+                        ["SKY_BRIGHTNESS"] = "DOUBLE PRECISION",
+                        ["RAIN_RATE"] = "FLOAT",
+                        ["SKY_QUALITY"] = "FLOAT",
+                        ["SKY_TEMPERATURE"] = "FLOAT",
+                        ["STAR_FWHM"] = "FLOAT",
+                        ["TEMPERATURE"] = "FLOAT",
+                        ["WIND_DIRECTION"] = "FLOAT",
+                        ["WIND_GUST"] = "FLOAT",
+                        ["WIND_SPEED"] = "FLOAT"
+                    })
             ];
         }
 
@@ -937,26 +945,54 @@ WIND_SPEED FLOAT
     }
 
     private static List<TableSchemaExpectation> BuildAggTableSchemas(IEnumerable<string> levels) {
-        var requiredColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "CREATED_AT" };
+        var requiredColumns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+            ["CREATED_AT"] = "TIMESTAMP"
+        };
         foreach (var metric in Metrics) {
-            requiredColumns.Add($"{metric.Name}_SUM");
-            requiredColumns.Add($"{metric.Name}_COUNT");
-            requiredColumns.Add($"{metric.Name}_AVG");
-            requiredColumns.Add($"{metric.Name}_MIN");
-            requiredColumns.Add($"{metric.Name}_MAX");
-            requiredColumns.Add($"{metric.Name}_FIRST");
-            requiredColumns.Add($"{metric.Name}_LAST");
+            requiredColumns[$"{metric.Name}_SUM"] = "DOUBLE PRECISION";
+            requiredColumns[$"{metric.Name}_COUNT"] = "INTEGER";
+            requiredColumns[$"{metric.Name}_AVG"] = metric.AggSqlType;
+            requiredColumns[$"{metric.Name}_MIN"] = metric.AggSqlType;
+            requiredColumns[$"{metric.Name}_MAX"] = metric.AggSqlType;
+            requiredColumns[$"{metric.Name}_FIRST"] = metric.AggSqlType;
+            requiredColumns[$"{metric.Name}_LAST"] = metric.AggSqlType;
         }
 
         return [.. levels.Select(level => new TableSchemaExpectation(
             $"METEO_AGG_{level}",
             $"IDX_METEO_AGG_{level}_CREATED_AT",
-            new HashSet<string>(requiredColumns, StringComparer.OrdinalIgnoreCase)))];
+            new Dictionary<string, string>(requiredColumns, StringComparer.OrdinalIgnoreCase)))];
     }
 
-    private static HashSet<string> GetTableColumns(FbConnection conn, string tableName) {
-        const string sql = @"SELECT TRIM(RDB$FIELD_NAME) FROM RDB$RELATION_FIELDS WHERE RDB$RELATION_NAME = @TableName";
-        var columns = conn.Query<string>(sql, new { TableName = tableName.ToUpperInvariant() });
-        return [.. columns.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim().ToUpperInvariant())];
+    private static Dictionary<string, string> GetTableColumns(FbConnection conn, string tableName) {
+        const string sql = @"
+SELECT
+    TRIM(rf.RDB$FIELD_NAME) AS COLUMN_NAME,
+    CASE f.RDB$FIELD_TYPE
+        WHEN 7 THEN CASE f.RDB$FIELD_SUB_TYPE WHEN 1 THEN 'NUMERIC' WHEN 2 THEN 'DECIMAL' ELSE 'SMALLINT' END
+        WHEN 8 THEN CASE f.RDB$FIELD_SUB_TYPE WHEN 1 THEN 'NUMERIC' WHEN 2 THEN 'DECIMAL' ELSE 'INTEGER' END
+        WHEN 10 THEN 'FLOAT'
+        WHEN 12 THEN 'DATE'
+        WHEN 13 THEN 'TIME'
+        WHEN 14 THEN 'CHAR'
+        WHEN 16 THEN CASE f.RDB$FIELD_SUB_TYPE WHEN 1 THEN 'NUMERIC' WHEN 2 THEN 'DECIMAL' ELSE 'BIGINT' END
+        WHEN 23 THEN 'BOOLEAN'
+        WHEN 27 THEN 'DOUBLE PRECISION'
+        WHEN 35 THEN 'TIMESTAMP'
+        WHEN 37 THEN 'VARCHAR'
+        WHEN 261 THEN 'BLOB'
+        ELSE 'UNKNOWN'
+    END AS COLUMN_TYPE
+FROM RDB$RELATION_FIELDS rf
+JOIN RDB$FIELDS f ON rf.RDB$FIELD_SOURCE = f.RDB$FIELD_NAME
+WHERE rf.RDB$RELATION_NAME = @TableName";
+
+        var columns = conn.Query<(string? Name, string? Type)>(sql, new { TableName = tableName.ToUpperInvariant() });
+        return columns
+            .Where(x => !string.IsNullOrWhiteSpace(x.Name) && !string.IsNullOrWhiteSpace(x.Type))
+            .ToDictionary(
+                x => x.Name!.Trim().ToUpperInvariant(),
+                x => x.Type!.Trim().ToUpperInvariant(),
+                StringComparer.OrdinalIgnoreCase);
     }
 }
