@@ -2410,18 +2410,24 @@ public class ChartTile : Panel {
 
         for (var i = 0; i < visibleSeries.Count; i++) {
             var (series, value) = visibleSeries[i];
-            var unit = string.IsNullOrWhiteSpace(series.Unit) ? string.Empty : $" {series.Unit}";
 
             AppendHoverInfoChunk(series.Label, isBold: true, series.SeriesColor, addSeparator: false);
             string formattedValue;
+            var appendUnit = true;
             if (!string.IsNullOrEmpty(series.ValueSchemeName)) {
                 var valueSchemes = _valueSchemeService.LoadSchemes();
                 var valueScheme = valueSchemes.FirstOrDefault(s => s.Name == series.ValueSchemeName);
                 var transformedText = valueScheme?.GetText(value);
                 formattedValue = transformedText ?? MetricDisplaySettingsStore.FormatMetricValue(series.Metric, value);
+                appendUnit = false;
             } else {
                 formattedValue = MetricDisplaySettingsStore.FormatMetricValue(series.Metric, value);
             }
+
+            var unit = appendUnit && !string.IsNullOrWhiteSpace(series.Unit)
+                ? $" {series.Unit}"
+                : string.Empty;
+
             AppendHoverInfoChunk($": {formattedValue}{unit}", isBold: false, series.SeriesColor,
                 addSeparator: i < visibleSeries.Count - 1);
         }
