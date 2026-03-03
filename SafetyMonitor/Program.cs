@@ -133,8 +133,11 @@ static class Program {
 
             if (validation.HasErrors) {
                 HideSplashForStartupDialogs();
-                var details = string.Join(Environment.NewLine, validation.Issues.Where(x => x.Severity == DataStorage.DataStorage.StorageValidationIssueSeverity.Error).Select(x => $"• {x.Message}"));
-                ThemedMessageBox.Show($"Storage data structure does not match expected format. The application will be closed.\n\n{details}", "Storage structure error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ThemedMessageBox.Show(
+                    "Unable to open data storage: the file structure does not match the expected format.\n\nCheck the database path and restore the storage structure. Then restart the application.",
+                    "Storage structure error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
                 _startupAborted = true;
                 ExitThread();
                 return false;
@@ -143,8 +146,11 @@ static class Program {
             if (validation.HasWarnings) {
                 StartupLaunchOptions.IgnoreStartMinimized = true;
                 HideSplashForStartupDialogs();
-                var details = string.Join(Environment.NewLine, validation.Issues.Where(x => x.Severity == DataStorage.DataStorage.StorageValidationIssueSeverity.Warning).Select(x => $"• {x.Message}"));
-                var answer = ThemedMessageBox.Show($"Data storage is not configured.\n\n{details}\n\nOpen Database settings now?", "Storage not configured", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                var answer = ThemedMessageBox.Show(
+                    "Data storage is not configured or is incomplete.\n\nTo continue, open Settings and provide valid database parameters.\n\nOpen Settings now?",
+                    "Storage not configured",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
                 return answer == DialogResult.Yes;
             }
 
