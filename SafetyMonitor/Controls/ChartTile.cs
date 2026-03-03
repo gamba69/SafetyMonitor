@@ -699,14 +699,14 @@ public class ChartTile : Panel {
             _plot.Plot.FigureBackground.Color = ScottPlot.Color.FromColor(Color.White);
             _plot.Plot.DataBackground.Color = ScottPlot.Color.FromColor(Color.White);
             _plot.Plot.Axes.Color(ScottPlot.Color.FromColor(Color.Black));
-            _plot.Plot.Legend.BackgroundColor = ScottPlot.Color.FromColor(Color.White);
+            _plot.Plot.Legend.BackgroundColor = ScottPlot.Color.FromColor(Color.FromArgb(200, 255, 255, 255));
             _plot.Plot.Legend.FontColor = ScottPlot.Color.FromColor(Color.Black);
             _plot.Plot.Legend.OutlineColor = ScottPlot.Color.FromColor(Color.LightGray);
         } else {
             _plot.Plot.FigureBackground.Color = ScottPlot.Color.FromColor(Color.FromArgb(35, 47, 52));
             _plot.Plot.DataBackground.Color = ScottPlot.Color.FromColor(Color.FromArgb(35, 47, 52));
             _plot.Plot.Axes.Color(ScottPlot.Color.FromColor(Color.White));
-            _plot.Plot.Legend.BackgroundColor = ScottPlot.Color.FromColor(Color.FromArgb(46, 61, 66));
+            _plot.Plot.Legend.BackgroundColor = ScottPlot.Color.FromColor(Color.FromArgb(170, 46, 61, 66));
             _plot.Plot.Legend.FontColor = ScottPlot.Color.FromColor(Color.White);
             _plot.Plot.Legend.OutlineColor = ScottPlot.Color.FromColor(Color.FromArgb(80, 102, 110));
         }
