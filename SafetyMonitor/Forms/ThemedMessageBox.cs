@@ -66,6 +66,7 @@ public class ThemedMessageBox : ThemedCaptionForm {
 
     public static DialogResult Show(string message, string caption, MessageBoxButtons buttons, MessageBoxIcon icon) {
         using var dialog = new ThemedMessageBox(message, caption, buttons, icon);
+        dialog.StartPosition = FormStartPosition.CenterScreen;
         return dialog.ShowDialog();
     }
 
@@ -83,7 +84,12 @@ public class ThemedMessageBox : ThemedCaptionForm {
 
     public static DialogResult Show(IWin32Window? owner, string message, string caption, MessageBoxButtons buttons, MessageBoxIcon icon) {
         using var dialog = new ThemedMessageBox(message, caption, buttons, icon);
-        return owner != null ? dialog.ShowDialog(owner) : dialog.ShowDialog();
+        if (owner == null) {
+            dialog.StartPosition = FormStartPosition.CenterScreen;
+            return dialog.ShowDialog();
+        }
+
+        return dialog.ShowDialog(owner);
     }
 
     #endregion Public Methods

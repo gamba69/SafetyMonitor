@@ -21,6 +21,7 @@ public class SettingsForm : ThemedCaptionForm {
     private CheckBox _showRefreshIndicatorSwitch = null!;
     private CheckBox _minimizeToTraySwitch = null!;
     private CheckBox _startMinimizedSwitch = null!;
+    private CheckBox _validateDbStructureOnStartupSwitch = null!;
     private NumericUpDown _chartStaticTimeoutNumeric = null!;
     private NumericUpDown _chartStaticAggregationPresetMatchToleranceNumeric = null!;
     private NumericUpDown _chartStaticAggregationTargetPointsNumeric = null!;
@@ -77,7 +78,7 @@ public class SettingsForm : ThemedCaptionForm {
 
     public SettingsMaintenanceAction SettingsMaintenanceAction { get; private set; }
 
-    public SettingsForm(AppSettingsMaintenanceService settingsMaintenanceService, string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartRawDataPointIntervalSeconds, bool currentShowRefreshIndicator, bool currentMinimizeToTray, bool currentStartMinimized, string currentMaterialColorScheme) {
+    public SettingsForm(AppSettingsMaintenanceService settingsMaintenanceService, string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartRawDataPointIntervalSeconds, bool currentShowRefreshIndicator, bool currentMinimizeToTray, bool currentStartMinimized, bool currentValidateDatabaseStructureOnStartup, string currentMaterialColorScheme, int initialTabIndex = 0) {
         _settingsMaintenanceService = settingsMaintenanceService;
         StoragePath = currentStoragePath;
         RefreshInterval = currentRefreshInterval;
@@ -89,12 +90,14 @@ public class SettingsForm : ThemedCaptionForm {
         ShowRefreshIndicator = currentShowRefreshIndicator;
         MinimizeToTray = currentMinimizeToTray;
         StartMinimized = currentStartMinimized;
+        ValidateDatabaseStructureOnStartup = currentValidateDatabaseStructureOnStartup;
         MaterialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(currentMaterialColorScheme);
 
         InitializeComponent();
         FormIconHelper.Apply(this, MaterialIcons.MenuFileSettings);
         ApplyTheme();
         LoadSettings();
+        SelectTab(Math.Clamp(initialTabIndex, 0, TabNames.Length - 1));
     }
 
     #endregion Public Constructors
@@ -111,6 +114,7 @@ public class SettingsForm : ThemedCaptionForm {
     public bool ShowRefreshIndicator { get; private set; } = true;
     public bool MinimizeToTray { get; private set; } = false;
     public bool StartMinimized { get; private set; } = false;
+    public bool ValidateDatabaseStructureOnStartup { get; private set; } = false;
     public string MaterialColorScheme { get; private set; } = "Teal";
 
     #endregion Public Properties
@@ -618,10 +622,11 @@ public class SettingsForm : ThemedCaptionForm {
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 5,
+            RowCount = 6,
             AutoSize = false
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -675,7 +680,17 @@ public class SettingsForm : ThemedCaptionForm {
         pathPanel.Controls.Add(description, 0, 1);
         pathPanel.SetColumnSpan(description, 3);
 
-        layout.Controls.Add(pathPanel, 0, 1);
+
+        _validateDbStructureOnStartupSwitch = CreateThemeSwitch(normalFont);
+        layout.Controls.Add(CreateSettingRow(
+            "Check DB structure on startup",
+            "File layout validation always runs at startup. When enabled, an extended validation also checks required Firebird tables, columns, and indexes across all databases in storage.",
+            "",
+            _validateDbStructureOnStartupSwitch,
+            titleFont,
+            descriptionFont), 0, 1);
+
+        layout.Controls.Add(pathPanel, 0, 2);
 
         _testConnectionButton = new Button {
             Text = "Test Connection",
@@ -686,7 +701,7 @@ public class SettingsForm : ThemedCaptionForm {
             Anchor = AnchorStyles.None
         };
         _testConnectionButton.Click += TestConnectionButton_Click;
-        layout.Controls.Add(_testConnectionButton, 0, 2);
+        layout.Controls.Add(_testConnectionButton, 0, 3);
 
         _connectionStatusLabel = new Label {
             Text = "",
@@ -696,7 +711,7 @@ public class SettingsForm : ThemedCaptionForm {
             Anchor = AnchorStyles.None,
             TextAlign = ContentAlignment.MiddleCenter
         };
-        layout.Controls.Add(_connectionStatusLabel, 0, 3);
+        layout.Controls.Add(_connectionStatusLabel, 0, 4);
 
         page.Controls.Add(layout);
         return page;
@@ -913,7 +928,13 @@ public class SettingsForm : ThemedCaptionForm {
     // ════════════════════════════════════════════════════════════════
 
     private void SelectTab(int index) {
+        if (_tabButtons.Count > index && !_tabButtons[index].Checked) {
+            _tabButtons[index].Checked = true;
+        }
+
         if (index == _selectedTabIndex) {
+            var currentThemeIsLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+            ApplyTabSegmentTheme(currentThemeIsLight);
             return;
         }
 
@@ -1082,6 +1103,7 @@ public class SettingsForm : ThemedCaptionForm {
         StyleSettingSwitch(_showRefreshIndicatorSwitch, isLight);
         StyleSettingSwitch(_minimizeToTraySwitch, isLight);
         StyleSettingSwitch(_startMinimizedSwitch, isLight);
+        StyleSettingSwitch(_validateDbStructureOnStartupSwitch, isLight);
     }
 
     private static void StyleSettingSwitch(CheckBox checkBox, bool isLight) {
@@ -1112,6 +1134,7 @@ public class SettingsForm : ThemedCaptionForm {
         _showRefreshIndicatorSwitch.Checked = ShowRefreshIndicator;
         _minimizeToTraySwitch.Checked = MinimizeToTray;
         _startMinimizedSwitch.Checked = StartMinimized;
+        _validateDbStructureOnStartupSwitch.Checked = ValidateDatabaseStructureOnStartup;
         _valueTileLookbackMinutesNumeric.Value = Math.Clamp(ValueTileLookbackMinutes, 1, 43200);
         _chartStaticTimeoutNumeric.Value = ChartStaticTimeoutSeconds;
         _chartStaticAggregationPresetMatchToleranceNumeric.Value = Math.Clamp((decimal)ChartStaticAggregationPresetMatchTolerancePercent, 0m, 100m);
@@ -1141,6 +1164,7 @@ public class SettingsForm : ThemedCaptionForm {
         ShowRefreshIndicator = _showRefreshIndicatorSwitch.Checked;
         MinimizeToTray = _minimizeToTraySwitch.Checked;
         StartMinimized = _startMinimizedSwitch.Checked;
+        ValidateDatabaseStructureOnStartup = _validateDbStructureOnStartupSwitch.Checked;
         var selectedSchemeName = (_materialColorSchemeComboBox.SelectedItem as MaterialSchemeComboItem)?.SchemeName;
         MaterialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(selectedSchemeName);
         ValueTileLookbackMinutes = (int)_valueTileLookbackMinutesNumeric.Value;

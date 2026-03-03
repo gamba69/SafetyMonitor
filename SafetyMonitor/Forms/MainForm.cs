@@ -147,6 +147,7 @@ public class MainForm : MaterialForm {
         InitializeComponent();
         ApplyApplicationIcon();
         ApplyWindowSettings();
+
         // LoadDashboards creates the panel invisible; it will NOT be shown
         // until BeginInitialDashboardReveal runs (triggered from OnShown).
         LoadDashboards();
@@ -275,7 +276,7 @@ public class MainForm : MaterialForm {
     protected override void OnShown(EventArgs e) {
         base.OnShown(e);
 
-        if (_appSettings.StartMinimized) {
+        if (_appSettings.StartMinimized && !Program.StartupLaunchOptions.IgnoreStartMinimized) {
             // Pretend the window was in its intended state so that OnResize
             // correctly computes _restoreToMaximizedAfterMinimize when the
             // Minimized transition fires.
@@ -1313,6 +1314,26 @@ public class MainForm : MaterialForm {
         Close();
     }
 
+
+    private bool EnsureStorageConfigurationAtStartup() {
+        var validation = DataStorage.DataStorage.ValidateStorageStructure(_appSettings.StoragePath, _appSettings.ValidateDatabaseStructureOnStartup);
+
+        if (validation.HasErrors) {
+            var details = string.Join(Environment.NewLine, validation.Issues.Where(x => x.Severity == DataStorage.DataStorage.StorageValidationIssueSeverity.Error).Select(x => $"• {x.Message}"));
+            ThemedMessageBox.Show(this, $"Storage data structure does not match expected format. The application will be closed.\n\n{details}", "Storage structure error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            throw new OperationCanceledException("Storage structure validation failed.");
+        }
+
+        if (validation.HasWarnings) {
+            _appSettings.StartMinimized = false;
+            var details = string.Join(Environment.NewLine, validation.Issues.Where(x => x.Severity == DataStorage.DataStorage.StorageValidationIssueSeverity.Warning).Select(x => $"• {x.Message}"));
+            var answer = ThemedMessageBox.Show(this, $"Data storage is not configured.\n\n{details}\n\nOpen Database settings now?", "Storage not configured", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            return answer == DialogResult.Yes;
+        }
+
+        return false;
+    }
+
     private void ShowAbout() {
         var message = $"SafetyMonitor v{AppBuildInfoHelper.ProductVersionWithBuild} {AppBuildInfoHelper.BuildDateDisplay}"
             + Environment.NewLine
@@ -1348,8 +1369,8 @@ public class MainForm : MaterialForm {
         }
     }
 
-    private void ShowSettings() {
-        using var settingsForm = new SettingsForm(_appSettingsMaintenanceService, _appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartRawDataPointIntervalSeconds, _appSettings.ShowRefreshIndicator, _appSettings.MinimizeToTray, _appSettings.StartMinimized, _appSettings.MaterialColorScheme);
+    private void ShowSettings(int initialTabIndex = 0) {
+        using var settingsForm = new SettingsForm(_appSettingsMaintenanceService, _appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartRawDataPointIntervalSeconds, _appSettings.ShowRefreshIndicator, _appSettings.MinimizeToTray, _appSettings.StartMinimized, _appSettings.ValidateDatabaseStructureOnStartup, _appSettings.MaterialColorScheme, initialTabIndex);
         if (settingsForm.ShowDialog() != DialogResult.OK) {
             return;
         }
@@ -1374,8 +1395,22 @@ public class MainForm : MaterialForm {
         _appSettings.MinimizeToTray = settingsForm.MinimizeToTray;
         _appSettings.StartMinimized = settingsForm.StartMinimized;
         _appSettings.MaterialColorScheme = settingsForm.MaterialColorScheme;
-        _appSettingsService.SaveSettings(_appSettings);
+        _appSettings.ValidateDatabaseStructureOnStartup = settingsForm.ValidateDatabaseStructureOnStartup;
 
+        try {
+            var openDatabaseSettings = EnsureStorageConfigurationAtStartup();
+            if (openDatabaseSettings) {
+                _appSettingsService.SaveSettings(_appSettings);
+                ShowSettings(initialTabIndex: 2);
+                return;
+            }
+        } catch (OperationCanceledException) {
+            _isExitConfirmed = true;
+            Close();
+            return;
+        }
+
+        _appSettingsService.SaveSettings(_appSettings);
         ApplySettingsToRuntime();
     }
 
@@ -1396,6 +1431,15 @@ public class MainForm : MaterialForm {
 
         var loaded = _appSettingsService.LoadSettings();
         CopySettings(loaded, _appSettings);
+
+        try {
+            EnsureStorageConfigurationAtStartup();
+        } catch (OperationCanceledException) {
+            _isExitConfirmed = true;
+            Close();
+            return;
+        }
+
         ApplySettingsToRuntime();
     }
 
@@ -1418,6 +1462,7 @@ public class MainForm : MaterialForm {
         target.MetricAxisRules = source.MetricAxisRules;
         target.MetricDisplaySettings = source.MetricDisplaySettings;
         target.StoragePath = source.StoragePath;
+        target.ValidateDatabaseStructureOnStartup = source.ValidateDatabaseStructureOnStartup;
         target.WindowHeight = source.WindowHeight;
         target.WindowWidth = source.WindowWidth;
         target.WindowX = source.WindowX;

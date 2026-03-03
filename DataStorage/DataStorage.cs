@@ -10,6 +10,19 @@ namespace DataStorage;
 
 public class DataStorage {
 
+    public enum StorageValidationIssueSeverity {
+        Warning,
+        Error
+    }
+
+    public sealed record StorageValidationIssue(StorageValidationIssueSeverity Severity, string Message);
+
+    public sealed class StorageValidationResult {
+        public List<StorageValidationIssue> Issues { get; } = [];
+        public bool HasWarnings => Issues.Any(x => x.Severity == StorageValidationIssueSeverity.Warning);
+        public bool HasErrors => Issues.Any(x => x.Severity == StorageValidationIssueSeverity.Error);
+    }
+
     private const string DbExt = ".fdb";
     private readonly string _root;
     private readonly string _user;
@@ -795,5 +808,155 @@ WIND_SPEED FLOAT
     private static bool IndexExists(FbConnection conn, string indexName) {
         const string sql = @"SELECT 1 FROM RDB$INDICES WHERE RDB$INDEX_NAME = @IndexName";
         return conn.ExecuteScalar<int?>(sql, new { IndexName = indexName.ToUpperInvariant() }).HasValue;
+    }
+
+    public static StorageValidationResult ValidateStorageStructure(string? storageRootPath, bool validateDatabaseSchema) {
+        var result = new StorageValidationResult();
+        if (string.IsNullOrWhiteSpace(storageRootPath)) {
+            result.Issues.Add(new(StorageValidationIssueSeverity.Warning, "Data storage path is not configured."));
+            return result;
+        }
+
+        if (!Directory.Exists(storageRootPath)) {
+            result.Issues.Add(new(StorageValidationIssueSeverity.Warning, "Data storage folder does not exist."));
+            return result;
+        }
+
+        var root = Path.GetFullPath(storageRootPath);
+        var dbFiles = Directory.EnumerateFiles(root, "*.fdb", SearchOption.AllDirectories).ToList();
+
+        foreach (var file in dbFiles) {
+            var name = Path.GetFileName(file);
+            var parent = Path.GetDirectoryName(file) ?? root;
+            var isRoot = string.Equals(parent, root, StringComparison.OrdinalIgnoreCase);
+
+            var isYearAgg = System.Text.RegularExpressions.Regex.IsMatch(name, @"^\d{4}_AGG\.fdb$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var isMonthlyRaw = System.Text.RegularExpressions.Regex.IsMatch(name, @"^\d{2}_RAW\.fdb$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var isMonthlyAgg = System.Text.RegularExpressions.Regex.IsMatch(name, @"^\d{2}_AGG\.fdb$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            if (isRoot) {
+                if (!isYearAgg) {
+                    result.Issues.Add(new(StorageValidationIssueSeverity.Warning, $"Unexpected database file in storage root: {name}."));
+                }
+            } else {
+                var yearFolderName = new DirectoryInfo(parent).Name;
+                var isYearFolder = System.Text.RegularExpressions.Regex.IsMatch(yearFolderName, @"^\d{4}$");
+                if (!isYearFolder || (!isMonthlyRaw && !isMonthlyAgg)) {
+                    result.Issues.Add(new(StorageValidationIssueSeverity.Warning, $"Unexpected database file layout: {Path.GetRelativePath(root, file)}."));
+                }
+            }
+        }
+
+        if (!validateDatabaseSchema || dbFiles.Count == 0) {
+            return result;
+        }
+
+        foreach (var file in dbFiles) {
+            try {
+                using var conn = new FbConnection(new FbConnectionStringBuilder {
+                    DataSource = "localhost",
+                    Database = file,
+                    UserID = "SYSDBA",
+                    Password = "masterkey",
+                    ServerType = FbServerType.Default,
+                    Charset = "UTF8",
+                    WireCrypt = FbWireCrypt.Enabled,
+                    Pooling = false
+                }.ToString());
+                conn.Open();
+
+                var expectedSchemas = GetRequiredTableSchemasForFile(file, root);
+                if (expectedSchemas.Count == 0) {
+                    continue;
+                }
+
+                foreach (var schema in expectedSchemas) {
+                    if (!TableExists(conn, schema.TableName)) {
+                        result.Issues.Add(new(StorageValidationIssueSeverity.Error, $"Missing table {schema.TableName} in {Path.GetFileName(file)}."));
+                        continue;
+                    }
+
+                    var actualColumns = GetTableColumns(conn, schema.TableName);
+                    foreach (var requiredColumn in schema.RequiredColumns) {
+                        if (!actualColumns.Contains(requiredColumn)) {
+                            result.Issues.Add(new(StorageValidationIssueSeverity.Error, $"Missing column {requiredColumn} in table {schema.TableName} ({Path.GetFileName(file)})."));
+                        }
+                    }
+
+                    if (!IndexExists(conn, schema.IndexName)) {
+                        result.Issues.Add(new(StorageValidationIssueSeverity.Error, $"Missing index {schema.IndexName} on table {schema.TableName} ({Path.GetFileName(file)})."));
+                    }
+                }
+            } catch (Exception ex) {
+                result.Issues.Add(new(StorageValidationIssueSeverity.Error, $"Cannot open database {Path.GetFileName(file)}: {ex.Message}"));
+            }
+        }
+
+        return result;
+    }
+
+    private sealed record TableSchemaExpectation(string TableName, string IndexName, HashSet<string> RequiredColumns);
+
+    private static List<TableSchemaExpectation> GetRequiredTableSchemasForFile(string filePath, string storageRootPath) {
+        var fileName = Path.GetFileName(filePath);
+        if (System.Text.RegularExpressions.Regex.IsMatch(fileName, @"^\d{2}_RAW\.fdb$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)) {
+            return [
+                new TableSchemaExpectation(
+                    "METEO_RAW",
+                    "IDX_METEO_RAW_CREATED_AT",
+                    [
+                        "CREATED_AT",
+                        "CLOUD_COVER",
+                        "IS_SAFE",
+                        "DEW_POINT",
+                        "HUMIDITY",
+                        "PRESSURE",
+                        "SKY_BRIGHTNESS",
+                        "RAIN_RATE",
+                        "SKY_QUALITY",
+                        "SKY_TEMPERATURE",
+                        "STAR_FWHM",
+                        "TEMPERATURE",
+                        "WIND_DIRECTION",
+                        "WIND_GUST",
+                        "WIND_SPEED"
+                    ])
+            ];
+        }
+
+        if (System.Text.RegularExpressions.Regex.IsMatch(fileName, @"^\d{2}_AGG\.fdb$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)) {
+            return BuildAggTableSchemas(["10S", "30S", "1M", "5M", "15M"]);
+        }
+
+        var isRoot = string.Equals(Path.GetDirectoryName(filePath), Path.GetFullPath(storageRootPath), StringComparison.OrdinalIgnoreCase);
+        if (isRoot && System.Text.RegularExpressions.Regex.IsMatch(fileName, @"^\d{4}_AGG\.fdb$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)) {
+            return BuildAggTableSchemas(["1H", "4H", "12H", "1D", "3D", "1W"]);
+        }
+
+        return [];
+    }
+
+    private static List<TableSchemaExpectation> BuildAggTableSchemas(IEnumerable<string> levels) {
+        var requiredColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "CREATED_AT" };
+        foreach (var metric in Metrics) {
+            requiredColumns.Add($"{metric.Name}_SUM");
+            requiredColumns.Add($"{metric.Name}_COUNT");
+            requiredColumns.Add($"{metric.Name}_AVG");
+            requiredColumns.Add($"{metric.Name}_MIN");
+            requiredColumns.Add($"{metric.Name}_MAX");
+            requiredColumns.Add($"{metric.Name}_FIRST");
+            requiredColumns.Add($"{metric.Name}_LAST");
+        }
+
+        return [.. levels.Select(level => new TableSchemaExpectation(
+            $"METEO_AGG_{level}",
+            $"IDX_METEO_AGG_{level}_CREATED_AT",
+            new HashSet<string>(requiredColumns, StringComparer.OrdinalIgnoreCase)))];
+    }
+
+    private static HashSet<string> GetTableColumns(FbConnection conn, string tableName) {
+        const string sql = @"SELECT TRIM(RDB$FIELD_NAME) FROM RDB$RELATION_FIELDS WHERE RDB$RELATION_NAME = @TableName";
+        var columns = conn.Query<string>(sql, new { TableName = tableName.ToUpperInvariant() });
+        return [.. columns.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim().ToUpperInvariant())];
     }
 }

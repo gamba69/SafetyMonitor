@@ -37,6 +37,7 @@ public static class AppSettingsDefaultsService {
             ],
             MetricDisplaySettings = [],
             StoragePath = string.Empty,
+            ValidateDatabaseStructureOnStartup = false,
             WindowHeight = 900,
             WindowWidth = 1400,
             WindowX = -1,

@@ -26,6 +26,7 @@ public class AppSettings {
     public List<MetricAxisRuleSetting> MetricAxisRules { get; set; } = [];
     public List<MetricDisplaySetting> MetricDisplaySettings { get; set; } = [];
     public string StoragePath { get; set; } = "";
+    public bool ValidateDatabaseStructureOnStartup { get; set; } = false;
     public int WindowHeight { get; set; }
 
     // Window settings
