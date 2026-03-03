@@ -12,6 +12,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
     private Button _saveButton = null!;
     private readonly List<MetricDisplaySetting> _settings;
     private readonly List<string> _trayValueSchemeNames;
+    private bool _isReorderingGrid;
 
     public MetricSettingsEditorForm(IEnumerable<MetricDisplaySetting> settings) {
         _settings = [.. settings.Select(s => new MetricDisplaySetting {
@@ -222,7 +223,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
     }
 
     private void LoadSettings() {
-        _metricsGrid.Rows.Clear();
+            _metricsGrid.Rows.Clear();
         var map = _settings.ToDictionary(s => s.Metric, s => s);
         foreach (var metric in GetOrderedMetricsForGrid(map)) {
             var s = map.TryGetValue(metric, out var found) ? found : new MetricDisplaySetting { Metric = metric };
@@ -257,68 +258,82 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
             return;
         }
 
-        ReorderGridRowsByTrayName();
-    }
-
-    private void ReorderGridRowsByTrayName() {
-        var metricNames = Enum.GetValues<MetricType>().ToDictionary(m => m.GetDisplayName(), m => m);
-        var selectedMetric = _metricsGrid.CurrentRow?.Cells["Metric"].Value?.ToString();
-
-        var rowStates = _metricsGrid.Rows
-            .Cast<DataGridViewRow>()
-            .Where(row => !row.IsNewRow)
-            .Select(row => new {
-                Metric = metricNames.TryGetValue(row.Cells["Metric"].Value?.ToString() ?? string.Empty, out var metric) ? metric : (MetricType?)null,
-                Decimals = row.Cells["Decimals"].Value,
-                HideZeroes = row.Cells["HideZeroes"].Value is true,
-                InvertY = row.Cells["InvertY"].Value is true,
-                LogY = row.Cells["LogY"].Value is true,
-                TrayName = row.Cells["TrayName"].Value?.ToString() ?? string.Empty,
-                TrayScheme = NormalizeTrayValueScheme(row.Cells["TrayValueScheme"].Value?.ToString())
-            })
-            .Where(state => state.Metric.HasValue)
-            .Select(state => new {
-                Metric = state.Metric!.Value,
-                state.Decimals,
-                state.HideZeroes,
-                state.InvertY,
-                state.LogY,
-                state.TrayName,
-                state.TrayScheme
-            })
-            .OrderByDescending(state => !string.IsNullOrWhiteSpace(state.TrayName))
-            .ThenBy(state => (int)state.Metric)
-            .ToList();
-
-        _metricsGrid.Rows.Clear();
-
-        foreach (var rowState in rowStates) {
-            _metricsGrid.Rows.Add(
-                rowState.Metric.GetDisplayName(),
-                rowState.Decimals!,
-                rowState.HideZeroes,
-                rowState.InvertY,
-                rowState.LogY,
-                rowState.TrayName,
-                rowState.TrayScheme);
-        }
-
-        if (selectedMetric is null) {
+        if (_isReorderingGrid) {
             return;
         }
 
-        foreach (DataGridViewRow row in _metricsGrid.Rows) {
-            if (row.IsNewRow) {
-                continue;
+        var selectedMetric = _metricsGrid.Rows[e.RowIndex].Cells["Metric"].Value?.ToString();
+        BeginInvoke(new Action(() => ReorderGridRowsByTrayName(selectedMetric)));
+    }
+
+    private void ReorderGridRowsByTrayName(string? selectedMetric = null) {
+        if (_isReorderingGrid || IsDisposed) {
+            return;
+        }
+
+        _isReorderingGrid = true;
+
+        try {
+            var metricNames = Enum.GetValues<MetricType>().ToDictionary(m => m.GetDisplayName(), m => m);
+
+            var rowStates = _metricsGrid.Rows
+                .Cast<DataGridViewRow>()
+                .Where(row => !row.IsNewRow)
+                .Select(row => new {
+                    Metric = metricNames.TryGetValue(row.Cells["Metric"].Value?.ToString() ?? string.Empty, out var metric) ? metric : (MetricType?)null,
+                    Decimals = row.Cells["Decimals"].Value,
+                    HideZeroes = row.Cells["HideZeroes"].Value is true,
+                    InvertY = row.Cells["InvertY"].Value is true,
+                    LogY = row.Cells["LogY"].Value is true,
+                    TrayName = row.Cells["TrayName"].Value?.ToString() ?? string.Empty,
+                    TrayScheme = NormalizeTrayValueScheme(row.Cells["TrayValueScheme"].Value?.ToString())
+                })
+                .Where(state => state.Metric.HasValue)
+                .Select(state => new {
+                    Metric = state.Metric!.Value,
+                    state.Decimals,
+                    state.HideZeroes,
+                    state.InvertY,
+                    state.LogY,
+                    state.TrayName,
+                    state.TrayScheme
+                })
+                .OrderByDescending(state => !string.IsNullOrWhiteSpace(state.TrayName))
+                .ThenBy(state => (int)state.Metric)
+                .ToList();
+
+            _metricsGrid.Rows.Clear();
+
+            foreach (var rowState in rowStates) {
+                _metricsGrid.Rows.Add(
+                    rowState.Metric.GetDisplayName(),
+                    rowState.Decimals!,
+                    rowState.HideZeroes,
+                    rowState.InvertY,
+                    rowState.LogY,
+                    rowState.TrayName,
+                    rowState.TrayScheme);
             }
 
-            if (!string.Equals(row.Cells["Metric"].Value?.ToString(), selectedMetric, StringComparison.Ordinal)) {
-                continue;
+            if (selectedMetric is null) {
+                return;
             }
 
-            row.Selected = true;
-            _metricsGrid.CurrentCell = row.Cells["TrayName"];
-            break;
+            foreach (DataGridViewRow row in _metricsGrid.Rows) {
+                if (row.IsNewRow) {
+                    continue;
+                }
+
+                if (!string.Equals(row.Cells["Metric"].Value?.ToString(), selectedMetric, StringComparison.Ordinal)) {
+                    continue;
+                }
+
+                row.Selected = true;
+                _metricsGrid.CurrentCell = row.Cells["TrayName"];
+                break;
+            }
+        } finally {
+            _isReorderingGrid = false;
         }
     }
 
@@ -337,7 +352,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         var metricNames = Enum.GetValues<MetricType>().ToDictionary(m => m.GetDisplayName(), m => m);
         var newSettings = new List<MetricDisplaySetting>();
 
-        foreach (DataGridViewRow row in _metricsGrid.Rows) {
+            foreach (DataGridViewRow row in _metricsGrid.Rows) {
             if (row.IsNewRow) {
                 continue;
             }
