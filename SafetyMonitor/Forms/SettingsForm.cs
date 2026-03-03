@@ -875,7 +875,7 @@ public class SettingsForm : ThemedCaptionForm {
         layout.Controls.Add(CreateSettingRow(
             "Export settings",
             "Export all application settings as a ZIP backup archive: dashboards, visual preferences, chart presets, and other configuration files. "
-            + "By default, backup files are created in the settings folder under Backup and use the YYYY-MM-DD.zip naming format.",
+            + "By default, backup files are created in the settings folder under Backup and use the YYYY-MM-DD#NN.zip naming format.",
             "",
             _exportSettingsButton,
             titleFont,
@@ -1232,8 +1232,10 @@ public class SettingsForm : ThemedCaptionForm {
     }
 
     private void ImportSettingsButton_Click(object? sender, EventArgs e) {
+        var backupFilePath = _settingsMaintenanceService.GetNextBackupFilePath();
+        var backupFileName = Path.GetFileName(backupFilePath);
         var confirm = ThemedMessageBox.Show(this,
-            "All current settings will be lost and replaced with settings from the selected archive. Continue?",
+            $"All current settings will be replaced with settings from the selected archive.\nCurrent settings will be saved to backup file: {backupFileName}.\nContinue?",
             "Import settings",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Warning);
@@ -1251,6 +1253,7 @@ public class SettingsForm : ThemedCaptionForm {
         }
 
         try {
+            _settingsMaintenanceService.ExportToArchive(backupFilePath);
             _settingsMaintenanceService.ImportFromArchive(dialog.FileName);
             SettingsMaintenanceAction = SettingsMaintenanceAction.Import;
             DialogResult = DialogResult.OK;
@@ -1261,8 +1264,10 @@ public class SettingsForm : ThemedCaptionForm {
     }
 
     private void ResetSettingsButton_Click(object? sender, EventArgs e) {
+        var backupFilePath = _settingsMaintenanceService.GetNextBackupFilePath();
+        var backupFileName = Path.GetFileName(backupFilePath);
         var confirm = ThemedMessageBox.Show(this,
-            "All settings will be restored to defaults. Continue?",
+            $"All settings will be restored to defaults.\nCurrent settings will be saved to backup file: {backupFileName}.\nContinue?",
             "Reset settings",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Warning);
@@ -1271,6 +1276,7 @@ public class SettingsForm : ThemedCaptionForm {
         }
 
         try {
+            _settingsMaintenanceService.ExportToArchive(backupFilePath);
             _settingsMaintenanceService.ResetToDefaults();
             SettingsMaintenanceAction = SettingsMaintenanceAction.Reset;
             DialogResult = DialogResult.OK;

@@ -14,9 +14,27 @@ public class AppSettingsMaintenanceService {
     }
 
     public string GetDefaultBackupFilePath() {
+        return GetNextBackupFilePath();
+    }
+
+    public string GetNextBackupFilePath() {
         var backupDirectory = Path.Combine(_appSettingsService.AppDataFolderPath, BackupDirectoryName);
         Directory.CreateDirectory(backupDirectory);
-        var fileName = DateTime.Now.ToString("yyyy-MM-dd") + ".zip";
+
+        var backupDatePrefix = DateTime.Now.ToString("yyyy-MM-dd");
+        var existingOrdinals = Directory
+            .EnumerateFiles(backupDirectory, $"{backupDatePrefix}#*.zip", SearchOption.TopDirectoryOnly)
+            .Select(Path.GetFileNameWithoutExtension)
+            .Where(static name => !string.IsNullOrWhiteSpace(name))
+            .Select(static name => name!.Split('#'))
+            .Where(static parts => parts.Length == 2
+                && int.TryParse(parts[1], out var parsedOrdinal)
+                && parsedOrdinal > 0)
+            .Select(static parts => int.Parse(parts[1]))
+            .ToList();
+
+        var nextOrdinal = existingOrdinals.Count == 0 ? 1 : existingOrdinals.Max() + 1;
+        var fileName = $"{backupDatePrefix}#{nextOrdinal:00}.zip";
         return Path.Combine(backupDirectory, fileName);
     }
 
