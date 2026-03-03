@@ -7,6 +7,9 @@ namespace SafetyMonitor.Forms;
 public class DashboardEditorForm : ThemedCaptionForm {
     #region Private Fields
 
+    private const int TileInsetX = 4;
+    private const int TileInsetY = 6;
+
     private readonly Dashboard _dashboard;
     private readonly string _materialColorScheme;
     private readonly List<EditableTileControl> _tileControls = [];
@@ -297,6 +300,7 @@ public class DashboardEditorForm : ThemedCaptionForm {
         _gridPanel.DragEnter += OnGridDragEnter;
         _gridPanel.DragOver += OnGridDragOver;
         _gridPanel.DragDrop += OnGridDragDrop;
+        _gridPanel.Resize += (s, e) => RefreshAllTilePositions();
         mainLayout.Controls.Add(_gridPanel, 0, 2);
 
         // Row 3: Add tile buttons
@@ -376,16 +380,22 @@ public class DashboardEditorForm : ThemedCaptionForm {
         foreach (var config in _dashboard.Tiles) {
             AddEditableTile(config);
         }
+
+        // Initial load can happen before final layout; recalc after controls are measured.
+        if (IsHandleCreated) {
+            BeginInvoke((Action)RefreshAllTilePositions);
+        } else {
+            Shown += OnInitialLayoutShown;
+        }
     }
 
     private void OnGridDragDrop(object? sender, DragEventArgs e) {
         if (e.Data?.GetData(typeof(EditableTileControl)) is EditableTileControl tile) {
-            var cellW = _gridPanel.Width / _dashboard.Columns;
-            var cellH = _gridPanel.Height / _dashboard.Rows;
+            GetCellSize(out var cellW, out var cellH);
             var point = _gridPanel.PointToClient(new Point(e.X, e.Y));
 
-            int newCol = Math.Clamp(point.X / cellW, 0, _dashboard.Columns - tile.Config.ColumnSpan);
-            int newRow = Math.Clamp(point.Y / cellH, 0, _dashboard.Rows - tile.Config.RowSpan);
+            int newCol = Math.Clamp((int)Math.Floor(point.X / cellW), 0, _dashboard.Columns - tile.Config.ColumnSpan);
+            int newRow = Math.Clamp((int)Math.Floor(point.Y / cellH), 0, _dashboard.Rows - tile.Config.RowSpan);
 
             var oldRow = tile.Config.Row;
             var oldCol = tile.Config.Column;
@@ -414,20 +424,28 @@ public class DashboardEditorForm : ThemedCaptionForm {
         }
     }
 
+    private void OnInitialLayoutShown(object? sender, EventArgs e) {
+        Shown -= OnInitialLayoutShown;
+        RefreshAllTilePositions();
+    }
+
     private void OnGridPaint(object? sender, PaintEventArgs e) {
-        var cellW = _gridPanel.Width / _dashboard.Columns;
-        var cellH = _gridPanel.Height / _dashboard.Rows;
+        GetCellSize(out var cellW, out var cellH);
+        var gridWidth = _gridPanel.ClientSize.Width;
+        var gridHeight = _gridPanel.ClientSize.Height;
 
         using var pen = new Pen(Color.LightGray, 1) {
             DashStyle = System.Drawing.Drawing2D.DashStyle.Dot
         };
 
         for (int i = 1; i < _dashboard.Columns; i++) {
-            e.Graphics.DrawLine(pen, i * cellW, 0, i * cellW, _gridPanel.Height);
+            var x = (int)Math.Round(i * cellW);
+            e.Graphics.DrawLine(pen, x, 0, x, gridHeight);
         }
 
         for (int i = 1; i < _dashboard.Rows; i++) {
-            e.Graphics.DrawLine(pen, 0, i * cellH, _gridPanel.Width, i * cellH);
+            var y = (int)Math.Round(i * cellH);
+            e.Graphics.DrawLine(pen, 0, y, gridWidth, y);
         }
     }
 
@@ -435,11 +453,7 @@ public class DashboardEditorForm : ThemedCaptionForm {
         _dashboard.Rows = (int)_rowsNumeric.Value;
         _dashboard.Columns = (int)_columnsNumeric.Value;
 
-        foreach (var tile in _tileControls) {
-            UpdateTilePosition(tile);
-        }
-
-        _gridPanel.Invalidate();
+        RefreshAllTilePositions();
         Modified = true;
     }
 
@@ -472,12 +486,44 @@ public class DashboardEditorForm : ThemedCaptionForm {
         DialogResult = DialogResult.OK;
         Close();
     }
-    private void UpdateTilePosition(EditableTileControl control) {
-        var cellW = _gridPanel.Width / _dashboard.Columns;
-        var cellH = _gridPanel.Height / _dashboard.Rows;
 
-        control.Location = new Point(control.Config.Column * cellW, control.Config.Row * cellH);
-        control.Size = new Size(control.Config.ColumnSpan * cellW - 4, control.Config.RowSpan * cellH - 4);
+    private void RefreshAllTilePositions() {
+        if (_gridPanel.ClientSize.Width <= 0 || _gridPanel.ClientSize.Height <= 0) {
+            return;
+        }
+
+        foreach (var tile in _tileControls) {
+            UpdateTilePosition(tile);
+        }
+
+        _gridPanel.Invalidate();
+    }
+
+    private void UpdateTilePosition(EditableTileControl control) {
+        GetCellSize(out var cellW, out var cellH);
+
+        var startX = control.Config.Column * cellW;
+        var startY = control.Config.Row * cellH;
+        var endX = (control.Config.Column + control.Config.ColumnSpan) * cellW;
+        var endY = (control.Config.Row + control.Config.RowSpan) * cellH;
+
+        // Keep tile strictly inside its grid area after insets; this avoids
+        // occasional 1px overflow caused by midpoint rounding.
+        var x = (int)Math.Ceiling(startX) + TileInsetX;
+        var y = (int)Math.Ceiling(startY) + TileInsetY;
+        var right = (int)Math.Floor(endX) - TileInsetX;
+        var bottom = (int)Math.Floor(endY) - TileInsetY;
+
+        var width = Math.Max(24, right - x);
+        var height = Math.Max(24, bottom - y);
+
+        control.Location = new Point(x, y);
+        control.Size = new Size(width, height);
+    }
+
+    private void GetCellSize(out double cellW, out double cellH) {
+        cellW = _dashboard.Columns > 0 ? _gridPanel.ClientSize.Width / (double)_dashboard.Columns : 0d;
+        cellH = _dashboard.Rows > 0 ? _gridPanel.ClientSize.Height / (double)_dashboard.Rows : 0d;
     }
 
     #endregion Private Methods

@@ -261,9 +261,9 @@ public class EditableTileControl : Panel {
             var deltaX = current.X - _resizeStartPoint.X;
             var deltaY = current.Y - _resizeStartPoint.Y;
 
-            var cellW = Parent.Width / _dashboard.Columns;
-            var cellH = Parent.Height / _dashboard.Rows;
-            if (cellW <= 0 || cellH <= 0) {
+            var cellW = _dashboard.Columns > 0 ? Parent.ClientSize.Width / (double)_dashboard.Columns : 0d;
+            var cellH = _dashboard.Rows > 0 ? Parent.ClientSize.Height / (double)_dashboard.Rows : 0d;
+            if (cellW <= 0d || cellH <= 0d) {
                 return;
             }
 
