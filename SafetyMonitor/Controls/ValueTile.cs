@@ -376,6 +376,48 @@ public class ValueTile : Panel {
         return TextRenderer.MeasureText(text, font).Width;
     }
 
+    private static Rectangle GetRenderedTextBounds(Label label) {
+        if (label.Width <= 0 || label.Height <= 0 || string.IsNullOrWhiteSpace(label.Text)) {
+            return Rectangle.Empty;
+        }
+
+        var measured = TextRenderer.MeasureText(label.Text, label.Font, new Size(label.Width, label.Height), TextFormatFlags.NoPadding);
+        var textWidth = Math.Min(label.Width, Math.Max(1, measured.Width));
+        var textHeight = Math.Min(label.Height, Math.Max(1, measured.Height));
+
+        var x = label.Left;
+        var y = label.Top;
+
+        switch (label.TextAlign) {
+            case ContentAlignment.TopRight:
+            case ContentAlignment.MiddleRight:
+            case ContentAlignment.BottomRight:
+                x = label.Right - textWidth;
+                break;
+            default:
+                x = label.Left;
+                break;
+        }
+
+        switch (label.TextAlign) {
+            case ContentAlignment.BottomLeft:
+            case ContentAlignment.BottomCenter:
+            case ContentAlignment.BottomRight:
+                y = label.Bottom - textHeight;
+                break;
+            case ContentAlignment.MiddleLeft:
+            case ContentAlignment.MiddleCenter:
+            case ContentAlignment.MiddleRight:
+                y = label.Top + (label.Height - textHeight) / 2;
+                break;
+            default:
+                y = label.Top;
+                break;
+        }
+
+        return new Rectangle(x, y, textWidth, textHeight);
+    }
+
     private void FitTitleFontAndTruncateWithEllipsis(float maxFontSize) {
         if (_titleLabel == null) {
             return;
@@ -474,13 +516,13 @@ public class ValueTile : Panel {
         var titleFontSize = Math.Max(MinTitleFontSize, Math.Min(14f, minDimension * 0.09f));
         var valueFontSize = Math.Max(14f, Math.Min(48f, minDimension * 0.28f));
         var textFontSize = Math.Max(MinTextFontSize, Math.Min(20f, titleFontSize + 2f));
-        var unitFontSize = Math.Max(8f, Math.Min(14f, minDimension * 0.09f));
+        var unitFontSize = textFontSize;
 
         // Update fonts
         UpdateFont(_titleLabel, "Segoe UI", titleFontSize, FontStyle.Bold);
         UpdateFont(_textLabel, "Segoe UI", textFontSize, FontStyle.Bold);
         UpdateFont(_valueLabel, "Segoe UI", valueFontSize, FontStyle.Bold);
-        UpdateFont(_unitLabel, "Segoe UI", unitFontSize, FontStyle.Regular);
+        UpdateFont(_unitLabel, "Segoe UI", unitFontSize, FontStyle.Bold);
 
         // Layout: divide into quadrants with overlap allowed
         var halfWidth = contentWidth / 2;
@@ -491,7 +533,7 @@ public class ValueTile : Panel {
         FitTitleFontAndTruncateWithEllipsis(titleFontSize);
 
         // Icon: top-right area — large, proportional to tile
-        var iconLogicalSize = Math.Max(24, Math.Min(102, (int)(minDimension * 0.44f)));
+        var iconLogicalSize = Math.Max(36, Math.Min(153, (int)(minDimension * 0.66f)));
         var iconX = Padding.Left + contentWidth - iconLogicalSize - 2;
         var iconY = Padding.Top + 2;
         _iconBox.SetBounds(iconX, iconY, iconLogicalSize, iconLogicalSize);
@@ -525,6 +567,26 @@ public class ValueTile : Panel {
         var unitWidth = Math.Max(0, contentWidth - valueWidth);
         _unitLabel.SetBounds(unitStartX, Padding.Top + halfHeight, unitWidth, halfHeight);
         _unitLabel.Visible = _config.ShowUnit;
+
+        // Hide unit only when the rendered unit text actually overlaps the icon glyph area.
+        var unitTextBounds = GetRenderedTextBounds(_unitLabel);
+        if (_unitLabel.Visible && _iconBox.Visible && !unitTextBounds.IsEmpty && unitTextBounds.IntersectsWith(_iconBox.Bounds)) {
+            _unitLabel.Visible = false;
+        }
+
+        // Hide title only when rendered title text actually overlaps rendered status/value text.
+        _titleLabel.Visible = true;
+        var titleTextBounds = GetRenderedTextBounds(_titleLabel);
+        var statusTextBounds = _textLabel.Visible ? GetRenderedTextBounds(_textLabel) : Rectangle.Empty;
+        var valueTextBounds = GetRenderedTextBounds(_valueLabel);
+        var overlapsStatusText = _textLabel.Visible && !titleTextBounds.IsEmpty && !statusTextBounds.IsEmpty && titleTextBounds.IntersectsWith(statusTextBounds);
+        var overlapsValueText = !titleTextBounds.IsEmpty && !valueTextBounds.IsEmpty && titleTextBounds.IntersectsWith(valueTextBounds);
+        if (overlapsStatusText || overlapsValueText) {
+            _titleLabel.Visible = false;
+        }
+
+        // Ensure enlarged icon is always rendered above text labels when regions overlap.
+        _iconBox.BringToFront();
     }
 
     private ContextMenuStrip CreateContextMenu() {
