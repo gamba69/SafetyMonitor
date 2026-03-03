@@ -539,8 +539,17 @@ public class ValueTile : Panel {
         _iconBox.SetBounds(iconX, iconY, iconLogicalSize, iconLogicalSize);
         UpdateIcon(iconLogicalSize);
 
-        // Value: bottom-left, takes more space
-        var valueWidth = _config.ShowUnit ? (int)(contentWidth * 0.84) : contentWidth;
+        // Value + Unit: keep enough room for long unit strings (for example "mpsas", "mm/hr")
+        var valueWidth = contentWidth;
+        var unitWidth = 0;
+        if (_config.ShowUnit) {
+            var minUnitWidth = Math.Max(40, MeasureTextWidth(_unitLabel.Text, _unitLabel.Font) + 6);
+            var preferredUnitWidth = Math.Max((int)(contentWidth * 0.16f), minUnitWidth);
+            var minValueWidth = (int)(contentWidth * 0.58f);
+
+            unitWidth = Math.Max(0, Math.Min(preferredUnitWidth, contentWidth - minValueWidth));
+            valueWidth = Math.Max(0, contentWidth - unitWidth);
+        }
         var showTextAboveValue = _config.DisplayMode == ValueTileDisplayMode.TextAndValue && !string.IsNullOrWhiteSpace(_textLabel.Text);
         var valueTop = Padding.Top + halfHeight - 10;
         var valueHeight = halfHeight + 10;
@@ -564,7 +573,6 @@ public class ValueTile : Panel {
 
         // Unit: bottom-right quadrant
         var unitStartX = Padding.Left + valueWidth;
-        var unitWidth = Math.Max(0, contentWidth - valueWidth);
         _unitLabel.SetBounds(unitStartX, Padding.Top + halfHeight, unitWidth, halfHeight);
         _unitLabel.Visible = _config.ShowUnit;
 
