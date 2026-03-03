@@ -67,10 +67,7 @@ public class AppSettingsMaintenanceService {
 
         var defaults = AppSettingsDefaultsService.CreateDefaults();
         _appSettingsService.SaveSettings(defaults);
-
-        var defaultDashboard = Dashboard.CreateDefault();
-        defaultDashboard.SortOrder = 0;
-        _dashboardService.SaveDashboard(defaultDashboard);
+        _dashboardService.ResetToSingleDefaultDashboard();
 
         return defaults;
     }

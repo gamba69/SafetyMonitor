@@ -69,6 +69,19 @@ public class DashboardService {
             .ThenBy(d => d.Name)];
     }
 
+    public Dashboard ResetToSingleDefaultDashboard() {
+        EnsureConfigDirectoryExists();
+
+        foreach (var dashboardPath in Directory.GetFiles(_configDirectory, "*.json")) {
+            File.Delete(dashboardPath);
+        }
+
+        var defaultDashboard = Dashboard.CreateDefault();
+        defaultDashboard.SortOrder = 0;
+        SaveDashboard(defaultDashboard);
+        return defaultDashboard;
+    }
+
     public void SaveDashboard(Dashboard dashboard) {
         EnsureConfigDirectoryExists();
         dashboard.ModifiedAt = DateTime.Now;

@@ -1380,6 +1380,20 @@ public class MainForm : MaterialForm {
     }
 
     private void ReloadSettingsFromStorage() {
+        if (_dashboardPanel != null) {
+            _dashboardPanel.DashboardChanged -= OnDashboardChanged;
+            _dashboardPanel.TileEditRequested -= OnTileEditRequested;
+
+            if (_dashboardContainer.Controls.Contains(_dashboardPanel)) {
+                _dashboardContainer.Controls.Remove(_dashboardPanel);
+            }
+
+            _dashboardPanel.Dispose();
+            _dashboardPanel = null;
+        }
+
+        _currentDashboard = null;
+
         var loaded = _appSettingsService.LoadSettings();
         CopySettings(loaded, _appSettings);
         ApplySettingsToRuntime();
