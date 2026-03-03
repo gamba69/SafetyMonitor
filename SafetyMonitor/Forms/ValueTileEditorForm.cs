@@ -57,12 +57,13 @@ public class ValueTileEditorForm : ThemedCaptionForm {
             AutoSize = true,
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 2,
+            RowCount = 3,
             Margin = new Padding(0, 0, 0, 10),
             Cursor = Cursors.Hand
         };
         headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
         headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 22F));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
@@ -143,7 +144,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
             itemPanel.Controls.Add(textLabel, 1, 0);
             bulletPanel.Controls.Add(itemPanel, column, row);
         }
-        headerPanel.Controls.Add(bulletPanel, 0, 1);
+        headerPanel.Controls.Add(bulletPanel, 0, 2);
         headerPanel.SetColumnSpan(bulletPanel, 2);
 
         var detailsExpanded = false;
@@ -268,12 +269,30 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         var titleFont = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold);
         var normalFont = CreateSafeFont("Segoe UI", 9.5f);
 
-        // Main layout
-        var mainLayout = new TableLayoutPanel {
+        // Root layout with fixed footer buttons and scrollable content area
+        var rootLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 9,
-            AutoSize = true
+            RowCount = 2
+        };
+        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        rootLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        rootLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        var scrollPanel = new Panel {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+            Margin = new Padding(0)
+        };
+
+        // Main layout
+        var mainLayout = new TableLayoutPanel {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Top,
+            ColumnCount = 1,
+            RowCount = 8,
+            Margin = new Padding(0)
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 0: Description
@@ -283,8 +302,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Color Schemes
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Value Schemes
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Icon + Unit
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 7: Spacer
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 8: Buttons
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 7: Bottom spacing
 
         var descriptionSection = CreateDescriptionSection(
             "Configure value tile content and appearance",
@@ -383,11 +401,13 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         mainLayout.Controls.Add(valueSchemesPanel, 0, 5);
         mainLayout.Controls.Add(iconPanel, 0, 6);
 
-
-        // Row 6: Spacer (empty)
+        // Row 7: Bottom spacing
         mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 7);
 
-        // Row 7: Buttons
+        scrollPanel.Controls.Add(mainLayout);
+        rootLayout.Controls.Add(scrollPanel, 0, 0);
+
+        // Fixed footer buttons
         var buttonPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Margin = new Padding(0, 10, 0, 0) };
         _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 35, Font = normalFont, Margin = new Padding(0) };
         _cancelButton.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
@@ -395,9 +415,9 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         _saveButton = new Button { Text = "Save", Width = 110, Height = 35, Font = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
-        mainLayout.Controls.Add(buttonPanel, 0, 8);
+        rootLayout.Controls.Add(buttonPanel, 0, 1);
 
-        Controls.Add(mainLayout);
+        Controls.Add(rootLayout);
 
         // Set form size after layout
         MinimumSize = new Size(560, 560);

@@ -71,12 +71,13 @@ public class ChartTileEditorForm : ThemedCaptionForm {
             AutoSize = true,
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 2,
+            RowCount = 3,
             Margin = new Padding(0, 0, 0, 10),
             Cursor = Cursors.Hand
         };
         headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
         headerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 22F));
+        headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         headerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
@@ -157,7 +158,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
             itemPanel.Controls.Add(textLabel, 1, 0);
             bulletPanel.Controls.Add(itemPanel, column, row);
         }
-        headerPanel.Controls.Add(bulletPanel, 0, 1);
+        headerPanel.Controls.Add(bulletPanel, 0, 2);
         headerPanel.SetColumnSpan(bulletPanel, 2);
 
         var detailsExpanded = false;
@@ -319,27 +320,43 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         MinimizeBox = false;
         FormBorderStyle = FormBorderStyle.Sizable;
         Padding = new Padding(15);
-        AutoScroll = true;
 
         var titleFont = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold);
         var normalFont = CreateSafeFont("Segoe UI", 9.5f);
 
-        // Main layout
-        var mainLayout = new TableLayoutPanel {
+        // Root layout with fixed footer buttons and scrollable content
+        var rootLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 8,
-            AutoSize = false
+            RowCount = 2
+        };
+        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        rootLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        rootLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        var scrollPanel = new Panel {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+            Margin = new Padding(0)
+        };
+
+        // Main layout
+        var mainLayout = new TableLayoutPanel {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Top,
+            ColumnCount = 1,
+            RowCount = 7,
+            Margin = new Padding(0)
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 0: Description
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 1: Title
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 2: Metrics label
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 3: Metrics grid (shrinks first on small heights)
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 3: Metrics grid container
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Add/Remove buttons
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F)); // 5: Period row (fixed height to prevent ComboBox clipping)
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Period row
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Options row
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 7: Buttons
 
         var descriptionSection = CreateDescriptionSection(
             "Configure chart tile content and behavior",
@@ -374,7 +391,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
             Font = normalFont,
-            Margin = new Padding(0, 0, 0, 5)
+            Margin = new Padding(0)
         };
 
         _metricsGrid.Columns.Add(new DataGridViewComboBoxColumn {
@@ -429,7 +446,15 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         _metricsGrid.CellFormatting += MetricsGrid_CellFormatting;
         _metricsGrid.DataError += MetricsGrid_DataError;
         _metricsGrid.EditingControlShowing += MetricsGrid_EditingControlShowing;
-        mainLayout.Controls.Add(_metricsGrid, 0, 3);
+
+        var metricsGridContainer = new Panel {
+            Dock = DockStyle.Fill,
+            Height = 260,
+            MinimumSize = new Size(0, 220),
+            Margin = new Padding(0, 0, 0, 5)
+        };
+        metricsGridContainer.Controls.Add(_metricsGrid);
+        mainLayout.Controls.Add(metricsGridContainer, 0, 3);
 
         // Row 3: Add/Remove buttons
         var gridButtonPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = false, Margin = new Padding(0, 5, 0, 10) };
@@ -443,24 +468,26 @@ public class ChartTileEditorForm : ThemedCaptionForm {
 
         // Row 5: Period
         var periodPanel = new FlowLayoutPanel {
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            AutoSize = false,
+            Height = 44,
+            MinimumSize = new Size(0, 44),
             Dock = DockStyle.Fill,
             WrapContents = false,
             FlowDirection = FlowDirection.LeftToRight,
-            Margin = new Padding(0, 6, 0, 8)
+            Margin = new Padding(0, 6, 0, 8),
+            Padding = new Padding(0, 4, 0, 0)
         };
         var periodLabel = new Label {
             Text = "Period:",
             Font = titleFont,
             AutoSize = true,
-            Margin = new Padding(0, 6, 8, 0)
+            Margin = new Padding(0, 7, 8, 0)
         };
         _periodComboBox = new ComboBox {
             Width = 160,
             Font = normalFont,
             DropDownStyle = ComboBoxStyle.DropDownList,
-            Margin = new Padding(0)
+            Margin = new Padding(0, 2, 0, 0)
         };
         LoadPeriodPresets();
         periodPanel.Controls.Add(periodLabel);
@@ -477,7 +504,10 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         optionsPanel.Controls.Add(_showInspectorCheckBox);
         mainLayout.Controls.Add(optionsPanel, 0, 6);
 
-        // Row 7: Buttons
+        scrollPanel.Controls.Add(mainLayout);
+        rootLayout.Controls.Add(scrollPanel, 0, 0);
+
+        // Fixed footer buttons
         var buttonPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Margin = new Padding(0, 10, 0, 0) };
         _cancelButton = new Button { Text = "Cancel", Width = 110, Height = 35, Font = normalFont, Margin = new Padding(0) };
         _cancelButton.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
@@ -485,9 +515,9 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         _saveButton = new Button { Text = "Save", Width = 110, Height = 35, Font = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold), Margin = new Padding(0, 0, 10, 0) };
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
-        mainLayout.Controls.Add(buttonPanel, 0, 7);
+        rootLayout.Controls.Add(buttonPanel, 0, 1);
 
-        Controls.Add(mainLayout);
+        Controls.Add(rootLayout);
 
         // Set form size
         MinimumSize = new Size(780, 620);
