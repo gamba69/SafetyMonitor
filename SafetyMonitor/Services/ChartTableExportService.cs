@@ -120,7 +120,7 @@ public class ChartTableExportService {
                 [MetricType.WindGust.GetDisplayName()] = RoundMetricValue(MetricType.WindGust, row.WindGust),
                 [MetricType.WindDirection.GetDisplayName()] = RoundMetricValue(MetricType.WindDirection, row.WindDirection),
                 [MetricType.StarFwhm.GetDisplayName()] = RoundMetricValue(MetricType.StarFwhm, row.StarFwhm),
-                [MetricType.IsSafe.GetDisplayName()] = RoundMetricValue(MetricType.IsSafe, row.IsSafeInt.HasValue ? row.IsSafeInt * 100.0 : null)
+                [MetricType.IsSafe.GetDisplayName()] = RoundMetricValue(MetricType.IsSafe, row.IsSafeInt)
             });
 
             if (progress != null && totalCount > 0) {

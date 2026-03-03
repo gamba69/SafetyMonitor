@@ -37,14 +37,14 @@ namespace DataStorage.Models {
         /// Safety monitor safe status (C# bool wrapper)
         /// </summary>
         public bool? IsSafe {
-            get => IsSafeInt.HasValue ? IsSafeInt.Value == 1 : null;
-            set => IsSafeInt = value.HasValue ? (value.Value ? 1 : 0) : null;
+            get => IsSafeInt.HasValue ? IsSafeInt.Value == 100 : null;
+            set => IsSafeInt = value.HasValue ? (value.Value ? 100 : 0) : null;
         }
 
         /// <summary>
         /// Safety monitor safe status (for raw data)
         /// For aggregated data, use SafePercentage instead
-        /// Stored as INTEGER in database (0/1/null)
+        /// Stored as INTEGER in database (0/100/null)
         /// </summary>
         public int? IsSafeInt { get; set; }
 
