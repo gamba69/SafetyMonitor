@@ -15,6 +15,8 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
     private Button _cancelButton = null!;
     private Button _addButton = null!;
     private Button _removeButton = null!;
+    private Button _moveUpButton = null!;
+    private Button _moveDownButton = null!;
     private Button _calculateButton = null!;
     private Label _headerLabel = null!;
     private Label _targetPointsLabel = null!;
@@ -228,6 +230,8 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true };
         _addButton = new Button { Text = "Add", Width = 100, Height = 32 };
         _removeButton = new Button { Text = "Delete", Width = 100, Height = 32 };
+        _moveUpButton = new Button { Text = "Up", Width = 100, Height = 32 };
+        _moveDownButton = new Button { Text = "Down", Width = 100, Height = 32 };
         _calculateButton = new Button { Text = "Auto...", Width = 120, Height = 32 };
         _addButton.Click += (_, _) => {
             var rowIndex = _grid.Rows.Add(Guid.NewGuid().ToString("N"), "Custom", 1, ChartPeriodUnit.Hours, "1m", string.Empty);
@@ -240,8 +244,10 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
                 if (!row.IsNewRow) _grid.Rows.Remove(row);
             }
         };
+        _moveUpButton.Click += (_, _) => MoveSelectedRow(-1);
+        _moveDownButton.Click += (_, _) => MoveSelectedRow(1);
         _calculateButton.Click += (_, _) => RecalculateAllWithConfirmation();
-        buttons.Controls.AddRange([_addButton, _removeButton, _calculateButton]);
+        buttons.Controls.AddRange([_addButton, _removeButton, _moveUpButton, _moveDownButton, _calculateButton]);
         layout.Controls.Add(buttons, 0, 2);
 
         var action = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, FlowDirection = FlowDirection.RightToLeft };
@@ -335,6 +341,40 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         }
     }
 
+    private void MoveSelectedRow(int direction) {
+        if (direction == 0 || _grid.CurrentRow is null || _grid.CurrentRow.IsNewRow) {
+            return;
+        }
+
+        _grid.EndEdit();
+
+        var sourceIndex = _grid.CurrentRow.Index;
+        var targetIndex = sourceIndex + direction;
+        if (targetIndex < 0 || targetIndex >= _grid.Rows.Count) {
+            return;
+        }
+
+        SwapRowValues(_grid.Rows[sourceIndex], _grid.Rows[targetIndex]);
+        UpdateRowAggregationOptions(_grid.Rows[sourceIndex], showWarningIfAdjusted: false);
+        UpdateRowAggregationOptions(_grid.Rows[targetIndex], showWarningIfAdjusted: false);
+        UpdateRowPoints(_grid.Rows[sourceIndex]);
+        UpdateRowPoints(_grid.Rows[targetIndex]);
+
+        _grid.ClearSelection();
+        _grid.Rows[targetIndex].Selected = true;
+        _grid.CurrentCell = _grid.Rows[targetIndex].Cells["Name"];
+    }
+
+    private static void SwapRowValues(DataGridViewRow firstRow, DataGridViewRow secondRow) {
+        var firstValues = firstRow.Cells.Cast<DataGridViewCell>().Select(cell => cell.Value).ToArray();
+        var secondValues = secondRow.Cells.Cast<DataGridViewCell>().Select(cell => cell.Value).ToArray();
+
+        for (var columnIndex = 0; columnIndex < firstRow.Cells.Count; columnIndex++) {
+            firstRow.Cells[columnIndex].Value = secondValues[columnIndex];
+            secondRow.Cells[columnIndex].Value = firstValues[columnIndex];
+        }
+    }
+
     private void RecalculateAllWithConfirmation() {
         var decision = ThemedMessageBox.Show(
             this,
@@ -421,8 +461,27 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         }
 
         var row = _grid.Rows[e.RowIndex];
+        if (string.Equals(columnName, "Unit", StringComparison.OrdinalIgnoreCase)) {
+            NormalizeUnitCellValue(row);
+        }
+
         UpdateRowAggregationOptions(row, showWarningIfAdjusted: columnName == "Aggregation");
         UpdateRowPoints(row);
+    }
+
+    private static void NormalizeUnitCellValue(DataGridViewRow row) {
+        if (row.Cells["Unit"] is not DataGridViewComboBoxCell unitCell) {
+            return;
+        }
+
+        if (TryParseUnit(unitCell.Value, out var unit)) {
+            unitCell.Value = unit;
+            return;
+        }
+
+        if (TryParseUnit(unitCell.FormattedValue, out unit)) {
+            unitCell.Value = unit;
+        }
     }
 
     private void UpdateRowAggregationOptions(DataGridViewRow row, bool showWarningIfAdjusted) {
@@ -489,18 +548,37 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
     }
 
     private static ChartPeriodUnit GetUnitValue(DataGridViewRow row) {
-        var rawValue = row.Cells["Unit"].Value;
-        if (rawValue is ChartPeriodUnit unit) {
+        if (TryParseUnit(row.Cells["Unit"].Value, out var unit)) {
             return unit;
         }
 
-        if (rawValue is string unitText
-            && Enum.TryParse<ChartPeriodUnit>(unitText, ignoreCase: true, out var parsed)
-            && Enum.IsDefined(parsed)) {
-            return parsed;
+        if (TryParseUnit(row.Cells["Unit"].FormattedValue, out unit)) {
+            return unit;
         }
 
         return ChartPeriodUnit.Hours;
+    }
+
+    private static bool TryParseUnit(object? rawValue, out ChartPeriodUnit unit) {
+        if (rawValue is ChartPeriodUnit enumValue) {
+            unit = enumValue;
+            return true;
+        }
+
+        if (rawValue is string text
+            && Enum.TryParse<ChartPeriodUnit>(text, ignoreCase: true, out var parsedFromText)
+            && Enum.IsDefined(parsedFromText)) {
+            unit = parsedFromText;
+            return true;
+        }
+
+        if (rawValue is int intValue && Enum.IsDefined(typeof(ChartPeriodUnit), intValue)) {
+            unit = (ChartPeriodUnit)intValue;
+            return true;
+        }
+
+        unit = default;
+        return false;
     }
 
     private bool IsBucketWithinAllowedRange(string bucket, TimeSpan duration) {
