@@ -133,8 +133,12 @@ static class Program {
 
             if (validation.HasErrors) {
                 HideSplashForStartupDialogs();
+                var details = StorageValidationMessageFormatter.BuildMessage(
+                    validation.Issues.Where(x => x.Severity == DataStorage.DataStorage.StorageValidationIssueSeverity.Error),
+                    "Unable to open data storage: structure validation failed.",
+                    "Check the database path and restore storage structure, then restart the application.");
                 ThemedMessageBox.Show(
-                    "Unable to open data storage: the file structure does not match the expected format.\n\nCheck the database path and restore the storage structure. Then restart the application.",
+                    details,
                     "Storage structure error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
@@ -146,8 +150,12 @@ static class Program {
             if (validation.HasWarnings) {
                 StartupLaunchOptions.IgnoreStartMinimized = true;
                 HideSplashForStartupDialogs();
+                var details = StorageValidationMessageFormatter.BuildMessage(
+                    validation.Issues.Where(x => x.Severity == DataStorage.DataStorage.StorageValidationIssueSeverity.Warning),
+                    "Data storage is not configured or contains unexpected files.",
+                    "To continue, open Settings and provide valid database parameters.\nOpen Settings now?");
                 var answer = ThemedMessageBox.Show(
-                    "Data storage is not configured or is incomplete.\n\nTo continue, open Settings and provide valid database parameters.\n\nOpen Settings now?",
+                    details,
                     "Storage not configured",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning);

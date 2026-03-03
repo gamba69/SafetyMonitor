@@ -1319,15 +1319,21 @@ public class MainForm : MaterialForm {
         var validation = DataStorage.DataStorage.ValidateStorageStructure(_appSettings.StoragePath, _appSettings.ValidateDatabaseStructureOnStartup);
 
         if (validation.HasErrors) {
-            var details = string.Join(Environment.NewLine, validation.Issues.Where(x => x.Severity == DataStorage.DataStorage.StorageValidationIssueSeverity.Error).Select(x => $"• {x.Message}"));
-            ThemedMessageBox.Show(this, $"Storage data structure does not match expected format. The application will be closed.\n\n{details}", "Storage structure error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            var details = StorageValidationMessageFormatter.BuildMessage(
+                validation.Issues.Where(x => x.Severity == DataStorage.DataStorage.StorageValidationIssueSeverity.Error),
+                "Storage structure validation failed.",
+                "The application will be closed.");
+            ThemedMessageBox.Show(this, details, "Storage structure error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             throw new OperationCanceledException("Storage structure validation failed.");
         }
 
         if (validation.HasWarnings) {
             _appSettings.StartMinimized = false;
-            var details = string.Join(Environment.NewLine, validation.Issues.Where(x => x.Severity == DataStorage.DataStorage.StorageValidationIssueSeverity.Warning).Select(x => $"• {x.Message}"));
-            var answer = ThemedMessageBox.Show(this, $"Data storage is not configured.\n\n{details}\n\nOpen Database settings now?", "Storage not configured", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            var details = StorageValidationMessageFormatter.BuildMessage(
+                validation.Issues.Where(x => x.Severity == DataStorage.DataStorage.StorageValidationIssueSeverity.Warning),
+                "Data storage is not configured or contains unexpected files.",
+                "Open Database settings now?");
+            var answer = ThemedMessageBox.Show(this, details, "Storage not configured", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             return answer == DialogResult.Yes;
         }
 
