@@ -24,7 +24,7 @@ public class MetricAggregation {
             return Color;
         }
 
-        return DarkThemeColor.IsEmpty ? Color : DarkThemeColor;
+        return DarkThemeColor.IsEmpty || DarkThemeColor.A == 0 ? Color : DarkThemeColor;
     }
 
     #endregion Public Methods

@@ -976,6 +976,7 @@ public class MainForm : MaterialForm {
         if (_dashboardPanelCache.TryGetValue(dashboard.Id, out var cachedPanel) && !cachedPanel.IsDisposed) {
             _dashboardPanel = cachedPanel;
             _dashboardPanel.SetLinkChartPeriods(_appSettings.LinkChartPeriods);
+            _dashboardPanel.UpdateTheme();
             _dashboardContainer.SuspendLayout();
             if (!_dashboardContainer.Controls.Contains(_dashboardPanel)) {
                 _dashboardPanel.Visible = false;
@@ -1093,6 +1094,28 @@ public class MainForm : MaterialForm {
         if (_dashboardContainer.Controls.Contains(previousPanel)) { _dashboardContainer.Controls.Remove(previousPanel); }
     }
 
+    private void PurgeAllDashboardPanels() {
+        var uniquePanels = new HashSet<DashboardPanel>(_dashboardPanelCache.Values);
+        if (_dashboardPanel != null) {
+            uniquePanels.Add(_dashboardPanel);
+        }
+
+        foreach (var panel in uniquePanels) {
+            if (panel.IsDisposed) {
+                continue;
+            }
+
+            if (_dashboardContainer.Controls.Contains(panel)) {
+                _dashboardContainer.Controls.Remove(panel);
+            }
+
+            panel.Dispose();
+        }
+
+        _dashboardPanelCache.Clear();
+        _dashboardPanel = null;
+    }
+
     private void InvalidateDashboardPanelCache(Guid dashboardId) {
         if (_dashboardPanelCache.Remove(dashboardId, out var panel) && !panel.IsDisposed) {
             if (_dashboardContainer.Controls.Contains(panel)) { _dashboardContainer.Controls.Remove(panel); }
@@ -1153,7 +1176,7 @@ public class MainForm : MaterialForm {
     /// Schedules a deferred theme reapply. When a visor is active (theme switch),
     /// the callback calls ScheduleVisorReveal after all colors are set.
     /// </summary>
-    private void ScheduleThemeReapply(bool skipVisorReveal = false, bool skipDataRefresh = false) {
+    private void ScheduleThemeReapply(bool skipVisorReveal = false, bool skipDataRefresh = false, bool rebuildDashboardPanels = false) {
         if (_themeTimer != null) { _themeTimer.Stop(); _themeTimer.Dispose(); }
         _themeTimer = new System.Windows.Forms.Timer { Interval = 50 };
         _themeTimer.Tick += async (s, e) => {
@@ -1163,7 +1186,14 @@ public class MainForm : MaterialForm {
             UpdateDashboardContainerTheme();
             UpdateQuickAccessPanelTheme();
             UpdateMenuTheme();
-            _dashboardPanel?.UpdateTheme();
+
+            if (rebuildDashboardPanels && _currentDashboard != null) {
+                PurgeAllDashboardPanels();
+                LoadDashboard(_currentDashboard, visorAlreadyShown: _visorForm != null && !_visorForm.IsDisposed);
+                return;
+            }
+
+            UpdateThemeForCachedDashboardPanels();
 
             // Force an immediate repaint of all recolored controls before
             // potentially expensive data refresh starts.
@@ -1179,6 +1209,16 @@ public class MainForm : MaterialForm {
             }
         };
         _themeTimer.Start();
+    }
+
+    private void UpdateThemeForCachedDashboardPanels() {
+        foreach (var panel in _dashboardPanelCache.Values) {
+            if (panel.IsDisposed) {
+                continue;
+            }
+
+            panel.UpdateTheme();
+        }
     }
 
     private void RequestImmediateThemeRepaint() {
@@ -1257,7 +1297,7 @@ public class MainForm : MaterialForm {
         // MaterialSkinManager queues multiple deferred color updates.
         // ScheduleThemeReapply reapplies our colors AFTER MSM is done,
         // then calls ScheduleVisorReveal to fade out the visor.
-        ScheduleThemeReapply();
+        ScheduleThemeReapply(skipVisorReveal: true, skipDataRefresh: true, rebuildDashboardPanels: true);
     }
 
     private void SetupRefreshTimer() {
@@ -1566,7 +1606,7 @@ public class MainForm : MaterialForm {
         SortDashboardsForDisplay();
         PersistDashboardOrdering();
 
-        if (_dashboards.Count == 0) { var fallback = Dashboard.CreateDefault(); fallback.SortOrder = 0; _dashboardService.SaveDashboard(fallback); _dashboards = [fallback]; }
+        if (_dashboards.Count == 0) { var fallback = Dashboard.CreateDefaultSet(); foreach (var dashboard in fallback) { _dashboardService.SaveDashboard(dashboard); } _dashboards = fallback; }
         var nextDashboard = _currentDashboard != null ? _dashboards.FirstOrDefault(d => d.Id == _currentDashboard.Id) : null;
         nextDashboard ??= _dashboards.First();
         LoadDashboard(nextDashboard);

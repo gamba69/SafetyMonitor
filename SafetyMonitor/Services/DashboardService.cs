@@ -59,9 +59,11 @@ public class DashboardService {
             }
         } catch { }
         if (dashboards.Count == 0) {
-            var def = Dashboard.CreateDefault();
-            SaveDashboard(def);
-            dashboards.Add(def);
+            var defaults = Dashboard.CreateDefaultSet();
+            foreach (var dashboard in defaults) {
+                SaveDashboard(dashboard);
+            }
+            dashboards.AddRange(defaults);
         }
         return [.. dashboards
             .OrderByDescending(d => d.IsQuickAccess)
@@ -76,10 +78,12 @@ public class DashboardService {
             File.Delete(dashboardPath);
         }
 
-        var defaultDashboard = Dashboard.CreateDefault();
-        defaultDashboard.SortOrder = 0;
-        SaveDashboard(defaultDashboard);
-        return defaultDashboard;
+        var defaults = Dashboard.CreateDefaultSet();
+        foreach (var dashboard in defaults) {
+            SaveDashboard(dashboard);
+        }
+
+        return defaults.First();
     }
 
     public void SaveDashboard(Dashboard dashboard) {

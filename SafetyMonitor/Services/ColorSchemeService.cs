@@ -15,7 +15,7 @@ public class ColorJsonConverter : JsonConverter<Color> {
         if (reader.TokenType == JsonTokenType.String) {
             var hex = reader.GetString();
             if (string.IsNullOrEmpty(hex)) {
-                return Color.Gray;
+                return Color.Empty;
             }
 
             try {
@@ -25,6 +25,10 @@ public class ColorJsonConverter : JsonConverter<Color> {
                     var r = Convert.ToInt32(hex.Substring(3, 2), 16);
                     var g = Convert.ToInt32(hex.Substring(5, 2), 16);
                     var b = Convert.ToInt32(hex.Substring(7, 2), 16);
+                    if (a == 0 && r == 0 && g == 0 && b == 0) {
+                        return Color.Empty;
+                    }
+
                     return Color.FromArgb(a, r, g, b);
                 }
                 return ColorTranslator.FromHtml(hex);
@@ -53,6 +57,11 @@ public class ColorJsonConverter : JsonConverter<Color> {
     }
 
     public override void Write(Utf8JsonWriter writer, Color value, JsonSerializerOptions options) {
+        if (value.IsEmpty) {
+            writer.WriteStringValue(string.Empty);
+            return;
+        }
+
         writer.WriteStringValue($"#{value.A:X2}{value.R:X2}{value.G:X2}{value.B:X2}");
     }
 
