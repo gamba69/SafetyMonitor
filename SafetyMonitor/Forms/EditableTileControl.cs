@@ -132,8 +132,8 @@ public class EditableTileControl : Panel {
         DataStorage.Models.AggregationFunction.Maximum => "Max",
         DataStorage.Models.AggregationFunction.Sum => "Sum",
         DataStorage.Models.AggregationFunction.Count => "Cnt",
-        DataStorage.Models.AggregationFunction.First => "First",
-        DataStorage.Models.AggregationFunction.Last => "Last",
+        DataStorage.Models.AggregationFunction.First => "Fst",
+        DataStorage.Models.AggregationFunction.Last => "Lst",
         _ => function.ToString()
     };
 
