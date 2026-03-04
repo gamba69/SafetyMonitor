@@ -96,12 +96,46 @@ public class EditableTileControl : Panel {
 
     private string GetInfoText() {
         if (Config is ValueTileConfig vtc) {
-            return $"Type: Value\nMetric: {vtc.Metric.GetDisplayName()}\nPos: ({Config.Row}, {Config.Column})\nSize: {Config.RowSpan}×{Config.ColumnSpan}";
+            return $"{vtc.Metric.GetDisplayName()}\n{GetValueDisplayModeName(vtc.DisplayMode)}";
         } else if (Config is ChartTileConfig ctc) {
-            return $"Type: Chart\nGroup: {ctc.LinkGroup.GetDisplayName()}\nMetrics: {ctc.MetricAggregations.Count}\nPos: ({Config.Row}, {Config.Column})\nSize: {Config.RowSpan}×{Config.ColumnSpan}";
+            var metricSummary = ctc.MetricAggregations.Count == 0
+                ? "No metrics"
+                : string.Join(", ",
+                    ctc.MetricAggregations.Select(agg =>
+                        $"{agg.Metric.GetDisplayName()} ({GetAggregationAbbreviation(agg.Function)})"));
+
+            var linkSummary = $"{ctc.LinkGroup.GetDisplayName()} · {GetLinkGroupPeriodDisplayName(ctc.LinkGroup)}";
+            return $"{metricSummary}\n{linkSummary}";
         }
-        return $"Type: {Config.Type}\nPos: ({Config.Row}, {Config.Column})\nSize: {Config.RowSpan}×{Config.ColumnSpan}";
+        return Config.Type.ToString();
     }
+
+    private string GetLinkGroupPeriodDisplayName(ChartLinkGroup group) {
+        var periodPresetUid = _dashboard.GetLinkGroupPeriodPresetUid(group);
+        var preset = ChartPeriodPresetStore
+            .GetPresetItems()
+            .FirstOrDefault(item => string.Equals(item.Uid, periodPresetUid, StringComparison.OrdinalIgnoreCase));
+
+        return string.IsNullOrWhiteSpace(preset.Label) ? "Default period" : preset.Label;
+    }
+
+    private static string GetValueDisplayModeName(ValueTileDisplayMode mode) => mode switch {
+        ValueTileDisplayMode.ValueOnly => "Value Only",
+        ValueTileDisplayMode.TextOnly => "Text Only",
+        ValueTileDisplayMode.TextAndValue => "Text + Value",
+        _ => mode.ToString()
+    };
+
+    private static string GetAggregationAbbreviation(DataStorage.Models.AggregationFunction function) => function switch {
+        DataStorage.Models.AggregationFunction.Average => "Avg",
+        DataStorage.Models.AggregationFunction.Minimum => "Min",
+        DataStorage.Models.AggregationFunction.Maximum => "Max",
+        DataStorage.Models.AggregationFunction.Sum => "Sum",
+        DataStorage.Models.AggregationFunction.Count => "Cnt",
+        DataStorage.Models.AggregationFunction.First => "First",
+        DataStorage.Models.AggregationFunction.Last => "Last",
+        _ => function.ToString()
+    };
 
     private void InitializeUI() {
         BorderStyle = BorderStyle.FixedSingle;
