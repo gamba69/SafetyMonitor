@@ -144,9 +144,9 @@ public class DashboardPanel : TableLayoutPanel {
 
         foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
             var presetUid = _dashboard.GetLinkGroupPeriodPresetUid(chartTile.Config.LinkGroup);
-            chartTile.SetPeriodPreset(presetUid, refreshData: false);
             chartTile.ExitStaticMode(raiseEvents: false);
             chartTile.SetStaticPaused(false, raiseEvents: false);
+            chartTile.SetPeriodPreset(presetUid, refreshData: false);
         }
 
         RefreshData();
