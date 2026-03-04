@@ -1478,8 +1478,10 @@ public class MainForm : MaterialForm {
         var loaded = _appSettingsService.LoadSettings();
         CopySettings(loaded, _appSettings);
 
+        var openDatabaseSettings = false;
+
         try {
-            EnsureStorageConfigurationAtStartup();
+            openDatabaseSettings = EnsureStorageConfigurationAtStartup();
         } catch (OperationCanceledException) {
             _isExitConfirmed = true;
             Close();
@@ -1487,6 +1489,10 @@ public class MainForm : MaterialForm {
         }
 
         ApplySettingsToRuntime();
+
+        if (openDatabaseSettings) {
+            ShowSettings(initialTabIndex: 2);
+        }
     }
 
     private static void CopySettings(AppSettings source, AppSettings target) {
