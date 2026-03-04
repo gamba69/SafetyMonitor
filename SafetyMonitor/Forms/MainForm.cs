@@ -984,6 +984,9 @@ public class MainForm : MaterialForm {
             PersistDashboardOrdering();
             var updatedDashboard = _dashboards.FirstOrDefault(d => d.Id == _currentDashboard.Id);
             if (updatedDashboard != null) {
+                // After dashboard structure/link settings are edited, force runtime
+                // chart-link state back to dashboard defaults on next load.
+                updatedDashboard.NeedsStartupReset = true;
                 _dashboardLinkModes.Remove(updatedDashboard.Id);
                 InvalidateDashboardPanelCache(updatedDashboard.Id);
                 LoadDashboard(updatedDashboard);
