@@ -76,7 +76,7 @@ namespace DataStorage.Models {
         public double? SafePercentage { get; set; }
 
         /// <summary>
-        /// Sky brightness (Lux)
+        /// Sky brightness (lux)
         /// </summary>
         public double? SkyBrightness { get; set; }
 

@@ -29,7 +29,7 @@ public static class MetricTypeExtensions {
         MetricType.DewPoint => "°C",
         MetricType.CloudCover => "%",
         MetricType.SkyTemperature => "°C",
-        MetricType.SkyBrightness => "Lux",
+        MetricType.SkyBrightness => "lux",
         MetricType.SkyQuality => "mpsas",
         MetricType.RainRate => "mm/hr",
         MetricType.WindSpeed => "m/s",

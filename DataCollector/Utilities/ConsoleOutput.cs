@@ -57,7 +57,7 @@ public static class ConsoleOutput {
         }
 
         if (data.SkyBrightness.HasValue) {
-            Console.WriteLine($"  Sky Brightness:   {data.SkyBrightness:F2} Lux");
+            Console.WriteLine($"  Sky Brightness:   {data.SkyBrightness:F2} lux");
         }
 
         if (data.SkyQuality.HasValue) {

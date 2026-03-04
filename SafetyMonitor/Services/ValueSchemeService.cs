@@ -175,11 +175,11 @@ public class ValueSchemeService {
         Descending = true,
         Stops =
         [
-            new() { Value = 20000, Text = "DAYLIGHT", Description = "Daylight level (> 20000 Lux)" },
-            new() { Value = 1000, Text = "TWILIGHT", Description = "Twilight/bright moonlight (1000–20000 Lux)" },
-            new() { Value = 50, Text = "DUSK", Description = "Dusk range (50–1000 Lux)" },
-            new() { Value = 1, Text = "DARK", Description = "Dark sky (1–50 Lux)" },
-            new() { Value = 0, Text = "NIGHT", Description = "Very dark night (< 1 Lux)" }
+            new() { Value = 20000, Text = "DAYLIGHT", Description = "Daylight level (> 20000 lux)" },
+            new() { Value = 1000, Text = "TWILIGHT", Description = "Twilight/bright moonlight (1000–20000 lux)" },
+            new() { Value = 50, Text = "DUSK", Description = "Dusk range (50–1000 lux)" },
+            new() { Value = 1, Text = "DARK", Description = "Dark sky (1–50 lux)" },
+            new() { Value = 0, Text = "NIGHT", Description = "Very dark night (< 1 lux)" }
         ]
     };
 
