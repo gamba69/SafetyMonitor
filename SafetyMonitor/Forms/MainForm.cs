@@ -842,7 +842,7 @@ public class MainForm : MaterialForm {
         };
         _unlinkedChartsButton.CheckedChanged += (s, e) => { if (_unlinkedChartsButton.Checked) { SetCurrentDashboardLinkMode(DashboardChartLinkMode.Disabled); } };
 
-        _linkSegmentPanel = new Panel { Location = new Point(10, 10), Size = new Size(110, 32), Padding = new Padding(1) };
+        _linkSegmentPanel = new Panel { Location = new Point(10, 10), Size = new Size(146, 32), Padding = new Padding(1) };
         _linkSegmentPanel.Controls.Add(_linkedChartsButton);
         _linkSegmentPanel.Controls.Add(_groupLinkedChartsButton);
         _linkSegmentPanel.Controls.Add(_unlinkedChartsButton);
@@ -856,6 +856,7 @@ public class MainForm : MaterialForm {
             Text = string.Empty
         };
         _resetChartLinkButton.Click += (_, _) => ResetCurrentDashboardLinkState();
+        _linkSegmentPanel.Controls.Add(_resetChartLinkButton);
 
         _quickDashboardsPanel = new Panel { Location = new Point(240, 10), Size = new Size(0, 32), Padding = new Padding(1), Font = new Font("Segoe UI", 9f, FontStyle.Regular) };
 
@@ -893,7 +894,7 @@ public class MainForm : MaterialForm {
             Visible = _appSettings.ShowRefreshIndicator
         };
 
-        _quickAccessPanel.Controls.AddRange([_dashboardLabel, _quickDashboardsPanel, _refreshIndicatorIcon, _refreshIndicatorTimeLabel, _exportProgressIcon, _exportProgressLabel, _chartsLabel, _linkSegmentPanel, _resetChartLinkButton, _themeLabel, _themeSegmentPanel]);
+        _quickAccessPanel.Controls.AddRange([_dashboardLabel, _quickDashboardsPanel, _refreshIndicatorIcon, _refreshIndicatorTimeLabel, _exportProgressIcon, _exportProgressLabel, _chartsLabel, _linkSegmentPanel, _themeLabel, _themeSegmentPanel]);
         _editDashboardContextMenu = CreateEditDashboardContextMenu();
         _quickAccessPanel.MouseUp += QuickPanel_MouseUp;
         _quickDashboardsPanel.MouseUp += QuickDashboardsPanel_MouseUp;
@@ -1993,10 +1994,9 @@ public class MainForm : MaterialForm {
         _themeSegmentPanel.Location = new Point(_quickAccessPanel.Width - rightMargin - panelWidth, top);
         _themeSegmentPanel.Size = new Size(panelWidth, 32);
         _themeLabel.Location = new Point(_themeSegmentPanel.Left - textGap - _themeLabel.PreferredWidth, 17);
-        var linkPanelWidth = segmentWidth * 3 + 2 + segmentGap;
-        _linkSegmentPanel.Location = new Point(_themeLabel.Left - sectionGap - linkPanelWidth - segmentWidth - 4, top);
+        var linkPanelWidth = segmentWidth * 4 + 2 + segmentGap;
+        _linkSegmentPanel.Location = new Point(_themeLabel.Left - sectionGap - linkPanelWidth, top);
         _linkSegmentPanel.Size = new Size(linkPanelWidth, 32);
-        _resetChartLinkButton.Location = new Point(_linkSegmentPanel.Right + 4, top + 1);
         _chartsLabel.Location = new Point(_linkSegmentPanel.Left - textGap - _chartsLabel.PreferredWidth, 17);
 
         if (_exportProgressLabel.Visible) {
@@ -2020,6 +2020,7 @@ public class MainForm : MaterialForm {
         _linkedChartsButton.Size = new Size(segmentWidth, segmentHeight); _linkedChartsButton.Location = new Point(1, 1);
         _groupLinkedChartsButton.Size = new Size(segmentWidth, segmentHeight); _groupLinkedChartsButton.Location = new Point(1 + segmentWidth + segmentGap, 1);
         _unlinkedChartsButton.Size = new Size(segmentWidth, segmentHeight); _unlinkedChartsButton.Location = new Point(1 + (segmentWidth + segmentGap) * 2, 1);
+        _resetChartLinkButton.Size = new Size(segmentWidth, segmentHeight); _resetChartLinkButton.Location = new Point(1 + (segmentWidth + segmentGap) * 3, 1);
         UpdateThemeSwitchAppearance(); UpdateLinkSwitchAppearance();
     }
 
