@@ -215,6 +215,8 @@ public class EditableTileControl : Panel {
             Image = CreateHeaderActionIcon(MaterialIcons.CommonClose, headerTextColor)
         };
         _deleteButton.FlatAppearance.BorderSize = 0;
+        _deleteButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(232, 17, 35);
+        _deleteButton.FlatAppearance.MouseDownBackColor = Color.FromArgb(139, 10, 20);
         _deleteButton.ImageAlign = ContentAlignment.MiddleCenter;
         _deleteButton.Click += OnDelete;
 

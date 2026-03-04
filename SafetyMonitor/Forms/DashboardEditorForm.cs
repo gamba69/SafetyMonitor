@@ -136,6 +136,9 @@ public class DashboardEditorForm : ThemedCaptionForm {
                     num.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
                     num.ForeColor = isLight ? Color.Black : Color.White;
                     break;
+                case ComboBox combo:
+                    ThemedComboBoxStyler.Apply(combo, isLight);
+                    break;
             }
 
             // Don't recurse into grid panel children
@@ -294,27 +297,91 @@ public class DashboardEditorForm : ThemedCaptionForm {
 
         mainLayout.Controls.Add(settingsPanel, 0, 1);
 
-        var linkSettingsPanel = new FlowLayoutPanel {
+        var uiScale = DeviceDpi / 96f;
+        var scaledComboWidth = (int)Math.Round(138 * uiScale);
+        var scaledLabelMarginRight = Math.Max(4, (int)Math.Round(8 * uiScale));
+        var scaledVerticalMargin = Math.Max(2, (int)Math.Round(3 * uiScale));
+        var scaledComboRightMargin = Math.Max(6, (int)Math.Round(12 * uiScale));
+
+        var linkSettingsPanel = new TableLayoutPanel {
             AutoSize = true,
-            Dock = DockStyle.Fill,
-            WrapContents = true,
-            Margin = new Padding(0, 0, 0, 12)
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.None,
+            Anchor = AnchorStyles.Top | AnchorStyles.Left,
+            Margin = new Padding(0, 0, 0, 12),
+            ColumnCount = 8,
+            RowCount = 2,
+            Padding = new Padding(0)
         };
-        linkSettingsPanel.Controls.Add(new Label { Text = "Initial Link:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 7, 6, 0) });
-        _initialLinkModeComboBox = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 160, Font = normalFont, Margin = new Padding(0, 3, 16, 0) };
-        _initialLinkModeComboBox.Items.AddRange(Enum.GetNames<DashboardChartLinkMode>());
-        linkSettingsPanel.Controls.Add(_initialLinkModeComboBox);
+        for (var i = 0; i < 8; i++) {
+            linkSettingsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        }
+        linkSettingsPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        linkSettingsPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         var presets = ChartPeriodPresetStore.GetPresetItems().ToList();
-        foreach (var group in ChartLinkGroupInfo.All) {
-            linkSettingsPanel.Controls.Add(new Label { Text = $"{group.GetDisplayName()}:", Font = normalFont, AutoSize = true, Margin = new Padding(0, 7, 6, 0) });
-            var combo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 145, Font = normalFont, Margin = new Padding(0, 3, 12, 0) };
+
+        Label CreateLinkLabel(string text, bool isTitle = false) {
+            return new Label {
+                Text = text,
+                Font = isTitle ? titleFont : normalFont,
+                AutoSize = true,
+                Anchor = AnchorStyles.Left,
+                Margin = new Padding(0, scaledVerticalMargin * 2, scaledLabelMarginRight, scaledVerticalMargin * 2)
+            };
+        }
+
+        ComboBox CreateLinkCombo() {
+            var combo = new ComboBox {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = scaledComboWidth,
+                Font = normalFont,
+                Margin = new Padding(0, scaledVerticalMargin, scaledComboRightMargin, scaledVerticalMargin),
+                Anchor = AnchorStyles.Left
+            };
             foreach (var preset in presets) {
                 combo.Items.Add(preset.Label);
             }
-            _groupPeriodCombos[group] = combo;
-            linkSettingsPanel.Controls.Add(combo);
+            return combo;
         }
+
+        _initialLinkModeComboBox = new ComboBox {
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            Width = scaledComboWidth,
+            Font = normalFont,
+            Margin = new Padding(0, scaledVerticalMargin, scaledComboRightMargin, scaledVerticalMargin),
+            Anchor = AnchorStyles.Left
+        };
+        _initialLinkModeComboBox.Items.AddRange(Enum.GetNames<DashboardChartLinkMode>());
+
+        var groups = ChartLinkGroupInfo.All.ToList();
+        var topGroups = groups.Take(3).ToList();
+        var bottomGroups = groups.Skip(3).Take(3).ToList();
+
+        linkSettingsPanel.Controls.Add(CreateLinkLabel("Charts link:", isTitle: true), 0, 0);
+        linkSettingsPanel.Controls.Add(_initialLinkModeComboBox, 1, 0);
+
+        for (var i = 0; i < topGroups.Count; i++) {
+            var group = topGroups[i];
+            var labelColumn = 2 + (i * 2);
+            var comboColumn = labelColumn + 1;
+            var combo = CreateLinkCombo();
+            _groupPeriodCombos[group] = combo;
+            linkSettingsPanel.Controls.Add(CreateLinkLabel($"{group.GetDisplayName()}:"), labelColumn, 0);
+            linkSettingsPanel.Controls.Add(combo, comboColumn, 0);
+        }
+
+        // Row 2 starts with an empty left pair, then remaining link groups.
+        for (var i = 0; i < bottomGroups.Count; i++) {
+            var group = bottomGroups[i];
+            var labelColumn = 2 + (i * 2);
+            var comboColumn = labelColumn + 1;
+            var combo = CreateLinkCombo();
+            _groupPeriodCombos[group] = combo;
+            linkSettingsPanel.Controls.Add(CreateLinkLabel($"{group.GetDisplayName()}:"), labelColumn, 1);
+            linkSettingsPanel.Controls.Add(combo, comboColumn, 1);
+        }
+
         mainLayout.Controls.Add(linkSettingsPanel, 0, 2);
 
         // Row 3: Grid Panel
