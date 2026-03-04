@@ -274,6 +274,7 @@ public class ChartTile : Panel {
             scatter.Color = ScottPlot.Color.FromColor(agg.GetColorForTheme(isLightTheme));
             scatter.LineWidth = agg.LineWidth;
             scatter.MarkerSize = agg.ShowMarkers ? 5 : 0;
+            scatter.MarkerShape = MarkerShape.VerticalBar;
             scatter.Smooth = agg.Smooth;
             ApplySmoothTension(scatter, agg);
 
@@ -1211,61 +1212,13 @@ public class ChartTile : Panel {
         }
     }
 
-    private void TryDisableScottPlotBuiltInContextMenu() {
+    private void DisableScottPlotInteractionOverlays() {
         if (_plot == null) {
             return;
         }
 
-        try {
-            var target = _plot as object;
-            // Best-effort compatibility across ScottPlot versions:
-            // disable any bool menu-related switch and clear menu-like object properties.
-            DisableMenuMembersRecursive(target, 0);
-        } catch {
-            // no-op (feature is best effort)
-        }
-    }
-
-    private static void DisableMenuMembersRecursive(object target, int depth) {
-        if (depth > 2) {
-            return;
-        }
-
-        var type = target.GetType();
-        foreach (var prop in type.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)) {
-            if (!prop.CanRead) {
-                continue;
-            }
-
-            var name = prop.Name.ToLowerInvariant();
-            object? value;
-            try {
-                value = prop.GetValue(target);
-            } catch {
-                continue;
-            }
-
-            if (prop.CanWrite) {
-                try {
-                    if (prop.PropertyType == typeof(bool) && (name.Contains("menu") || name.Contains("context"))) {
-                        prop.SetValue(target, false);
-                    } else if (!prop.PropertyType.IsValueType && (name.Contains("menu") || name.Contains("context"))) {
-                        prop.SetValue(target, null);
-                    }
-                } catch {
-                    // ignore setter failures
-                }
-            }
-
-            if (value == null) {
-                continue;
-            }
-
-            var valueType = value.GetType();
-            if (valueType.Namespace != null && valueType.Namespace.StartsWith("ScottPlot", StringComparison.Ordinal)) {
-                DisableMenuMembersRecursive(value, depth + 1);
-            }
-        }
+        // Disable benchmark toggle action so FPS overlay cannot be enabled.
+        _plot.UserInputProcessor.RemoveAll<ScottPlot.Interactivity.UserActionResponses.DoubleClickBenchmark>();
     }
 
     private static void ApplyContextMenuItemColors(ToolStripItemCollection items, Color backColor, Color foreColor) {
@@ -1610,7 +1563,7 @@ public class ChartTile : Panel {
         _plot.MouseLeave += Plot_MouseLeave;
         _plot.MouseWheel += Plot_MouseWheel;
         _plot.MouseDoubleClick += Plot_MouseDoubleClick;
-        TryDisableScottPlotBuiltInContextMenu();
+        DisableScottPlotInteractionOverlays();
         ApplyPlotContextMenuTheme();
 
         // Add header and info labels first
