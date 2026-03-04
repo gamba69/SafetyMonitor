@@ -40,6 +40,7 @@ public class ValueTile : Panel {
     #region Public Events
 
     public event Action<ValueTile>? EditRequested;
+    public event Action<ValueTile>? EditDashboardRequested;
     public event Action<ValueTile>? ViewSettingsChanged;
 
     #endregion Public Events
@@ -617,6 +618,8 @@ public class ValueTile : Panel {
     private void RebuildContextMenu(ContextMenuStrip contextMenu) {
         contextMenu.Items.Clear();
 
+        contextMenu.Items.Add(CreateMenuItem("Edit Dashboard...", MaterialIcons.CommonEdit, (_, _) => EditDashboardRequested?.Invoke(this)));
+        contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add(CreateMenuItem("Edit Tile...", MaterialIcons.CommonEdit, (_, _) => EditRequested?.Invoke(this)));
         contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add(CreateToggleMenuItem("Show Icon", MaterialIcons.ValueMenuNorthEast, _config.ShowIcon, (_, _) => {

@@ -17,6 +17,9 @@ public class DashboardPanel : TableLayoutPanel {
     private int _chartStaticAggregationTargetPointCount;
     private bool _tilesCreated;
     private readonly HashSet<ChartTile> _hoveredChartTiles = [];
+    private readonly ThemedMenuRenderer _contextMenuRenderer = new();
+    private ContextMenuStrip? _contextMenu;
+    private const int MenuIconSize = 22;
 
     #endregion Private Fields
 
@@ -24,6 +27,7 @@ public class DashboardPanel : TableLayoutPanel {
 
     public event Action? DashboardChanged;
     public event Action<TileConfig>? TileEditRequested;
+    public event Action? DashboardEditRequested;
 
     public DashboardPanel(
         Dashboard dashboard,
@@ -208,6 +212,7 @@ public class DashboardPanel : TableLayoutPanel {
                 tileControl.Visible = false;
 
                 if (tileControl is ValueTile valueTile) {
+                    valueTile.EditDashboardRequested += OnTileDashboardEditRequested;
                     valueTile.EditRequested += OnValueTileEditRequested;
                     valueTile.ViewSettingsChanged += OnValueTileViewSettingsChanged;
                 }
@@ -221,6 +226,7 @@ public class DashboardPanel : TableLayoutPanel {
                     chartTile.PlotHoverPresenceChanged += OnPlotHoverPresenceChanged;
                     chartTile.HoverAnchorChanged += OnChartHoverAnchorChanged;
                     chartTile.StaticPauseChanged += OnChartStaticPauseChanged;
+                    chartTile.EditDashboardRequested += OnTileDashboardEditRequested;
                     chartTile.SetStaticModeTimeout(TimeSpan.FromSeconds(_chartStaticModeTimeoutSeconds));
                     chartTile.SetStaticAggregationSettings(
                         _chartStaticAggregationPresetMatchTolerancePercent,
@@ -383,6 +389,14 @@ public class DashboardPanel : TableLayoutPanel {
         }
     }
 
+    private void OnTileDashboardEditRequested(ValueTile source) {
+        DashboardEditRequested?.Invoke();
+    }
+
+    private void OnTileDashboardEditRequested(ChartTile source) {
+        DashboardEditRequested?.Invoke();
+    }
+
     private void OnValueTileEditRequested(ValueTile source) {
         var config = _dashboard.Tiles.OfType<ValueTileConfig>().FirstOrDefault(c =>
             _tileControls.TryGetValue(c.Id, out var ctrl) && ReferenceEquals(ctrl, source));
@@ -408,6 +422,41 @@ public class DashboardPanel : TableLayoutPanel {
         for (int i = 0; i < _dashboard.Rows; i++) {
             RowStyles.Add(new RowStyle(SizeType.Percent, 100f / _dashboard.Rows));
         }
+
+        _contextMenu = CreateContextMenu();
+        ContextMenuStrip = _contextMenu;
+    }
+
+    private ContextMenuStrip CreateContextMenu() {
+        var contextMenu = new ContextMenuStrip {
+            ShowImageMargin = true,
+            ImageScalingSize = new Size(MenuIconSize, MenuIconSize),
+            Cursor = Cursors.Hand
+        };
+
+        contextMenu.Opening += (_, _) => {
+            var iconColor = MaterialSkin.MaterialSkinManager.Instance.Theme == MaterialSkin.MaterialSkinManager.Themes.LIGHT
+                ? Color.FromArgb(33, 33, 33)
+                : Color.FromArgb(240, 240, 240);
+            if (contextMenu.Items.Count > 0 && contextMenu.Items[0] is ToolStripMenuItem item) {
+                item.Image = MaterialIcons.GetIcon(MaterialIcons.CommonEdit, iconColor, MenuIconSize);
+            }
+            _contextMenuRenderer.UpdateTheme();
+            contextMenu.RenderMode = ToolStripRenderMode.Professional;
+            contextMenu.Renderer = _contextMenuRenderer;
+        };
+
+        var menuItem = new ToolStripMenuItem("Edit Dashboard...") {
+            DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+            TextImageRelation = TextImageRelation.ImageBeforeText,
+            ImageAlign = ContentAlignment.MiddleLeft,
+            TextAlign = ContentAlignment.MiddleLeft,
+            ImageScaling = ToolStripItemImageScaling.None
+        };
+        menuItem.Click += (_, _) => DashboardEditRequested?.Invoke();
+        contextMenu.Items.Add(menuItem);
+        InteractiveCursorStyler.Apply(contextMenu.Items);
+        return contextMenu;
     }
 
     #endregion Private Methods

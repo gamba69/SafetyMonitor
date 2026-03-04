@@ -88,6 +88,7 @@ public class ChartTile : Panel {
     public event Action<ChartTile, double>? HoverAnchorChanged;
     public event Action<ChartTile, bool>? StaticPauseChanged;
     public event Action<ChartTile>? EditRequested;
+    public event Action<ChartTile>? EditDashboardRequested;
 
     #endregion Public Events
 
@@ -816,6 +817,8 @@ public class ChartTile : Panel {
     private void RebuildPlotContextMenu(ContextMenuStrip contextMenu) {
         contextMenu.Items.Clear();
 
+        contextMenu.Items.Add(CreatePlotMenuItem("Edit Dashboard...", MaterialIcons.CommonEdit, (_, _) => EditDashboardRequested?.Invoke(this)));
+        contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add(CreatePlotMenuItem("Edit Tile...", MaterialIcons.CommonEdit, HandleEditTileClick));
         contextMenu.Items.Add(new ToolStripSeparator());
 

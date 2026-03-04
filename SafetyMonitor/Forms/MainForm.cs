@@ -43,6 +43,7 @@ public class MainForm : MaterialForm {
     private const int MaxQuickAccessDashboards = 7;
     private Panel _quickAccessPanel = null!;
     private Panel _quickDashboardsPanel = null!;
+    private ContextMenuStrip? _editDashboardContextMenu;
     private Panel _linkSegmentPanel = null!;
     private PictureBox _exportProgressIcon = null!;
     private Label _exportProgressLabel = null!;
@@ -874,8 +875,56 @@ public class MainForm : MaterialForm {
         };
 
         _quickAccessPanel.Controls.AddRange([_dashboardLabel, _quickDashboardsPanel, _refreshIndicatorIcon, _refreshIndicatorTimeLabel, _exportProgressIcon, _exportProgressLabel, _chartsLabel, _linkSegmentPanel, _themeLabel, _themeSegmentPanel, _linkChartsCheckBox]);
+        _editDashboardContextMenu = CreateEditDashboardContextMenu();
+        _quickAccessPanel.MouseUp += QuickPanel_MouseUp;
+        _quickDashboardsPanel.MouseUp += QuickDashboardsPanel_MouseUp;
         RefreshQuickAccessLayout();
         _quickAccessPanel.SizeChanged += (s, e) => RefreshQuickAccessLayout();
+    }
+
+    private ContextMenuStrip CreateEditDashboardContextMenu() {
+        var iconColor = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT ? Color.Black : Color.White;
+        var contextMenu = new ContextMenuStrip {
+            ShowImageMargin = true,
+            ImageScalingSize = new Size(MenuIconSize, MenuIconSize),
+            Cursor = Cursors.Hand
+        };
+        contextMenu.Items.Add(CreateMenuItem("Edit Dashboard...", MaterialIcons.CommonEdit, iconColor, (_, _) => EditCurrentDashboard()));
+        contextMenu.Opening += (_, _) => {
+            var itemIconColor = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT ? Color.Black : Color.White;
+            UpdateMenuItemsIcons(contextMenu.Items, itemIconColor);
+            _menuRenderer?.UpdateTheme();
+            contextMenu.RenderMode = ToolStripRenderMode.Professional;
+            contextMenu.Renderer = _menuRenderer;
+            InteractiveCursorStyler.Apply(contextMenu.Items);
+        };
+
+        return contextMenu;
+    }
+
+    private void QuickPanel_MouseUp(object? sender, MouseEventArgs e) {
+        if (e.Button != MouseButtons.Right || _editDashboardContextMenu == null || sender is not Control control) {
+            return;
+        }
+
+        if (control.GetChildAtPoint(e.Location, GetChildAtPointSkip.Invisible) != null) {
+            return;
+        }
+
+        _editDashboardContextMenu.Show(control, e.Location);
+    }
+
+    private void QuickDashboardsPanel_MouseUp(object? sender, MouseEventArgs e) {
+        if (e.Button != MouseButtons.Right || _editDashboardContextMenu == null || sender is not Control control) {
+            return;
+        }
+
+        var hasChildUnderPointer = control.Controls.Cast<Control>().Any(child => child.Visible && child.Bounds.Contains(e.Location));
+        if (hasChildUnderPointer) {
+            return;
+        }
+
+        _editDashboardContextMenu.Show(control, e.Location);
     }
 
     private void DeleteCurrentDashboard() {
@@ -1025,6 +1074,7 @@ public class MainForm : MaterialForm {
                 Visible = false
             };
             _dashboardPanel.DashboardChanged += OnDashboardChanged;
+            _dashboardPanel.DashboardEditRequested += EditCurrentDashboard;
             _dashboardPanel.TileEditRequested += OnTileEditRequested;
             _dashboardPanel.SetLinkChartPeriods(_appSettings.LinkChartPeriods);
             _dashboardContainer.Controls.Add(_dashboardPanel);
