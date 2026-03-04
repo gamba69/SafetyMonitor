@@ -273,7 +273,10 @@ public class ChartTile : Panel {
             scatter.LegendText = agg.Label;
             scatter.Color = ScottPlot.Color.FromColor(agg.GetColorForTheme(isLightTheme));
             scatter.LineWidth = agg.LineWidth;
-            scatter.MarkerSize = agg.ShowMarkers ? 5 : 0;
+            scatter.MarkerLineWidth = agg.LineWidth;
+            scatter.MarkerSize = agg.ShowMarkers
+                ? Math.Max(agg.LineWidth * 2f, 5f)
+                : 0;
             scatter.MarkerShape = MarkerShape.VerticalBar;
             scatter.Smooth = agg.Smooth;
             ApplySmoothTension(scatter, agg);
