@@ -33,6 +33,7 @@ public class ValueTile : Panel {
     private const float MinTitleFontSize = 10f;
     private const float MinTextFontSize = 11f;
     private const float MinValueFontSize = 10f;
+    private const float MaxValueFontSize = 33.6f;
     private const int HorizontalFitPadding = 8;
 
     #endregion Private Fields
@@ -515,7 +516,7 @@ public class ValueTile : Panel {
 
         // Font sizes proportional to tile size
         var titleFontSize = Math.Max(MinTitleFontSize, Math.Min(14f, minDimension * 0.09f));
-        var valueFontSize = Math.Max(14f, Math.Min(48f, minDimension * 0.28f));
+        var valueFontSize = Math.Max(14f, Math.Min(MaxValueFontSize, minDimension * 0.28f));
         var textFontSize = Math.Max(MinTextFontSize, Math.Min(20f, titleFontSize + 2f));
         var unitFontSize = textFontSize;
 
