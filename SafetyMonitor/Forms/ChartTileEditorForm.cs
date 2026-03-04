@@ -31,8 +31,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
 
     private Button _cancelButton = null!;
     private DataGridView _metricsGrid = null!;
-    private ComboBox _periodComboBox = null!;
-    private List<ChartPeriodPreset> _periodPresets = [];
+    private ComboBox _linkGroupComboBox = null!;
     private Button _saveButton = null!;
     private CheckBox _showGridCheckBox = null!;
     private CheckBox _showInspectorCheckBox = null!;
@@ -355,7 +354,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 2: Metrics label
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 3: Metrics grid container
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Add/Remove buttons
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Period row
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Link group row
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Options row
 
         var descriptionSection = CreateDescriptionSection(
@@ -364,7 +363,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
             [
                 "Set the tile title shown in the dashboard.",
                 "Add one or more metrics and choose aggregation/line settings.",
-                "Select a chart period preset used for loading data.",
+                "Select a dashboard link group for this chart.",
                 "Enable or disable legend, grid, and inspector."
             ],
             titleFont,
@@ -468,7 +467,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         gridButtonPanel.Controls.Add(removeMetricButton);
         mainLayout.Controls.Add(gridButtonPanel, 0, 4);
 
-        // Row 5: Period
+        // Row 5: Link group
         var periodPanel = new FlowLayoutPanel {
             AutoSize = false,
             Height = 44,
@@ -480,20 +479,22 @@ public class ChartTileEditorForm : ThemedCaptionForm {
             Padding = new Padding(0, 4, 0, 0)
         };
         var periodLabel = new Label {
-            Text = "Period:",
+            Text = "Link Group:",
             Font = titleFont,
             AutoSize = true,
             Margin = new Padding(0, 7, 8, 0)
         };
-        _periodComboBox = new ComboBox {
+        _linkGroupComboBox = new ComboBox {
             Width = 160,
             Font = normalFont,
             DropDownStyle = ComboBoxStyle.DropDownList,
             Margin = new Padding(0, 2, 0, 0)
         };
-        LoadPeriodPresets();
+        foreach (var group in ChartLinkGroupInfo.All) {
+            _linkGroupComboBox.Items.Add(group.GetDisplayName());
+        }
         periodPanel.Controls.Add(periodLabel);
-        periodPanel.Controls.Add(_periodComboBox);
+        periodPanel.Controls.Add(_linkGroupComboBox);
         mainLayout.Controls.Add(periodPanel, 0, 5);
 
         // Row 6: Options
@@ -527,7 +528,9 @@ public class ChartTileEditorForm : ThemedCaptionForm {
     }
     private void LoadConfig() {
         _titleTextBox.Text = _config.Title;
-        SetSelectedPeriodPreset();
+        if (_linkGroupComboBox.Items.Count > 0) {
+            _linkGroupComboBox.SelectedIndex = Math.Max(0, ChartLinkGroupInfo.All.ToList().IndexOf(_config.LinkGroup));
+        }
 
         _showLegendCheckBox.Checked = _config.ShowLegend;
         _showGridCheckBox.Checked = _config.ShowGrid;
@@ -698,18 +701,12 @@ public class ChartTileEditorForm : ThemedCaptionForm {
     }
     private void SaveButton_Click(object? sender, EventArgs e) {
         _config.Title = _titleTextBox.Text;
-        if (_periodComboBox.SelectedIndex < 0 || _periodComboBox.SelectedIndex >= _periodPresets.Count) {
-            ThemedMessageBox.Show(this, "Please select a chart period preset.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        if (_linkGroupComboBox.SelectedIndex < 0 || _linkGroupComboBox.SelectedIndex >= ChartLinkGroupInfo.All.Count) {
+            ThemedMessageBox.Show(this, "Please select a link group.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
-        var selectedPreset = _periodPresets[_periodComboBox.SelectedIndex];
-        _config.PeriodPresetUid = selectedPreset.Uid;
-        _config.Period = selectedPreset.Period;
-        _config.CustomPeriodDuration = selectedPreset.Period == ChartPeriod.Custom ? selectedPreset.Duration : null;
-        _config.CustomAggregationInterval = selectedPreset.AggregationInterval;
-
-        _config.CustomEndTime = null;
+        _config.LinkGroup = ChartLinkGroupInfo.All[_linkGroupComboBox.SelectedIndex];
 
         _config.ShowLegend = _showLegendCheckBox.Checked;
         _config.ShowGrid = _showGridCheckBox.Checked;
@@ -743,41 +740,6 @@ public class ChartTileEditorForm : ThemedCaptionForm {
 
         DialogResult = DialogResult.OK;
         Close();
-    }
-
-    private void LoadPeriodPresets() {
-        _periodComboBox.Items.Clear();
-        _periodPresets = [.. ChartPeriodPresetStore.GetPresetItems()];
-        foreach (var preset in _periodPresets) {
-            _periodComboBox.Items.Add(preset.Label);
-        }
-    }
-
-    private void SetSelectedPeriodPreset() {
-        var index = ChartPeriodPresetStore.FindMatchingPresetIndex(_config.PeriodPresetUid, _periodPresets);
-        if (index >= 0) {
-            var selectedPreset = _periodPresets[index];
-            _config.PeriodPresetUid = selectedPreset.Uid;
-            _config.Period = selectedPreset.Period;
-            _config.CustomPeriodDuration = selectedPreset.Period == ChartPeriod.Custom
-                ? selectedPreset.Duration
-                : null;
-            _config.CustomAggregationInterval = selectedPreset.AggregationInterval;
-            _periodComboBox.SelectedIndex = index;
-            return;
-        }
-
-        var fallbackPreset = ChartPeriodPresetStore.GetFallbackPreset(_periodPresets);
-        _config.PeriodPresetUid = fallbackPreset.Uid;
-        _config.Period = fallbackPreset.Period;
-        _config.CustomPeriodDuration = fallbackPreset.Period == ChartPeriod.Custom
-            ? fallbackPreset.Duration
-            : null;
-        _config.CustomAggregationInterval = fallbackPreset.AggregationInterval;
-
-        if (_periodComboBox.Items.Count > 0) {
-            _periodComboBox.SelectedIndex = 0;
-        }
     }
 
     private static Font CreateSafeFont(string familyName, float emSize, FontStyle style = FontStyle.Regular) {

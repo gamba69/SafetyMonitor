@@ -11,7 +11,7 @@ public class DashboardPanel : TableLayoutPanel {
     private readonly Dashboard _dashboard;
     private readonly DataService _dataService;
     private readonly Dictionary<Guid, Control> _tileControls = [];
-    private bool _linkChartPeriods;
+    private DashboardChartLinkMode _chartLinkMode;
     private int _chartStaticModeTimeoutSeconds;
     private double _chartStaticAggregationPresetMatchTolerancePercent;
     private int _chartStaticAggregationTargetPointCount;
@@ -127,15 +127,29 @@ public class DashboardPanel : TableLayoutPanel {
         }
     }
 
-    public void SetLinkChartPeriods(bool linkChartPeriods) {
-        _linkChartPeriods = linkChartPeriods;
+    public void SetChartLinkMode(DashboardChartLinkMode linkMode) {
+        _chartLinkMode = linkMode;
         _hoveredChartTiles.Clear();
 
-        if (!_linkChartPeriods) {
+        if (_chartLinkMode == DashboardChartLinkMode.Disabled) {
             foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
                 chartTile.ClearInspectorDisplay();
             }
         }
+    }
+
+    public void ResetLinkStateToDashboardDefaults() {
+        _dashboard.EnsureLinkGroupPeriodDefaults();
+        SetChartLinkMode(_dashboard.InitialChartLinkMode);
+
+        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+            var presetUid = _dashboard.GetLinkGroupPeriodPresetUid(chartTile.Config.LinkGroup);
+            chartTile.SetPeriodPreset(presetUid, refreshData: false);
+            chartTile.ExitStaticMode(raiseEvents: false);
+            chartTile.SetStaticPaused(false, raiseEvents: false);
+        }
+
+        RefreshData();
     }
 
     public void SetChartStaticModeTimeoutSeconds(int seconds) {
@@ -242,12 +256,11 @@ public class DashboardPanel : TableLayoutPanel {
     }
 
     private void OnChartPeriodChanged(ChartTile source, string periodPresetUid) {
-        if (!_linkChartPeriods) {
-            DashboardChanged?.Invoke();
+        if (_chartLinkMode == DashboardChartLinkMode.Disabled) {
             return;
         }
 
-        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+        foreach (var chartTile in GetLinkedChartTiles(source)) {
             if (ReferenceEquals(chartTile, source)) {
                 continue;
             }
@@ -255,18 +268,16 @@ public class DashboardPanel : TableLayoutPanel {
             chartTile.SetPeriodPreset(periodPresetUid);
         }
 
-        DashboardChanged?.Invoke();
     }
 
 
 
     private void OnChartStaticRangeChanged(ChartTile source, DateTime start, DateTime end) {
-        if (!_linkChartPeriods) {
-            DashboardChanged?.Invoke();
+        if (_chartLinkMode == DashboardChartLinkMode.Disabled) {
             return;
         }
 
-        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+        foreach (var chartTile in GetLinkedChartTiles(source)) {
             if (ReferenceEquals(chartTile, source)) {
                 continue;
             }
@@ -274,16 +285,14 @@ public class DashboardPanel : TableLayoutPanel {
             chartTile.SetStaticRange(start, end, raiseEvents: false);
         }
 
-        DashboardChanged?.Invoke();
     }
 
     private void OnChartAutoModeRestored(ChartTile source) {
-        if (!_linkChartPeriods) {
-            DashboardChanged?.Invoke();
+        if (_chartLinkMode == DashboardChartLinkMode.Disabled) {
             return;
         }
 
-        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+        foreach (var chartTile in GetLinkedChartTiles(source)) {
             if (ReferenceEquals(chartTile, source)) {
                 continue;
             }
@@ -291,16 +300,14 @@ public class DashboardPanel : TableLayoutPanel {
             chartTile.ExitStaticMode(raiseEvents: false);
         }
 
-        DashboardChanged?.Invoke();
     }
 
     private void OnChartStaticPauseChanged(ChartTile source, bool paused) {
-        if (!_linkChartPeriods) {
-            DashboardChanged?.Invoke();
+        if (_chartLinkMode == DashboardChartLinkMode.Disabled) {
             return;
         }
 
-        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+        foreach (var chartTile in GetLinkedChartTiles(source)) {
             if (ReferenceEquals(chartTile, source)) {
                 continue;
             }
@@ -308,7 +315,6 @@ public class DashboardPanel : TableLayoutPanel {
             chartTile.SetStaticPaused(paused, raiseEvents: false);
         }
 
-        DashboardChanged?.Invoke();
     }
 
     private void OnChartViewSettingsChanged(ChartTile source) {
@@ -317,12 +323,11 @@ public class DashboardPanel : TableLayoutPanel {
 
 
     private void OnChartInspectorToggled(ChartTile source, bool enabled) {
-        if (!_linkChartPeriods) {
-            DashboardChanged?.Invoke();
+        if (_chartLinkMode == DashboardChartLinkMode.Disabled) {
             return;
         }
 
-        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+        foreach (var chartTile in GetLinkedChartTiles(source)) {
             if (ReferenceEquals(chartTile, source)) {
                 continue;
             }
@@ -337,11 +342,10 @@ public class DashboardPanel : TableLayoutPanel {
             }
         }
 
-        DashboardChanged?.Invoke();
     }
 
     private void OnPlotHoverPresenceChanged(ChartTile source, bool isHovered) {
-        if (!_linkChartPeriods || !source.IsInspectorEnabled) {
+        if (_chartLinkMode == DashboardChartLinkMode.Disabled || !source.IsInspectorEnabled) {
             if (!isHovered) {
                 source.ClearInspectorDisplay();
             }
@@ -364,7 +368,7 @@ public class DashboardPanel : TableLayoutPanel {
     }
 
     private void OnChartHoverAnchorChanged(ChartTile source, double x) {
-        if (!_linkChartPeriods || !source.IsInspectorEnabled) {
+        if (_chartLinkMode == DashboardChartLinkMode.Disabled || !source.IsInspectorEnabled) {
             return;
         }
 
@@ -372,13 +376,22 @@ public class DashboardPanel : TableLayoutPanel {
         // after runtime state changes, so treat anchor updates as active hover.
         _hoveredChartTiles.Add(source);
 
-        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+        foreach (var chartTile in GetLinkedChartTiles(source)) {
             if (!chartTile.IsInspectorEnabled) {
                 continue;
             }
 
             chartTile.ShowInspectorAt(x);
         }
+    }
+
+    private IEnumerable<ChartTile> GetLinkedChartTiles(ChartTile source) {
+        var allCharts = _tileControls.Values.OfType<ChartTile>();
+        return _chartLinkMode switch {
+            DashboardChartLinkMode.Full => allCharts,
+            DashboardChartLinkMode.Grouped => allCharts.Where(tile => tile.Config.LinkGroup == source.Config.LinkGroup),
+            _ => []
+        };
     }
 
     private void OnChartTileEditRequested(ChartTile source) {

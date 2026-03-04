@@ -27,6 +27,7 @@ public static class MaterialIcons {
     public const string MenuViewColorSchemes = "menu_view_color_schemes";
     public const string MenuViewValueSchemes = "menu_view_value_schemes";
     public const string ToolbarChartsLink = "toolbar_charts_link";
+    public const string ToolbarChartsGroup = "toolbar_charts_group";
     public const string ToolbarChartsUnlink = "toolbar_charts_unlink";
     public const string ChartModeAuto = "chart_mode_auto";
     public const string ChartModeStatic = "chart_mode_static";
@@ -102,6 +103,12 @@ public static class MaterialIcons {
     public const string RefreshLoader80 = "refresh_loader_80";
     public const string RefreshLoader90 = "refresh_loader_90";
     public const string RefreshHourglass = "refresh_hourglass";
+    public const string LinkGroupAlpha = "link_group_alpha";
+    public const string LinkGroupBravo = "link_group_bravo";
+    public const string LinkGroupCharlie = "link_group_charlie";
+    public const string LinkGroupDelta = "link_group_delta";
+    public const string LinkGroupEcho = "link_group_echo";
+    public const string LinkGroupFoxtrot = "link_group_foxtrot";
 
     #endregion Public Constants
 
@@ -170,6 +177,7 @@ public static class MaterialIcons {
         [CommonAvgTime] = "avg_time",
         [DashboardTab] = "\uE871",
         [ToolbarChartsLink] = "\uE157",
+        [ToolbarChartsGroup] = "dataset_linked",
         [ToolbarChartsUnlink] = "\uE16F",
         [ChartModeStatic] = "\uF71E",
         [ChartModeAuto] = "\uF417",
@@ -199,6 +207,12 @@ public static class MaterialIcons {
         [RefreshLoader80] = "\uF722",
         [RefreshLoader90] = "\uF721",
         [RefreshHourglass] = "hourglass",
+        [LinkGroupAlpha] = "counter_1",
+        [LinkGroupBravo] = "counter_2",
+        [LinkGroupCharlie] = "counter_3",
+        [LinkGroupDelta] = "counter_4",
+        [LinkGroupEcho] = "counter_5",
+        [LinkGroupFoxtrot] = "counter_6",
     };
 
     private static readonly string[] _fontCandidates = [

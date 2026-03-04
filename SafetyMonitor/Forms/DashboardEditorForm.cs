@@ -23,6 +23,8 @@ public class DashboardEditorForm : ThemedCaptionForm {
     private Button _resizeButton = null!;
     private NumericUpDown _rowsNumeric = null!;
     private Button _saveButton = null!;
+    private ComboBox _initialLinkModeComboBox = null!;
+    private readonly Dictionary<ChartLinkGroup, ComboBox> _groupPeriodCombos = [];
 
     #endregion Private Fields
 
@@ -31,6 +33,7 @@ public class DashboardEditorForm : ThemedCaptionForm {
     public DashboardEditorForm(Dashboard dashboard) {
         _dashboard = dashboard;
         _materialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(new AppSettingsService().LoadSettings().MaterialColorScheme);
+        _dashboard.EnsureLinkGroupPeriodDefaults();
 
         InitializeComponent();
         FormIconHelper.Apply(this, MaterialIcons.DashboardEditCurrent);
@@ -176,16 +179,17 @@ public class DashboardEditorForm : ThemedCaptionForm {
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 6,
+            RowCount = 7,
             AutoSize = false
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 0: Description
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 1: Settings row
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 2: Grid panel
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 3: Add buttons
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Spacer
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Save/Cancel buttons
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 2: Chart link settings
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 3: Grid panel
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Add buttons
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Spacer
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Save/Cancel buttons
 
         var descriptionPanel = new FlowLayoutPanel {
             AutoSize = true,
@@ -290,7 +294,30 @@ public class DashboardEditorForm : ThemedCaptionForm {
 
         mainLayout.Controls.Add(settingsPanel, 0, 1);
 
-        // Row 2: Grid Panel
+        var linkSettingsPanel = new FlowLayoutPanel {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            WrapContents = true,
+            Margin = new Padding(0, 0, 0, 12)
+        };
+        linkSettingsPanel.Controls.Add(new Label { Text = "Initial Link:", Font = titleFont, AutoSize = true, Margin = new Padding(0, 7, 6, 0) });
+        _initialLinkModeComboBox = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 160, Font = normalFont, Margin = new Padding(0, 3, 16, 0) };
+        _initialLinkModeComboBox.Items.AddRange(Enum.GetNames<DashboardChartLinkMode>());
+        linkSettingsPanel.Controls.Add(_initialLinkModeComboBox);
+
+        var presets = ChartPeriodPresetStore.GetPresetItems().ToList();
+        foreach (var group in ChartLinkGroupInfo.All) {
+            linkSettingsPanel.Controls.Add(new Label { Text = $"{group.GetDisplayName()}:", Font = normalFont, AutoSize = true, Margin = new Padding(0, 7, 6, 0) });
+            var combo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 145, Font = normalFont, Margin = new Padding(0, 3, 12, 0) };
+            foreach (var preset in presets) {
+                combo.Items.Add(preset.Label);
+            }
+            _groupPeriodCombos[group] = combo;
+            linkSettingsPanel.Controls.Add(combo);
+        }
+        mainLayout.Controls.Add(linkSettingsPanel, 0, 2);
+
+        // Row 3: Grid Panel
         _gridPanel = new Panel {
             Dock = DockStyle.Fill,
             BorderStyle = BorderStyle.FixedSingle,
@@ -303,9 +330,9 @@ public class DashboardEditorForm : ThemedCaptionForm {
         _gridPanel.DragOver += OnGridDragOver;
         _gridPanel.DragDrop += OnGridDragDrop;
         _gridPanel.Resize += (s, e) => RefreshAllTilePositions();
-        mainLayout.Controls.Add(_gridPanel, 0, 2);
+        mainLayout.Controls.Add(_gridPanel, 0, 3);
 
-        // Row 3: Add tile buttons
+        // Row 4: Add tile buttons
         var addButtonPanel = new FlowLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -333,12 +360,12 @@ public class DashboardEditorForm : ThemedCaptionForm {
         _addChartButton.Click += (s, e) => AddTile(TileType.Chart);
         addButtonPanel.Controls.Add(_addChartButton);
 
-        mainLayout.Controls.Add(addButtonPanel, 0, 3);
+        mainLayout.Controls.Add(addButtonPanel, 0, 4);
 
-        // Row 4: Spacer
-        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 4);
+        // Row 5: Spacer
+        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 5);
 
-        // Row 5: Save/Cancel buttons
+        // Row 6: Save/Cancel buttons
         var buttonPanel = new FlowLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -366,7 +393,7 @@ public class DashboardEditorForm : ThemedCaptionForm {
         _saveButton.Click += SaveButton_Click;
         buttonPanel.Controls.Add(_saveButton);
 
-        mainLayout.Controls.Add(buttonPanel, 0, 5);
+        mainLayout.Controls.Add(buttonPanel, 0, 6);
 
         Controls.Add(mainLayout);
 
@@ -378,6 +405,15 @@ public class DashboardEditorForm : ThemedCaptionForm {
         _rowsNumeric.Value = _dashboard.Rows;
         _columnsNumeric.Value = _dashboard.Columns;
         _quickAccessCheckBox.Checked = _dashboard.IsQuickAccess;
+        _initialLinkModeComboBox.SelectedItem = _dashboard.InitialChartLinkMode.ToString();
+
+        var presets = ChartPeriodPresetStore.GetPresetItems().ToList();
+        foreach (var group in ChartLinkGroupInfo.All) {
+            var combo = _groupPeriodCombos[group];
+            var uid = _dashboard.GetLinkGroupPeriodPresetUid(group);
+            var index = ChartPeriodPresetStore.FindMatchingPresetIndex(uid, presets);
+            combo.SelectedIndex = index >= 0 ? index : 0;
+        }
 
         foreach (var config in _dashboard.Tiles) {
             AddEditableTile(config);
@@ -484,6 +520,17 @@ public class DashboardEditorForm : ThemedCaptionForm {
         // CRITICAL: Save name and quick access flag
         _dashboard.Name = _nameTextBox.Text;
         _dashboard.IsQuickAccess = _quickAccessCheckBox.Checked;
+        if (_initialLinkModeComboBox.SelectedItem != null) {
+            _dashboard.InitialChartLinkMode = Enum.Parse<DashboardChartLinkMode>(_initialLinkModeComboBox.SelectedItem.ToString()!);
+        }
+        var presets = ChartPeriodPresetStore.GetPresetItems().ToList();
+        foreach (var group in ChartLinkGroupInfo.All) {
+            var combo = _groupPeriodCombos[group];
+            if (combo.SelectedIndex < 0 || combo.SelectedIndex >= presets.Count) {
+                continue;
+            }
+            _dashboard.SetLinkGroupPeriodPresetUid(group, presets[combo.SelectedIndex].Uid);
+        }
 
         DialogResult = DialogResult.OK;
         Close();

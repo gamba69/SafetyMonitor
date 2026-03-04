@@ -34,8 +34,10 @@ public class MainForm : MaterialForm {
     private Label _dataPathLabel = null!;
     private DataService _dataService;
     private RadioButton _linkedChartsButton = null!;
-    private CheckBox _linkChartsCheckBox = null!;
+    private RadioButton _groupLinkedChartsButton = null!;
     private RadioButton _unlinkedChartsButton = null!;
+    private Button _resetChartLinkButton = null!;
+    private readonly Dictionary<Guid, DashboardChartLinkMode> _dashboardLinkModes = [];
     private RadioButton _lightThemeButton = null!;
     private MenuStrip _mainMenu = null!;
     private ThemedMenuRenderer _menuRenderer = null!;
@@ -806,11 +808,25 @@ public class MainForm : MaterialForm {
             FlatAppearance = { BorderSize = 0, CheckedBackColor = Color.Transparent, MouseDownBackColor = Color.Transparent, MouseOverBackColor = Color.Transparent },
             AutoSize = false,
             Size = new Size(36, 30),
-            Checked = _appSettings.LinkChartPeriods,
+            Checked = false,
             UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
         };
-        _linkedChartsButton.CheckedChanged += (s, e) => { if (_linkedChartsButton.Checked) { _linkChartsCheckBox.Checked = true; } };
+        _linkedChartsButton.CheckedChanged += (s, e) => { if (_linkedChartsButton.Checked) { SetCurrentDashboardLinkMode(DashboardChartLinkMode.Full); } };
+
+        _groupLinkedChartsButton = new RadioButton {
+            Text = string.Empty,
+            Appearance = Appearance.Button,
+            TextAlign = ContentAlignment.MiddleCenter,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = { BorderSize = 0, CheckedBackColor = Color.Transparent, MouseDownBackColor = Color.Transparent, MouseOverBackColor = Color.Transparent },
+            AutoSize = false,
+            Size = new Size(36, 30),
+            Checked = false,
+            UseVisualStyleBackColor = false,
+            Cursor = Cursors.Hand
+        };
+        _groupLinkedChartsButton.CheckedChanged += (s, e) => { if (_groupLinkedChartsButton.Checked) { SetCurrentDashboardLinkMode(DashboardChartLinkMode.Grouped); } };
 
         _unlinkedChartsButton = new RadioButton {
             Text = string.Empty,
@@ -820,25 +836,28 @@ public class MainForm : MaterialForm {
             FlatAppearance = { BorderSize = 0, CheckedBackColor = Color.Transparent, MouseDownBackColor = Color.Transparent, MouseOverBackColor = Color.Transparent },
             AutoSize = false,
             Size = new Size(36, 30),
-            Checked = !_appSettings.LinkChartPeriods,
+            Checked = true,
             UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
         };
-        _unlinkedChartsButton.CheckedChanged += (s, e) => { if (_unlinkedChartsButton.Checked) { _linkChartsCheckBox.Checked = false; } };
+        _unlinkedChartsButton.CheckedChanged += (s, e) => { if (_unlinkedChartsButton.Checked) { SetCurrentDashboardLinkMode(DashboardChartLinkMode.Disabled); } };
 
-        _linkSegmentPanel = new Panel { Location = new Point(10, 10), Size = new Size(74, 32), Padding = new Padding(1) };
+        _linkSegmentPanel = new Panel { Location = new Point(10, 10), Size = new Size(110, 32), Padding = new Padding(1) };
         _linkSegmentPanel.Controls.Add(_linkedChartsButton);
+        _linkSegmentPanel.Controls.Add(_groupLinkedChartsButton);
         _linkSegmentPanel.Controls.Add(_unlinkedChartsButton);
 
-        _quickDashboardsPanel = new Panel { Location = new Point(240, 10), Size = new Size(0, 32), Padding = new Padding(1), Font = new Font("Segoe UI", 9f, FontStyle.Regular) };
-
-        _linkChartsCheckBox = new CheckBox { Visible = false, AutoSize = true, Checked = _appSettings.LinkChartPeriods, Cursor = Cursors.Hand };
-        _linkChartsCheckBox.CheckedChanged += (s, e) => {
-            _appSettings.LinkChartPeriods = _linkChartsCheckBox.Checked;
-            _appSettingsService.SaveSettings(_appSettings);
-            _dashboardPanel?.SetLinkChartPeriods(_linkChartsCheckBox.Checked);
-            UpdateLinkSwitchAppearance();
+        _resetChartLinkButton = new Button {
+            Width = 36,
+            Height = 30,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = { BorderSize = 0 },
+            Cursor = Cursors.Hand,
+            Text = string.Empty
         };
+        _resetChartLinkButton.Click += (_, _) => ResetCurrentDashboardLinkState();
+
+        _quickDashboardsPanel = new Panel { Location = new Point(240, 10), Size = new Size(0, 32), Padding = new Padding(1), Font = new Font("Segoe UI", 9f, FontStyle.Regular) };
 
         _exportProgressIcon = new PictureBox {
             Size = new Size(22, 22),
@@ -874,7 +893,7 @@ public class MainForm : MaterialForm {
             Visible = _appSettings.ShowRefreshIndicator
         };
 
-        _quickAccessPanel.Controls.AddRange([_dashboardLabel, _quickDashboardsPanel, _refreshIndicatorIcon, _refreshIndicatorTimeLabel, _exportProgressIcon, _exportProgressLabel, _chartsLabel, _linkSegmentPanel, _themeLabel, _themeSegmentPanel, _linkChartsCheckBox]);
+        _quickAccessPanel.Controls.AddRange([_dashboardLabel, _quickDashboardsPanel, _refreshIndicatorIcon, _refreshIndicatorTimeLabel, _exportProgressIcon, _exportProgressLabel, _chartsLabel, _linkSegmentPanel, _resetChartLinkButton, _themeLabel, _themeSegmentPanel]);
         _editDashboardContextMenu = CreateEditDashboardContextMenu();
         _quickAccessPanel.MouseUp += QuickPanel_MouseUp;
         _quickDashboardsPanel.MouseUp += QuickDashboardsPanel_MouseUp;
@@ -958,7 +977,11 @@ public class MainForm : MaterialForm {
             SortDashboardsForDisplay();
             PersistDashboardOrdering();
             var updatedDashboard = _dashboards.FirstOrDefault(d => d.Id == _currentDashboard.Id);
-            if (updatedDashboard != null) { InvalidateDashboardPanelCache(updatedDashboard.Id); LoadDashboard(updatedDashboard); }
+            if (updatedDashboard != null) {
+                _dashboardLinkModes.Remove(updatedDashboard.Id);
+                InvalidateDashboardPanelCache(updatedDashboard.Id);
+                LoadDashboard(updatedDashboard);
+            }
             if (_mainMenu.Items.Count > 1) { var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1]; UpdateDashboardMenu(dashboardMenu); }
             UpdateQuickDashboards();
         }
@@ -1055,7 +1078,6 @@ public class MainForm : MaterialForm {
         // Try to reuse a previously created panel from cache
         if (_dashboardPanelCache.TryGetValue(dashboard.Id, out var cachedPanel) && !cachedPanel.IsDisposed) {
             _dashboardPanel = cachedPanel;
-            _dashboardPanel.SetLinkChartPeriods(_appSettings.LinkChartPeriods);
             _dashboardPanel.UpdateTheme();
             _dashboardContainer.SuspendLayout();
             if (!_dashboardContainer.Controls.Contains(_dashboardPanel)) {
@@ -1076,10 +1098,21 @@ public class MainForm : MaterialForm {
             _dashboardPanel.DashboardChanged += OnDashboardChanged;
             _dashboardPanel.DashboardEditRequested += EditCurrentDashboard;
             _dashboardPanel.TileEditRequested += OnTileEditRequested;
-            _dashboardPanel.SetLinkChartPeriods(_appSettings.LinkChartPeriods);
             _dashboardContainer.Controls.Add(_dashboardPanel);
             _dashboardPanelCache[dashboard.Id] = _dashboardPanel;
             _dashboardContainer.ResumeLayout(true);
+        }
+
+        var isFirstDashboardLaunch = !_dashboardLinkModes.ContainsKey(dashboard.Id);
+        if (isFirstDashboardLaunch) {
+            _dashboardLinkModes[dashboard.Id] = dashboard.InitialChartLinkMode;
+        }
+        _dashboardPanel.SetChartLinkMode(_dashboardLinkModes[dashboard.Id]);
+        _linkedChartsButton.Checked = _dashboardLinkModes[dashboard.Id] == DashboardChartLinkMode.Full;
+        _groupLinkedChartsButton.Checked = _dashboardLinkModes[dashboard.Id] == DashboardChartLinkMode.Grouped;
+        _unlinkedChartsButton.Checked = _dashboardLinkModes[dashboard.Id] == DashboardChartLinkMode.Disabled;
+        if (isFirstDashboardLaunch) {
+            _dashboardPanel.ResetLinkStateToDashboardDefaults();
         }
         _statusLabel.Text = $"Dashboard: {dashboard.Name}";
 
@@ -1219,6 +1252,29 @@ public class MainForm : MaterialForm {
         _dashboardService.SaveDashboard(_currentDashboard);
     }
 
+    private void SetCurrentDashboardLinkMode(DashboardChartLinkMode mode) {
+        if (_currentDashboard == null || _dashboardPanel == null) {
+            return;
+        }
+
+        _dashboardLinkModes[_currentDashboard.Id] = mode;
+        _dashboardPanel.SetChartLinkMode(mode);
+        UpdateLinkSwitchAppearance();
+    }
+
+    private void ResetCurrentDashboardLinkState() {
+        if (_currentDashboard == null || _dashboardPanel == null) {
+            return;
+        }
+
+        _dashboardLinkModes[_currentDashboard.Id] = _currentDashboard.InitialChartLinkMode;
+        _dashboardPanel.ResetLinkStateToDashboardDefaults();
+        _linkedChartsButton.Checked = _currentDashboard.InitialChartLinkMode == DashboardChartLinkMode.Full;
+        _groupLinkedChartsButton.Checked = _currentDashboard.InitialChartLinkMode == DashboardChartLinkMode.Grouped;
+        _unlinkedChartsButton.Checked = _currentDashboard.InitialChartLinkMode == DashboardChartLinkMode.Disabled;
+        UpdateLinkSwitchAppearance();
+    }
+
     private void OnTileEditRequested(TileConfig tileConfig) {
         if (_currentDashboard == null) { return; }
 
@@ -1237,7 +1293,11 @@ public class MainForm : MaterialForm {
             _dashboardService.SaveDashboard(_currentDashboard);
             _dashboards = _dashboardService.LoadDashboards();
             var updatedDashboard = _dashboards.FirstOrDefault(d => d.Id == _currentDashboard.Id);
-            if (updatedDashboard != null) { InvalidateDashboardPanelCache(updatedDashboard.Id); LoadDashboard(updatedDashboard); }
+            if (updatedDashboard != null) {
+                _dashboardLinkModes.Remove(updatedDashboard.Id);
+                InvalidateDashboardPanelCache(updatedDashboard.Id);
+                LoadDashboard(updatedDashboard);
+            }
         }
     }
 
@@ -1815,7 +1875,7 @@ public class MainForm : MaterialForm {
     }
 
     private void UpdateLinkSwitchAppearance() {
-        if (_linkSegmentPanel == null || _linkedChartsButton == null || _unlinkedChartsButton == null) { return; }
+        if (_linkSegmentPanel == null || _linkedChartsButton == null || _groupLinkedChartsButton == null || _unlinkedChartsButton == null) { return; }
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var segmentBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
         var activeBg = isLight ? Color.White : Color.FromArgb(62, 77, 84);
@@ -1825,15 +1885,27 @@ public class MainForm : MaterialForm {
 
         _linkSegmentPanel.BackColor = borderColor;
         _linkedChartsButton.BackColor = _linkedChartsButton.Checked ? activeBg : segmentBg;
+        _groupLinkedChartsButton.BackColor = _groupLinkedChartsButton.Checked ? activeBg : segmentBg;
         _unlinkedChartsButton.BackColor = _unlinkedChartsButton.Checked ? activeBg : segmentBg;
         _linkedChartsButton.ForeColor = _linkedChartsButton.Checked ? activeFg : inactiveFg;
+        _groupLinkedChartsButton.ForeColor = _groupLinkedChartsButton.Checked ? activeFg : inactiveFg;
         _unlinkedChartsButton.ForeColor = _unlinkedChartsButton.Checked ? activeFg : inactiveFg;
 
         var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
         _linkedChartsButton.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarChartsLink, iconColor, 22);
+        _groupLinkedChartsButton.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarChartsGroup, iconColor, 22);
         _unlinkedChartsButton.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarChartsUnlink, iconColor, 22);
         _linkedChartsButton.ImageAlign = ContentAlignment.MiddleCenter;
+        _groupLinkedChartsButton.ImageAlign = ContentAlignment.MiddleCenter;
         _unlinkedChartsButton.ImageAlign = ContentAlignment.MiddleCenter;
+
+        if (_resetChartLinkButton != null) {
+            _resetChartLinkButton.BackColor = segmentBg;
+            _resetChartLinkButton.ForeColor = inactiveFg;
+            _resetChartLinkButton.Image?.Dispose();
+            _resetChartLinkButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartModeAuto, iconColor, 22);
+            _resetChartLinkButton.ImageAlign = ContentAlignment.MiddleCenter;
+        }
     }
 
     private void UpdateRefreshIndicatorAppearance() {
@@ -1894,7 +1966,7 @@ public class MainForm : MaterialForm {
         }
     }
 
-    private void RefreshQuickAccessLayout() { PositionLinkControls(); UpdateThemeSwitchLayout(); UpdateQuickDashboards(); }
+    private void RefreshQuickAccessLayout() { UpdateThemeSwitchLayout(); UpdateQuickDashboards(); }
 
     private int GetQuickDashboardsLeft() { return _dashboardLabel.Right + 8; }
 
@@ -1921,8 +1993,10 @@ public class MainForm : MaterialForm {
         _themeSegmentPanel.Location = new Point(_quickAccessPanel.Width - rightMargin - panelWidth, top);
         _themeSegmentPanel.Size = new Size(panelWidth, 32);
         _themeLabel.Location = new Point(_themeSegmentPanel.Left - textGap - _themeLabel.PreferredWidth, 17);
-        _linkSegmentPanel.Location = new Point(_themeLabel.Left - sectionGap - panelWidth, top);
-        _linkSegmentPanel.Size = new Size(panelWidth, 32);
+        var linkPanelWidth = segmentWidth * 3 + 2 + segmentGap;
+        _linkSegmentPanel.Location = new Point(_themeLabel.Left - sectionGap - linkPanelWidth - segmentWidth - 4, top);
+        _linkSegmentPanel.Size = new Size(linkPanelWidth, 32);
+        _resetChartLinkButton.Location = new Point(_linkSegmentPanel.Right + 4, top + 1);
         _chartsLabel.Location = new Point(_linkSegmentPanel.Left - textGap - _chartsLabel.PreferredWidth, 17);
 
         if (_exportProgressLabel.Visible) {
@@ -1944,7 +2018,8 @@ public class MainForm : MaterialForm {
         _lightThemeButton.Size = new Size(segmentWidth, segmentHeight); _lightThemeButton.Location = new Point(1, 1);
         _darkThemeButton.Size = new Size(segmentWidth, segmentHeight); _darkThemeButton.Location = new Point(1 + segmentWidth + segmentGap, 1);
         _linkedChartsButton.Size = new Size(segmentWidth, segmentHeight); _linkedChartsButton.Location = new Point(1, 1);
-        _unlinkedChartsButton.Size = new Size(segmentWidth, segmentHeight); _unlinkedChartsButton.Location = new Point(1 + segmentWidth + segmentGap, 1);
+        _groupLinkedChartsButton.Size = new Size(segmentWidth, segmentHeight); _groupLinkedChartsButton.Location = new Point(1 + segmentWidth + segmentGap, 1);
+        _unlinkedChartsButton.Size = new Size(segmentWidth, segmentHeight); _unlinkedChartsButton.Location = new Point(1 + (segmentWidth + segmentGap) * 2, 1);
         UpdateThemeSwitchAppearance(); UpdateLinkSwitchAppearance();
     }
 
@@ -1981,10 +2056,7 @@ public class MainForm : MaterialForm {
         return text[..low] + ellipsis;
     }
 
-    private void PositionLinkControls() {
-        if (_linkChartsCheckBox == null) { return; }
-        _linkChartsCheckBox.Location = new Point(Math.Max(_quickAccessPanel.Width - _linkChartsCheckBox.Width - 15, 10), 13);
-    }
+    private void PositionLinkControls() { }
 
     private bool UpdateQuickDashboards() {
         _quickDashboardsPanel.Controls.Clear();

@@ -15,6 +15,7 @@ public class EditableTileControl : Panel {
     private Button _deleteButton = null!;
     private Point _dragStartPoint;
     private Button _editButton = null!;
+    private Button? _linkGroupButton;
     private Label _infoLabel = null!;
     private bool _isDragging;
     private bool _isResizing;
@@ -24,6 +25,7 @@ public class EditableTileControl : Panel {
 
     private Label _titleLabel = null!;
     private PictureBox _tileTypeIcon = null!;
+    private ContextMenuStrip? _linkGroupMenu;
 
     #endregion Private Fields
 
@@ -60,6 +62,10 @@ public class EditableTileControl : Panel {
     public void UpdateDisplay() {
         _titleLabel.Text = Config.Title;
         _infoLabel.Text = GetInfoText();
+        if (_linkGroupButton != null && Config is ChartTileConfig ctc) {
+            _linkGroupButton.Image?.Dispose();
+            _linkGroupButton.Image = MaterialIcons.GetIcon(GetLinkGroupIcon(ctc.LinkGroup), _linkGroupButton.ForeColor, 18);
+        }
     }
 
     #endregion Public Methods
@@ -70,6 +76,7 @@ public class EditableTileControl : Panel {
         if (disposing) {
             _titleFont?.Dispose();
             _tileTypeIcon?.Image?.Dispose();
+            _linkGroupMenu?.Dispose();
         }
         base.Dispose(disposing);
     }
@@ -87,7 +94,7 @@ public class EditableTileControl : Panel {
         if (Config is ValueTileConfig vtc) {
             return $"Type: Value\nMetric: {vtc.Metric.GetDisplayName()}\nPos: ({Config.Row}, {Config.Column})\nSize: {Config.RowSpan}×{Config.ColumnSpan}";
         } else if (Config is ChartTileConfig ctc) {
-            return $"Type: Chart\nMetrics: {ctc.MetricAggregations.Count}\nPos: ({Config.Row}, {Config.Column})\nSize: {Config.RowSpan}×{Config.ColumnSpan}";
+            return $"Type: Chart\nGroup: {ctc.LinkGroup.GetDisplayName()}\nMetrics: {ctc.MetricAggregations.Count}\nPos: ({Config.Row}, {Config.Column})\nSize: {Config.RowSpan}×{Config.ColumnSpan}";
         }
         return $"Type: {Config.Type}\nPos: ({Config.Row}, {Config.Column})\nSize: {Config.RowSpan}×{Config.ColumnSpan}";
     }
@@ -141,6 +148,24 @@ public class EditableTileControl : Panel {
         _editButton.FlatAppearance.BorderSize = 0;
         _editButton.Click += OnEdit;
 
+        if (Config is ChartTileConfig chartConfig) {
+            _linkGroupButton = new Button {
+                Dock = DockStyle.Right,
+                Width = 30,
+                FlatStyle = FlatStyle.Flat,
+                ForeColor = headerTextColor,
+                Cursor = Cursors.Hand,
+                Image = MaterialIcons.GetIcon(GetLinkGroupIcon(chartConfig.LinkGroup), headerTextColor, 18)
+            };
+            _linkGroupButton.FlatAppearance.BorderSize = 0;
+            _linkGroupButton.Click += (_, _) => {
+                if (_linkGroupMenu == null) {
+                    _linkGroupMenu = CreateLinkGroupMenu();
+                }
+                _linkGroupMenu.Show(_linkGroupButton, new Point(0, _linkGroupButton.Height));
+            };
+        }
+
         _deleteButton = new Button {
             Text = "✖",
             Dock = DockStyle.Right,
@@ -154,6 +179,9 @@ public class EditableTileControl : Panel {
 
         header.Controls.Add(_titleLabel);
         header.Controls.Add(_tileTypeIcon);
+        if (_linkGroupButton != null) {
+            header.Controls.Add(_linkGroupButton);
+        }
         header.Controls.Add(_editButton);
         header.Controls.Add(_deleteButton);
 
@@ -180,6 +208,40 @@ public class EditableTileControl : Panel {
         _infoLabel.MouseMove += OnMouseMove;
         _infoLabel.MouseUp += OnMouseUp;
     }
+
+    private ContextMenuStrip CreateLinkGroupMenu() {
+        var menu = new ContextMenuStrip();
+        foreach (var group in ChartLinkGroupInfo.All) {
+            var item = new ToolStripMenuItem(group.GetDisplayName()) {
+                Tag = group,
+                Image = MaterialIcons.GetIcon(GetLinkGroupIcon(group), ForeColor, 18)
+            };
+            item.Click += (_, _) => {
+                if (Config is not ChartTileConfig ctc) {
+                    return;
+                }
+                ctc.LinkGroup = group;
+                UpdateDisplay();
+                if (_linkGroupButton != null) {
+                    _linkGroupButton.Image?.Dispose();
+                    _linkGroupButton.Image = MaterialIcons.GetIcon(GetLinkGroupIcon(group), _linkGroupButton.ForeColor, 18);
+                }
+                TileEdited?.Invoke(this, Config);
+            };
+            menu.Items.Add(item);
+        }
+        return menu;
+    }
+
+    private static string GetLinkGroupIcon(ChartLinkGroup group) => group switch {
+        ChartLinkGroup.Alpha => MaterialIcons.LinkGroupAlpha,
+        ChartLinkGroup.Bravo => MaterialIcons.LinkGroupBravo,
+        ChartLinkGroup.Charlie => MaterialIcons.LinkGroupCharlie,
+        ChartLinkGroup.Delta => MaterialIcons.LinkGroupDelta,
+        ChartLinkGroup.Echo => MaterialIcons.LinkGroupEcho,
+        ChartLinkGroup.Foxtrot => MaterialIcons.LinkGroupFoxtrot,
+        _ => MaterialIcons.LinkGroupAlpha
+    };
 
     private static bool IsNearBottomBorder(Point point, Size controlSize) {
         return controlSize.Height - point.Y <= ResizeBorderThreshold;

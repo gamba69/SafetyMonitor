@@ -9,6 +9,8 @@ public class Dashboard {
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public Guid Id { get; set; } = Guid.NewGuid();
     public bool IsQuickAccess { get; set; } = false;
+    public DashboardChartLinkMode InitialChartLinkMode { get; set; } = DashboardChartLinkMode.Full;
+    public Dictionary<ChartLinkGroup, string> LinkGroupPeriodPresetUids { get; set; } = new();
     public DateTime ModifiedAt { get; set; } = DateTime.Now;
     public string Name { get; set; } = "New Dashboard";
     public int Rows { get; set; } = 4;
@@ -52,6 +54,28 @@ public class Dashboard {
             }
         }
         return true;
+    }
+
+    public string GetLinkGroupPeriodPresetUid(ChartLinkGroup group) {
+        EnsureLinkGroupPeriodDefaults();
+        return LinkGroupPeriodPresetUids[group];
+    }
+
+    public void SetLinkGroupPeriodPresetUid(ChartLinkGroup group, string periodPresetUid) {
+        EnsureLinkGroupPeriodDefaults();
+        LinkGroupPeriodPresetUids[group] = periodPresetUid;
+    }
+
+    public void EnsureLinkGroupPeriodDefaults() {
+        var fallbackPresetUid = ChartPeriodPresetStore
+            .GetFallbackPreset(ChartPeriodPresetStore.GetPresetItems())
+            .Uid;
+
+        foreach (var group in ChartLinkGroupInfo.All) {
+            if (!LinkGroupPeriodPresetUids.ContainsKey(group) || string.IsNullOrWhiteSpace(LinkGroupPeriodPresetUids[group])) {
+                LinkGroupPeriodPresetUids[group] = fallbackPresetUid;
+            }
+        }
     }
 
     #endregion Public Methods

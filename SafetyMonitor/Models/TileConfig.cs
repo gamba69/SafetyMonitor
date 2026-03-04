@@ -48,6 +48,7 @@ public class ChartTileConfig : TileConfig {
     public DateTime? CustomEndTime { get; set; }
     public DateTime? CustomStartTime { get; set; }
     public List<MetricAggregation> MetricAggregations { get; set; } = [];
+    public ChartLinkGroup LinkGroup { get; set; } = ChartLinkGroup.Alpha;
     public ChartPeriod Period { get; set; } = ChartPeriod.Last24Hours;
     public string PeriodPresetUid { get; set; } = "";
     public bool ShowGrid { get; set; } = true;

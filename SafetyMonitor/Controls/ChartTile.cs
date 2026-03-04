@@ -486,6 +486,7 @@ public class ChartTile : Panel {
     }
 
     public bool IsInspectorEnabled => _config.ShowInspector;
+    public ChartTileConfig Config => _config;
 
     public void ShowInspectorAt(double x) {
         if (!_inspectorActive || _plot == null || _hoverSeries.Count == 0) {
@@ -824,6 +825,16 @@ public class ChartTile : Panel {
         contextMenu.Items.Add(CreatePlotMenuItem("Edit Dashboard...", MaterialIcons.CommonEdit, (_, _) => EditDashboardRequested?.Invoke(this)));
         contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add(CreatePlotMenuItem("Edit Tile...", MaterialIcons.CommonEdit, HandleEditTileClick));
+
+        var linkGroupItem = CreatePlotMenuItem("Link group", MaterialIcons.ToolbarChartsGroup, (_, _) => { });
+        foreach (var group in ChartLinkGroupInfo.All) {
+            var item = CreateToggleMenuItem(group.GetDisplayName(), GetLinkGroupIcon(group), _config.LinkGroup == group, (_, _) => {
+                _config.LinkGroup = group;
+                ViewSettingsChanged?.Invoke(this);
+            });
+            linkGroupItem.DropDownItems.Add(item);
+        }
+        contextMenu.Items.Add(linkGroupItem);
         contextMenu.Items.Add(new ToolStripSeparator());
 
         var isExporting = ExcelExportStateService.IsExporting;
@@ -899,6 +910,16 @@ public class ChartTile : Panel {
 
         return $"{aggregation.Metric.GetDisplayName()} ({aggregation.Function})";
     }
+
+    private static string GetLinkGroupIcon(ChartLinkGroup group) => group switch {
+        ChartLinkGroup.Alpha => MaterialIcons.LinkGroupAlpha,
+        ChartLinkGroup.Bravo => MaterialIcons.LinkGroupBravo,
+        ChartLinkGroup.Charlie => MaterialIcons.LinkGroupCharlie,
+        ChartLinkGroup.Delta => MaterialIcons.LinkGroupDelta,
+        ChartLinkGroup.Echo => MaterialIcons.LinkGroupEcho,
+        ChartLinkGroup.Foxtrot => MaterialIcons.LinkGroupFoxtrot,
+        _ => MaterialIcons.LinkGroupAlpha
+    };
 
     private void ApplyViewSettings() {
         RefreshData();
