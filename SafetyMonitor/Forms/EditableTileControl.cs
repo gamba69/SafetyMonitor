@@ -253,17 +253,20 @@ public class EditableTileControl : Panel {
     private ContextMenuStrip CreateLinkGroupMenu() {
         var menu = new ContextMenuStrip();
         menu.ImageScalingSize = new Size(UnifiedTileEditorIconSize, UnifiedTileEditorIconSize);
+        menu.Opening += (_, _) => UpdateLinkGroupMenuSelection(menu);
         foreach (var group in ChartLinkGroupInfo.All) {
             var item = new ToolStripMenuItem(group.GetDisplayName()) {
                 Tag = group,
                 Image = CreateLinkGroupIcon(group, ForeColor),
-                ImageScaling = ToolStripItemImageScaling.None
+                ImageScaling = ToolStripItemImageScaling.None,
+                CheckOnClick = false
             };
             item.Click += (_, _) => {
                 if (Config is not ChartTileConfig ctc) {
                     return;
                 }
                 ctc.LinkGroup = group;
+                UpdateLinkGroupMenuSelection(menu);
                 UpdateDisplay();
                 if (_linkGroupButton != null) {
                     _linkGroupButton.Image?.Dispose();
@@ -274,6 +277,20 @@ public class EditableTileControl : Panel {
             menu.Items.Add(item);
         }
         return menu;
+    }
+
+    private void UpdateLinkGroupMenuSelection(ContextMenuStrip menu) {
+        if (Config is not ChartTileConfig ctc) {
+            return;
+        }
+
+        foreach (var item in menu.Items.OfType<ToolStripMenuItem>()) {
+            if (item.Tag is not ChartLinkGroup itemGroup) {
+                continue;
+            }
+
+            item.Checked = itemGroup == ctc.LinkGroup;
+        }
     }
 
 
