@@ -30,8 +30,8 @@ public static class AppSettingsDefaultsService {
                 new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 100000, MaxSpan = null, Metric = MetricType.SkyBrightness, MinBoundary = -1, MinSpan = null },
                 new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 25, MaxSpan = null, Metric = MetricType.SkyQuality, MinBoundary = 5, MinSpan = 2 },
                 new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 25, MaxSpan = null, Metric = MetricType.RainRate, MinBoundary = -5, MinSpan = 2 },
-                new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 20, MaxSpan = null, Metric = MetricType.WindSpeed, MinBoundary = -5, MinSpan = 2 },
-                new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 20, MaxSpan = null, Metric = MetricType.WindGust, MinBoundary = -5, MinSpan = 2 },
+                new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 25, MaxSpan = null, Metric = MetricType.WindSpeed, MinBoundary = -5, MinSpan = 2 },
+                new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 25, MaxSpan = null, Metric = MetricType.WindGust, MinBoundary = -5, MinSpan = 2 },
                 new MetricAxisRuleSetting { Enabled = false, MaxBoundary = null, MaxSpan = null, Metric = MetricType.StarFwhm, MinBoundary = null, MinSpan = null },
                 new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 110, MaxSpan = null, Metric = MetricType.IsSafe, MinBoundary = -10, MinSpan = 5 }
             ],

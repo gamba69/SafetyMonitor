@@ -292,9 +292,34 @@ internal static class Program {
         var humidityBase = 48 + 26 * cloudOpacity - 0.7 * (temperature - 5) + 6 * (1 - solarElevationFactor);
         var humidityForRain = Math.Clamp(humidityBase + NextRange(random, -2.5, 2.5), 35, 75);
 
-        var windSpeedBase = 1.5 + 5 * (1 - solarElevationFactor) + 4 * cloudOpacity + 1.8 * Math.Abs(Math.Sin(2 * Math.PI * dayOfYear / 2.8));
-        var windSpeed = Math.Clamp(windSpeedBase + NextRange(random, -1.2, 1.4), 0, 24);
-        var windGust = Math.Clamp(windSpeed + 0.4 + 0.6 * windSpeed + NextRange(random, 0, 3), windSpeed, 35);
+        var windActivity = Math.Clamp(
+            0.45 * (1 - solarElevationFactor)
+            + 0.35 * cloudOpacity
+            + 0.2 * Math.Abs(Math.Sin(2 * Math.PI * dayOfYear / 2.8)),
+            0,
+            1);
+
+        var speedBandRoll = random.NextDouble();
+        double speedMin;
+        double speedMax;
+        if (speedBandRoll < 0.70) {
+            speedMin = 0;
+            speedMax = 8;
+        } else if (speedBandRoll < 0.99) {
+            speedMin = 8;
+            speedMax = 12;
+        } else {
+            speedMin = 12;
+            speedMax = 20;
+        }
+
+        var speedIntensity = Math.Clamp(0.25 + 0.65 * windActivity + NextRange(random, -0.12, 0.12), 0, 1);
+        var windSpeed = Math.Clamp(speedMin + (speedMax - speedMin) * speedIntensity + NextRange(random, -0.4, 0.4), 0, 20);
+
+        var gustCap = random.NextDouble() < 0.97 ? 16.0 : 20.0;
+        gustCap = Math.Max(gustCap, windSpeed);
+        var gustDelta = NextRange(random, 0.5, 2.4) + windSpeed * NextRange(random, 0.1, 0.3);
+        var windGust = Math.Clamp(windSpeed + gustDelta, windSpeed, gustCap);
 
         var seasonalRainChance = 0.02 + 0.5 * rainSeasonStrength * Math.Pow(cloudOpacity, 1.7);
         var rainRate = rainTimeline.GetRainRate(timestamp, seasonalRainChance, humidityForRain, cloudOpacity);
