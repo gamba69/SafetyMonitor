@@ -239,7 +239,7 @@ public class SettingsForm : ThemedCaptionForm {
             dialog.SelectedPath = _storagePathTextBox.Text;
         }
 
-        if (dialog.ShowDialog() == DialogResult.OK) {
+        if (dialog.ShowDialog(this) == DialogResult.OK) {
             _storagePathTextBox.Text = dialog.SelectedPath;
         }
     }

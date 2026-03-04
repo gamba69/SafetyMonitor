@@ -16,6 +16,7 @@ public class DashboardPanel : TableLayoutPanel {
     private double _chartStaticAggregationPresetMatchTolerancePercent;
     private int _chartStaticAggregationTargetPointCount;
     private bool _tilesCreated;
+    private bool _resetLinkStatePendingUntilTilesCreated;
     private readonly HashSet<ChartTile> _hoveredChartTiles = [];
     private readonly ThemedMenuRenderer _contextMenuRenderer = new();
     private ContextMenuStrip? _contextMenu;
@@ -142,14 +143,12 @@ public class DashboardPanel : TableLayoutPanel {
         _dashboard.EnsureLinkGroupPeriodDefaults();
         SetChartLinkMode(_dashboard.InitialChartLinkMode);
 
-        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
-            var presetUid = _dashboard.GetLinkGroupPeriodPresetUid(chartTile.Config.LinkGroup);
-            chartTile.ExitStaticMode(raiseEvents: false);
-            chartTile.SetStaticPaused(false, raiseEvents: false);
-            chartTile.SetPeriodPreset(presetUid, refreshData: false);
+        if (!_tilesCreated || _tileControls.Count == 0) {
+            _resetLinkStatePendingUntilTilesCreated = true;
+            return;
         }
 
-        RefreshData();
+        ApplyChartRuntimeDefaults(refreshData: true);
     }
 
     public void SetChartStaticModeTimeoutSeconds(int seconds) {
@@ -215,6 +214,23 @@ public class DashboardPanel : TableLayoutPanel {
 
     #region Private Methods
 
+    private void ApplyChartRuntimeDefaults(bool refreshData) {
+        foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
+            if (!chartTile.IsHandleCreated) {
+                chartTile.CreateControl();
+            }
+
+            var presetUid = _dashboard.GetLinkGroupPeriodPresetUid(chartTile.Config.LinkGroup);
+            chartTile.ExitStaticMode(raiseEvents: false);
+            chartTile.SetStaticPaused(false, raiseEvents: false);
+            chartTile.SetPeriodPreset(presetUid, refreshData: false);
+        }
+
+        if (refreshData) {
+            RefreshData();
+        }
+    }
+
     private void CreateTiles() {
         foreach (var tileConfig in _dashboard.Tiles) {
             Control? tileControl = tileConfig switch {
@@ -252,6 +268,11 @@ public class DashboardPanel : TableLayoutPanel {
                 SetRowSpan(tileControl, tileConfig.RowSpan);
                 _tileControls[tileConfig.Id] = tileControl;
             }
+        }
+
+        if (_resetLinkStatePendingUntilTilesCreated) {
+            _resetLinkStatePendingUntilTilesCreated = false;
+            ApplyChartRuntimeDefaults(refreshData: false);
         }
     }
 

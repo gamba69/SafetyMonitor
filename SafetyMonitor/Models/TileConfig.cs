@@ -45,7 +45,9 @@ public class ChartTileConfig : TileConfig {
 
     public TimeSpan? CustomAggregationInterval { get; set; }
     public TimeSpan? CustomPeriodDuration { get; set; }
+    [JsonIgnore]
     public DateTime? CustomEndTime { get; set; }
+    [JsonIgnore]
     public DateTime? CustomStartTime { get; set; }
     public List<MetricAggregation> MetricAggregations { get; set; } = [];
     public ChartLinkGroup LinkGroup { get; set; } = ChartLinkGroup.Alpha;
@@ -54,6 +56,7 @@ public class ChartTileConfig : TileConfig {
     public bool ShowGrid { get; set; } = true;
     public bool ShowInspector { get; set; }
     public bool ShowLegend { get; set; } = true;
+    [JsonIgnore]
     public bool StaticModePaused { get; set; }
     public override TileType Type => TileType.Chart;
 

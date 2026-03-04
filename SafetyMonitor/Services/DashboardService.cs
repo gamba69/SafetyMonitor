@@ -53,6 +53,11 @@ public class DashboardService {
                 try {
                     var db = JsonSerializer.Deserialize<Dashboard>(File.ReadAllText(file), _jsonOptions);
                     if (db != null) {
+                        var updated = EnsureDashboardDefaults(db);
+                        if (updated) {
+                            File.WriteAllText(file, JsonSerializer.Serialize(db, _jsonOptions));
+                        }
+
                         dashboards.Add(db);
                     }
                 } catch { }
@@ -90,6 +95,16 @@ public class DashboardService {
         EnsureConfigDirectoryExists();
         dashboard.ModifiedAt = DateTime.Now;
         File.WriteAllText(Path.Combine(_configDirectory, $"{dashboard.Id}.json"), JsonSerializer.Serialize(dashboard, _jsonOptions));
+    }
+
+    private static bool EnsureDashboardDefaults(Dashboard dashboard) {
+        var hadAllLinkGroupPeriodDefaults = ChartLinkGroupInfo.All
+            .All(group => dashboard.LinkGroupPeriodPresetUids.TryGetValue(group, out var uid)
+                && !string.IsNullOrWhiteSpace(uid));
+
+        dashboard.EnsureLinkGroupPeriodDefaults();
+
+        return !hadAllLinkGroupPeriodDefaults;
     }
 
     private void EnsureConfigDirectoryExists() {

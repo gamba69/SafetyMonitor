@@ -155,7 +155,7 @@ public class MainForm : MaterialForm {
 
         // LoadDashboards creates the panel invisible; it will NOT be shown
         // until BeginInitialDashboardReveal runs (triggered from OnShown).
-        LoadDashboards();
+        LoadDashboards(initializeStartupReset: true);
         UpdateStatusBar();
         SetupRefreshTimer();
         SetupTrayIcon();
@@ -554,6 +554,11 @@ public class MainForm : MaterialForm {
 
         // Make dashboard visible and refresh behind visor
         if (_dashboardPanel != null) {
+            if (_currentDashboard != null && _currentDashboard.NeedsStartupReset) {
+                _dashboardPanel.ResetLinkStateToDashboardDefaults();
+                _currentDashboard.NeedsStartupReset = false;
+            }
+
             _dashboardContainer.Visible = true;
             _dashboardPanel.Visible = true;
             _dashboardPanel.BringToFront();
@@ -1104,17 +1109,19 @@ public class MainForm : MaterialForm {
             _dashboardContainer.ResumeLayout(true);
         }
 
-        var isFirstDashboardLaunch = !_dashboardLinkModes.ContainsKey(dashboard.Id);
-        if (isFirstDashboardLaunch) {
+        var shouldResetDashboardState = dashboard.NeedsStartupReset;
+
+        if (!_dashboardLinkModes.ContainsKey(dashboard.Id)) {
+            _dashboardLinkModes[dashboard.Id] = dashboard.InitialChartLinkMode;
+        }
+
+        if (shouldResetDashboardState) {
             _dashboardLinkModes[dashboard.Id] = dashboard.InitialChartLinkMode;
         }
         _dashboardPanel.SetChartLinkMode(_dashboardLinkModes[dashboard.Id]);
         _linkedChartsButton.Checked = _dashboardLinkModes[dashboard.Id] == DashboardChartLinkMode.Full;
         _groupLinkedChartsButton.Checked = _dashboardLinkModes[dashboard.Id] == DashboardChartLinkMode.Grouped;
         _unlinkedChartsButton.Checked = _dashboardLinkModes[dashboard.Id] == DashboardChartLinkMode.Disabled;
-        if (isFirstDashboardLaunch) {
-            _dashboardPanel.ResetLinkStateToDashboardDefaults();
-        }
         _statusLabel.Text = $"Dashboard: {dashboard.Name}";
 
         if (_mainMenu.Items.Count > 1) { var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1]; UpdateDashboardMenu(dashboardMenu); }
@@ -1124,7 +1131,7 @@ public class MainForm : MaterialForm {
 
         if (isDashboardSwitch) {
             // Normal path: visor is up, build and show dashboard behind it
-            QueueDashboardInitialRender(_dashboardPanel, previousPanel);
+            QueueDashboardInitialRender(_dashboardPanel, previousPanel, shouldResetDashboardState);
         } else {
             // Initial load path: just remove old panel, keep new one invisible.
             // BeginInitialDashboardReveal will make it visible behind the visor.
@@ -1140,10 +1147,16 @@ public class MainForm : MaterialForm {
         return !(previousWasQuickAccess && currentIsQuickAccess);
     }
 
-    private void LoadDashboards() {
+    private void LoadDashboards(bool initializeStartupReset = false) {
         _dashboards = _dashboardService.LoadDashboards();
         SortDashboardsForDisplay();
         PersistDashboardOrdering();
+
+        if (initializeStartupReset) {
+            foreach (var dashboard in _dashboards) {
+                dashboard.NeedsStartupReset = true;
+            }
+        }
 
         if (_dashboards.Count > 0) {
             Dashboard? dashboardToLoad = null;
@@ -1159,11 +1172,11 @@ public class MainForm : MaterialForm {
     private void OnFirstHandleCreated(object? sender, EventArgs e) {
         HandleCreated -= OnFirstHandleCreated;
         if (_dashboardPanel != null) {
-            QueueDashboardInitialRender(_dashboardPanel, null);
+            QueueDashboardInitialRender(_dashboardPanel, null, applyStartupReset: false);
         }
     }
 
-    private void QueueDashboardInitialRender(DashboardPanel panel, DashboardPanel? previousPanel) {
+    private void QueueDashboardInitialRender(DashboardPanel panel, DashboardPanel? previousPanel, bool applyStartupReset) {
         if (!IsHandleCreated) {
             HandleCreated -= OnFirstHandleCreated;
             HandleCreated += OnFirstHandleCreated;
@@ -1176,6 +1189,10 @@ public class MainForm : MaterialForm {
                 panel.Visible = true;
                 BeginInvoke(async () => {
                     if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) { HideVisorImmediate(); return; }
+                    if (applyStartupReset && _currentDashboard != null && _currentDashboard.NeedsStartupReset) {
+                        panel.ResetLinkStateToDashboardDefaults();
+                        _currentDashboard.NeedsStartupReset = false;
+                    }
                     await RefreshDashboardDataAsync(panel);
                     if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) { HideVisorImmediate(); return; }
                     _dashboardContainer.Visible = true;
@@ -1186,11 +1203,16 @@ public class MainForm : MaterialForm {
             }
         }
 
-        BeginInvoke(async () => await RefreshAndShowDashboardAsync(panel, previousPanel));
+        BeginInvoke(async () => await RefreshAndShowDashboardAsync(panel, previousPanel, applyStartupReset));
     }
 
-    private async Task RefreshAndShowDashboardAsync(DashboardPanel panel, DashboardPanel? previousPanel) {
+    private async Task RefreshAndShowDashboardAsync(DashboardPanel panel, DashboardPanel? previousPanel, bool applyStartupReset) {
         if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) { HideVisorImmediate(); return; }
+
+        if (applyStartupReset && _currentDashboard != null && _currentDashboard.NeedsStartupReset) {
+            panel.ResetLinkStateToDashboardDefaults();
+            _currentDashboard.NeedsStartupReset = false;
+        }
 
         await RefreshDashboardDataAsync(panel);
         if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) { HideVisorImmediate(); return; }
@@ -1559,8 +1581,15 @@ public class MainForm : MaterialForm {
     }
 
     private void ShowSettings(int initialTabIndex = 0) {
+        if (_isMinimizedToTray) {
+            RestoreFromTray();
+        } else if (WindowState == FormWindowState.Minimized) {
+            WindowState = FormWindowState.Normal;
+            Activate();
+        }
+
         using var settingsForm = new SettingsForm(_appSettingsMaintenanceService, _appSettings.StoragePath, _appSettings.RefreshInterval, _appSettings.ValueTileLookbackMinutes, _appSettings.ChartStaticModeTimeoutSeconds, _appSettings.ChartStaticAggregationPresetMatchTolerancePercent, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartRawDataPointIntervalSeconds, _appSettings.ShowRefreshIndicator, _appSettings.MinimizeToTray, _appSettings.StartMinimized, _appSettings.ValidateDatabaseStructureOnStartup, _appSettings.MaterialColorScheme, initialTabIndex);
-        if (settingsForm.ShowDialog() != DialogResult.OK) {
+        if (settingsForm.ShowDialog(this) != DialogResult.OK) {
             return;
         }
 

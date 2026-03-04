@@ -1,4 +1,5 @@
 using DataStorage.Models;
+using System.Text.Json.Serialization;
 
 namespace SafetyMonitor.Models;
 
@@ -9,6 +10,8 @@ public class Dashboard {
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public Guid Id { get; set; } = Guid.NewGuid();
     public bool IsQuickAccess { get; set; } = false;
+    [JsonIgnore]
+    public bool NeedsStartupReset { get; set; }
     public DashboardChartLinkMode InitialChartLinkMode { get; set; } = DashboardChartLinkMode.Full;
     public Dictionary<ChartLinkGroup, string> LinkGroupPeriodPresetUids { get; set; } = new();
     public DateTime ModifiedAt { get; set; } = DateTime.Now;
