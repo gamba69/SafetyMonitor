@@ -107,7 +107,7 @@ public static class MetricDisplaySettingsStore {
                 setting.Decimals = 1;
                 break;
             case MetricType.SkyBrightness:
-                setting.Decimals = 4;
+                setting.Decimals = 3;
                 setting.HideZeroes = true;
                 setting.LogY = true;
                 break;
