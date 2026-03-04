@@ -7,6 +7,10 @@ public class EditableTileControl : Panel {
     #region Private Fields
 
     private const int ResizeBorderThreshold = 8;
+    private const int UnifiedTileEditorIconSize = 22;
+    private const float TileTypeGlyphScale = 0.90f;
+    private const float LinkGroupGlyphScale = 1.0f;
+    private const float HeaderActionGlyphScale = 0.90f;
 
     private readonly Dashboard _dashboard;
     private readonly Font _titleFont;
@@ -64,7 +68,7 @@ public class EditableTileControl : Panel {
         _infoLabel.Text = GetInfoText();
         if (_linkGroupButton != null && Config is ChartTileConfig ctc) {
             _linkGroupButton.Image?.Dispose();
-            _linkGroupButton.Image = MaterialIcons.GetIcon(GetLinkGroupIcon(ctc.LinkGroup), _linkGroupButton.ForeColor, 18);
+            _linkGroupButton.Image = CreateLinkGroupIcon(ctc.LinkGroup, _linkGroupButton.ForeColor);
         }
     }
 
@@ -125,7 +129,7 @@ public class EditableTileControl : Panel {
             Width = 30,
             SizeMode = PictureBoxSizeMode.CenterImage,
             BackColor = Color.Transparent,
-            Image = MaterialIcons.GetIcon(tileIconName, headerTextColor, 20)
+            Image = CreateTileTypeIcon(tileIconName, headerTextColor)
         };
 
         _titleLabel = new Label {
@@ -138,14 +142,15 @@ public class EditableTileControl : Panel {
         };
 
         _editButton = new Button {
-            Text = "✏",
             Dock = DockStyle.Right,
             Width = 30,
             FlatStyle = FlatStyle.Flat,
             ForeColor = headerTextColor,
-            Cursor = Cursors.Hand
+            Cursor = Cursors.Hand,
+            Image = CreateHeaderActionIcon(MaterialIcons.CommonEdit, headerTextColor)
         };
         _editButton.FlatAppearance.BorderSize = 0;
+        _editButton.ImageAlign = ContentAlignment.MiddleCenter;
         _editButton.Click += OnEdit;
 
         if (Config is ChartTileConfig chartConfig) {
@@ -155,9 +160,10 @@ public class EditableTileControl : Panel {
                 FlatStyle = FlatStyle.Flat,
                 ForeColor = headerTextColor,
                 Cursor = Cursors.Hand,
-                Image = MaterialIcons.GetIcon(GetLinkGroupIcon(chartConfig.LinkGroup), headerTextColor, 18)
+                Image = CreateLinkGroupIcon(chartConfig.LinkGroup, headerTextColor)
             };
             _linkGroupButton.FlatAppearance.BorderSize = 0;
+            _linkGroupButton.ImageAlign = ContentAlignment.MiddleCenter;
             _linkGroupButton.Click += (_, _) => {
                 if (_linkGroupMenu == null) {
                     _linkGroupMenu = CreateLinkGroupMenu();
@@ -167,14 +173,15 @@ public class EditableTileControl : Panel {
         }
 
         _deleteButton = new Button {
-            Text = "✖",
             Dock = DockStyle.Right,
             Width = 30,
             FlatStyle = FlatStyle.Flat,
             ForeColor = headerTextColor,
-            Cursor = Cursors.Hand
+            Cursor = Cursors.Hand,
+            Image = CreateHeaderActionIcon(MaterialIcons.CommonClose, headerTextColor)
         };
         _deleteButton.FlatAppearance.BorderSize = 0;
+        _deleteButton.ImageAlign = ContentAlignment.MiddleCenter;
         _deleteButton.Click += OnDelete;
 
         header.Controls.Add(_titleLabel);
@@ -211,10 +218,12 @@ public class EditableTileControl : Panel {
 
     private ContextMenuStrip CreateLinkGroupMenu() {
         var menu = new ContextMenuStrip();
+        menu.ImageScalingSize = new Size(UnifiedTileEditorIconSize, UnifiedTileEditorIconSize);
         foreach (var group in ChartLinkGroupInfo.All) {
             var item = new ToolStripMenuItem(group.GetDisplayName()) {
                 Tag = group,
-                Image = MaterialIcons.GetIcon(GetLinkGroupIcon(group), ForeColor, 18)
+                Image = CreateLinkGroupIcon(group, ForeColor),
+                ImageScaling = ToolStripItemImageScaling.None
             };
             item.Click += (_, _) => {
                 if (Config is not ChartTileConfig ctc) {
@@ -224,13 +233,26 @@ public class EditableTileControl : Panel {
                 UpdateDisplay();
                 if (_linkGroupButton != null) {
                     _linkGroupButton.Image?.Dispose();
-                    _linkGroupButton.Image = MaterialIcons.GetIcon(GetLinkGroupIcon(group), _linkGroupButton.ForeColor, 18);
+                    _linkGroupButton.Image = CreateLinkGroupIcon(group, _linkGroupButton.ForeColor);
                 }
                 TileEdited?.Invoke(this, Config);
             };
             menu.Items.Add(item);
         }
         return menu;
+    }
+
+
+    private Bitmap? CreateLinkGroupIcon(ChartLinkGroup group, Color color) {
+        return MaterialIcons.GetIcon(GetLinkGroupIcon(group), color, UnifiedTileEditorIconSize, LinkGroupGlyphScale);
+    }
+
+    private Bitmap? CreateTileTypeIcon(string iconName, Color color) {
+        return MaterialIcons.GetIcon(iconName, color, UnifiedTileEditorIconSize, TileTypeGlyphScale);
+    }
+
+    private Bitmap? CreateHeaderActionIcon(string iconName, Color color) {
+        return MaterialIcons.GetIcon(iconName, color, UnifiedTileEditorIconSize, HeaderActionGlyphScale);
     }
 
     private static string GetLinkGroupIcon(ChartLinkGroup group) => group switch {
