@@ -31,7 +31,7 @@ public class MainForm : MaterialForm {
     private DashboardPanel? _dashboardPanel;
     private readonly Dictionary<Guid, DashboardPanel> _dashboardPanelCache = [];
     private List<Dashboard> _dashboards = [];
-    private ToolStripStatusLabel _dataPathLabel = null!;
+    private Label _dataPathLabel = null!;
     private DataService _dataService;
     private RadioButton _linkedChartsButton = null!;
     private CheckBox _linkChartsCheckBox = null!;
@@ -51,8 +51,10 @@ public class MainForm : MaterialForm {
     private System.Windows.Forms.Timer? _refreshTimer;
     private CancellationTokenSource? _refreshCts;
     private bool _isRefreshing;
-    private ToolStripStatusLabel _statusLabel = null!;
-    private StatusStrip _statusStrip = null!;
+    private Label _statusLabel = null!;
+    private Panel _statusBarPanel = null!;
+    private Panel _statusSeparator = null!;
+    private string _dataPathStatusText = "Storage: not configured";
 
     // ── Refresh indicator fields ──
     private PictureBox _refreshIndicatorIcon = null!;
@@ -545,6 +547,7 @@ public class MainForm : MaterialForm {
         UpdateDashboardContainerTheme();
         UpdateQuickAccessPanelTheme();
         UpdateMenuTheme();
+        UpdateStatusStripTheme();
 
         // Make dashboard visible and refresh behind visor
         if (_dashboardPanel != null) {
@@ -932,14 +935,42 @@ public class MainForm : MaterialForm {
         _dashboardContainer = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         UpdateDashboardContainerTheme();
 
-        _statusStrip = new StatusStrip { Dock = DockStyle.Bottom };
-        _statusLabel = new ToolStripStatusLabel("Ready") { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
-        _dataPathLabel = new ToolStripStatusLabel("Storage: not configured") { BorderSides = ToolStripStatusLabelBorderSides.Left };
-        _statusStrip.Items.AddRange([_statusLabel, _dataPathLabel]);
+        _statusBarPanel = new Panel { Dock = DockStyle.Bottom, Height = 24, Padding = new Padding(6, 0, 6, 0) };
+
+        _dataPathLabel = new Label {
+            Text = _dataPathStatusText,
+            Dock = DockStyle.Right,
+            AutoSize = false,
+            AutoEllipsis = true,
+            Width = 380,
+            TextAlign = ContentAlignment.MiddleRight,
+            Margin = Padding.Empty
+        };
+
+        _statusSeparator = new Panel {
+            Dock = DockStyle.Right,
+            Width = 1,
+            Margin = new Padding(6, 4, 6, 4)
+        };
+
+        _statusLabel = new Label {
+            Text = "Ready",
+            Dock = DockStyle.Fill,
+            AutoEllipsis = true,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Margin = Padding.Empty
+        };
+
+        _statusBarPanel.Controls.Add(_statusLabel);
+        _statusBarPanel.Controls.Add(_statusSeparator);
+        _statusBarPanel.Controls.Add(_dataPathLabel);
+        _statusBarPanel.Resize += (_, _) => UpdateStatusBarLayout();
+        UpdateStatusStripTheme();
+        UpdateStatusBarLayout();
 
         Controls.Add(_dashboardContainer);
         Controls.Add(_quickAccessPanel);
-        Controls.Add(_statusStrip);
+        Controls.Add(_statusBarPanel);
         Controls.Add(_mainMenu);
 
         MainMenuStrip = _mainMenu;
@@ -1186,6 +1217,7 @@ public class MainForm : MaterialForm {
             UpdateDashboardContainerTheme();
             UpdateQuickAccessPanelTheme();
             UpdateMenuTheme();
+            UpdateStatusStripTheme();
 
             if (rebuildDashboardPanels && _currentDashboard != null) {
                 PurgeAllDashboardPanels();
@@ -1575,6 +1607,7 @@ public class MainForm : MaterialForm {
     private void ApplyHeaderThemeImmediately() {
         UpdateQuickAccessPanelTheme();
         UpdateMenuTheme();
+        UpdateStatusStripTheme();
 
         _mainMenu?.Invalidate(true);
         _mainMenu?.Update();
@@ -1623,6 +1656,23 @@ public class MainForm : MaterialForm {
 
     private void SortDashboardsForDisplay() {
         _dashboards = [.. _dashboards.OrderByDescending(d => d.IsQuickAccess).ThenBy(d => d.SortOrder).ThenBy(d => d.Name)];
+    }
+
+    private void UpdateStatusStripTheme() {
+        if (_statusBarPanel == null || _statusLabel == null || _dataPathLabel == null || _statusSeparator == null) { return; }
+
+        var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+        var backColor = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(25, 36, 40);
+        var foreColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
+        var separatorColor = isLight ? Color.FromArgb(196, 206, 211) : Color.FromArgb(70, 85, 92);
+
+        _statusBarPanel.BackColor = backColor;
+        _statusLabel.BackColor = backColor;
+        _dataPathLabel.BackColor = backColor;
+        _statusLabel.ForeColor = foreColor;
+        _dataPathLabel.ForeColor = foreColor;
+        _statusSeparator.BackColor = separatorColor;
+        _statusBarPanel.Invalidate(true);
     }
 
     private void UpdateDashboardContainerTheme() {
@@ -2165,7 +2215,23 @@ public class MainForm : MaterialForm {
     }
 
     private void UpdateStatusBar() {
-        if (_dataService.IsConnected) { _dataPathLabel.Text = $"Storage: {_appSettings.StoragePath}"; _statusLabel.Text = "Connected to storage"; } else { _dataPathLabel.Text = "Storage: not configured"; _statusLabel.Text = "Storage not configured (File → Settings)"; }
+        if (_dataService.IsConnected) {
+            _dataPathStatusText = $"Storage: {_appSettings.StoragePath}";
+            _statusLabel.Text = "Connected to storage";
+        } else {
+            _dataPathStatusText = "Storage: not configured";
+            _statusLabel.Text = "Storage not configured (File → Settings)";
+        }
+
+        _dataPathLabel.Text = _dataPathStatusText;
+        UpdateStatusBarLayout();
+    }
+
+    private void UpdateStatusBarLayout() {
+        if (_statusBarPanel == null || _statusBarPanel.IsDisposed || _dataPathLabel == null || _dataPathLabel.IsDisposed) { return; }
+
+        var targetWidth = Math.Clamp((int)Math.Round(_statusBarPanel.ClientSize.Width * 0.42), 220, 720);
+        _dataPathLabel.Width = targetWidth;
     }
 
     #endregion Private Methods
