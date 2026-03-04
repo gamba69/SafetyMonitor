@@ -407,6 +407,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         _metricsGrid.Columns.Add(new DataGridViewComboBoxColumn {
             Name = "Function",
             HeaderText = "Agg.",
+            ToolTipText = "Aggregation",
             FillWeight = 22,
             DataSource = Enum.GetValues<AggregationFunction>()
                 .Where(f => f != AggregationFunction.Sum && f != AggregationFunction.Count)
@@ -420,14 +421,15 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Label", HeaderText = "Label", FillWeight = 18 });
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "LightColor", HeaderText = "Light", FillWeight = 8, ReadOnly = true });
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "DarkColor", HeaderText = "Dark", FillWeight = 8, ReadOnly = true });
-        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "LineWidth", HeaderText = "W", FillWeight = 7 });
-        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Smooth", HeaderText = "Smth", FillWeight = 8 });
-        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Tension", HeaderText = "Tns", FillWeight = 8 });
-        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "ShowMarkers", HeaderText = "Mark", FillWeight = 12 });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "LineWidth", HeaderText = "W", ToolTipText = "Width", FillWeight = 7 });
+        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Smooth", HeaderText = "Smth", ToolTipText = "Smoothing", FillWeight = 8 });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Tension", HeaderText = "Tns", ToolTipText = "Tension", FillWeight = 8 });
+        _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "ShowMarkers", HeaderText = "Mark", ToolTipText = "Markers", FillWeight = 12 });
 
         var valueSchemeCol = new DataGridViewComboBoxColumn {
             Name = "ValueScheme",
             HeaderText = "Val.Scheme",
+            ToolTipText = "Value Scheme",
             FillWeight = 18,
             FlatStyle = FlatStyle.Flat,
             DisplayStyle = DataGridViewComboBoxDisplayStyle.DropDownButton
