@@ -161,8 +161,9 @@ internal static class Program {
 
             total++;
 
+            var percent = totalPlanned <= 0 ? 100d : (total * 100d / totalPlanned);
             var remainingTime = CalculateRemainingTime(stopwatch.Elapsed, total, totalPlanned);
-            Console.Write($"\rGenerated {total}/{totalPlanned}. Elapsed: {FormatDuration(stopwatch.Elapsed)}. Remaining: {FormatDuration(remainingTime)}.");
+            Console.Write($"\rGenerated {total}/{totalPlanned} ({percent:0.00}%). Elapsed: {FormatDuration(stopwatch.Elapsed)}. Remaining: {FormatDuration(remainingTime)}.");
         }
 
         if (batch.Count > 0) {
@@ -170,17 +171,14 @@ internal static class Program {
         }
 
         Console.WriteLine();
-        Console.WriteLine("Starting aggregation recalculation...");
         var recalcStopwatch = Stopwatch.StartNew();
         storage.RecalculateAggregations(startTime, endTime.Value, progress => {
             var percent = progress.TotalBuckets <= 0 ? 100d : (progress.ProcessedBuckets * 100d / progress.TotalBuckets);
             var eta = CalculateRemainingTime(recalcStopwatch.Elapsed, progress.ProcessedBuckets, progress.TotalBuckets);
-            Console.Write($"\rRecalc {progress.ProcessedBuckets}/{progress.TotalBuckets} ({percent:0.0}%). Level: {progress.Level}. ETA: {FormatDuration(eta)}   ");
+            Console.Write($"\rAggregated {progress.ProcessedBuckets}/{progress.TotalBuckets} ({percent:0.00}%). Elapsed: {FormatDuration(recalcStopwatch.Elapsed)}. Remaining: {FormatDuration(eta)}.");
         }, options.BatchSize);
         Console.WriteLine();
 
-
-        Console.WriteLine($"Generated {total} records from {startTime:O} to {endTime:O}.");
         return Task.FromResult(0);
     }
 

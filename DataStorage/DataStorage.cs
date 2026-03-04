@@ -24,6 +24,7 @@ public class DataStorage {
     }
 
     private const string DbExt = ".fdb";
+    private const int RecalcRawReadBatchSize = 20000;
     private readonly string _root;
     private readonly string _user;
     private readonly string _password;
@@ -43,6 +44,17 @@ public class DataStorage {
         public double?[] Max { get; } = new double?[Metrics.Length];
         public double?[] First { get; } = new double?[Metrics.Length];
         public double?[] Last { get; } = new double?[Metrics.Length];
+    }
+
+    private sealed class RecalcLevelContext {
+        public required string Name { get; init; }
+        public required TimeSpan Span { get; init; }
+        public required bool Monthly { get; init; }
+        public required DateTime EndBucket { get; init; }
+        public required string UpsertSql { get; init; }
+        public required DateTime CurrentBucket { get; set; }
+        public required BucketState State { get; set; }
+        public List<KeyValuePair<DateTime, BucketState>> PendingRows { get; } = [];
     }
 
     public readonly record struct AggregationRecalcProgress(
@@ -258,85 +270,120 @@ FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CR
             throw new ArgumentException("End time must be greater than or equal to start time");
         }
 
-        var raw = GetRawData(startTime, endTime);
-        if (raw.Count == 0) {
-            return;
-        }
-
         upsertBatchSize = Math.Max(1, upsertBatchSize);
 
         var levels = Levels.Skip(1).ToList();
         var totalBuckets = levels.Sum(level => CountBucketsInRange(startTime, endTime, level.Name));
-        var totalSteps = (levels.Count * raw.Count) + totalBuckets;
-        var processedSteps = 0;
+        var processedBuckets = 0;
 
-        foreach (var level in levels) {
-            var states = new Dictionary<DateTime, BucketState>();
-
-            for (var idx = 0; idx < raw.Count; idx++) {
-                var row = raw[idx];
-                var ts = FloorToSecond(row.Timestamp);
-                var bucket = AlignToBucket(ts, level.Name);
-
-                if (!states.TryGetValue(bucket, out var state)) {
-                    state = new BucketState();
-                    states[bucket] = state;
-                }
-
-                AggregateRow(state, row);
-
-                processedSteps++;
-                if ((processedSteps % 500) == 0 || idx == raw.Count - 1) {
-                    progress?.Invoke(new AggregationRecalcProgress(processedSteps, totalSteps, level.Name, bucket));
-                }
-            }
-
-            if (states.Count == 0) {
-                continue;
-            }
-
+        var contexts = levels.Select(level => {
             var startBucket = AlignToBucket(startTime, level.Name);
-            var endBucket = AlignToBucket(endTime, level.Name);
+            var initialState = BuildSingleBucketState(GetRawData(startBucket, startTime.AddSeconds(-1)));
 
-            states[startBucket] = BuildSingleBucketState(LoadRawBucket(level.Name, startBucket));
-            if (endBucket != startBucket) {
-                states[endBucket] = BuildSingleBucketState(LoadRawBucket(level.Name, endBucket));
-            }
+            return new RecalcLevelContext {
+                Name = level.Name,
+                Span = level.Span,
+                Monthly = level.Monthly,
+                EndBucket = AlignToBucket(endTime, level.Name),
+                UpsertSql = UpsertAggSqlCache.GetOrAdd(level.Name, BuildUpsertAggSql),
+                CurrentBucket = startBucket,
+                State = initialState
+            };
+        }).ToList();
 
-            var byDb = states.GroupBy(x => level.Monthly ? GetMonthlyAggDbPath(x.Key) : GetYearAggDbPath(x.Key.Year));
+        foreach (var rawBatch in EnumerateRawDataBatches(startTime, endTime, RecalcRawReadBatchSize)) {
+            foreach (var row in rawBatch) {
+                var ts = FloorToSecond(row.Timestamp);
+                foreach (var context in contexts) {
+                    var rowBucket = AlignToBucket(ts, context.Name);
 
-            foreach (var dbGroup in byDb) {
-                var dbPath = dbGroup.Key;
-                if (level.Monthly) {
-                    EnsureMonthlyAggDatabase(dbPath);
-                } else {
-                    EnsureYearAggDatabase(dbPath);
-                }
-
-                using var conn = new FbConnection(GetConnectionString(dbPath));
-                conn.Open();
-                using var tx = conn.BeginTransaction();
-
-                conn.Execute($"DELETE FROM METEO_AGG_{level.Name} WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime", new { startTime, endTime }, tx);
-
-                var upsertSql = UpsertAggSqlCache.GetOrAdd(level.Name, BuildUpsertAggSql);
-                var orderedBuckets = dbGroup.OrderBy(x => x.Key).ToList();
-
-                for (var offset = 0; offset < orderedBuckets.Count; offset += upsertBatchSize) {
-                    var chunk = orderedBuckets.Skip(offset).Take(upsertBatchSize).ToList();
-                    var rows = chunk.Select(x => CreateAggUpsertParams(x.Key, x.Value)).ToList();
-                    conn.Execute(upsertSql, rows, tx);
-
-                    foreach (var bucket in chunk) {
-                        processedSteps++;
-                        progress?.Invoke(new AggregationRecalcProgress(processedSteps, totalSteps, level.Name, bucket.Key));
+                    while (context.CurrentBucket < rowBucket) {
+                        processedBuckets += QueueBucket(context, context.CurrentBucket, context.State, upsertBatchSize);
+                        progress?.Invoke(new AggregationRecalcProgress(processedBuckets, totalBuckets, context.Name, context.CurrentBucket));
+                        context.CurrentBucket = context.CurrentBucket.Add(context.Span);
+                        context.State = new BucketState();
                     }
-                }
 
-                tx.Commit();
+                    AggregateRow(context.State, row);
+                }
             }
         }
 
+        foreach (var context in contexts) {
+            while (context.CurrentBucket < context.EndBucket) {
+                processedBuckets += QueueBucket(context, context.CurrentBucket, context.State, upsertBatchSize);
+                progress?.Invoke(new AggregationRecalcProgress(processedBuckets, totalBuckets, context.Name, context.CurrentBucket));
+                context.CurrentBucket = context.CurrentBucket.Add(context.Span);
+                context.State = new BucketState();
+            }
+
+            var tailStart = endTime.AddSeconds(1);
+            var tailEndExclusive = context.CurrentBucket.Add(context.Span);
+            MergeStates(context.State, BuildSingleBucketState(GetRawData(tailStart, tailEndExclusive.AddSeconds(-1))));
+
+            processedBuckets += QueueBucket(context, context.CurrentBucket, context.State, upsertBatchSize);
+            progress?.Invoke(new AggregationRecalcProgress(processedBuckets, totalBuckets, context.Name, context.CurrentBucket));
+            FlushPendingRows(context);
+        }
+
+    }
+
+    private int QueueBucket(RecalcLevelContext context, DateTime bucketTs, BucketState state, int upsertBatchSize) {
+        context.PendingRows.Add(new KeyValuePair<DateTime, BucketState>(bucketTs, state));
+        if (context.PendingRows.Count >= upsertBatchSize) {
+            FlushPendingRows(context);
+        }
+
+        return 1;
+    }
+
+    private void FlushPendingRows(RecalcLevelContext context) {
+        if (context.PendingRows.Count == 0) {
+            return;
+        }
+
+        var grouped = context.PendingRows
+            .OrderBy(x => x.Key)
+            .GroupBy(x => context.Monthly ? GetMonthlyAggDbPath(x.Key) : GetYearAggDbPath(x.Key.Year));
+
+        foreach (var dbGroup in grouped) {
+            var dbPath = dbGroup.Key;
+            if (context.Monthly) {
+                EnsureMonthlyAggDatabase(dbPath);
+            } else {
+                EnsureYearAggDatabase(dbPath);
+            }
+
+            using var conn = new FbConnection(GetConnectionString(dbPath));
+            conn.Open();
+            using var tx = conn.BeginTransaction();
+
+            var rows = dbGroup.Select(x => CreateAggUpsertParams(x.Key, x.Value)).ToList();
+            conn.Execute(context.UpsertSql, rows, tx);
+            tx.Commit();
+        }
+
+        context.PendingRows.Clear();
+    }
+
+    private static void MergeStates(BucketState target, BucketState source) {
+        for (var i = 0; i < Metrics.Length; i++) {
+            target.Sum[i] += source.Sum[i];
+            target.Count[i] += source.Count[i];
+
+            if (source.Min[i].HasValue) {
+                target.Min[i] = !target.Min[i].HasValue || source.Min[i].Value < target.Min[i].Value ? source.Min[i] : target.Min[i];
+            }
+
+            if (source.Max[i].HasValue) {
+                target.Max[i] = !target.Max[i].HasValue || source.Max[i].Value > target.Max[i].Value ? source.Max[i] : target.Max[i];
+            }
+
+            target.First[i] ??= source.First[i];
+            if (source.Last[i].HasValue) {
+                target.Last[i] = source.Last[i];
+            }
+        }
     }
 
     private static void AggregateRow(BucketState state, ObservingData row) {
@@ -593,6 +640,46 @@ FROM METEO_RAW WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER B
         });
 
         return [.. bags.OrderBy(x => x.Timestamp)];
+    }
+
+    private IEnumerable<IReadOnlyList<ObservingData>> EnumerateRawDataBatches(DateTime startTime, DateTime endTime, int batchSize) {
+        if (endTime < startTime) {
+            yield break;
+        }
+
+        var boundedBatchSize = Math.Max(1, batchSize);
+        var shards = EnumerateMonths(startTime, endTime).Select(GetRawDbPath).Where(File.Exists).ToList();
+        const string sql = @"SELECT CREATED_AT AS ""Timestamp"", CLOUD_COVER AS CloudCover, DEW_POINT AS DewPoint, HUMIDITY AS Humidity, PRESSURE AS Pressure,
+RAIN_RATE AS RainRate, SKY_BRIGHTNESS AS SkyBrightness, SKY_QUALITY AS SkyQuality, SKY_TEMPERATURE AS SkyTemperature, STAR_FWHM AS StarFwhm,
+TEMPERATURE AS Temperature, WIND_DIRECTION AS WindDirection, WIND_GUST AS WindGust, WIND_SPEED AS WindSpeed, CAST(IS_SAFE AS INTEGER) AS IsSafeInt
+FROM METEO_RAW WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime
+ORDER BY CREATED_AT ASC ROWS @rowStart TO @rowEnd";
+
+        foreach (var db in shards) {
+            using var conn = new FbConnection(GetConnectionString(db));
+            conn.Open();
+
+            var offset = 0;
+            while (true) {
+                var chunk = conn.Query<ObservingData>(sql, new {
+                    startTime,
+                    endTime,
+                    rowStart = offset + 1,
+                    rowEnd = offset + boundedBatchSize
+                }).ToList();
+
+                if (chunk.Count == 0) {
+                    break;
+                }
+
+                yield return chunk;
+                offset += chunk.Count;
+
+                if (chunk.Count < boundedBatchSize) {
+                    break;
+                }
+            }
+        }
     }
 
     private List<ObservingData> GetAggregatedData(DateTime startTime, DateTime endTime, string level, TimeSpan slotDuration, AggregationFunction func) {
