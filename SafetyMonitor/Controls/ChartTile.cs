@@ -87,6 +87,7 @@ public class ChartTile : Panel {
     public event Action<ChartTile, bool>? PlotHoverPresenceChanged;
     public event Action<ChartTile, double>? HoverAnchorChanged;
     public event Action<ChartTile, bool>? StaticPauseChanged;
+    public event Action<ChartTile>? LinkGroupChanged;
     public event Action<ChartTile>? EditRequested;
     public event Action<ChartTile>? EditDashboardRequested;
 
@@ -829,8 +830,13 @@ public class ChartTile : Panel {
         var linkGroupItem = CreatePlotMenuItem("Link group", MaterialIcons.ToolbarChartsGroup, (_, _) => { });
         foreach (var group in ChartLinkGroupInfo.All) {
             var item = CreateToggleMenuItem(group.GetDisplayName(), GetLinkGroupIcon(group), _config.LinkGroup == group, (_, _) => {
+                if (_config.LinkGroup == group) {
+                    return;
+                }
+
                 _config.LinkGroup = group;
                 ViewSettingsChanged?.Invoke(this);
+                LinkGroupChanged?.Invoke(this);
             });
             linkGroupItem.DropDownItems.Add(item);
         }

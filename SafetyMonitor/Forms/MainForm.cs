@@ -1105,6 +1105,7 @@ public class MainForm : MaterialForm {
                 Visible = false
             };
             _dashboardPanel.DashboardChanged += OnDashboardChanged;
+            _dashboardPanel.DashboardResetToDefaultRequested += OnDashboardResetToDefaultRequested;
             _dashboardPanel.DashboardEditRequested += EditCurrentDashboard;
             _dashboardPanel.TileEditRequested += OnTileEditRequested;
             _dashboardContainer.Controls.Add(_dashboardPanel);
@@ -1301,8 +1302,21 @@ public class MainForm : MaterialForm {
         UpdateLinkSwitchAppearance();
     }
 
+    private void OnDashboardResetToDefaultRequested() {
+        if (_currentDashboard == null) {
+            return;
+        }
+
+        _currentDashboard.NeedsStartupReset = true;
+        ResetCurrentDashboardLinkState();
+    }
+
     private void OnTileEditRequested(TileConfig tileConfig) {
         if (_currentDashboard == null) { return; }
+
+        var chartTileBeforeEdit = tileConfig is ChartTileConfig ctcBeforeEdit
+            ? CaptureChartTileEditSnapshot(ctcBeforeEdit)
+            : null;
 
         DialogResult result;
         if (tileConfig is ValueTileConfig vtc) {
@@ -1316,16 +1330,112 @@ public class MainForm : MaterialForm {
         }
 
         if (result == DialogResult.OK) {
+            var chartTileConfigChanged = tileConfig is ChartTileConfig ctcAfterEdit
+                && chartTileBeforeEdit != null
+                && !ChartTileEditSnapshotEquals(chartTileBeforeEdit, CaptureChartTileEditSnapshot(ctcAfterEdit));
+
+            if (chartTileConfigChanged) {
+                _currentDashboard.NeedsStartupReset = true;
+            }
+
             _dashboardService.SaveDashboard(_currentDashboard);
             _dashboards = _dashboardService.LoadDashboards();
             var updatedDashboard = _dashboards.FirstOrDefault(d => d.Id == _currentDashboard.Id);
             if (updatedDashboard != null) {
+                if (chartTileConfigChanged) {
+                    updatedDashboard.NeedsStartupReset = true;
+                }
                 _dashboardLinkModes.Remove(updatedDashboard.Id);
                 InvalidateDashboardPanelCache(updatedDashboard.Id);
                 LoadDashboard(updatedDashboard);
             }
         }
     }
+
+    private static ChartTileEditSnapshot CaptureChartTileEditSnapshot(ChartTileConfig config) {
+        return new ChartTileEditSnapshot(
+            config.Title,
+            config.Row,
+            config.Column,
+            config.RowSpan,
+            config.ColumnSpan,
+            config.Period,
+            config.PeriodPresetUid,
+            config.CustomPeriodDuration,
+            config.CustomAggregationInterval,
+            config.LinkGroup,
+            config.ShowLegend,
+            config.ShowGrid,
+            config.ShowInspector,
+            config.MetricAggregations.Select(aggregation => new MetricAggregationSnapshot(
+                aggregation.Metric,
+                aggregation.Function,
+                aggregation.Label,
+                aggregation.Color.ToArgb(),
+                aggregation.DarkThemeColor.ToArgb(),
+                aggregation.LineWidth,
+                aggregation.Smooth,
+                aggregation.Tension,
+                aggregation.ShowMarkers,
+                aggregation.ValueSchemeName)).ToList());
+    }
+
+    private static bool ChartTileEditSnapshotEquals(ChartTileEditSnapshot left, ChartTileEditSnapshot right) {
+        if (!string.Equals(left.Title, right.Title, StringComparison.Ordinal)
+            || left.Row != right.Row
+            || left.Column != right.Column
+            || left.RowSpan != right.RowSpan
+            || left.ColumnSpan != right.ColumnSpan
+            || left.Period != right.Period
+            || !string.Equals(left.PeriodPresetUid, right.PeriodPresetUid, StringComparison.Ordinal)
+            || left.CustomPeriodDuration != right.CustomPeriodDuration
+            || left.CustomAggregationInterval != right.CustomAggregationInterval
+            || left.LinkGroup != right.LinkGroup
+            || left.ShowLegend != right.ShowLegend
+            || left.ShowGrid != right.ShowGrid
+            || left.ShowInspector != right.ShowInspector
+            || left.MetricAggregations.Count != right.MetricAggregations.Count) {
+            return false;
+        }
+
+        for (var index = 0; index < left.MetricAggregations.Count; index++) {
+            var leftAggregation = left.MetricAggregations[index];
+            var rightAggregation = right.MetricAggregations[index];
+            if (leftAggregation != rightAggregation) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private sealed record ChartTileEditSnapshot(
+        string Title,
+        int Row,
+        int Column,
+        int RowSpan,
+        int ColumnSpan,
+        ChartPeriod Period,
+        string PeriodPresetUid,
+        TimeSpan? CustomPeriodDuration,
+        TimeSpan? CustomAggregationInterval,
+        ChartLinkGroup LinkGroup,
+        bool ShowLegend,
+        bool ShowGrid,
+        bool ShowInspector,
+        List<MetricAggregationSnapshot> MetricAggregations);
+
+    private sealed record MetricAggregationSnapshot(
+        MetricType Metric,
+        DataStorage.Models.AggregationFunction Function,
+        string Label,
+        int ColorArgb,
+        int DarkThemeColorArgb,
+        float LineWidth,
+        bool Smooth,
+        float Tension,
+        bool ShowMarkers,
+        string ValueSchemeName);
 
     private void SaveWindowSettings() {
         _appSettings.IsMaximized = WindowState == FormWindowState.Maximized;
@@ -1638,6 +1748,7 @@ public class MainForm : MaterialForm {
     private void ReloadSettingsFromStorage() {
         if (_dashboardPanel != null) {
             _dashboardPanel.DashboardChanged -= OnDashboardChanged;
+            _dashboardPanel.DashboardResetToDefaultRequested -= OnDashboardResetToDefaultRequested;
             _dashboardPanel.TileEditRequested -= OnTileEditRequested;
 
             if (_dashboardContainer.Controls.Contains(_dashboardPanel)) {
