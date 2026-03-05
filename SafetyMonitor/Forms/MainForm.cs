@@ -1071,11 +1071,7 @@ public class MainForm : MaterialForm {
     }
 
     private void ToggleDashboardFavoriteFromQuickButton() {
-        if (!_quickButtonContextDashboardId.HasValue) {
-            return;
-        }
-
-        var dashboard = _dashboards.FirstOrDefault(d => d.Id == _quickButtonContextDashboardId.Value);
+        var dashboard = GetContextMenuTargetDashboard();
         if (dashboard == null) {
             return;
         }
