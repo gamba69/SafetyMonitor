@@ -40,7 +40,7 @@ internal static class ThemedButtonStyler {
         var iconName = ResolveIcon(role);
 
         button.Image?.Dispose();
-        button.Image = MaterialIcons.GetIcon(iconName, colors.ForeColor, iconSize);
+        button.Image = MaterialIcons.GetIcon(iconName, colors.ForeColor, iconSize, IconRenderPreset.DarkOutlined);
         button.ImageAlign = ContentAlignment.MiddleLeft;
         button.TextImageRelation = TextImageRelation.ImageBeforeText;
         button.TextAlign = ContentAlignment.MiddleLeft;

@@ -118,8 +118,6 @@ public static class MaterialIcons {
 
     #region Private Fields
 
-    private static readonly Dictionary<string, Bitmap> _cache = [];
-
     private static readonly Dictionary<string, string> _fontGlyphs = new() {
         [MenuFileSettings] = "\uE8B8",
         [MenuFileExitApp] = "\uE879",
@@ -245,49 +243,45 @@ public static class MaterialIcons {
     ];
 
     private static readonly string? _materialFontPath = ResolveMaterialFontPath();
-    private static readonly SKTypeface? _outlinedTypeface = ResolveTypeface(0f);
-    private static readonly SKTypeface? _filledTypeface = ResolveTypeface(1f);
+    private static readonly SKTypeface? _defaultTypeface = ResolveTypeface();
 
     #endregion Private Fields
 
     #region Public Methods
 
-    public static void ClearCache() {
-        foreach (var bitmap in _cache.Values) {
-            bitmap.Dispose();
-        }
-
-        _cache.Clear();
-    }
+    public static void ClearCache() => HeavyRenderCache.Clear();
 
     public static IEnumerable<string> GetAvailableIcons() => _fontGlyphs.Keys;
 
-    public static Bitmap? GetIcon(string name, Color color, int size = 16, float glyphScale = 0.78f, bool? forceFilled = null) {
-        var normalizedName = name.ToLowerInvariant();
-        var fillModeToken = forceFilled.HasValue ? (forceFilled.Value ? "fill" : "outline") : "auto";
-        var key = $"{normalizedName}_{size}_{glyphScale:F2}_{color.ToArgb()}_{fillModeToken}";
+    public static Bitmap? GetIcon(string name, Color color, int size, IconRenderPreset preset) {
+        var presetOptions = IconRenderPresetService.Get(preset);
+        return GetIcon(name, color, size, presetOptions);
+    }
 
-        if (_cache.TryGetValue(key, out var cached)) {
-            return (Bitmap)cached.Clone();
+    public static Bitmap? GetIcon(string name, Color color, int size, IconRenderOptions options) {
+        var normalizedName = name.ToLowerInvariant();
+        var cacheKey = BuildCacheKey(normalizedName, color, size, options);
+
+        var cached = HeavyRenderCache.GetBitmap(cacheKey);
+        if (cached is not null) {
+            return cached;
         }
 
-        if (_outlinedTypeface is null) {
+        if (_defaultTypeface is null) {
             return null;
         }
 
         if (!_fontGlyphs.TryGetValue(normalizedName, out var glyph)) {
-            // Fallback to ligature rendering: Material Symbols can resolve many icon names directly.
             glyph = normalizedName;
         }
 
-        var isFilled = forceFilled ?? _filledIconNames.Contains(normalizedName);
-        var bitmap = RenderFontIcon(glyph, color, size, glyphScale, isFilled);
+        var bitmap = RenderFontIcon(glyph, color, size, options);
         if (bitmap is null) {
             return null;
         }
-        _cache[key] = bitmap;
 
-        return (Bitmap)bitmap.Clone();
+        HeavyRenderCache.PutBitmap(cacheKey, bitmap);
+        return bitmap;
     }
 
     public static Bitmap? GetMessageBoxIcon(MessageBoxIcon icon, bool isLightTheme, int size = 28) {
@@ -307,7 +301,8 @@ public static class MaterialIcons {
             ? Color.FromArgb(48, 48, 48)
             : Color.White;
 
-        return GetIcon(iconName, color, size);
+        var preset = IconRenderPresetService.ResolveThemePreset(isLightTheme, _filledIconNames.Contains(iconName));
+        return GetIcon(iconName, color, size, preset);
     }
 
     public static string GetMetricIconName(MetricType metric) => metric switch {
@@ -332,13 +327,17 @@ public static class MaterialIcons {
 
     #region Private Methods
 
-    private static Bitmap? RenderFontIcon(string glyph, Color color, int size, float glyphScale, bool isFilled) {
+    private static Bitmap? RenderFontIcon(string glyph, Color color, int size, IconRenderOptions options) {
+        if (_defaultTypeface is null) {
+            return null;
+        }
+
+        var isFilled = options.Axes.TryGetValue("FILL", out var fill) && fill > 0.5f;
         if (isFilled && glyph == "\uE838") {
             return RenderFilledStarWithSkia(color, size);
         }
 
-        var typeface = isFilled ? _filledTypeface ?? _outlinedTypeface : _outlinedTypeface;
-        return typeface is null ? null : RenderWithSkia(glyph, color, size, glyphScale, typeface);
+        return RenderWithSkiaPath(glyph, color, size, options, _defaultTypeface);
     }
 
     private static Bitmap RenderFilledStarWithSkia(Color color, int size) {
@@ -379,22 +378,30 @@ public static class MaterialIcons {
         return ToBitmap(skBitmap);
     }
 
-    private static Bitmap RenderWithSkia(string glyph, Color color, int size, float glyphScale, SKTypeface typeface) {
+    private static Bitmap RenderWithSkiaPath(string glyph, Color color, int size, IconRenderOptions options, SKTypeface typeface) {
         using var surface = SKSurface.Create(new SKImageInfo(size, size, SKColorType.Bgra8888, SKAlphaType.Premul));
         var canvas = surface.Canvas;
         canvas.Clear(SKColors.Transparent);
 
-        var textSize = size * Math.Clamp(glyphScale, 0.1f, 1.5f);
-        using var font = new SKFont(typeface, textSize);
+        var textSize = size * Math.Clamp(options.GlyphScale, 0.1f, 1.5f);
+        using var font = CreateVariableSkFont(typeface, textSize, options.Axes);
         using var paint = new SKPaint {
             IsAntialias = true,
             Color = new SKColor(color.R, color.G, color.B, color.A),
-            IsStroke = false,
+            Style = SKPaintStyle.Fill,
         };
 
-        var metrics = font.Metrics;
-        var textY = (size / 2f) - ((metrics.Ascent + metrics.Descent) / 2f);
-        canvas.DrawText(glyph, size / 2f, textY, SKTextAlign.Center, font, paint);
+        var glyphId = font.GetGlyphs(glyph)[0];
+        using var glyphPath = font.GetGlyphPath(glyphId);
+        if (glyphPath is null) {
+            canvas.DrawText(glyph, size / 2f, size / 2f, SKTextAlign.Center, font, paint);
+        } else {
+            var bounds = glyphPath.Bounds;
+            var tx = (size - bounds.Width) / 2f - bounds.Left;
+            var ty = (size - bounds.Height) / 2f - bounds.Top;
+            glyphPath.Transform(SKMatrix.CreateTranslation(tx, ty));
+            canvas.DrawPath(glyphPath, paint);
+        }
 
         using var image = surface.Snapshot();
         using var skBitmap = SKBitmap.FromImage(image);
@@ -410,14 +417,29 @@ public static class MaterialIcons {
         return new Bitmap(stream);
     }
 
-    private static SKTypeface? ResolveTypeface(float fillValue) {
-        _ = fillValue;
-
+    private static SKTypeface? ResolveTypeface() {
         if (_materialFontPath is null) {
             return null;
         }
 
         return SKTypeface.FromFile(_materialFontPath);
+    }
+
+    private static SKFont CreateVariableSkFont(SKTypeface typeface, float textSize, IReadOnlyDictionary<string, float> axes) {
+        _ = axes;
+
+        return new SKFont(typeface, textSize, 1f, 0f) {
+            Edging = SKFontEdging.Antialias,
+            Subpixel = true,
+        };
+    }
+
+    private static string BuildCacheKey(string normalizedName, Color color, int size, IconRenderOptions options) {
+        var axisToken = options.Axes.Count == 0
+            ? "none"
+            : string.Join(",", options.Axes.OrderBy(static x => x.Key, StringComparer.OrdinalIgnoreCase).Select(static x => $"{x.Key}:{x.Value:F2}"));
+
+        return $"icon::{normalizedName}::{size}::{options.GlyphScale:F2}::{color.ToArgb()}::{axisToken}";
     }
 
     private static string? ResolveMaterialFontPath() {

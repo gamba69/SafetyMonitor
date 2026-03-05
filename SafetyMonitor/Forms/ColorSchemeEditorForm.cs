@@ -306,7 +306,7 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         void UpdateDetailsToggle() {
             bulletPanel.Visible = detailsExpanded;
             detailsToggle.Image?.Dispose();
-            detailsToggle.Image = MaterialIcons.GetIcon(detailsExpanded ? "keyboard_double_arrow_up" : "keyboard_double_arrow_down", headerLabel.ForeColor, 20);
+            detailsToggle.Image = MaterialIcons.GetIcon(detailsExpanded ? "keyboard_double_arrow_up" : "keyboard_double_arrow_down", headerLabel.ForeColor, 20, IconRenderPreset.DarkOutlined);
         }
 
         void ToggleDetails() {
@@ -867,8 +867,8 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         _gradientButton.ForeColor = _gradientButton.Checked ? activeFg : inactiveFg;
 
         var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
-        _solidButton.Image = MaterialIcons.GetIcon(MaterialIcons.ColorModeSolid, iconColor, 22);
-        _gradientButton.Image = MaterialIcons.GetIcon(MaterialIcons.ColorModeGradient, iconColor, 22);
+        _solidButton.Image = MaterialIcons.GetIcon(MaterialIcons.ColorModeSolid, iconColor, 22, IconRenderPreset.DarkOutlined);
+        _gradientButton.Image = MaterialIcons.GetIcon(MaterialIcons.ColorModeGradient, iconColor, 22, IconRenderPreset.DarkOutlined);
         _solidButton.ImageAlign = ContentAlignment.MiddleLeft;
         _gradientButton.ImageAlign = ContentAlignment.MiddleLeft;
         _solidButton.TextAlign = ContentAlignment.MiddleLeft;

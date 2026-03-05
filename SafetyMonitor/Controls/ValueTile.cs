@@ -370,7 +370,7 @@ public class ValueTile : Panel {
 
         var iconName = MaterialIcons.GetMetricIconName(_config.Metric);
         var oldImage = _iconBox.Image;
-        _iconBox.Image = MaterialIcons.GetIcon(iconName, _currentIconColor, renderSize);
+        _iconBox.Image = MaterialIcons.GetIcon(iconName, _currentIconColor, renderSize, IconRenderPreset.DarkOutlined);
         oldImage?.Dispose();
     }
 
@@ -706,7 +706,7 @@ public class ValueTile : Panel {
                 continue;
             }
             if (menuItem.Tag is string iconName) {
-                menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize);
+                menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize, IconRenderPreset.DarkOutlined);
             }
             if (menuItem.DropDownItems.Count > 0) {
                 UpdateContextMenuIcons(menuItem.DropDownItems, iconColor);
@@ -721,7 +721,7 @@ public class ValueTile : Panel {
 
         var item = new ToolStripMenuItem(text) {
             DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-            Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize),
+            Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize, IconRenderPreset.DarkOutlined),
             ImageScaling = ToolStripItemImageScaling.None,
             TextImageRelation = TextImageRelation.ImageBeforeText,
             ImageAlign = ContentAlignment.MiddleLeft,

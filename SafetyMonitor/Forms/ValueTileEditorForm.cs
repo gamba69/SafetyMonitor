@@ -152,7 +152,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         void UpdateDetailsToggle() {
             bulletPanel.Visible = detailsExpanded;
             detailsToggle.Image?.Dispose();
-            detailsToggle.Image = MaterialIcons.GetIcon(detailsExpanded ? "keyboard_double_arrow_up" : "keyboard_double_arrow_down", headerLabel.ForeColor, 20);
+            detailsToggle.Image = MaterialIcons.GetIcon(detailsExpanded ? "keyboard_double_arrow_up" : "keyboard_double_arrow_down", headerLabel.ForeColor, 20, IconRenderPreset.DarkOutlined);
         }
 
         void ToggleDetails() {
@@ -243,14 +243,14 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         var iconColor = isLight ? Color.FromArgb(48, 48, 48) : Color.White;
 
         if (_editSchemesButton != null) {
-            var colorSchemesIcon = MaterialIcons.GetIcon(MaterialIcons.MenuViewColorSchemes, iconColor, 18);
+            var colorSchemesIcon = MaterialIcons.GetIcon(MaterialIcons.MenuViewColorSchemes, iconColor, 18, IconRenderPreset.DarkOutlined);
             var oldImage = _editSchemesButton.Image;
             _editSchemesButton.Image = colorSchemesIcon;
             oldImage?.Dispose();
         }
 
         if (_editValueSchemesButton != null) {
-            var valueSchemesIcon = MaterialIcons.GetIcon(MaterialIcons.MenuViewValueSchemes, iconColor, 18);
+            var valueSchemesIcon = MaterialIcons.GetIcon(MaterialIcons.MenuViewValueSchemes, iconColor, 18, IconRenderPreset.DarkOutlined);
             var oldImage = _editValueSchemesButton.Image;
             _editValueSchemesButton.Image = valueSchemesIcon;
             oldImage?.Dispose();

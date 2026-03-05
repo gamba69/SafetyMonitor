@@ -480,7 +480,7 @@ public class DashboardPanel : TableLayoutPanel {
                 ? Color.FromArgb(33, 33, 33)
                 : Color.FromArgb(240, 240, 240);
             if (contextMenu.Items.Count > 0 && contextMenu.Items[0] is ToolStripMenuItem item) {
-                item.Image = MaterialIcons.GetIcon(MaterialIcons.CommonEdit, iconColor, MenuIconSize);
+                item.Image = MaterialIcons.GetIcon(MaterialIcons.CommonEdit, iconColor, MenuIconSize, IconRenderPreset.DarkOutlined);
             }
             _contextMenuRenderer.UpdateTheme();
             contextMenu.RenderMode = ToolStripRenderMode.Professional;

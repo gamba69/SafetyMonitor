@@ -604,7 +604,7 @@ public class MainForm : MaterialForm {
 
     private static ToolStripMenuItem CreateMenuItem(string text, string iconName, Color iconColor, EventHandler? onClick, bool? forceFilled = null) {
         var item = new ToolStripMenuItem(text) {
-            Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize, forceFilled: forceFilled),
+            Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize, forceFilled == true ? IconRenderPreset.DarkFilled : IconRenderPreset.DarkOutlined),
             ImageScaling = ToolStripItemImageScaling.None
         };
         if (onClick != null) {
@@ -654,7 +654,7 @@ public class MainForm : MaterialForm {
                         "Remove from Favorites" => false,
                         _ => (bool?)null,
                     };
-                    menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize, forceFilled: forceFilled);
+                    menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize, forceFilled == true ? IconRenderPreset.DarkFilled : IconRenderPreset.DarkOutlined);
                 }
 
                 if (menuItem.HasDropDownItems) {
@@ -973,7 +973,7 @@ public class MainForm : MaterialForm {
                 if (showFavoriteToggle) {
                     _quickButtonFavoriteMenuItem.Text = targetDashboard!.IsQuickAccess ? "Remove from Favorites" : "Add to Favorites";
                     _quickButtonFavoriteMenuItem.Image?.Dispose();
-                    _quickButtonFavoriteMenuItem.Image = MaterialIcons.GetIcon("star", itemIconColor, MenuIconSize, forceFilled: !targetDashboard.IsQuickAccess);
+                    _quickButtonFavoriteMenuItem.Image = MaterialIcons.GetIcon("star", itemIconColor, MenuIconSize, !targetDashboard.IsQuickAccess ? IconRenderPreset.DarkFilled : IconRenderPreset.DarkOutlined);
                 }
             }
             foreach (var item in linkModeMenuItem.DropDownItems.OfType<ToolStripMenuItem>()) {
@@ -1810,7 +1810,7 @@ public class MainForm : MaterialForm {
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var iconColor = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
         _refreshIndicatorIcon.Image?.Dispose();
-        _refreshIndicatorIcon.Image = MaterialIcons.GetIcon(iconName, iconColor, 22);
+        _refreshIndicatorIcon.Image = MaterialIcons.GetIcon(iconName, iconColor, 22, IconRenderPreset.DarkOutlined);
     }
 
     private void AttachDataServiceHandlers() {
@@ -2135,7 +2135,7 @@ public class MainForm : MaterialForm {
 
         foreach (var dashboard in _dashboards) {
             var isSelected = dashboard.Id == _currentDashboard?.Id;
-            var item = new ToolStripMenuItem(dashboard.Name) { Checked = false, Image = isSelected ? MaterialIcons.GetIcon(MaterialIcons.CommonCheck, iconColor, MenuIconSize) : null, ImageScaling = ToolStripItemImageScaling.None };
+            var item = new ToolStripMenuItem(dashboard.Name) { Checked = false, Image = isSelected ? MaterialIcons.GetIcon(MaterialIcons.CommonCheck, iconColor, MenuIconSize, IconRenderPreset.DarkOutlined) : null, ImageScaling = ToolStripItemImageScaling.None };
             item.Click += (s, e) => LoadDashboard(dashboard);
             dashboardMenu.DropDownItems.Add(item);
         }
@@ -2173,7 +2173,7 @@ public class MainForm : MaterialForm {
             }
 
             item.Image?.Dispose();
-            item.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize);
+            item.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize, IconRenderPreset.DarkOutlined);
             item.ImageScaling = ToolStripItemImageScaling.None;
         }
     }
@@ -2194,9 +2194,9 @@ public class MainForm : MaterialForm {
         _dashboardLabelIcon.Image?.Dispose();
         _chartsLabelIcon.Image?.Dispose();
         _themeLabelIcon.Image?.Dispose();
-        _dashboardLabelIcon.Image = MaterialIcons.GetIcon("star", iconColor, 22, forceFilled: true);
-        _chartsLabelIcon.Image = MaterialIcons.GetIcon(MaterialIcons.LinkedServices, iconColor, 22);
-        _themeLabelIcon.Image = MaterialIcons.GetIcon(MaterialIcons.MenuViewTheme, iconColor, 22);
+        _dashboardLabelIcon.Image = MaterialIcons.GetIcon("star", iconColor, 22, IconRenderPreset.DarkFilled);
+        _chartsLabelIcon.Image = MaterialIcons.GetIcon(MaterialIcons.LinkedServices, iconColor, 22, IconRenderPreset.DarkOutlined);
+        _themeLabelIcon.Image = MaterialIcons.GetIcon(MaterialIcons.MenuViewTheme, iconColor, 22, IconRenderPreset.DarkOutlined);
     }
 
     private void UpdateThemeSwitchAppearance() {
@@ -2215,8 +2215,8 @@ public class MainForm : MaterialForm {
         _darkThemeButton.ForeColor = _darkThemeButton.Checked ? activeFg : inactiveFg;
 
         var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
-        _lightThemeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ThemeLightMode, iconColor, 22);
-        _darkThemeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ThemeDarkMode, iconColor, 22);
+        _lightThemeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ThemeLightMode, iconColor, 22, IconRenderPreset.DarkOutlined);
+        _darkThemeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ThemeDarkMode, iconColor, 22, IconRenderPreset.DarkOutlined);
         _lightThemeButton.ImageAlign = ContentAlignment.MiddleCenter;
         _darkThemeButton.ImageAlign = ContentAlignment.MiddleCenter;
     }
@@ -2239,9 +2239,9 @@ public class MainForm : MaterialForm {
         _unlinkedChartsButton.ForeColor = _unlinkedChartsButton.Checked ? activeFg : inactiveFg;
 
         var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
-        _linkedChartsButton.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarChartsLink, iconColor, 22);
-        _groupLinkedChartsButton.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarChartsGroup, iconColor, 22);
-        _unlinkedChartsButton.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarChartsUnlink, iconColor, 22);
+        _linkedChartsButton.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarChartsLink, iconColor, 22, IconRenderPreset.DarkOutlined);
+        _groupLinkedChartsButton.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarChartsGroup, iconColor, 22, IconRenderPreset.DarkOutlined);
+        _unlinkedChartsButton.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarChartsUnlink, iconColor, 22, IconRenderPreset.DarkOutlined);
         _linkedChartsButton.ImageAlign = ContentAlignment.MiddleCenter;
         _groupLinkedChartsButton.ImageAlign = ContentAlignment.MiddleCenter;
         _unlinkedChartsButton.ImageAlign = ContentAlignment.MiddleCenter;
@@ -2250,7 +2250,7 @@ public class MainForm : MaterialForm {
             _resetChartLinkButton.BackColor = segmentBg;
             _resetChartLinkButton.ForeColor = inactiveFg;
             _resetChartLinkButton.Image?.Dispose();
-            _resetChartLinkButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartModeAuto, iconColor, 22);
+            _resetChartLinkButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartModeAuto, iconColor, 22, IconRenderPreset.DarkOutlined);
             _resetChartLinkButton.ImageAlign = ContentAlignment.MiddleCenter;
         }
     }
@@ -2283,7 +2283,7 @@ public class MainForm : MaterialForm {
         var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
         _exportProgressLabel.ForeColor = fg;
         _exportProgressIcon.Image?.Dispose();
-        _exportProgressIcon.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarExportProgress, iconColor, 22);
+        _exportProgressIcon.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarExportProgress, iconColor, 22, IconRenderPreset.DarkOutlined);
     }
 
     private void UpdateDashboardSwitchAppearance() {
@@ -2504,7 +2504,7 @@ public class MainForm : MaterialForm {
         var iconColor = isLight ? Color.Black : Color.White;
 
         trayMenu.Items.Add(new ToolStripMenuItem("Restore") {
-            Image = MaterialIcons.GetIcon("open_in_full", iconColor, MenuIconSize),
+            Image = MaterialIcons.GetIcon("open_in_full", iconColor, MenuIconSize, IconRenderPreset.DarkOutlined),
             ImageScaling = ToolStripItemImageScaling.None
         });
         ((ToolStripMenuItem)trayMenu.Items[^1]).Click += (s, e) => RestoreFromTray();
@@ -2512,7 +2512,7 @@ public class MainForm : MaterialForm {
         trayMenu.Items.Add(new ToolStripSeparator());
 
         trayMenu.Items.Add(new ToolStripMenuItem("Exit") {
-            Image = MaterialIcons.GetIcon(MaterialIcons.MenuFileExitApp, iconColor, MenuIconSize),
+            Image = MaterialIcons.GetIcon(MaterialIcons.MenuFileExitApp, iconColor, MenuIconSize, IconRenderPreset.DarkOutlined),
             ImageScaling = ToolStripItemImageScaling.None
         });
         ((ToolStripMenuItem)trayMenu.Items[^1]).Click += (s, e) => {

@@ -947,7 +947,7 @@ public class ChartTile : Panel {
             // Keep classic image+text mode for platforms where image margin works,
             // and also include an ASCII marker in text so item origin is always visible.
             DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
-            Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize),
+            Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize, IconRenderPreset.DarkOutlined),
             ImageScaling = ToolStripItemImageScaling.None,
             TextImageRelation = TextImageRelation.ImageBeforeText,
             ImageAlign = ContentAlignment.MiddleLeft,
@@ -967,7 +967,7 @@ public class ChartTile : Panel {
 
             if (menuItem.Tag is string iconName && !string.IsNullOrWhiteSpace(iconName)) {
                 menuItem.Image?.Dispose();
-                menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize);
+                menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize, IconRenderPreset.DarkOutlined);
             }
 
             if (menuItem.DropDownItems.Count > 0) {
@@ -2130,15 +2130,15 @@ public class ChartTile : Panel {
         _staticModeButton.BackColor = _staticModeButton.Checked ? activeBg : segmentBg;
         _pauseModeButton.Visible = _isStaticMode;
 
-        _pauseModeButton.Image = MaterialIcons.GetIcon("pause", iconColor, 22);
+        _pauseModeButton.Image = MaterialIcons.GetIcon("pause", iconColor, 22, IconRenderPreset.DarkOutlined);
         _pauseModeButton.ImageAlign = ContentAlignment.MiddleCenter;
-        _autoModeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartModeAuto, iconColor, 22);
+        _autoModeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartModeAuto, iconColor, 22, IconRenderPreset.DarkOutlined);
         _autoModeButton.ImageAlign = ContentAlignment.MiddleCenter;
-        _staticModeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartModeStatic, iconColor, 22);
+        _staticModeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartModeStatic, iconColor, 22, IconRenderPreset.DarkOutlined);
         _staticModeButton.ImageAlign = ContentAlignment.MiddleCenter;
         if (_inspectorButton != null) {
             _inspectorButton.BackColor = _inspectorButton.Checked ? activeBg : segmentBg;
-            _inspectorButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartInspector, iconColor, 22);
+            _inspectorButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartInspector, iconColor, 22, IconRenderPreset.DarkOutlined);
             _inspectorButton.ImageAlign = ContentAlignment.MiddleCenter;
         }
 

@@ -296,15 +296,15 @@ public class EditableTileControl : Panel {
 
 
     private static Bitmap? CreateLinkGroupIcon(ChartLinkGroup group, Color color) {
-        return MaterialIcons.GetIcon(GetLinkGroupIcon(group), color, UnifiedTileEditorIconSize, LinkGroupGlyphScale);
+        return MaterialIcons.GetIcon(GetLinkGroupIcon(group), color, UnifiedTileEditorIconSize, new IconRenderOptions { GlyphScale = LinkGroupGlyphScale, Axes = IconRenderPresetService.Get(IconRenderPreset.DarkOutlined).Axes });
     }
 
     private static Bitmap? CreateTileTypeIcon(string iconName, Color color) {
-        return MaterialIcons.GetIcon(iconName, color, UnifiedTileEditorIconSize, TileTypeGlyphScale);
+        return MaterialIcons.GetIcon(iconName, color, UnifiedTileEditorIconSize, new IconRenderOptions { GlyphScale = TileTypeGlyphScale, Axes = IconRenderPresetService.Get(IconRenderPreset.DarkOutlined).Axes });
     }
 
     private static Bitmap? CreateHeaderActionIcon(string iconName, Color color) {
-        return MaterialIcons.GetIcon(iconName, color, UnifiedTileEditorIconSize, HeaderActionGlyphScale);
+        return MaterialIcons.GetIcon(iconName, color, UnifiedTileEditorIconSize, new IconRenderOptions { GlyphScale = HeaderActionGlyphScale, Axes = IconRenderPresetService.Get(IconRenderPreset.DarkOutlined).Axes });
     }
 
     private static string GetLinkGroupIcon(ChartLinkGroup group) => group switch {

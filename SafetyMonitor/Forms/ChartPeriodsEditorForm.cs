@@ -174,7 +174,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         void UpdateDetailsToggle() {
             bulletPanel.Visible = detailsExpanded;
             detailsToggle.Image?.Dispose();
-            detailsToggle.Image = MaterialIcons.GetIcon(detailsExpanded ? "keyboard_double_arrow_up" : "keyboard_double_arrow_down", _headerLabel.ForeColor, 20);
+            detailsToggle.Image = MaterialIcons.GetIcon(detailsExpanded ? "keyboard_double_arrow_up" : "keyboard_double_arrow_down", _headerLabel.ForeColor, 20, IconRenderPreset.DarkOutlined);
         }
 
         void ToggleDetails() {

@@ -1,3 +1,4 @@
+using SafetyMonitor.Models;
 using System.Runtime.InteropServices;
 
 namespace SafetyMonitor.Services;
@@ -38,8 +39,8 @@ internal static class FormIconHelper {
         var smallSize = GetIconSizeForDpi(SmCxSmIcon, SmCySmIcon, dpi, 16);
         var largeSize = GetIconSizeForDpi(SmCxIcon, SmCyIcon, dpi, 32);
 
-        using var smallBitmap = MaterialIcons.GetIcon(iconName, color, smallSize, WindowIconGlyphScale);
-        using var largeBitmap = MaterialIcons.GetIcon(iconName, color, largeSize, WindowIconGlyphScale);
+        using var smallBitmap = MaterialIcons.GetIcon(iconName, color, smallSize, new IconRenderOptions { GlyphScale = WindowIconGlyphScale, Axes = IconRenderPresetService.Get(IconRenderPreset.DarkOutlined).Axes });
+        using var largeBitmap = MaterialIcons.GetIcon(iconName, color, largeSize, new IconRenderOptions { GlyphScale = WindowIconGlyphScale, Axes = IconRenderPresetService.Get(IconRenderPreset.DarkOutlined).Axes });
 
         if (smallBitmap is null || largeBitmap is null) {
             return;

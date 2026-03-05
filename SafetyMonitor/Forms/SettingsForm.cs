@@ -148,19 +148,19 @@ public class SettingsForm : ThemedCaptionForm {
         if (_exportSettingsButton != null) {
             ThemedButtonStyler.Apply(_exportSettingsButton, isLight);
             _exportSettingsButton.Image?.Dispose();
-            _exportSettingsButton.Image = MaterialIcons.GetIcon("output_circle", _exportSettingsButton.ForeColor, 24);
+            _exportSettingsButton.Image = MaterialIcons.GetIcon("output_circle", _exportSettingsButton.ForeColor, 24, IconRenderPreset.DarkOutlined);
         }
 
         if (_importSettingsButton != null) {
             ThemedButtonStyler.Apply(_importSettingsButton, isLight);
             _importSettingsButton.Image?.Dispose();
-            _importSettingsButton.Image = MaterialIcons.GetIcon("input_circle", _importSettingsButton.ForeColor, 24);
+            _importSettingsButton.Image = MaterialIcons.GetIcon("input_circle", _importSettingsButton.ForeColor, 24, IconRenderPreset.DarkOutlined);
         }
 
         if (_resetSettingsButton != null) {
             ThemedButtonStyler.Apply(_resetSettingsButton, isLight);
             _resetSettingsButton.Image?.Dispose();
-            _resetSettingsButton.Image = MaterialIcons.GetIcon("dangerous", _resetSettingsButton.ForeColor, 24);
+            _resetSettingsButton.Image = MaterialIcons.GetIcon("dangerous", _resetSettingsButton.ForeColor, 24, IconRenderPreset.DarkOutlined);
         }
     }
 
@@ -182,7 +182,7 @@ public class SettingsForm : ThemedCaptionForm {
             button.FlatAppearance.MouseDownBackColor = activeBg;
 
             button.Image?.Dispose();
-            button.Image = MaterialIcons.GetIcon(TabIcons[i], button.ForeColor, TabIconSize);
+            button.Image = MaterialIcons.GetIcon(TabIcons[i], button.ForeColor, TabIconSize, IconRenderPreset.DarkOutlined);
         }
 
         // Tab page backgrounds
@@ -339,7 +339,7 @@ public class SettingsForm : ThemedCaptionForm {
                 }
             };
 
-            var icon = MaterialIcons.GetIcon(TabIcons[i], Color.White, TabIconSize);
+            var icon = MaterialIcons.GetIcon(TabIcons[i], Color.White, TabIconSize, IconRenderPreset.DarkOutlined);
             if (icon is not null) {
                 btn.Image = icon;
             }
@@ -1046,7 +1046,7 @@ public class SettingsForm : ThemedCaptionForm {
             Margin = new Padding(0, 0, 0, 0)
         };
 
-        button.Image = MaterialIcons.GetIcon(iconName, Color.White, 24);
+        button.Image = MaterialIcons.GetIcon(iconName, Color.White, 24, IconRenderPreset.DarkOutlined);
         return button;
     }
 
@@ -1558,7 +1558,7 @@ public class SettingsForm : ThemedCaptionForm {
 
             _arrowPicture.Image?.Dispose();
             _arrowPicture.Image = truncated
-                ? MaterialIcons.GetIcon(_isExpanded ? "keyboard_double_arrow_up" : "keyboard_double_arrow_down", _descriptionLabel.ForeColor, 22)
+                ? MaterialIcons.GetIcon(_isExpanded ? "keyboard_double_arrow_up" : "keyboard_double_arrow_down", _descriptionLabel.ForeColor, 22, IconRenderPreset.DarkOutlined)
                 : null;
 
             _isExpandable = truncated;

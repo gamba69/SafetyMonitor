@@ -296,7 +296,7 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         void UpdateDetailsToggle() {
             bulletPanel.Visible = detailsExpanded;
             detailsToggle.Image?.Dispose();
-            detailsToggle.Image = MaterialIcons.GetIcon(detailsExpanded ? "keyboard_double_arrow_up" : "keyboard_double_arrow_down", headerLabel.ForeColor, 20);
+            detailsToggle.Image = MaterialIcons.GetIcon(detailsExpanded ? "keyboard_double_arrow_up" : "keyboard_double_arrow_down", headerLabel.ForeColor, 20, IconRenderPreset.DarkOutlined);
         }
 
         void ToggleDetails() {
@@ -828,8 +828,8 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         _descendingButton.ForeColor = _descendingButton.Checked ? activeFg : inactiveFg;
 
         var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
-        _ascendingButton.Image = MirrorIconVertically(MaterialIcons.GetIcon(MaterialIcons.Sort, iconColor, 22));
-        _descendingButton.Image = MaterialIcons.GetIcon(MaterialIcons.Sort, iconColor, 22);
+        _ascendingButton.Image = MirrorIconVertically(MaterialIcons.GetIcon(MaterialIcons.Sort, iconColor, 22, IconRenderPreset.DarkOutlined));
+        _descendingButton.Image = MaterialIcons.GetIcon(MaterialIcons.Sort, iconColor, 22, IconRenderPreset.DarkOutlined);
         _ascendingButton.ImageAlign = ContentAlignment.MiddleLeft;
         _descendingButton.ImageAlign = ContentAlignment.MiddleLeft;
         _ascendingButton.TextAlign = ContentAlignment.MiddleLeft;
