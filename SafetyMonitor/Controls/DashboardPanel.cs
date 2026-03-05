@@ -27,6 +27,7 @@ public class DashboardPanel : TableLayoutPanel {
     #region Public Constructors
 
     public event Action? DashboardChanged;
+    public event Action? DashboardResetToDefaultRequested;
     public event Action<TileConfig>? TileEditRequested;
     public event Action? DashboardEditRequested;
 
@@ -256,6 +257,7 @@ public class DashboardPanel : TableLayoutPanel {
                     chartTile.PlotHoverPresenceChanged += OnPlotHoverPresenceChanged;
                     chartTile.HoverAnchorChanged += OnChartHoverAnchorChanged;
                     chartTile.StaticPauseChanged += OnChartStaticPauseChanged;
+                    chartTile.LinkGroupChanged += OnChartLinkGroupChanged;
                     chartTile.EditDashboardRequested += OnTileDashboardEditRequested;
                     chartTile.SetStaticModeTimeout(TimeSpan.FromSeconds(_chartStaticModeTimeoutSeconds));
                     chartTile.SetStaticAggregationSettings(
@@ -340,6 +342,11 @@ public class DashboardPanel : TableLayoutPanel {
 
     private void OnChartViewSettingsChanged(ChartTile source) {
         DashboardChanged?.Invoke();
+    }
+
+    private void OnChartLinkGroupChanged(ChartTile source) {
+        DashboardChanged?.Invoke();
+        DashboardResetToDefaultRequested?.Invoke();
     }
 
 
