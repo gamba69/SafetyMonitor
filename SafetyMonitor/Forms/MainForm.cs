@@ -47,6 +47,9 @@ public class MainForm : MaterialForm {
     private Panel _quickAccessPanel = null!;
     private Panel _quickDashboardsPanel = null!;
     private ContextMenuStrip? _editDashboardContextMenu;
+    private ToolStripSeparator? _quickButtonFavoriteSeparator;
+    private ToolStripMenuItem? _quickButtonFavoriteMenuItem;
+    private Guid? _quickButtonContextDashboardId;
     private Panel _linkSegmentPanel = null!;
     private PictureBox _exportProgressIcon = null!;
     private Label _exportProgressLabel = null!;
@@ -631,6 +634,8 @@ public class MainForm : MaterialForm {
             "Chart Periods..." => MaterialIcons.MenuViewChartPeriods,
             "Color Schemes..." => MaterialIcons.MenuViewColorSchemes,
             "Value Schemes..." => MaterialIcons.MenuViewValueSchemes,
+            "Add to favorites" => "star_outline",
+            "Remove from favorites" => "star",
             _ => ""
         };
     }
@@ -932,15 +937,33 @@ public class MainForm : MaterialForm {
         };
         contextMenu.Items.Add(CreateMenuItem("Manage Dashboards...", MaterialIcons.DashboardManage, iconColor, (_, _) => ShowDashboardManager()));
         contextMenu.Items.Add(new ToolStripSeparator());
-        contextMenu.Items.Add(CreateMenuItem("Edit Dashboard...", MaterialIcons.CommonEdit, iconColor, (_, _) => EditCurrentDashboard()));
+        contextMenu.Items.Add(CreateMenuItem("Edit Dashboard...", MaterialIcons.CommonEdit, iconColor, (_, _) => EditDashboardFromContextMenu()));
         var linkModeMenuItem = CreateMenuItem("Link Mode", MaterialIcons.LinkedServices, iconColor, null);
         linkModeMenuItem.DropDownItems.Add(CreateLinkModeMenuItem("Full", MaterialIcons.ToolbarChartsLink, DashboardChartLinkMode.Full, iconColor));
         linkModeMenuItem.DropDownItems.Add(CreateLinkModeMenuItem("Grouped", MaterialIcons.ToolbarChartsGroup, DashboardChartLinkMode.Grouped, iconColor));
         linkModeMenuItem.DropDownItems.Add(CreateLinkModeMenuItem("Disabled", MaterialIcons.ToolbarChartsUnlink, DashboardChartLinkMode.Disabled, iconColor));
         contextMenu.Items.Add(linkModeMenuItem);
+        _quickButtonFavoriteSeparator = new ToolStripSeparator { Visible = false };
+        _quickButtonFavoriteMenuItem = CreateMenuItem("Add to favorites", "star_outline", iconColor, (_, _) => ToggleDashboardFavoriteFromQuickButton());
+        _quickButtonFavoriteMenuItem.Visible = false;
+        contextMenu.Items.Add(_quickButtonFavoriteSeparator);
+        contextMenu.Items.Add(_quickButtonFavoriteMenuItem);
         contextMenu.Opening += (_, _) => {
             var itemIconColor = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT ? Color.Black : Color.White;
-            var currentLinkMode = _currentDashboard?.InitialChartLinkMode ?? DashboardChartLinkMode.Full;
+            var targetDashboard = GetContextMenuTargetDashboard();
+            var currentLinkMode = targetDashboard?.InitialChartLinkMode ?? DashboardChartLinkMode.Full;
+            var showFavoriteToggle = targetDashboard != null;
+            if (_quickButtonFavoriteSeparator != null) {
+                _quickButtonFavoriteSeparator.Visible = showFavoriteToggle;
+            }
+            if (_quickButtonFavoriteMenuItem != null) {
+                _quickButtonFavoriteMenuItem.Visible = showFavoriteToggle;
+                if (showFavoriteToggle) {
+                    _quickButtonFavoriteMenuItem.Text = targetDashboard!.IsQuickAccess ? "Remove from favorites" : "Add to favorites";
+                    _quickButtonFavoriteMenuItem.Image?.Dispose();
+                    _quickButtonFavoriteMenuItem.Image = MaterialIcons.GetIcon(targetDashboard.IsQuickAccess ? "star" : "star_outline", itemIconColor, MenuIconSize);
+                }
+            }
             foreach (var item in linkModeMenuItem.DropDownItems.OfType<ToolStripMenuItem>()) {
                 if (item.Tag is DashboardChartLinkMode mode) {
                     item.Checked = mode == currentLinkMode;
@@ -966,6 +989,14 @@ public class MainForm : MaterialForm {
         return item;
     }
 
+    private Dashboard? GetContextMenuTargetDashboard() {
+        if (_quickButtonContextDashboardId.HasValue) {
+            return _dashboards.FirstOrDefault(d => d.Id == _quickButtonContextDashboardId.Value);
+        }
+
+        return _currentDashboard;
+    }
+
     private void QuickPanel_MouseUp(object? sender, MouseEventArgs e) {
         if (e.Button != MouseButtons.Right || _editDashboardContextMenu == null || sender is not Control control) {
             return;
@@ -975,6 +1006,7 @@ public class MainForm : MaterialForm {
             return;
         }
 
+        _quickButtonContextDashboardId = null;
         _editDashboardContextMenu.Show(control, e.Location);
     }
 
@@ -988,7 +1020,58 @@ public class MainForm : MaterialForm {
             return;
         }
 
+        _quickButtonContextDashboardId = null;
         _editDashboardContextMenu.Show(control, e.Location);
+    }
+
+    private void QuickDashboardButton_MouseUp(object? sender, MouseEventArgs e, Dashboard dashboard) {
+        if (e.Button != MouseButtons.Right || _editDashboardContextMenu == null || sender is not Control control) {
+            return;
+        }
+
+        _quickButtonContextDashboardId = dashboard.Id;
+        _editDashboardContextMenu.Show(control, e.Location);
+    }
+
+    private void ToggleDashboardFavoriteFromQuickButton() {
+        if (!_quickButtonContextDashboardId.HasValue) {
+            return;
+        }
+
+        var dashboard = _dashboards.FirstOrDefault(d => d.Id == _quickButtonContextDashboardId.Value);
+        if (dashboard == null) {
+            return;
+        }
+
+        if (!dashboard.IsQuickAccess && _dashboards.Count(d => d.IsQuickAccess && d.Id != dashboard.Id) >= MaxQuickAccessDashboards) {
+            ThemedMessageBox.Show(this, $"Only {MaxQuickAccessDashboards} dashboards can be marked as favorite.", "Favorite dashboards", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        dashboard.IsQuickAccess = !dashboard.IsQuickAccess;
+        dashboard.SortOrder = _dashboards
+            .Where(d => d.IsQuickAccess == dashboard.IsQuickAccess && d.Id != dashboard.Id)
+            .Select(d => d.SortOrder)
+            .DefaultIfEmpty(-1)
+            .Max() + 1;
+
+        _dashboardService.SaveDashboard(dashboard);
+        SortDashboardsForDisplay();
+        PersistDashboardOrdering();
+        _dashboards = _dashboardService.LoadDashboards();
+        SortDashboardsForDisplay();
+
+        if (_currentDashboard != null) {
+            _currentDashboard = _dashboards.FirstOrDefault(d => d.Id == _currentDashboard.Id) ?? _dashboards.FirstOrDefault();
+        }
+
+        if (_mainMenu.Items.Count > 1) {
+            var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1];
+            UpdateDashboardMenu(dashboardMenu);
+        }
+
+        UpdateQuickDashboards();
+        RefreshQuickAccessLayout();
     }
 
     private void DeleteCurrentDashboard() {
@@ -1011,28 +1094,50 @@ public class MainForm : MaterialForm {
 
     private void EditCurrentDashboard() {
         if (_currentDashboard == null) { return; }
-        using var editor = new DashboardEditorForm(_currentDashboard);
-        if (editor.ShowDialog() == DialogResult.OK && editor.Modified) {
-            if (_currentDashboard.IsQuickAccess && _dashboards.Count(d => d.IsQuickAccess && d.Id != _currentDashboard.Id) >= MaxQuickAccessDashboards) {
-                _currentDashboard.IsQuickAccess = false;
-                ThemedMessageBox.Show(this, $"Only {MaxQuickAccessDashboards} dashboards can be marked as favorite.", "Favorite dashboards", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-            _dashboardService.SaveDashboard(_currentDashboard);
+        EditDashboard(_currentDashboard, switchToEditedDashboardOnSave: false);
+    }
+
+    private void EditDashboardFromContextMenu() {
+        var targetDashboard = GetContextMenuTargetDashboard();
+        if (targetDashboard == null) { return; }
+        EditDashboard(targetDashboard, switchToEditedDashboardOnSave: true);
+    }
+
+    private void EditDashboard(Dashboard dashboard, bool switchToEditedDashboardOnSave) {
+        using var editor = new DashboardEditorForm(dashboard);
+        if (editor.ShowDialog() != DialogResult.OK) {
+            return;
+        }
+
+        if (dashboard.IsQuickAccess && _dashboards.Count(d => d.IsQuickAccess && d.Id != dashboard.Id) >= MaxQuickAccessDashboards) {
+            dashboard.IsQuickAccess = false;
+            ThemedMessageBox.Show(this, $"Only {MaxQuickAccessDashboards} dashboards can be marked as favorite.", "Favorite dashboards", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        if (editor.Modified) {
+            _dashboardService.SaveDashboard(dashboard);
             _dashboards = _dashboardService.LoadDashboards();
             SortDashboardsForDisplay();
             PersistDashboardOrdering();
-            var updatedDashboard = _dashboards.FirstOrDefault(d => d.Id == _currentDashboard.Id);
-            if (updatedDashboard != null) {
+        }
+
+        var updatedDashboard = _dashboards.FirstOrDefault(d => d.Id == dashboard.Id);
+        if (updatedDashboard != null) {
+            if (editor.Modified) {
                 // After dashboard structure/link settings are edited, force runtime
                 // chart-link state back to dashboard defaults on next load.
                 updatedDashboard.NeedsStartupReset = true;
                 _dashboardLinkModes.Remove(updatedDashboard.Id);
                 InvalidateDashboardPanelCache(updatedDashboard.Id);
+            }
+
+            if (switchToEditedDashboardOnSave || editor.Modified) {
                 LoadDashboard(updatedDashboard);
             }
-            if (_mainMenu.Items.Count > 1) { var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1]; UpdateDashboardMenu(dashboardMenu); }
-            UpdateQuickDashboards();
         }
+
+        if (_mainMenu.Items.Count > 1) { var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1]; UpdateDashboardMenu(dashboardMenu); }
+        UpdateQuickDashboards();
     }
 
     private void InitializeComponent() {
@@ -1329,19 +1434,33 @@ public class MainForm : MaterialForm {
     }
 
     private void SaveDashboardLinkModeAndReload(DashboardChartLinkMode mode) {
-        if (_currentDashboard == null) {
+        var targetDashboard = GetContextMenuTargetDashboard();
+        if (targetDashboard == null) {
             return;
         }
 
-        if (_currentDashboard.InitialChartLinkMode == mode) {
+        if (targetDashboard.InitialChartLinkMode == mode) {
+            if (_currentDashboard?.Id != targetDashboard.Id) {
+                LoadDashboard(targetDashboard);
+            }
             return;
         }
 
-        _currentDashboard.InitialChartLinkMode = mode;
-        _dashboardService.SaveDashboard(_currentDashboard);
-        _dashboardLinkModes[_currentDashboard.Id] = mode;
-        InvalidateDashboardPanelCache(_currentDashboard.Id);
-        LoadDashboard(_currentDashboard);
+        targetDashboard.InitialChartLinkMode = mode;
+        _dashboardService.SaveDashboard(targetDashboard);
+        _dashboardLinkModes[targetDashboard.Id] = mode;
+        InvalidateDashboardPanelCache(targetDashboard.Id);
+
+        _dashboards = _dashboardService.LoadDashboards();
+        SortDashboardsForDisplay();
+        var updatedDashboard = _dashboards.FirstOrDefault(d => d.Id == targetDashboard.Id) ?? targetDashboard;
+        LoadDashboard(updatedDashboard);
+
+        if (_mainMenu.Items.Count > 1) {
+            var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1];
+            UpdateDashboardMenu(dashboardMenu);
+        }
+        UpdateQuickDashboards();
     }
 
     private void ResetCurrentDashboardLinkState() {
@@ -2317,6 +2436,7 @@ public class MainForm : MaterialForm {
             } else {
                 btn.CheckedChanged += (s, e) => { if (btn.Checked && _currentDashboard?.Id != dashboard.Id) { LoadDashboard(dashboard); } };
             }
+            btn.MouseUp += (s, e) => QuickDashboardButton_MouseUp(s, e, dashboard);
 
             _quickDashboardsPanel.Controls.Add(btn);
             x += segmentWidth;
