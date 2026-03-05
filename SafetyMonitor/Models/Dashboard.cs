@@ -178,27 +178,38 @@ public class Dashboard {
 
     private static Dashboard CreateNowDashboard() {
         var dashboard = new Dashboard {
+            Id = Guid.Parse("586a05ad-74cc-4ae4-a321-55cd69b86817"),
             Name = "Now",
             Rows = 3,
             Columns = 5,
-            IsQuickAccess = true
+            IsQuickAccess = true,
+            InitialChartLinkMode = DashboardChartLinkMode.Full,
+            UsedLinkGroups = 6,
+            LinkGroupPeriodPresetUids = new Dictionary<ChartLinkGroup, string> {
+                [ChartLinkGroup.Alpha] = "15m",
+                [ChartLinkGroup.Bravo] = "15m",
+                [ChartLinkGroup.Charlie] = "15m",
+                [ChartLinkGroup.Delta] = "15m",
+                [ChartLinkGroup.Echo] = "15m",
+                [ChartLinkGroup.Foxtrot] = "15m"
+            }
         };
 
         dashboard.Tiles.AddRange([
-            ValueTile("Safety", MetricType.IsSafe, 0, 0),
-            ValueTile("Temperature", MetricType.Temperature, 0, 1),
-            ValueTile("Humidity", MetricType.Humidity, 0, 2),
-            ValueTile("Pressure", MetricType.Pressure, 0, 3),
-            ValueTile("Dew Point", MetricType.DewPoint, 0, 4),
-            ValueTile("Cloud Cover", MetricType.CloudCover, 1, 0),
-            ValueTile("Sky Temp", MetricType.SkyTemperature, 1, 1),
-            ValueTile("Sky Brightness", MetricType.SkyBrightness, 1, 2),
-            ValueTile("Sky Quality", MetricType.SkyQuality, 1, 3),
-            ValueTile("Rain Rate", MetricType.RainRate, 1, 4),
-            ValueTile("Wind Speed", MetricType.WindSpeed, 2, 0),
-            ValueTile("Wind Gust", MetricType.WindGust, 2, 1),
-            ValueTile("Wind Direction", MetricType.WindDirection, 2, 2),
-            ValueTile("Star FWHM", MetricType.StarFwhm, 2, 3)
+            ValueTile("Safety", MetricType.IsSafe, 0, 0, displayMode: ValueTileDisplayMode.TextOnly, showUnit: false, showIcon: true, decimalPlaces: 1, iconName: "", iconColorSchemeName: "", colorSchemeName: "Safety", textColorSchemeName: "Safety", valueSchemeName: "Safety Status", id: Guid.Parse("d7776357-edb5-4647-9d1c-39a2de4ea87a")),
+            ValueTile("Temperature", MetricType.Temperature, 0, 1, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconName: "", iconColorSchemeName: "", colorSchemeName: "Temperature", textColorSchemeName: "Temperature", valueSchemeName: "Temperature Status", id: Guid.Parse("581511d7-15fb-47c7-9ce0-fe1cfca9239b")),
+            ValueTile("Humidity", MetricType.Humidity, 0, 2, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconName: "", iconColorSchemeName: "", colorSchemeName: "Humidity", textColorSchemeName: "Humidity", valueSchemeName: "Humidity Status", id: Guid.Parse("29ca29b5-bfa1-4fb8-b098-58d82f18add5")),
+            ValueTile("Pressure", MetricType.Pressure, 0, 3, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconName: "", iconColorSchemeName: "", colorSchemeName: "Pressure", textColorSchemeName: "Pressure", valueSchemeName: "Pressure Status", id: Guid.Parse("82127bef-2af4-4b8e-9aeb-9047b47316ed")),
+            ValueTile("Dew Point", MetricType.DewPoint, 0, 4, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconName: "", iconColorSchemeName: "", colorSchemeName: "", textColorSchemeName: "", valueSchemeName: "", id: Guid.Parse("0ff58579-bb06-4621-a664-e070e5ef9b0f")),
+            ValueTile("Cloud Cover", MetricType.CloudCover, 1, 0, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconName: "", iconColorSchemeName: "", colorSchemeName: "Cloud Cover", textColorSchemeName: "Cloud Cover", valueSchemeName: "Cloud Cover Status", id: Guid.Parse("71123269-a775-4a6d-8a7c-7c45fa095b30")),
+            ValueTile("Sky Temp", MetricType.SkyTemperature, 1, 1, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconName: "", iconColorSchemeName: "", colorSchemeName: "", textColorSchemeName: "", valueSchemeName: "", id: Guid.Parse("ddb58772-5602-4a6a-9e51-eb136fdb9561")),
+            ValueTile("Sky Brightness", MetricType.SkyBrightness, 1, 2, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconName: "", iconColorSchemeName: "", colorSchemeName: "Sky Brightness", textColorSchemeName: "Sky Brightness", valueSchemeName: "Sky Brightness Status", id: Guid.Parse("0dc0e13f-9593-4520-b25a-7fbbaf5f9fb3")),
+            ValueTile("Sky Quality", MetricType.SkyQuality, 1, 3, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconName: "", iconColorSchemeName: "", colorSchemeName: "Sky Quality", textColorSchemeName: "Sky Quality", valueSchemeName: "Sky Quality Status", id: Guid.Parse("818aeb90-a085-47bb-9fb9-2b7a7cca9ac1")),
+            ValueTile("Rain Rate", MetricType.RainRate, 1, 4, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconName: "", iconColorSchemeName: "", colorSchemeName: "Rain Rate", textColorSchemeName: "Rain Rate", valueSchemeName: "Rain Rate Status", id: Guid.Parse("2eee88ae-3fae-4073-a0aa-ee9ca0c6c05c")),
+            ValueTile("Wind Speed", MetricType.WindSpeed, 2, 0, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconName: "", iconColorSchemeName: "", colorSchemeName: "Wind Speed", textColorSchemeName: "Wind Speed", valueSchemeName: "Wind Speed Status", id: Guid.Parse("f150fff7-c170-4904-b635-5c45eda83440")),
+            ValueTile("Wind Gust", MetricType.WindGust, 2, 1, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconName: "", iconColorSchemeName: "", colorSchemeName: "Wind Gust", textColorSchemeName: "Wind Gust", valueSchemeName: "Wind Gust Status", id: Guid.Parse("5b0e0e19-23b3-43c5-8a38-3d443e7d75d7")),
+            ValueTile("Wind Direction", MetricType.WindDirection, 2, 2, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconName: "", iconColorSchemeName: "", colorSchemeName: "", textColorSchemeName: "", valueSchemeName: "", id: Guid.Parse("455f430a-bf69-43bb-ba92-3545786992c3")),
+            ValueTile("Star FWHM", MetricType.StarFwhm, 2, 3, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconName: "", iconColorSchemeName: "", colorSchemeName: "", textColorSchemeName: "", valueSchemeName: "", id: Guid.Parse("bca06f9c-1b15-41c7-b8a6-81e1c76c31a2"))
         ]);
 
         return dashboard;
@@ -288,8 +299,9 @@ public class Dashboard {
         return dashboard;
     }
 
-    private static ValueTileConfig ValueTile(string title, MetricType metric, int row, int column, ValueTileDisplayMode displayMode = ValueTileDisplayMode.TextAndValue, bool showUnit = true, bool showIcon = true, int decimalPlaces = 1, string? iconName = null, string? iconColorSchemeName = null, string? colorSchemeName = null, string? textColorSchemeName = null, string? valueSchemeName = null) {
+    private static ValueTileConfig ValueTile(string title, MetricType metric, int row, int column, ValueTileDisplayMode displayMode = ValueTileDisplayMode.TextAndValue, bool showUnit = true, bool showIcon = true, int decimalPlaces = 1, string? iconName = null, string? iconColorSchemeName = null, string? colorSchemeName = null, string? textColorSchemeName = null, string? valueSchemeName = null, Guid? id = null) {
         return new ValueTileConfig {
+            Id = id ?? Guid.NewGuid(),
             Title = title,
             Metric = metric,
             Row = row,
