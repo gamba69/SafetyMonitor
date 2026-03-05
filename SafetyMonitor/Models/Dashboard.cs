@@ -71,6 +71,17 @@ public class Dashboard {
         LinkGroupPeriodPresetUids[group] = periodPresetUid;
     }
 
+    public string GetLinkGroupPeriodShortName(ChartLinkGroup group) {
+        var presetUid = GetLinkGroupPeriodPresetUid(group);
+        var preset = ChartPeriodPresetStore
+            .GetPresetItems()
+            .FirstOrDefault(item => string.Equals(item.Uid, presetUid, StringComparison.OrdinalIgnoreCase));
+
+        return string.IsNullOrWhiteSpace(preset.ShortLabel)
+            ? ChartPeriodPresetStore.GetFallbackPreset(ChartPeriodPresetStore.GetPresetItems()).ShortLabel
+            : preset.ShortLabel;
+    }
+
     public void EnsureLinkGroupPeriodDefaults() {
         UsedLinkGroups = ChartLinkGroupInfo.NormalizeUsedGroups(UsedLinkGroups);
         var fallbackPresetUid = ChartPeriodPresetStore

@@ -494,7 +494,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
             Margin = new Padding(0, 2, 0, 0)
         };
         foreach (var group in _dashboard.GetAvailableLinkGroups()) {
-            _linkGroupComboBox.Items.Add(group.GetDisplayName());
+            _linkGroupComboBox.Items.Add(group.GetDisplayName(_dashboard.GetLinkGroupPeriodShortName(group)));
         }
         _linkGroupPanel.Controls.Add(periodLabel);
         _linkGroupPanel.Controls.Add(_linkGroupComboBox);

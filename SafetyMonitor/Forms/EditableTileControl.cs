@@ -272,7 +272,7 @@ public class EditableTileControl : Panel {
         };
         menu.Opening += (_, _) => UpdateLinkGroupMenuSelection(menu);
         foreach (var group in _dashboard.GetAvailableLinkGroups()) {
-            var item = new ToolStripMenuItem(group.GetDisplayName()) {
+            var item = new ToolStripMenuItem(group.GetDisplayName(_dashboard.GetLinkGroupPeriodShortName(group))) {
                 Tag = group,
                 Image = CreateLinkGroupIcon(group, ForeColor),
                 ImageScaling = ToolStripItemImageScaling.None,

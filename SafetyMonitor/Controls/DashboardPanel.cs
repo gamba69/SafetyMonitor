@@ -222,6 +222,7 @@ public class DashboardPanel : TableLayoutPanel {
             }
 
             chartTile.SetAvailableLinkGroups(_dashboard.UsedLinkGroups);
+            chartTile.SetLinkGroupPeriodShortNames(GetLinkGroupPeriodShortNames());
             var presetUid = _dashboard.GetLinkGroupPeriodPresetUid(chartTile.Config.LinkGroup);
             chartTile.ExitStaticMode(raiseEvents: false);
             chartTile.SetStaticPaused(false, raiseEvents: false);
@@ -251,6 +252,7 @@ public class DashboardPanel : TableLayoutPanel {
 
                 if (tileControl is ChartTile chartTile) {
                     chartTile.SetAvailableLinkGroups(_dashboard.UsedLinkGroups);
+                    chartTile.SetLinkGroupPeriodShortNames(GetLinkGroupPeriodShortNames());
                     chartTile.PeriodChanged += OnChartPeriodChanged;
                     chartTile.StaticRangeChanged += OnChartStaticRangeChanged;
                     chartTile.AutoModeRestored += OnChartAutoModeRestored;
@@ -278,6 +280,15 @@ public class DashboardPanel : TableLayoutPanel {
             _resetLinkStatePendingUntilTilesCreated = false;
             ApplyChartRuntimeDefaults(refreshData: false);
         }
+    }
+
+    private Dictionary<ChartLinkGroup, string> GetLinkGroupPeriodShortNames() {
+        var result = new Dictionary<ChartLinkGroup, string>();
+        foreach (var group in ChartLinkGroupInfo.All) {
+            result[group] = _dashboard.GetLinkGroupPeriodShortName(group);
+        }
+
+        return result;
     }
 
     private void OnChartPeriodChanged(ChartTile source, string periodPresetUid) {

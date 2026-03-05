@@ -392,7 +392,7 @@ public class DashboardEditorForm : ThemedCaptionForm {
 
         foreach (var (group, column, row) in orderedGroups) {
             var combo = CreateLinkCombo();
-            var label = CreateLinkLabel($"{group.GetDisplayName()}:");
+            var label = CreateLinkLabel($"{group.GetDisplayName(includeCircledNumber: true)}:");
             _groupPeriodControls[group] = (label, combo);
             linkSettingsPanel.Controls.Add(label, column, row);
             linkSettingsPanel.Controls.Add(combo, column + 1, row);
@@ -625,8 +625,6 @@ public class DashboardEditorForm : ThemedCaptionForm {
         DialogResult = DialogResult.OK;
         Close();
     }
-
-
     private void ApplyUsedGroupsToEditor(int usedGroups) {
         _dashboard.UsedLinkGroups = ChartLinkGroupInfo.NormalizeUsedGroups(usedGroups);
         _dashboard.EnsureLinkGroupConfiguration();

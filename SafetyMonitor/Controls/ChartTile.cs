@@ -65,6 +65,7 @@ public class ChartTile : Panel {
     private int _lastHorizontalPointCount;
     private const int HeaderControlHeight = 28;
     private int _availableLinkGroups = ChartLinkGroupInfo.MaxUsedGroups;
+    private readonly Dictionary<ChartLinkGroup, string> _linkGroupPeriodShortNames = [];
 
     private sealed class SeriesHoverSnapshot {
         public string Label { get; init; } = string.Empty;
@@ -130,6 +131,13 @@ public class ChartTile : Panel {
     public void SetAvailableLinkGroups(int usedGroups) {
         _availableLinkGroups = ChartLinkGroupInfo.NormalizeUsedGroups(usedGroups);
         _config.LinkGroup = ChartLinkGroupInfo.NormalizeGroup(_config.LinkGroup, _availableLinkGroups);
+    }
+
+    public void SetLinkGroupPeriodShortNames(IReadOnlyDictionary<ChartLinkGroup, string> periodShortNames) {
+        _linkGroupPeriodShortNames.Clear();
+        foreach (var pair in periodShortNames) {
+            _linkGroupPeriodShortNames[pair.Key] = pair.Value;
+        }
     }
 
     /// <summary>
@@ -836,7 +844,8 @@ public class ChartTile : Panel {
         if (_availableLinkGroups > 1) {
             var linkGroupItem = CreatePlotMenuItem("Link group", MaterialIcons.ToolbarChartsGroup, (_, _) => { });
             foreach (var group in ChartLinkGroupInfo.GetAvailable(_availableLinkGroups)) {
-                var item = CreateToggleMenuItem(group.GetDisplayName(), GetLinkGroupIcon(group), _config.LinkGroup == group, (_, _) => {
+                var periodShortName = _linkGroupPeriodShortNames.GetValueOrDefault(group, string.Empty);
+                var item = CreateToggleMenuItem(group.GetDisplayName(periodShortName), GetLinkGroupIcon(group), _config.LinkGroup == group, (_, _) => {
                     if (_config.LinkGroup == group) {
                         return;
                     }
