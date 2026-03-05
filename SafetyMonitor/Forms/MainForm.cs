@@ -2305,6 +2305,7 @@ public class MainForm : MaterialForm {
                 var badgeBg = isLight ? Color.FromArgb(222, 222, 222) : Color.FromArgb(124, 132, 140);
                 button.BackColor = badgeBg; button.FlatAppearance.CheckedBackColor = badgeBg; button.FlatAppearance.MouseDownBackColor = badgeBg; button.FlatAppearance.MouseOverBackColor = badgeBg;
                 button.ForeColor = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(206, 215, 220);
+                button.Font = new Font(_quickDashboardsPanel.Font, FontStyle.Bold);
                 continue;
             }
             button.BackColor = button.Checked ? activeBg : segmentBg;
@@ -2384,9 +2385,10 @@ public class MainForm : MaterialForm {
     }
 
     private static int MeasureDashboardSegmentPreferredWidth(string text, Font font) {
+        const int maxSegmentWidth = 220;
         var flags = TextFormatFlags.SingleLine | TextFormatFlags.NoPadding;
         var textWidth = TextRenderer.MeasureText(text, font, new Size(int.MaxValue, int.MaxValue), flags).Width;
-        return Math.Max(80, textWidth + 24);
+        return Math.Min(Math.Max(80, textWidth + 24), maxSegmentWidth);
     }
 
     private static List<int> ScaleSegmentWidths(List<int> preferredWidths, int targetWidth) {
