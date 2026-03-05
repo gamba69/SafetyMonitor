@@ -165,7 +165,7 @@ internal sealed class SplashForm : Form {
             AutoSize = true,
             AutoSizeMode = AutoSizeMode.GrowAndShrink,
             ColumnCount = 2,
-            RowCount = 2,
+            RowCount = 3,
             Dock = DockStyle.Top,
             BackColor = Color.Transparent,
             Margin = new Padding(0),
@@ -174,6 +174,7 @@ internal sealed class SplashForm : Form {
         detailsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         detailsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         detailsLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        detailsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, Math.Max(1f, Font.GetHeight() * 0.5f)));
         detailsLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         var copyrightCaptionLabel = new Label {
@@ -222,8 +223,8 @@ internal sealed class SplashForm : Form {
 
         detailsLayout.Controls.Add(copyrightCaptionLabel, 0, 0);
         detailsLayout.Controls.Add(copyrightValueLabel, 1, 0);
-        detailsLayout.Controls.Add(versionCaptionLabel, 0, 1);
-        detailsLayout.Controls.Add(versionValueLabel, 1, 1);
+        detailsLayout.Controls.Add(versionCaptionLabel, 0, 2);
+        detailsLayout.Controls.Add(versionValueLabel, 1, 2);
 
         textLayout.Controls.Add(titleLabel, 0, 0);
         textLayout.Controls.Add(detailsLayout, 0, 2);
