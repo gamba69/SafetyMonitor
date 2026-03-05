@@ -96,6 +96,9 @@ public static class MaterialIcons {
     public const string WindowTileValue = "window_tile_value";
     public const string WindowTileChart = "window_tile_chart";
     public const string ToolbarExportProgress = "toolbar_export_progress";
+    public const string Refresh = "refresh";
+    public const string TrayPip = "pip";
+    public const string RuleSettings = "rule_settings";
     public const string RefreshCircle = "refresh_circle";
     public const string RefreshLoader10 = "refresh_loader_10";
     public const string RefreshLoader20 = "refresh_loader_20";
@@ -204,6 +207,9 @@ public static class MaterialIcons {
         [WindowTileValue] = "\uE400",
         [WindowTileChart] = "\uE667", //"\uE6E1",
         [ToolbarExportProgress] = "\uF398",
+        [Refresh] = "\uE5D5",
+        [TrayPip] = "\uF64D",
+        [RuleSettings] = "\uF64C",
         [RefreshCircle] = "\uEF4A",
         [RefreshLoader10] = "\uF726",
         [RefreshLoader20] = "\uF725",
@@ -270,7 +276,8 @@ public static class MaterialIcons {
         }
 
         if (!_fontGlyphs.TryGetValue(normalizedName, out var glyph)) {
-            return null;
+            // Fallback to ligature rendering: Material Symbols can resolve many icon names directly.
+            glyph = normalizedName;
         }
 
         var isFilled = forceFilled ?? _filledIconNames.Contains(normalizedName);

@@ -62,12 +62,12 @@ public class SettingsForm : ThemedCaptionForm {
     private const int ColorSwatchTextGap = 8;
 
     private static readonly string[] TabIcons = {
-        "refresh",
-        "pip",
+        MaterialIcons.Refresh,
+        MaterialIcons.TrayPip,
         MaterialIcons.CommonDatabase,
         MaterialIcons.DashboardTab,
         MaterialIcons.CommonAvgTime,
-        "rule_settings"
+        MaterialIcons.RuleSettings
     };
 
     private sealed record MaterialSchemeComboItem(string SchemeName, string DisplayName, Color PrimaryColor) {
