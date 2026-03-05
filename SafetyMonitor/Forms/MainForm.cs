@@ -24,8 +24,10 @@ public class MainForm : MaterialForm {
     private readonly bool _isLoading = true;
     private readonly MaterialSkinManager _skinManager;
     private Label _chartsLabel = null!;
+    private PictureBox _chartsLabelIcon = null!;
     private Dashboard? _currentDashboard;
     private Label _dashboardLabel = null!;
+    private PictureBox _dashboardLabelIcon = null!;
     private RadioButton _darkThemeButton = null!;
     private Panel _dashboardContainer = null!;
     private DashboardPanel? _dashboardPanel;
@@ -54,6 +56,7 @@ public class MainForm : MaterialForm {
     private PictureBox _exportProgressIcon = null!;
     private Label _exportProgressLabel = null!;
     private Label _themeLabel = null!;
+    private PictureBox _themeLabelIcon = null!;
     private Panel _themeSegmentPanel = null!;
     private System.Windows.Forms.Timer? _refreshTimer;
     private CancellationTokenSource? _refreshCts;
@@ -634,8 +637,8 @@ public class MainForm : MaterialForm {
             "Chart Periods..." => MaterialIcons.MenuViewChartPeriods,
             "Color Schemes..." => MaterialIcons.MenuViewColorSchemes,
             "Value Schemes..." => MaterialIcons.MenuViewValueSchemes,
-            "Add to favorites" => "star_outline",
-            "Remove from favorites" => "star",
+            "Add to Favorites" => "star",
+            "Remove from Favorites" => "star",
             _ => ""
         };
     }
@@ -646,7 +649,12 @@ public class MainForm : MaterialForm {
                 var iconName = GetIconNameForMenuItem(menuItem.Text!);
                 if (!string.IsNullOrEmpty(iconName)) {
                     menuItem.Image?.Dispose();
-                    menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize);
+                    bool? forceFilled = menuItem.Text switch {
+                        "Add to Favorites" => true,
+                        "Remove from Favorites" => false,
+                        _ => (bool?)null,
+                    };
+                    menuItem.Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize, forceFilled: forceFilled);
                 }
 
                 if (menuItem.HasDropDownItems) {
@@ -754,7 +762,7 @@ public class MainForm : MaterialForm {
 
     private void CreateQuickAccessControls() {
         _dashboardLabel = new Label {
-            Text = "Dashboard",
+            Text = "Dashboards",
             AutoSize = true,
             Font = new Font("Segoe UI", 9f, FontStyle.Bold)
         };
@@ -766,10 +774,14 @@ public class MainForm : MaterialForm {
         };
 
         _themeLabel = new Label {
-            Text = "Theme",
+            Text = "Themes",
             AutoSize = true,
             Font = new Font("Segoe UI", 9f, FontStyle.Bold)
         };
+
+        _dashboardLabelIcon = new PictureBox { Size = new Size(22, 22), SizeMode = PictureBoxSizeMode.CenterImage };
+        _chartsLabelIcon = new PictureBox { Size = new Size(22, 22), SizeMode = PictureBoxSizeMode.CenterImage };
+        _themeLabelIcon = new PictureBox { Size = new Size(22, 22), SizeMode = PictureBoxSizeMode.CenterImage };
 
         _lightThemeButton = new RadioButton {
             Text = string.Empty,
@@ -919,7 +931,7 @@ public class MainForm : MaterialForm {
             Visible = _appSettings.ShowRefreshIndicator
         };
 
-        _quickAccessPanel.Controls.AddRange([_dashboardLabel, _quickDashboardsPanel, _refreshIndicatorIcon, _refreshIndicatorTimeLabel, _exportProgressIcon, _exportProgressLabel, _chartsLabel, _linkSegmentPanel, _themeLabel, _themeSegmentPanel]);
+        _quickAccessPanel.Controls.AddRange([_dashboardLabelIcon, _dashboardLabel, _quickDashboardsPanel, _refreshIndicatorIcon, _refreshIndicatorTimeLabel, _exportProgressIcon, _exportProgressLabel, _chartsLabelIcon, _chartsLabel, _linkSegmentPanel, _themeLabelIcon, _themeLabel, _themeSegmentPanel]);
         _editDashboardContextMenu = CreateEditDashboardContextMenu();
         _quickAccessPanel.MouseUp += QuickPanel_MouseUp;
         _quickDashboardsPanel.MouseUp += QuickDashboardsPanel_MouseUp;
@@ -944,7 +956,7 @@ public class MainForm : MaterialForm {
         linkModeMenuItem.DropDownItems.Add(CreateLinkModeMenuItem("Disabled", MaterialIcons.ToolbarChartsUnlink, DashboardChartLinkMode.Disabled, iconColor));
         contextMenu.Items.Add(linkModeMenuItem);
         _quickButtonFavoriteSeparator = new ToolStripSeparator { Visible = false };
-        _quickButtonFavoriteMenuItem = CreateMenuItem("Add to favorites", "star_outline", iconColor, (_, _) => ToggleDashboardFavoriteFromQuickButton());
+        _quickButtonFavoriteMenuItem = CreateMenuItem("Add to Favorites", "star", iconColor, (_, _) => ToggleDashboardFavoriteFromQuickButton());
         _quickButtonFavoriteMenuItem.Visible = false;
         contextMenu.Items.Add(_quickButtonFavoriteSeparator);
         contextMenu.Items.Add(_quickButtonFavoriteMenuItem);
@@ -959,9 +971,9 @@ public class MainForm : MaterialForm {
             if (_quickButtonFavoriteMenuItem != null) {
                 _quickButtonFavoriteMenuItem.Visible = showFavoriteToggle;
                 if (showFavoriteToggle) {
-                    _quickButtonFavoriteMenuItem.Text = targetDashboard!.IsQuickAccess ? "Remove from favorites" : "Add to favorites";
+                    _quickButtonFavoriteMenuItem.Text = targetDashboard!.IsQuickAccess ? "Remove from Favorites" : "Add to Favorites";
                     _quickButtonFavoriteMenuItem.Image?.Dispose();
-                    _quickButtonFavoriteMenuItem.Image = MaterialIcons.GetIcon(targetDashboard.IsQuickAccess ? "star" : "star_outline", itemIconColor, MenuIconSize);
+                    _quickButtonFavoriteMenuItem.Image = MaterialIcons.GetIcon("star", itemIconColor, MenuIconSize, forceFilled: !targetDashboard.IsQuickAccess);
                 }
             }
             foreach (var item in linkModeMenuItem.DropDownItems.OfType<ToolStripMenuItem>()) {
@@ -2177,6 +2189,14 @@ public class MainForm : MaterialForm {
         UpdateRefreshIndicatorAppearance();
         UpdateExportProgressAppearance();
         UpdateDashboardSwitchAppearance();
+
+        var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
+        _dashboardLabelIcon.Image?.Dispose();
+        _chartsLabelIcon.Image?.Dispose();
+        _themeLabelIcon.Image?.Dispose();
+        _dashboardLabelIcon.Image = MaterialIcons.GetIcon("star", iconColor, 22, forceFilled: true);
+        _chartsLabelIcon.Image = MaterialIcons.GetIcon(MaterialIcons.LinkedServices, iconColor, 22);
+        _themeLabelIcon.Image = MaterialIcons.GetIcon(MaterialIcons.MenuViewTheme, iconColor, 22);
     }
 
     private void UpdateThemeSwitchAppearance() {
@@ -2306,33 +2326,46 @@ public class MainForm : MaterialForm {
         } else if (_exportProgressIcon.Visible) {
             rightBound = _exportProgressIcon.Left;
         } else {
-            rightBound = _chartsLabel.Left;
+            rightBound = _chartsLabelIcon.Left;
         }
         return Math.Max(rightBound - spacingToRightGroup - left, 0);
     }
 
     private void UpdateThemeSwitchLayout() {
         if (_themeSegmentPanel == null || _lightThemeButton == null || _darkThemeButton == null) { return; }
-        const int leftMargin = 10, rightMargin = 10, top = 10, textGap = 8, sectionGap = 16, segmentGap = 0, segmentHeight = 30, segmentWidth = 36;
+        const int leftMargin = 10, rightMargin = 10, top = 10, textGap = 10, sectionGap = 16, segmentGap = 0, segmentHeight = 30, segmentWidth = 36;
 
-        _dashboardLabel.Location = new Point(leftMargin, 17);
+        const int labelIconGap = 4;
+        const int labelIconTop = 15;
+
+        _dashboardLabelIcon.Location = new Point(leftMargin, labelIconTop);
+        _dashboardLabel.Location = new Point(leftMargin + _dashboardLabelIcon.Width + labelIconGap,
+            _dashboardLabelIcon.Top + Math.Max((_dashboardLabelIcon.Height - _dashboardLabel.PreferredHeight) / 2, 0));
+
         var panelWidth = segmentWidth * 2 + 2 + segmentGap;
         _themeSegmentPanel.Location = new Point(_quickAccessPanel.Width - rightMargin - panelWidth, top);
         _themeSegmentPanel.Size = new Size(panelWidth, 32);
-        _themeLabel.Location = new Point(_themeSegmentPanel.Left - textGap - _themeLabel.PreferredWidth, 17);
+
+        _themeLabel.Location = new Point(_themeSegmentPanel.Left - textGap - _themeLabel.PreferredWidth,
+            labelIconTop + Math.Max((_themeLabelIcon.Height - _themeLabel.PreferredHeight) / 2, 0));
+        _themeLabelIcon.Location = new Point(_themeLabel.Left - labelIconGap - _themeLabelIcon.Width, labelIconTop);
+
         var linkPanelWidth = segmentWidth * 4 + 2 + segmentGap;
-        _linkSegmentPanel.Location = new Point(_themeLabel.Left - sectionGap - linkPanelWidth, top);
+        _linkSegmentPanel.Location = new Point(_themeLabelIcon.Left - sectionGap - linkPanelWidth, top);
         _linkSegmentPanel.Size = new Size(linkPanelWidth, 32);
-        _chartsLabel.Location = new Point(_linkSegmentPanel.Left - textGap - _chartsLabel.PreferredWidth, 17);
+
+        _chartsLabel.Location = new Point(_linkSegmentPanel.Left - textGap - _chartsLabel.PreferredWidth,
+            labelIconTop + Math.Max((_chartsLabelIcon.Height - _chartsLabel.PreferredHeight) / 2, 0));
+        _chartsLabelIcon.Location = new Point(_chartsLabel.Left - labelIconGap - _chartsLabelIcon.Width, labelIconTop);
 
         if (_exportProgressLabel.Visible) {
             const int exportIconGap = 4;
-            _exportProgressLabel.Location = new Point(_chartsLabel.Left - sectionGap - _exportProgressLabel.PreferredWidth, 17);
+            _exportProgressLabel.Location = new Point(_chartsLabelIcon.Left - sectionGap - _exportProgressLabel.PreferredWidth, 17);
             _exportProgressIcon.Location = new Point(_exportProgressLabel.Left - exportIconGap - _exportProgressIcon.Width, 14);
         }
 
         if (_refreshIndicatorTimeLabel.Visible) {
-            var indicatorRightBound = _exportProgressIcon.Visible ? _exportProgressIcon.Left : _chartsLabel.Left;
+            var indicatorRightBound = _exportProgressIcon.Visible ? _exportProgressIcon.Left : _chartsLabelIcon.Left;
             const int indicatorSectionGap = 16;
             const int indicatorIconGap = 4;
             _refreshIndicatorTimeLabel.Location = new Point(indicatorRightBound - indicatorSectionGap - _refreshIndicatorTimeLabel.PreferredWidth, 17);

@@ -226,7 +226,7 @@ public static class MaterialIcons {
         ["input_circle"] = "\uF71A",
         ["dangerous"] = "\uE99A",
         ["star"] = "\uE838",
-        ["star_outline"] = "\uE838",
+        ["star_outline"] = "\uE83A",
         ["open_in_full"] = "\uF1CE",
         ["pause"] = "\uE034",
         ["smooth"] = "\uE155",
@@ -265,9 +265,10 @@ public static class MaterialIcons {
 
     public static IEnumerable<string> GetAvailableIcons() => _fontGlyphs.Keys;
 
-    public static Bitmap? GetIcon(string name, Color color, int size = 16, float glyphScale = 0.78f) {
+    public static Bitmap? GetIcon(string name, Color color, int size = 16, float glyphScale = 0.78f, bool? forceFilled = null) {
         var normalizedName = name.ToLowerInvariant();
-        var key = $"{normalizedName}_{size}_{glyphScale:F2}_{color.ToArgb()}";
+        var fillModeToken = forceFilled.HasValue ? (forceFilled.Value ? "fill" : "outline") : "auto";
+        var key = $"{normalizedName}_{size}_{glyphScale:F2}_{color.ToArgb()}_{fillModeToken}";
 
         if (_cache.TryGetValue(key, out var cached)) {
             return (Bitmap)cached.Clone();
@@ -281,7 +282,16 @@ public static class MaterialIcons {
             return null;
         }
 
-        var isFilled = _filledIconNames.Contains(normalizedName);
+        var useStarGlyphFallback = forceFilled.HasValue && normalizedName == "star" && _filledTypeface is null;
+        if (useStarGlyphFallback) {
+            // Fallback for environments where variable-font FILL axis cannot be applied:
+            // use dedicated glyphs from the font for filled/outlined star.
+            glyph = forceFilled.Value ? "\uE885" : "\uE83A";
+        }
+
+        var isFilled = useStarGlyphFallback
+            ? false
+            : forceFilled ?? _filledIconNames.Contains(normalizedName);
         var bitmap = RenderFontIcon(glyph, color, size, glyphScale, isFilled);
         _cache[key] = bitmap;
 
@@ -440,7 +450,7 @@ public static class MaterialIcons {
 
             var coordinates = Array.CreateInstance(coordinateType, 4);
             coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('F', 'I', 'L', 'L'), fillValue), 0);
-            coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('w', 'g', 'h', 't'), 200f), 1);
+            coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('w', 'g', 'h', 't'), 400f), 1);
             coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('o', 'p', 's', 'z'), 24f), 2);
             coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('G', 'R', 'A', 'D'), 0f), 3);
 
@@ -450,7 +460,12 @@ public static class MaterialIcons {
             }
 
             var setVariationMethod = argumentsType.GetMethod("SetVariationDesignPosition", [variationPositionType]);
-            setVariationMethod?.Invoke(arguments, [variationPosition]);
+            if (setVariationMethod is not null) {
+                var result = setVariationMethod.Invoke(arguments, [variationPosition]);
+                if (result is not null) {
+                    arguments = result;
+                }
+            }
 
             return arguments;
         }
