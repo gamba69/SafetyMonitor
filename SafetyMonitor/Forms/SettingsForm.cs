@@ -60,6 +60,9 @@ public class SettingsForm : ThemedCaptionForm {
     private const int ColorSwatchSize = 12;
     private const int ColorSwatchLeftPadding = 8;
     private const int ColorSwatchTextGap = 8;
+    private const int StorageValidationModeButtonWidth = 72;
+    private const int StorageValidationModeButtonHeight = 28;
+    private const int StorageValidationModePanelPadding = 1;
 
     private static readonly string[] TabIcons = {
         MaterialIcons.Refresh,
@@ -684,8 +687,8 @@ public class SettingsForm : ThemedCaptionForm {
         pathPanel.SetColumnSpan(description, 4);
 
         _storageValidationModeSegmentPanel = new Panel {
-            Size = new Size(120, 30),
-            Padding = new Padding(1)
+            Size = new Size((StorageValidationModeButtonWidth * 2) + (StorageValidationModePanelPadding * 2), StorageValidationModeButtonHeight + (StorageValidationModePanelPadding * 2)),
+            Padding = new Padding(StorageValidationModePanelPadding)
         };
 
         _storageValidationFilesButton = CreateStorageValidationModeButton("FILES", true, normalFont);
@@ -699,7 +702,8 @@ public class SettingsForm : ThemedCaptionForm {
             "",
             _storageValidationModeSegmentPanel,
             titleFont,
-            descriptionFont), 0, 1);
+            descriptionFont,
+            valueColumnWidth: (StorageValidationModeButtonWidth * 2) + (StorageValidationModePanelPadding * 2)), 0, 1);
 
         layout.Controls.Add(pathPanel, 0, 2);
 
@@ -1017,13 +1021,13 @@ public class SettingsForm : ThemedCaptionForm {
                 MouseOverBackColor = Color.Transparent
             },
             AutoSize = false,
-            Width = 59,
-            Height = 28,
+            Width = StorageValidationModeButtonWidth,
+            Height = StorageValidationModeButtonHeight,
             Font = new Font(font.FontFamily, 8.5f, FontStyle.Bold),
             Cursor = Cursors.Hand,
             TextAlign = ContentAlignment.MiddleCenter,
             UseVisualStyleBackColor = false,
-            Location = new Point(isLeft ? 1 : 60, 1)
+            Location = new Point(isLeft ? StorageValidationModePanelPadding : StorageValidationModePanelPadding + StorageValidationModeButtonWidth, StorageValidationModePanelPadding)
         };
 
         button.CheckedChanged += (_, _) => {
