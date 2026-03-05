@@ -440,7 +440,7 @@ public static class MaterialIcons {
 
             var coordinates = Array.CreateInstance(coordinateType, 4);
             coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('F', 'I', 'L', 'L'), fillValue), 0);
-            coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('w', 'g', 'h', 't'), 400f), 1);
+            coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('w', 'g', 'h', 't'), 200f), 1);
             coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('o', 'p', 's', 'z'), 24f), 2);
             coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('G', 'R', 'A', 'D'), 0f), 3);
 
