@@ -21,7 +21,9 @@ public class SettingsForm : ThemedCaptionForm {
     private CheckBox _showRefreshIndicatorSwitch = null!;
     private CheckBox _minimizeToTraySwitch = null!;
     private CheckBox _startMinimizedSwitch = null!;
-    private CheckBox _validateDbStructureOnStartupSwitch = null!;
+    private Panel _storageValidationModeSegmentPanel = null!;
+    private RadioButton _storageValidationFilesButton = null!;
+    private RadioButton _storageValidationTablesButton = null!;
     private NumericUpDown _chartStaticTimeoutNumeric = null!;
     private NumericUpDown _chartStaticAggregationPresetMatchToleranceNumeric = null!;
     private NumericUpDown _chartStaticAggregationTargetPointsNumeric = null!;
@@ -636,13 +638,14 @@ public class SettingsForm : ThemedCaptionForm {
         var pathPanel = new TableLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
-            ColumnCount = 3,
+            ColumnCount = 4,
             RowCount = 2,
             Margin = new Padding(0, 0, 0, 8)
         };
         pathPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         pathPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         pathPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        pathPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, SettingUnitColumnWidth));
 
         var nameLabel = CreateLabel("Data Storage Path", titleFont);
         nameLabel.Margin = new Padding(0, 4, 14, 0);
@@ -663,7 +666,7 @@ public class SettingsForm : ThemedCaptionForm {
             Height = 35,
             Font = normalFont,
             Margin = new Padding(0),
-            Anchor = AnchorStyles.None
+            Anchor = AnchorStyles.Right
         };
         _browseButton.Click += BrowseButton_Click;
         pathPanel.Controls.Add(_browseButton, 2, 0);
@@ -678,15 +681,23 @@ public class SettingsForm : ThemedCaptionForm {
             Dock = DockStyle.Fill
         };
         pathPanel.Controls.Add(description, 0, 1);
-        pathPanel.SetColumnSpan(description, 3);
+        pathPanel.SetColumnSpan(description, 4);
 
+        _storageValidationModeSegmentPanel = new Panel {
+            Size = new Size(120, 30),
+            Padding = new Padding(1)
+        };
 
-        _validateDbStructureOnStartupSwitch = CreateThemeSwitch(normalFont);
+        _storageValidationFilesButton = CreateStorageValidationModeButton("FILES", true, normalFont);
+        _storageValidationTablesButton = CreateStorageValidationModeButton("TABLES", false, normalFont);
+        _storageValidationModeSegmentPanel.Controls.Add(_storageValidationFilesButton);
+        _storageValidationModeSegmentPanel.Controls.Add(_storageValidationTablesButton);
+
         layout.Controls.Add(CreateSettingRow(
-            "Check DB structure on startup",
-            "File layout validation always runs at startup. When enabled, an extended validation also checks required Firebird tables, columns, and indexes across all databases in storage.",
+            "Startup Storage Validation",
+            "FILES validates storage structure and file layout at startup. TABLES adds extended Firebird table, column, and index validation across all databases in storage.",
             "",
-            _validateDbStructureOnStartupSwitch,
+            _storageValidationModeSegmentPanel,
             titleFont,
             descriptionFont), 0, 1);
 
@@ -994,6 +1005,35 @@ public class SettingsForm : ThemedCaptionForm {
         return checkBox;
     }
 
+    private RadioButton CreateStorageValidationModeButton(string text, bool isLeft, Font font) {
+        var button = new RadioButton {
+            Text = text,
+            Appearance = Appearance.Button,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = {
+                BorderSize = 0,
+                CheckedBackColor = Color.Transparent,
+                MouseDownBackColor = Color.Transparent,
+                MouseOverBackColor = Color.Transparent
+            },
+            AutoSize = false,
+            Width = 59,
+            Height = 28,
+            Font = new Font(font.FontFamily, 8.5f, FontStyle.Bold),
+            Cursor = Cursors.Hand,
+            TextAlign = ContentAlignment.MiddleCenter,
+            UseVisualStyleBackColor = false,
+            Location = new Point(isLeft ? 1 : 60, 1)
+        };
+
+        button.CheckedChanged += (_, _) => {
+            var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+            StyleStorageValidationModeSwitch(isLight);
+        };
+
+        return button;
+    }
+
     private static Button CreateSettingsActionButton(string text, string iconName, Font font) {
         var button = new Button {
             Text = text,
@@ -1103,7 +1143,25 @@ public class SettingsForm : ThemedCaptionForm {
         StyleSettingSwitch(_showRefreshIndicatorSwitch, isLight);
         StyleSettingSwitch(_minimizeToTraySwitch, isLight);
         StyleSettingSwitch(_startMinimizedSwitch, isLight);
-        StyleSettingSwitch(_validateDbStructureOnStartupSwitch, isLight);
+        StyleStorageValidationModeSwitch(isLight);
+    }
+
+    private void StyleStorageValidationModeSwitch(bool isLight) {
+        if (_storageValidationModeSegmentPanel == null || _storageValidationFilesButton == null || _storageValidationTablesButton == null) {
+            return;
+        }
+
+        var segmentBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
+        var activeBg = isLight ? Color.FromArgb(195, 205, 210) : Color.FromArgb(62, 77, 84);
+        var inactiveFg = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
+        var activeFg = isLight ? Color.Black : Color.White;
+        var borderColor = isLight ? Color.FromArgb(196, 206, 211) : Color.FromArgb(70, 85, 92);
+
+        _storageValidationModeSegmentPanel.BackColor = borderColor;
+        _storageValidationFilesButton.BackColor = _storageValidationFilesButton.Checked ? activeBg : segmentBg;
+        _storageValidationTablesButton.BackColor = _storageValidationTablesButton.Checked ? activeBg : segmentBg;
+        _storageValidationFilesButton.ForeColor = _storageValidationFilesButton.Checked ? activeFg : inactiveFg;
+        _storageValidationTablesButton.ForeColor = _storageValidationTablesButton.Checked ? activeFg : inactiveFg;
     }
 
     private static void StyleSettingSwitch(CheckBox checkBox, bool isLight) {
@@ -1134,7 +1192,8 @@ public class SettingsForm : ThemedCaptionForm {
         _showRefreshIndicatorSwitch.Checked = ShowRefreshIndicator;
         _minimizeToTraySwitch.Checked = MinimizeToTray;
         _startMinimizedSwitch.Checked = StartMinimized;
-        _validateDbStructureOnStartupSwitch.Checked = ValidateDatabaseStructureOnStartup;
+        _storageValidationTablesButton.Checked = ValidateDatabaseStructureOnStartup;
+        _storageValidationFilesButton.Checked = !ValidateDatabaseStructureOnStartup;
         _valueTileLookbackMinutesNumeric.Value = Math.Clamp(ValueTileLookbackMinutes, 1, 43200);
         _chartStaticTimeoutNumeric.Value = ChartStaticTimeoutSeconds;
         _chartStaticAggregationPresetMatchToleranceNumeric.Value = Math.Clamp((decimal)ChartStaticAggregationPresetMatchTolerancePercent, 0m, 100m);
@@ -1164,7 +1223,7 @@ public class SettingsForm : ThemedCaptionForm {
         ShowRefreshIndicator = _showRefreshIndicatorSwitch.Checked;
         MinimizeToTray = _minimizeToTraySwitch.Checked;
         StartMinimized = _startMinimizedSwitch.Checked;
-        ValidateDatabaseStructureOnStartup = _validateDbStructureOnStartupSwitch.Checked;
+        ValidateDatabaseStructureOnStartup = _storageValidationTablesButton.Checked;
         var selectedSchemeName = (_materialColorSchemeComboBox.SelectedItem as MaterialSchemeComboItem)?.SchemeName;
         MaterialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(selectedSchemeName);
         ValueTileLookbackMinutes = (int)_valueTileLookbackMinutesNumeric.Value;
