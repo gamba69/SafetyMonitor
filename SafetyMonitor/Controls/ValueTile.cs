@@ -208,9 +208,10 @@ public class ValueTile : Panel {
 
         if (_currentValue.HasValue && _textColorScheme != null && HasTransformedTextForCurrentValue()) {
             var textColor = _textColorScheme.GetColor(_currentValue.Value);
-            if (_textLabel.Visible) {
-                _textLabel.ForeColor = textColor;
-            }
+            // Color must be assigned even before layout toggles text visibility.
+            // Otherwise Text+Value mode can show an uncolored text badge on first render
+            // and only pick up scheme color on the next refresh cycle.
+            _textLabel.ForeColor = textColor;
 
             if (_config.DisplayMode == ValueTileDisplayMode.TextOnly) {
                 _valueLabel.ForeColor = textColor;
