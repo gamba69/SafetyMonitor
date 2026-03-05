@@ -199,9 +199,7 @@ public class EditableTileControl : Panel {
             _linkGroupButton.FlatAppearance.BorderSize = 0;
             _linkGroupButton.ImageAlign = ContentAlignment.MiddleCenter;
             _linkGroupButton.Click += (_, _) => {
-                if (_linkGroupMenu == null) {
-                    _linkGroupMenu = CreateLinkGroupMenu();
-                }
+                _linkGroupMenu ??= CreateLinkGroupMenu();
                 _linkGroupMenu.Show(_linkGroupButton, new Point(0, _linkGroupButton.Height));
             };
         }
@@ -253,8 +251,9 @@ public class EditableTileControl : Panel {
     }
 
     private ContextMenuStrip CreateLinkGroupMenu() {
-        var menu = new ContextMenuStrip();
-        menu.ImageScalingSize = new Size(UnifiedTileEditorIconSize, UnifiedTileEditorIconSize);
+        var menu = new ContextMenuStrip {
+            ImageScalingSize = new Size(UnifiedTileEditorIconSize, UnifiedTileEditorIconSize)
+        };
         menu.Opening += (_, _) => UpdateLinkGroupMenuSelection(menu);
         foreach (var group in ChartLinkGroupInfo.All) {
             var item = new ToolStripMenuItem(group.GetDisplayName()) {
@@ -296,15 +295,15 @@ public class EditableTileControl : Panel {
     }
 
 
-    private Bitmap? CreateLinkGroupIcon(ChartLinkGroup group, Color color) {
+    private static Bitmap? CreateLinkGroupIcon(ChartLinkGroup group, Color color) {
         return MaterialIcons.GetIcon(GetLinkGroupIcon(group), color, UnifiedTileEditorIconSize, LinkGroupGlyphScale);
     }
 
-    private Bitmap? CreateTileTypeIcon(string iconName, Color color) {
+    private static Bitmap? CreateTileTypeIcon(string iconName, Color color) {
         return MaterialIcons.GetIcon(iconName, color, UnifiedTileEditorIconSize, TileTypeGlyphScale);
     }
 
-    private Bitmap? CreateHeaderActionIcon(string iconName, Color color) {
+    private static Bitmap? CreateHeaderActionIcon(string iconName, Color color) {
         return MaterialIcons.GetIcon(iconName, color, UnifiedTileEditorIconSize, HeaderActionGlyphScale);
     }
 

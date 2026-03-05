@@ -372,11 +372,11 @@ FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CR
             target.Count[i] += source.Count[i];
 
             if (source.Min[i].HasValue) {
-                target.Min[i] = !target.Min[i].HasValue || source.Min[i].Value < target.Min[i].Value ? source.Min[i] : target.Min[i];
+                target.Min[i] = !target.Min[i].HasValue || source.Min[i]!.Value < target.Min[i]!.Value ? source.Min[i] : target.Min[i];
             }
 
             if (source.Max[i].HasValue) {
-                target.Max[i] = !target.Max[i].HasValue || source.Max[i].Value > target.Max[i].Value ? source.Max[i] : target.Max[i];
+                target.Max[i] = !target.Max[i].HasValue || source.Max[i]!.Value > target.Max[i]!.Value ? source.Max[i] : target.Max[i];
             }
 
             target.First[i] ??= source.First[i];
@@ -403,7 +403,7 @@ FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CR
         }
     }
 
-    private BucketState BuildSingleBucketState(IEnumerable<ObservingData> bucketRows) {
+    private static BucketState BuildSingleBucketState(IEnumerable<ObservingData> bucketRows) {
         var state = new BucketState();
         foreach (var row in bucketRows) {
             AggregateRow(state, row);
@@ -412,7 +412,7 @@ FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CR
         return state;
     }
 
-    private IEnumerable<ObservingData> LoadRawBucket(string levelName, DateTime bucketStart) {
+    private List<ObservingData> LoadRawBucket(string levelName, DateTime bucketStart) {
         var span = Levels.First(x => x.Name == levelName).Span;
         var bucketEnd = bucketStart.Add(span).AddSeconds(-1);
         return GetRawData(bucketStart, bucketEnd);
@@ -537,18 +537,18 @@ WHEN NOT MATCHED THEN INSERT (
             CreatedAt = ts,
             CloudCover = d.CloudCover is null ? (short?)null : Convert.ToInt16(Math.Round(d.CloudCover.Value)),
             IsSafeInt = d.IsSafeInt is null ? (short?)null : Convert.ToInt16(d.IsSafeInt.Value),
-            DewPoint = d.DewPoint,
-            Humidity = d.Humidity,
-            Pressure = d.Pressure,
-            SkyBrightness = d.SkyBrightness,
-            RainRate = d.RainRate,
-            SkyQuality = d.SkyQuality,
-            SkyTemperature = d.SkyTemperature,
-            StarFwhm = d.StarFwhm,
-            Temperature = d.Temperature,
-            WindDirection = d.WindDirection,
-            WindGust = d.WindGust,
-            WindSpeed = d.WindSpeed
+            d.DewPoint,
+            d.Humidity,
+            d.Pressure,
+            d.SkyBrightness,
+            d.RainRate,
+            d.SkyQuality,
+            d.SkyTemperature,
+            d.StarFwhm,
+            d.Temperature,
+            d.WindDirection,
+            d.WindGust,
+            d.WindSpeed
         };
     }
 
@@ -719,7 +719,7 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
         var bag = new ConcurrentBag<ObservingData>();
 
         var shards = level is "10S" or "30S" or "1M" or "5M" or "15M"
-            ? EnumerateMonths(startTime, endTime).Select(GetMonthlyAggDbPath).Where(File.Exists).ToList()
+            ? [.. EnumerateMonths(startTime, endTime).Select(GetMonthlyAggDbPath).Where(File.Exists)]
             : EnumerateYears(startTime, endTime).Select(GetYearAggDbPath).Where(File.Exists).ToList();
 
         Parallel.ForEach(shards, db => {
@@ -751,13 +751,13 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
         return "1W";
     }
 
-    private IEnumerable<DateTime> EnumerateMonths(DateTime start, DateTime end) {
+    private static IEnumerable<DateTime> EnumerateMonths(DateTime start, DateTime end) {
         for (var d = new DateTime(start.Year, start.Month, 1); d <= end; d = d.AddMonths(1)) {
             yield return d;
         }
     }
 
-    private IEnumerable<int> EnumerateYears(DateTime start, DateTime end) {
+    private static IEnumerable<int> EnumerateYears(DateTime start, DateTime end) {
         for (var y = start.Year; y <= end.Year; y++) {
             yield return y;
         }
