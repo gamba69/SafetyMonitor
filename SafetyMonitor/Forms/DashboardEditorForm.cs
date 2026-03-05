@@ -24,7 +24,8 @@ public class DashboardEditorForm : ThemedCaptionForm {
     private NumericUpDown _rowsNumeric = null!;
     private Button _saveButton = null!;
     private ComboBox _initialLinkModeComboBox = null!;
-    private readonly Dictionary<ChartLinkGroup, ComboBox> _groupPeriodCombos = [];
+    private NumericUpDown _groupsNumeric = null!;
+    private readonly Dictionary<ChartLinkGroup, (Label Label, ComboBox Combo)> _groupPeriodControls = [];
 
     #endregion Private Fields
 
@@ -34,6 +35,7 @@ public class DashboardEditorForm : ThemedCaptionForm {
         _dashboard = dashboard;
         _materialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(new AppSettingsService().LoadSettings().MaterialColorScheme);
         _dashboard.EnsureLinkGroupPeriodDefaults();
+        _dashboard.EnsureLinkGroupConfiguration();
 
         InitializeComponent();
         FormIconHelper.Apply(this, MaterialIcons.DashboardEditCurrent);
@@ -139,6 +141,7 @@ public class DashboardEditorForm : ThemedCaptionForm {
                 case ComboBox combo:
                     ThemedComboBoxStyler.Apply(combo, isLight);
                     break;
+
             }
 
             // Don't recurse into grid panel children
@@ -354,32 +357,45 @@ public class DashboardEditorForm : ThemedCaptionForm {
         };
         _initialLinkModeComboBox.Items.AddRange(Enum.GetNames<DashboardChartLinkMode>());
 
-        var groups = ChartLinkGroupInfo.All.ToList();
-        var topGroups = groups.Take(3).ToList();
-        var bottomGroups = groups.Skip(3).Take(3).ToList();
+        _groupsNumeric = new NumericUpDown {
+            Minimum = ChartLinkGroupInfo.MinUsedGroups,
+            Maximum = ChartLinkGroupInfo.MaxUsedGroups,
+            Width = scaledComboWidth,
+            Font = normalFont,
+            Margin = new Padding(0, scaledVerticalMargin, scaledComboRightMargin, scaledVerticalMargin),
+            Anchor = AnchorStyles.Left,
+            TextAlign = HorizontalAlignment.Center
+        };
+        _groupsNumeric.ValueChanged += (_, _) => {
+            ApplyUsedGroupsToEditor((int)_groupsNumeric.Value);
+            Modified = true;
+        };
 
+        // A1/A2
         linkSettingsPanel.Controls.Add(CreateLinkLabel("Charts link:", isTitle: true), 0, 0);
         linkSettingsPanel.Controls.Add(_initialLinkModeComboBox, 1, 0);
+        // B1/B2
+        linkSettingsPanel.Controls.Add(CreateLinkLabel("Groups:", isTitle: true), 0, 1);
+        linkSettingsPanel.Controls.Add(_groupsNumeric, 1, 1);
 
-        for (var i = 0; i < topGroups.Count; i++) {
-            var group = topGroups[i];
-            var labelColumn = 2 + (i * 2);
-            var comboColumn = labelColumn + 1;
-            var combo = CreateLinkCombo();
-            _groupPeriodCombos[group] = combo;
-            linkSettingsPanel.Controls.Add(CreateLinkLabel($"{group.GetDisplayName()}:"), labelColumn, 0);
-            linkSettingsPanel.Controls.Add(combo, comboColumn, 0);
-        }
+        // Fixed A/B layout:
+        // A3/A4 Alpha, A5/A6 Charlie, A7/A8 Echo
+        // B3/B4 Bravo, B5/B6 Delta, B7/B8 Foxtrot
+        var orderedGroups = new[] {
+            (Group: ChartLinkGroup.Alpha, Column: 2, Row: 0),
+            (Group: ChartLinkGroup.Bravo, Column: 2, Row: 1),
+            (Group: ChartLinkGroup.Charlie, Column: 4, Row: 0),
+            (Group: ChartLinkGroup.Delta, Column: 4, Row: 1),
+            (Group: ChartLinkGroup.Echo, Column: 6, Row: 0),
+            (Group: ChartLinkGroup.Foxtrot, Column: 6, Row: 1)
+        };
 
-        // Row 2 starts with an empty left pair, then remaining link groups.
-        for (var i = 0; i < bottomGroups.Count; i++) {
-            var group = bottomGroups[i];
-            var labelColumn = 2 + (i * 2);
-            var comboColumn = labelColumn + 1;
+        foreach (var (group, column, row) in orderedGroups) {
             var combo = CreateLinkCombo();
-            _groupPeriodCombos[group] = combo;
-            linkSettingsPanel.Controls.Add(CreateLinkLabel($"{group.GetDisplayName()}:"), labelColumn, 1);
-            linkSettingsPanel.Controls.Add(combo, comboColumn, 1);
+            var label = CreateLinkLabel($"{group.GetDisplayName()}:");
+            _groupPeriodControls[group] = (label, combo);
+            linkSettingsPanel.Controls.Add(label, column, row);
+            linkSettingsPanel.Controls.Add(combo, column + 1, row);
         }
 
         mainLayout.Controls.Add(linkSettingsPanel, 0, 2);
@@ -473,18 +489,23 @@ public class DashboardEditorForm : ThemedCaptionForm {
         _columnsNumeric.Value = _dashboard.Columns;
         _quickAccessCheckBox.Checked = _dashboard.IsQuickAccess;
         _initialLinkModeComboBox.SelectedItem = _dashboard.InitialChartLinkMode.ToString();
+        _groupsNumeric.Value = ChartLinkGroupInfo.NormalizeUsedGroups(_dashboard.UsedLinkGroups);
 
         var presets = ChartPeriodPresetStore.GetPresetItems().ToList();
         foreach (var group in ChartLinkGroupInfo.All) {
-            var combo = _groupPeriodCombos[group];
+            var combo = _groupPeriodControls[group].Combo;
             var uid = _dashboard.GetLinkGroupPeriodPresetUid(group);
             var index = ChartPeriodPresetStore.FindMatchingPresetIndex(uid, presets);
             combo.SelectedIndex = index >= 0 ? index : 0;
         }
 
+        ApplyUsedGroupsToEditor((int)_groupsNumeric.Value);
+
         foreach (var config in _dashboard.Tiles) {
             AddEditableTile(config);
         }
+
+        ApplyUsedGroupsToEditor((int)_groupsNumeric.Value);
 
         // Initial load can happen before final layout; recalc after controls are measured.
         if (IsHandleCreated) {
@@ -590,9 +611,11 @@ public class DashboardEditorForm : ThemedCaptionForm {
         if (_initialLinkModeComboBox.SelectedItem != null) {
             _dashboard.InitialChartLinkMode = Enum.Parse<DashboardChartLinkMode>(_initialLinkModeComboBox.SelectedItem.ToString()!);
         }
+        _dashboard.UsedLinkGroups = (int)_groupsNumeric.Value;
+        _dashboard.EnsureLinkGroupConfiguration();
         var presets = ChartPeriodPresetStore.GetPresetItems().ToList();
         foreach (var group in ChartLinkGroupInfo.All) {
-            var combo = _groupPeriodCombos[group];
+            var combo = _groupPeriodControls[group].Combo;
             if (combo.SelectedIndex < 0 || combo.SelectedIndex >= presets.Count) {
                 continue;
             }
@@ -601,6 +624,35 @@ public class DashboardEditorForm : ThemedCaptionForm {
 
         DialogResult = DialogResult.OK;
         Close();
+    }
+
+
+    private void ApplyUsedGroupsToEditor(int usedGroups) {
+        _dashboard.UsedLinkGroups = ChartLinkGroupInfo.NormalizeUsedGroups(usedGroups);
+        _dashboard.EnsureLinkGroupConfiguration();
+
+        var available = _dashboard.GetAvailableLinkGroups();
+        foreach (var group in ChartLinkGroupInfo.All) {
+            if (!_groupPeriodControls.TryGetValue(group, out var control)) {
+                continue;
+            }
+
+            var visible = available.Contains(group);
+            control.Label.Visible = visible;
+            control.Combo.Visible = visible;
+        }
+
+        if (_dashboard.UsedLinkGroups == 1 && _initialLinkModeComboBox.SelectedItem?.ToString() == DashboardChartLinkMode.Grouped.ToString()) {
+            _initialLinkModeComboBox.SelectedItem = DashboardChartLinkMode.Full.ToString();
+        }
+
+        foreach (var editableTile in _tileControls) {
+            if (editableTile.Config is ChartTileConfig chartConfig) {
+                chartConfig.LinkGroup = ChartLinkGroupInfo.NormalizeGroup(chartConfig.LinkGroup, _dashboard.UsedLinkGroups);
+                editableTile.RefreshLinkGroupUI();
+            }
+            editableTile.UpdateDisplay();
+        }
     }
 
     private void RefreshAllTilePositions() {

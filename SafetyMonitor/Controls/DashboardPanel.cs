@@ -221,6 +221,7 @@ public class DashboardPanel : TableLayoutPanel {
                 chartTile.CreateControl();
             }
 
+            chartTile.SetAvailableLinkGroups(_dashboard.UsedLinkGroups);
             var presetUid = _dashboard.GetLinkGroupPeriodPresetUid(chartTile.Config.LinkGroup);
             chartTile.ExitStaticMode(raiseEvents: false);
             chartTile.SetStaticPaused(false, raiseEvents: false);
@@ -249,6 +250,7 @@ public class DashboardPanel : TableLayoutPanel {
                 }
 
                 if (tileControl is ChartTile chartTile) {
+                    chartTile.SetAvailableLinkGroups(_dashboard.UsedLinkGroups);
                     chartTile.PeriodChanged += OnChartPeriodChanged;
                     chartTile.StaticRangeChanged += OnChartStaticRangeChanged;
                     chartTile.AutoModeRestored += OnChartAutoModeRestored;
@@ -417,7 +419,8 @@ public class DashboardPanel : TableLayoutPanel {
         var allCharts = _tileControls.Values.OfType<ChartTile>();
         return _chartLinkMode switch {
             DashboardChartLinkMode.Full => allCharts,
-            DashboardChartLinkMode.Grouped => allCharts.Where(tile => tile.Config.LinkGroup == source.Config.LinkGroup),
+            DashboardChartLinkMode.Grouped when _dashboard.UsedLinkGroups > 1 => allCharts.Where(tile => tile.Config.LinkGroup == source.Config.LinkGroup),
+            DashboardChartLinkMode.Grouped => allCharts,
             _ => []
         };
     }

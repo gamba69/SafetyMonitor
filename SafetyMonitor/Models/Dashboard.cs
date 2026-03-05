@@ -14,6 +14,7 @@ public class Dashboard {
     [JsonIgnore]
     public bool NeedsStartupReset { get; set; }
     public DashboardChartLinkMode InitialChartLinkMode { get; set; } = DashboardChartLinkMode.Full;
+    public int UsedLinkGroups { get; set; } = ChartLinkGroupInfo.MaxUsedGroups;
     public Dictionary<ChartLinkGroup, string> LinkGroupPeriodPresetUids { get; set; } = new();
     public DateTime ModifiedAt { get; set; } = DateTime.Now;
     public string Name { get; set; } = "New Dashboard";
@@ -71,6 +72,7 @@ public class Dashboard {
     }
 
     public void EnsureLinkGroupPeriodDefaults() {
+        UsedLinkGroups = ChartLinkGroupInfo.NormalizeUsedGroups(UsedLinkGroups);
         var fallbackPresetUid = ChartPeriodPresetStore
             .GetFallbackPreset(ChartPeriodPresetStore.GetPresetItems())
             .Uid;
@@ -80,6 +82,32 @@ public class Dashboard {
                 LinkGroupPeriodPresetUids[group] = fallbackPresetUid;
             }
         }
+    }
+
+    public IReadOnlyList<ChartLinkGroup> GetAvailableLinkGroups() => ChartLinkGroupInfo.GetAvailable(UsedLinkGroups);
+
+    public bool EnsureLinkGroupConfiguration() {
+        var changed = false;
+        var normalizedUsedGroups = ChartLinkGroupInfo.NormalizeUsedGroups(UsedLinkGroups);
+        if (normalizedUsedGroups != UsedLinkGroups) {
+            UsedLinkGroups = normalizedUsedGroups;
+            changed = true;
+        }
+
+        foreach (var chart in Tiles.OfType<ChartTileConfig>()) {
+            var normalizedGroup = ChartLinkGroupInfo.NormalizeGroup(chart.LinkGroup, UsedLinkGroups);
+            if (chart.LinkGroup != normalizedGroup) {
+                chart.LinkGroup = normalizedGroup;
+                changed = true;
+            }
+        }
+
+        if (UsedLinkGroups == 1 && InitialChartLinkMode == DashboardChartLinkMode.Grouped) {
+            InitialChartLinkMode = DashboardChartLinkMode.Full;
+            changed = true;
+        }
+
+        return changed;
     }
 
     #endregion Public Methods

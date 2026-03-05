@@ -64,6 +64,7 @@ public class ChartTile : Panel {
     private bool _staticModePaused;
     private int _lastHorizontalPointCount;
     private const int HeaderControlHeight = 28;
+    private int _availableLinkGroups = ChartLinkGroupInfo.MaxUsedGroups;
 
     private sealed class SeriesHoverSnapshot {
         public string Label { get; init; } = string.Empty;
@@ -125,6 +126,11 @@ public class ChartTile : Panel {
     #endregion Public Constructors
 
     #region Public Methods
+
+    public void SetAvailableLinkGroups(int usedGroups) {
+        _availableLinkGroups = ChartLinkGroupInfo.NormalizeUsedGroups(usedGroups);
+        _config.LinkGroup = ChartLinkGroupInfo.NormalizeGroup(_config.LinkGroup, _availableLinkGroups);
+    }
 
     /// <summary>
     /// Returns the set of <see cref="DataService.GetChartData"/> parameter tuples that
@@ -827,21 +833,23 @@ public class ChartTile : Panel {
         contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add(CreatePlotMenuItem("Edit Tile...", MaterialIcons.CommonEdit, HandleEditTileClick));
 
-        var linkGroupItem = CreatePlotMenuItem("Link group", MaterialIcons.ToolbarChartsGroup, (_, _) => { });
-        foreach (var group in ChartLinkGroupInfo.All) {
-            var item = CreateToggleMenuItem(group.GetDisplayName(), GetLinkGroupIcon(group), _config.LinkGroup == group, (_, _) => {
-                if (_config.LinkGroup == group) {
-                    return;
-                }
+        if (_availableLinkGroups > 1) {
+            var linkGroupItem = CreatePlotMenuItem("Link group", MaterialIcons.ToolbarChartsGroup, (_, _) => { });
+            foreach (var group in ChartLinkGroupInfo.GetAvailable(_availableLinkGroups)) {
+                var item = CreateToggleMenuItem(group.GetDisplayName(), GetLinkGroupIcon(group), _config.LinkGroup == group, (_, _) => {
+                    if (_config.LinkGroup == group) {
+                        return;
+                    }
 
-                _config.LinkGroup = group;
-                ViewSettingsChanged?.Invoke(this);
-                LinkGroupChanged?.Invoke(this);
-            });
-            linkGroupItem.DropDownItems.Add(item);
+                    _config.LinkGroup = group;
+                    ViewSettingsChanged?.Invoke(this);
+                    LinkGroupChanged?.Invoke(this);
+                });
+                linkGroupItem.DropDownItems.Add(item);
+            }
+            contextMenu.Items.Add(linkGroupItem);
+            contextMenu.Items.Add(new ToolStripSeparator());
         }
-        contextMenu.Items.Add(linkGroupItem);
-        contextMenu.Items.Add(new ToolStripSeparator());
 
         var isExporting = ExcelExportStateService.IsExporting;
         var copyItem = CreatePlotMenuItem("Copy to Clipboard", MaterialIcons.PlotMenuCopyToClipboard, HandleCopyImageClick);

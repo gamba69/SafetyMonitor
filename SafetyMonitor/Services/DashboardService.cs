@@ -103,8 +103,9 @@ public class DashboardService {
                 && !string.IsNullOrWhiteSpace(uid));
 
         dashboard.EnsureLinkGroupPeriodDefaults();
+        var hadValidLinkGroupConfiguration = !dashboard.EnsureLinkGroupConfiguration();
 
-        return !hadAllLinkGroupPeriodDefaults;
+        return !hadAllLinkGroupPeriodDefaults || !hadValidLinkGroupConfiguration;
     }
 
     private void EnsureConfigDirectoryExists() {

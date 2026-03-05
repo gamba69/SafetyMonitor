@@ -27,5 +27,20 @@ public static class ChartLinkGroupInfo {
 
     public static IReadOnlyList<ChartLinkGroup> All => _all;
 
+    public const int MinUsedGroups = 1;
+    public static int MaxUsedGroups => _all.Length;
+
+    public static int NormalizeUsedGroups(int usedGroups) => Math.Clamp(usedGroups, MinUsedGroups, MaxUsedGroups);
+
+    public static IReadOnlyList<ChartLinkGroup> GetAvailable(int usedGroups) {
+        var normalized = NormalizeUsedGroups(usedGroups);
+        return _all.Take(normalized).ToList();
+    }
+
+    public static ChartLinkGroup NormalizeGroup(ChartLinkGroup group, int usedGroups) {
+        var available = GetAvailable(usedGroups);
+        return available.Contains(group) ? group : available[0];
+    }
+
     public static string GetDisplayName(this ChartLinkGroup group) => group.ToString();
 }

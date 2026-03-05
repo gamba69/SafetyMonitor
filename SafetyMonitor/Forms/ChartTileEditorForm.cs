@@ -26,6 +26,8 @@ public class ChartTileEditorForm : ThemedCaptionForm {
 
     private readonly ChartTileConfig _config;
     private readonly ValueSchemeService _valueSchemeService;
+    private readonly Dashboard _dashboard;
+    private FlowLayoutPanel _linkGroupPanel = null!;
     private Color _inputBackColor;
     private Color _inputForeColor;
 
@@ -44,6 +46,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
 
     public ChartTileEditorForm(ChartTileConfig config, Dashboard dashboard) {
         _config = config;
+        _dashboard = dashboard;
         _valueSchemeService = new ValueSchemeService();
 
         InitializeComponent();
@@ -468,7 +471,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         mainLayout.Controls.Add(gridButtonPanel, 0, 4);
 
         // Row 5: Link group
-        var periodPanel = new FlowLayoutPanel {
+        _linkGroupPanel = new FlowLayoutPanel {
             AutoSize = false,
             Height = 44,
             MinimumSize = new Size(0, 44),
@@ -490,12 +493,12 @@ public class ChartTileEditorForm : ThemedCaptionForm {
             DropDownStyle = ComboBoxStyle.DropDownList,
             Margin = new Padding(0, 2, 0, 0)
         };
-        foreach (var group in ChartLinkGroupInfo.All) {
+        foreach (var group in _dashboard.GetAvailableLinkGroups()) {
             _linkGroupComboBox.Items.Add(group.GetDisplayName());
         }
-        periodPanel.Controls.Add(periodLabel);
-        periodPanel.Controls.Add(_linkGroupComboBox);
-        mainLayout.Controls.Add(periodPanel, 0, 5);
+        _linkGroupPanel.Controls.Add(periodLabel);
+        _linkGroupPanel.Controls.Add(_linkGroupComboBox);
+        mainLayout.Controls.Add(_linkGroupPanel, 0, 5);
 
         // Row 6: Options
         var optionsPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 0, 0, 10) };
@@ -528,8 +531,13 @@ public class ChartTileEditorForm : ThemedCaptionForm {
     }
     private void LoadConfig() {
         _titleTextBox.Text = _config.Title;
+        _config.LinkGroup = ChartLinkGroupInfo.NormalizeGroup(_config.LinkGroup, _dashboard.UsedLinkGroups);
+        _linkGroupPanel.Visible = _dashboard.UsedLinkGroups > 1;
+
         if (_linkGroupComboBox.Items.Count > 0) {
-            _linkGroupComboBox.SelectedIndex = Math.Max(0, ChartLinkGroupInfo.All.ToList().IndexOf(_config.LinkGroup));
+            var groups = _dashboard.GetAvailableLinkGroups().ToList();
+            var idx = groups.IndexOf(_config.LinkGroup);
+            _linkGroupComboBox.SelectedIndex = Math.Max(0, idx);
         }
 
         _showLegendCheckBox.Checked = _config.ShowLegend;
@@ -701,12 +709,17 @@ public class ChartTileEditorForm : ThemedCaptionForm {
     }
     private void SaveButton_Click(object? sender, EventArgs e) {
         _config.Title = _titleTextBox.Text;
-        if (_linkGroupComboBox.SelectedIndex < 0 || _linkGroupComboBox.SelectedIndex >= ChartLinkGroupInfo.All.Count) {
-            ThemedMessageBox.Show(this, "Please select a link group.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
-        }
+        if (_dashboard.UsedLinkGroups > 1) {
+            var groups = _dashboard.GetAvailableLinkGroups().ToList();
+            if (_linkGroupComboBox.SelectedIndex < 0 || _linkGroupComboBox.SelectedIndex >= groups.Count) {
+                ThemedMessageBox.Show(this, "Please select a link group.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
-        _config.LinkGroup = ChartLinkGroupInfo.All[_linkGroupComboBox.SelectedIndex];
+            _config.LinkGroup = groups[_linkGroupComboBox.SelectedIndex];
+        } else {
+            _config.LinkGroup = _dashboard.GetAvailableLinkGroups()[0];
+        }
 
         _config.ShowLegend = _showLegendCheckBox.Checked;
         _config.ShowGrid = _showGridCheckBox.Checked;

@@ -66,10 +66,24 @@ public class EditableTileControl : Panel {
     public void UpdateDisplay() {
         _titleLabel.Text = Config.Title;
         _infoLabel.Text = GetInfoText();
-        if (_linkGroupButton != null && Config is ChartTileConfig ctc) {
-            _linkGroupButton.Image?.Dispose();
-            _linkGroupButton.Image = CreateLinkGroupIcon(ctc.LinkGroup, _linkGroupButton.ForeColor);
+        RefreshLinkGroupUI();
+    }
+
+    public void RefreshLinkGroupUI() {
+        if (_linkGroupButton == null || Config is not ChartTileConfig ctc) {
+            return;
         }
+
+        ctc.LinkGroup = ChartLinkGroupInfo.NormalizeGroup(ctc.LinkGroup, _dashboard.UsedLinkGroups);
+        var shouldShowGroupControls = _dashboard.UsedLinkGroups > 1;
+        _linkGroupButton.Visible = shouldShowGroupControls;
+
+        if (!shouldShowGroupControls) {
+            return;
+        }
+
+        _linkGroupButton.Image?.Dispose();
+        _linkGroupButton.Image = CreateLinkGroupIcon(ctc.LinkGroup, _linkGroupButton.ForeColor);
     }
 
     #endregion Public Methods
@@ -199,7 +213,8 @@ public class EditableTileControl : Panel {
             _linkGroupButton.FlatAppearance.BorderSize = 0;
             _linkGroupButton.ImageAlign = ContentAlignment.MiddleCenter;
             _linkGroupButton.Click += (_, _) => {
-                _linkGroupMenu ??= CreateLinkGroupMenu();
+                _linkGroupMenu?.Dispose();
+                _linkGroupMenu = CreateLinkGroupMenu();
                 _linkGroupMenu.Show(_linkGroupButton, new Point(0, _linkGroupButton.Height));
             };
         }
@@ -235,6 +250,7 @@ public class EditableTileControl : Panel {
 
         Controls.Add(_infoLabel);
         Controls.Add(header);
+        RefreshLinkGroupUI();
 
         MouseDown += OnMouseDown;
         MouseMove += OnMouseMove;
@@ -255,7 +271,7 @@ public class EditableTileControl : Panel {
             ImageScalingSize = new Size(UnifiedTileEditorIconSize, UnifiedTileEditorIconSize)
         };
         menu.Opening += (_, _) => UpdateLinkGroupMenuSelection(menu);
-        foreach (var group in ChartLinkGroupInfo.All) {
+        foreach (var group in _dashboard.GetAvailableLinkGroups()) {
             var item = new ToolStripMenuItem(group.GetDisplayName()) {
                 Tag = group,
                 Image = CreateLinkGroupIcon(group, ForeColor),
@@ -342,6 +358,7 @@ public class EditableTileControl : Panel {
         } else if (Config is ChartTileConfig ctc) {
             using var editor = new ChartTileEditorForm(ctc, _dashboard);
             if (editor.ShowDialog() == DialogResult.OK) {
+                ctc.LinkGroup = ChartLinkGroupInfo.NormalizeGroup(ctc.LinkGroup, _dashboard.UsedLinkGroups);
                 UpdateDisplay();
                 TileEdited?.Invoke(this, Config);
             }
