@@ -1,6 +1,5 @@
 using SafetyMonitor.Models;
 using SkiaSharp;
-using System.Drawing.Imaging;
 
 namespace SafetyMonitor.Services;
 
@@ -327,8 +326,50 @@ public static class MaterialIcons {
     #region Private Methods
 
     private static Bitmap? RenderFontIcon(string glyph, Color color, int size, float glyphScale, bool isFilled) {
+        if (isFilled && glyph == "\uE838") {
+            return RenderFilledStarWithSkia(color, size);
+        }
+
         var typeface = isFilled ? _filledTypeface ?? _outlinedTypeface : _outlinedTypeface;
         return typeface is null ? null : RenderWithSkia(glyph, color, size, glyphScale, typeface);
+    }
+
+    private static Bitmap RenderFilledStarWithSkia(Color color, int size) {
+        using var surface = SKSurface.Create(new SKImageInfo(size, size, SKColorType.Bgra8888, SKAlphaType.Premul));
+        var canvas = surface.Canvas;
+        canvas.Clear(SKColors.Transparent);
+
+        var center = size / 2f;
+        var outerRadius = size * 0.38f;
+        var innerRadius = size * 0.16f;
+
+        using var path = new SKPath();
+        for (int i = 0; i < 10; i++) {
+            var angle = (-90f + i * 36f) * (float)Math.PI / 180f;
+            var radius = i % 2 == 0 ? outerRadius : innerRadius;
+            var x = center + MathF.Cos(angle) * radius;
+            var y = center + MathF.Sin(angle) * radius;
+            if (i == 0) {
+                path.MoveTo(x, y);
+            } else {
+                path.LineTo(x, y);
+            }
+        }
+
+        path.Close();
+
+        using var paint = new SKPaint {
+            IsAntialias = true,
+            Color = new SKColor(color.R, color.G, color.B, color.A),
+            Style = SKPaintStyle.Fill,
+        };
+
+        canvas.DrawPath(path, paint);
+
+        using var image = surface.Snapshot();
+        using var skBitmap = SKBitmap.FromImage(image);
+
+        return ToBitmap(skBitmap);
     }
 
     private static Bitmap RenderWithSkia(string glyph, Color color, int size, float glyphScale, SKTypeface typeface) {
@@ -336,18 +377,17 @@ public static class MaterialIcons {
         var canvas = surface.Canvas;
         canvas.Clear(SKColors.Transparent);
 
+        var textSize = size * Math.Clamp(glyphScale, 0.1f, 1.5f);
+        using var font = new SKFont(typeface, textSize);
         using var paint = new SKPaint {
             IsAntialias = true,
-            Typeface = typeface,
             Color = new SKColor(color.R, color.G, color.B, color.A),
-            TextSize = size * Math.Clamp(glyphScale, 0.1f, 1.5f),
-            TextAlign = SKTextAlign.Center,
             IsStroke = false,
         };
 
-        var metrics = paint.FontMetrics;
+        var metrics = font.Metrics;
         var textY = (size / 2f) - ((metrics.Ascent + metrics.Descent) / 2f);
-        canvas.DrawText(glyph, size / 2f, textY, paint);
+        canvas.DrawText(glyph, size / 2f, textY, SKTextAlign.Center, font, paint);
 
         using var image = surface.Snapshot();
         using var skBitmap = SKBitmap.FromImage(image);
@@ -364,79 +404,13 @@ public static class MaterialIcons {
     }
 
     private static SKTypeface? ResolveTypeface(float fillValue) {
+        _ = fillValue;
+
         if (_materialFontPath is null) {
             return null;
         }
 
-        var baseTypeface = SKTypeface.FromFile(_materialFontPath);
-        if (baseTypeface is null) {
-            return null;
-        }
-
-        var fontArguments = BuildFontArgumentsObject(fillValue);
-        if (fontArguments is null) {
-            return baseTypeface;
-        }
-
-        try {
-            var withFontArgumentsMethod = typeof(SKTypeface).GetMethod("WithFontArguments");
-            if (withFontArgumentsMethod?.Invoke(baseTypeface, [fontArguments]) is SKTypeface variedTypeface) {
-                return variedTypeface;
-            }
-        }
-        catch {
-            // Ignore and use base typeface.
-        }
-
-        return baseTypeface;
-    }
-
-    private static object? BuildFontArgumentsObject(float fillValue) {
-        try {
-            var argumentsType = typeof(SKTypeface).Assembly.GetType("SkiaSharp.SKFontArguments");
-            if (argumentsType is null) {
-                return null;
-            }
-
-            var arguments = Activator.CreateInstance(argumentsType);
-            if (arguments is null) {
-                return null;
-            }
-
-            var variationPositionType = argumentsType.GetNestedType("VariationPosition");
-            var coordinateType = variationPositionType?.GetNestedType("Coordinate");
-            if (variationPositionType is null || coordinateType is null) {
-                return null;
-            }
-
-            var coordinates = Array.CreateInstance(coordinateType, 4);
-            coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('F', 'I', 'L', 'L'), fillValue), 0);
-            coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('w', 'g', 'h', 't'), 200f), 1);
-            coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('o', 'p', 's', 'z'), 24f), 2);
-            coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('G', 'R', 'A', 'D'), 0f), 3);
-
-            var variationPosition = Activator.CreateInstance(variationPositionType, coordinates);
-            if (variationPosition is null) {
-                return null;
-            }
-
-            var setVariationMethod = argumentsType.GetMethod("SetVariationDesignPosition", [variationPositionType]);
-            if (setVariationMethod is not null) {
-                var result = setVariationMethod.Invoke(arguments, [variationPosition]);
-                if (result is not null) {
-                    arguments = result;
-                }
-            }
-
-            return arguments;
-        }
-        catch {
-            return null;
-        }
-    }
-
-    private static uint MakeAxisTag(char c1, char c2, char c3, char c4) {
-        return ((uint)c1 << 24) | ((uint)c2 << 16) | ((uint)c3 << 8) | c4;
+        return SKTypeface.FromFile(_materialFontPath);
     }
 
     private static string? ResolveMaterialFontPath() {

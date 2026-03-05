@@ -602,9 +602,9 @@ public class MainForm : MaterialForm {
         }
     }
 
-    private static ToolStripMenuItem CreateMenuItem(string text, string iconName, Color iconColor, EventHandler? onClick) {
+    private static ToolStripMenuItem CreateMenuItem(string text, string iconName, Color iconColor, EventHandler? onClick, bool? forceFilled = null) {
         var item = new ToolStripMenuItem(text) {
-            Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize),
+            Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize, forceFilled: forceFilled),
             ImageScaling = ToolStripItemImageScaling.None
         };
         if (onClick != null) {
@@ -956,7 +956,7 @@ public class MainForm : MaterialForm {
         linkModeMenuItem.DropDownItems.Add(CreateLinkModeMenuItem("Disabled", MaterialIcons.ToolbarChartsUnlink, DashboardChartLinkMode.Disabled, iconColor));
         contextMenu.Items.Add(linkModeMenuItem);
         _quickButtonFavoriteSeparator = new ToolStripSeparator { Visible = false };
-        _quickButtonFavoriteMenuItem = CreateMenuItem("Add to Favorites", "star", iconColor, (_, _) => ToggleDashboardFavoriteFromQuickButton());
+        _quickButtonFavoriteMenuItem = CreateMenuItem("Add to Favorites", "star", iconColor, (_, _) => ToggleDashboardFavoriteFromQuickButton(), forceFilled: true);
         _quickButtonFavoriteMenuItem.Visible = false;
         contextMenu.Items.Add(_quickButtonFavoriteSeparator);
         contextMenu.Items.Add(_quickButtonFavoriteMenuItem);
