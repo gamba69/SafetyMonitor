@@ -42,6 +42,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         _presets = [.. presets.Select(p => new ChartPeriodPresetDefinition {
             Uid = p.Uid,
             Name = p.Name,
+            ShortName = p.ShortName,
             Value = p.Value,
             Unit = p.Unit,
             AggregationInterval = p.AggregationInterval
@@ -126,6 +127,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         const int detailsColumnCount = visualDetailsColumnCount * 2;
         var details = new[] {
             "Preset: display name shown in the chart period selector.",
+            "Short: editable short period name stored with the preset.",
             "Value + Unit: duration of the period (for example 6 Hours).",
             "Aggregation: bucket size used for chart data grouping.",
             "Points: expected number of points for the selected aggregation."
@@ -205,10 +207,11 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         };
 
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Uid", Visible = false });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Name", HeaderText = "Preset", FillWeight = 34 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Value", HeaderText = "Value", FillWeight = 14 });
-        _grid.Columns.Add(new DataGridViewComboBoxColumn { Name = "Unit", HeaderText = "Unit", FillWeight = 16, DataSource = _units });
-        _grid.Columns.Add(new DataGridViewComboBoxColumn { Name = "Aggregation", HeaderText = "Aggregation", FillWeight = 28, DataSource = Buckets });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Name", HeaderText = "Preset", FillWeight = 28 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "ShortName", HeaderText = "Short", FillWeight = 12 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Value", HeaderText = "Value", FillWeight = 12 });
+        _grid.Columns.Add(new DataGridViewComboBoxColumn { Name = "Unit", HeaderText = "Unit", FillWeight = 14, DataSource = _units });
+        _grid.Columns.Add(new DataGridViewComboBoxColumn { Name = "Aggregation", HeaderText = "Aggregation", FillWeight = 24, DataSource = Buckets });
         _grid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "Points",
             HeaderText = "Points",
@@ -234,7 +237,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         _moveDownButton = new Button { Text = "Down", Width = 100, Height = 32 };
         _calculateButton = new Button { Text = "Auto...", Width = 120, Height = 32 };
         _addButton.Click += (_, _) => {
-            var rowIndex = _grid.Rows.Add(Guid.NewGuid().ToString("N"), "Custom", 1, ChartPeriodUnit.Hours, "1m", string.Empty);
+            var rowIndex = _grid.Rows.Add(Guid.NewGuid().ToString("N"), "Custom", "custom", 1, ChartPeriodUnit.Hours, "1m", string.Empty);
             if (rowIndex >= 0 && rowIndex < _grid.Rows.Count) {
                 UpdateRowAggregationOptions(_grid.Rows[rowIndex], showWarningIfAdjusted: false);
             }
@@ -323,7 +326,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
     private void LoadPresets() {
         _grid.Rows.Clear();
         foreach (var p in _presets) {
-            var rowIndex = _grid.Rows.Add(p.Uid, p.Name, p.Value, p.Unit, BucketFromInterval(p.AggregationInterval), string.Empty);
+            var rowIndex = _grid.Rows.Add(p.Uid, p.Name, p.ShortName, p.Value, p.Unit, BucketFromInterval(p.AggregationInterval), string.Empty);
             if (rowIndex >= 0 && rowIndex < _grid.Rows.Count) {
                 UpdateRowAggregationOptions(_grid.Rows[rowIndex], showWarningIfAdjusted: false);
             }
@@ -402,6 +405,12 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
                 return;
             }
 
+            var shortName = row.Cells["ShortName"].Value?.ToString()?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(shortName)) {
+                shortName = name;
+                row.Cells["ShortName"].Value = shortName;
+            }
+
             if (!double.TryParse(row.Cells["Value"].Value?.ToString(), out var value) || value <= 0) {
                 ThemedMessageBox.Show(this, "Preset value must be positive.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -421,6 +430,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
             output.Add(new ChartPeriodPresetDefinition {
                 Uid = string.IsNullOrWhiteSpace(uid) ? Guid.NewGuid().ToString("N") : uid,
                 Name = name,
+                ShortName = shortName,
                 Value = value,
                 Unit = unit,
                 AggregationInterval = IntervalFromBucket(bucket)

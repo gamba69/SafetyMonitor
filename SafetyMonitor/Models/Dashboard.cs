@@ -94,12 +94,12 @@ public class Dashboard {
             IsQuickAccess = true,
             InitialChartLinkMode = DashboardChartLinkMode.Grouped,
             LinkGroupPeriodPresetUids = new Dictionary<ChartLinkGroup, string> {
-                [ChartLinkGroup.Alpha] = "preset-1-day",
-                [ChartLinkGroup.Bravo] = "preset-6-hours",
-                [ChartLinkGroup.Charlie] = "preset-15-minutes",
-                [ChartLinkGroup.Delta] = "preset-15-minutes",
-                [ChartLinkGroup.Echo] = "preset-15-minutes",
-                [ChartLinkGroup.Foxtrot] = "preset-15-minutes"
+                [ChartLinkGroup.Alpha] = "24h",
+                [ChartLinkGroup.Bravo] = "6h",
+                [ChartLinkGroup.Charlie] = "15m",
+                [ChartLinkGroup.Delta] = "15m",
+                [ChartLinkGroup.Echo] = "15m",
+                [ChartLinkGroup.Foxtrot] = "15m"
             }
         };
 
@@ -110,7 +110,7 @@ public class Dashboard {
             ValueTile("Wind Speed", MetricType.WindSpeed, 0, 3, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconName: "", iconColorSchemeName: "", colorSchemeName: "Wind Speed", textColorSchemeName: "Wind Speed", valueSchemeName: "Wind Speed Status"),
             ChartTile("Temperature / Dew Point (24h)", 1, 0, 3, 2, ChartPeriod.Last24Hours,
                 linkGroup: ChartLinkGroup.Alpha,
-                periodPresetUid: "preset-1-day",
+                periodPresetUid: "24h",
                 customAggregationInterval: TimeSpan.FromMinutes(1),
                 series: [
                     Aggregation(MetricType.Temperature, AggregationFunction.Average, Color.FromArgb(255, 112, 67), "Temperature"),
@@ -118,7 +118,7 @@ public class Dashboard {
                 ]),
             ChartTile("Humidity / Pressure (24h)", 1, 2, 2, 2, ChartPeriod.Last24Hours,
                 linkGroup: ChartLinkGroup.Alpha,
-                periodPresetUid: "preset-1-day",
+                periodPresetUid: "24h",
                 customAggregationInterval: TimeSpan.FromMinutes(1),
                 series: [
                     Aggregation(MetricType.Humidity, AggregationFunction.Average, Color.FromArgb(38, 166, 154), "Humidity"),
@@ -126,7 +126,7 @@ public class Dashboard {
                 ]),
             ChartTile("Wind & Rain (6h)", 3, 2, 1, 2, ChartPeriod.Last6Hours,
                 linkGroup: ChartLinkGroup.Bravo,
-                periodPresetUid: "preset-6-hours",
+                periodPresetUid: "6h",
                 customAggregationInterval: TimeSpan.FromSeconds(30),
                 series: [
                     Aggregation(MetricType.WindSpeed, AggregationFunction.Maximum, Color.FromArgb(255, 202, 40), "Wind Max"),
