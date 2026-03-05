@@ -42,6 +42,7 @@ public class MainForm : MaterialForm {
     private MenuStrip _mainMenu = null!;
     private ThemedMenuRenderer _menuRenderer = null!;
     private const int MenuIconSize = 22;
+    private const float QuickAccessContextMenuFontSize = 10f;
     private const int MaxQuickAccessDashboards = 7;
     private Panel _quickAccessPanel = null!;
     private Panel _quickDashboardsPanel = null!;
@@ -620,6 +621,11 @@ public class MainForm : MaterialForm {
             "Duplicate Current" => MaterialIcons.DashboardDuplicateCurrent,
             "Delete Current" => MaterialIcons.DashboardDeleteCurrent,
             "Manage Dashboards..." => MaterialIcons.DashboardManage,
+            "Edit Dashboard..." => MaterialIcons.CommonEdit,
+            "Link Mode" => MaterialIcons.LinkedServices,
+            "Full" => MaterialIcons.ToolbarChartsLink,
+            "Grouped" => MaterialIcons.ToolbarChartsGroup,
+            "Disabled" => MaterialIcons.ToolbarChartsUnlink,
             "Axis Rules..." => MaterialIcons.MenuViewAxisRules,
             "Metric Settings..." => MaterialIcons.MenuViewMetricSettings,
             "Chart Periods..." => MaterialIcons.MenuViewChartPeriods,
@@ -642,6 +648,15 @@ public class MainForm : MaterialForm {
                     InteractiveCursorStyler.Apply(menuItem.DropDownItems);
                     UpdateMenuItemsIcons(menuItem.DropDownItems, iconColor);
                 }
+            }
+        }
+    }
+
+    private static void ApplyContextMenuItemFont(ToolStripItemCollection items, Font menuFont) {
+        foreach (ToolStripItem item in items) {
+            item.Font = menuFont;
+            if (item is ToolStripMenuItem menuItem && menuItem.HasDropDownItems) {
+                ApplyContextMenuItemFont(menuItem.DropDownItems, menuFont);
             }
         }
     }
@@ -912,11 +927,28 @@ public class MainForm : MaterialForm {
         var contextMenu = new ContextMenuStrip {
             ShowImageMargin = true,
             ImageScalingSize = new Size(MenuIconSize, MenuIconSize),
+            Font = new Font("Segoe UI", QuickAccessContextMenuFontSize, FontStyle.Regular),
             Cursor = Cursors.Hand
         };
+        contextMenu.Items.Add(CreateMenuItem("Manage Dashboards...", MaterialIcons.DashboardManage, iconColor, (_, _) => ShowDashboardManager()));
+        contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add(CreateMenuItem("Edit Dashboard...", MaterialIcons.CommonEdit, iconColor, (_, _) => EditCurrentDashboard()));
+        var linkModeMenuItem = CreateMenuItem("Link Mode", MaterialIcons.LinkedServices, iconColor, null);
+        linkModeMenuItem.DropDownItems.Add(CreateLinkModeMenuItem("Full", MaterialIcons.ToolbarChartsLink, DashboardChartLinkMode.Full, iconColor));
+        linkModeMenuItem.DropDownItems.Add(CreateLinkModeMenuItem("Grouped", MaterialIcons.ToolbarChartsGroup, DashboardChartLinkMode.Grouped, iconColor));
+        linkModeMenuItem.DropDownItems.Add(CreateLinkModeMenuItem("Disabled", MaterialIcons.ToolbarChartsUnlink, DashboardChartLinkMode.Disabled, iconColor));
+        contextMenu.Items.Add(linkModeMenuItem);
         contextMenu.Opening += (_, _) => {
             var itemIconColor = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT ? Color.Black : Color.White;
+            var currentLinkMode = _currentDashboard?.InitialChartLinkMode ?? DashboardChartLinkMode.Full;
+            foreach (var item in linkModeMenuItem.DropDownItems.OfType<ToolStripMenuItem>()) {
+                if (item.Tag is DashboardChartLinkMode mode) {
+                    item.Checked = mode == currentLinkMode;
+                }
+            }
+            contextMenu.ImageScalingSize = new Size(MenuIconSize, MenuIconSize);
+            contextMenu.Font = new Font("Segoe UI", QuickAccessContextMenuFontSize, FontStyle.Regular);
+            ApplyContextMenuItemFont(contextMenu.Items, contextMenu.Font);
             UpdateMenuItemsIcons(contextMenu.Items, itemIconColor);
             _menuRenderer?.UpdateTheme();
             contextMenu.RenderMode = ToolStripRenderMode.Professional;
@@ -925,6 +957,13 @@ public class MainForm : MaterialForm {
         };
 
         return contextMenu;
+    }
+
+    private ToolStripMenuItem CreateLinkModeMenuItem(string text, string iconName, DashboardChartLinkMode mode, Color iconColor) {
+        var item = CreateMenuItem(text, iconName, iconColor, (_, _) => SaveDashboardLinkModeAndReload(mode));
+        item.CheckOnClick = false;
+        item.Tag = mode;
+        return item;
     }
 
     private void QuickPanel_MouseUp(object? sender, MouseEventArgs e) {
@@ -1287,6 +1326,22 @@ public class MainForm : MaterialForm {
         _dashboardLinkModes[_currentDashboard.Id] = mode;
         _dashboardPanel.SetChartLinkMode(mode);
         UpdateLinkSwitchAppearance();
+    }
+
+    private void SaveDashboardLinkModeAndReload(DashboardChartLinkMode mode) {
+        if (_currentDashboard == null) {
+            return;
+        }
+
+        if (_currentDashboard.InitialChartLinkMode == mode) {
+            return;
+        }
+
+        _currentDashboard.InitialChartLinkMode = mode;
+        _dashboardService.SaveDashboard(_currentDashboard);
+        _dashboardLinkModes[_currentDashboard.Id] = mode;
+        InvalidateDashboardPanelCache(_currentDashboard.Id);
+        LoadDashboard(_currentDashboard);
     }
 
     private void ResetCurrentDashboardLinkState() {
