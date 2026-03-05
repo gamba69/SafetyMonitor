@@ -1,4 +1,6 @@
 using SafetyMonitor.Models;
+using SkiaSharp;
+using System.Drawing.Imaging;
 using System.Drawing.Text;
 
 namespace SafetyMonitor.Services;
@@ -126,7 +128,7 @@ public static class MaterialIcons {
         [PlotMenuCopyToClipboard] = "\uE14D",
         [DashboardDeleteCurrent] = "\uE872",
         [DashboardManage] = "\uE871",
-        [LinkedServices] = "linked_services",
+        [LinkedServices] = "\uF535",
         [MenuViewTheme] = "\uE6A2", // "\uE3A1",
         [MenuViewColorSchemes] = "\uE40A",
         [MenuViewValueSchemes] = "\uE262",
@@ -155,7 +157,10 @@ public static class MaterialIcons {
         [MenuViewAxisRules] = "\uEA9A",
         [MenuViewMetricSettings] = "\uEA49",
         [PlotMenuDisplayOption] = "\uE6E1",
+        [PlotMenuConversionPath] = "\uE155",
+        [PlotMenuGrid4x4] = "\uF016",
         [PlotMenuLegendToggle] = "\uE267",
+        [PlotMenuStat0] = "\uE697",
         [CommonCheck] = "\uE5CA",
         [CommonClose] = "\uE5CD",
         [CommonSave] = "\uE5CA", // "\uE161",
@@ -174,12 +179,12 @@ public static class MaterialIcons {
         [CommonResize] = "\uE8CE",
         [CommonTest] = "\uE86C",
         [CommonCalculate] = "\uEA5F",
-        [CommonBuild] = "build",
-        [CommonDatabase] = "database",
-        [CommonAvgTime] = "avg_time",
+        [CommonBuild] = "\uE869",
+        [CommonDatabase] = "\uF20E",
+        [CommonAvgTime] = "\uF813",
         [DashboardTab] = "\uE871",
         [ToolbarChartsLink] = "\uE157",
-        [ToolbarChartsGroup] = "dataset_linked",
+        [ToolbarChartsGroup] = "\uF8EF",
         [ToolbarChartsUnlink] = "\uE16F",
         [ChartModeStatic] = "\uF71E",
         [ChartModeAuto] = "\uF417",
@@ -200,7 +205,7 @@ public static class MaterialIcons {
         [MetricIsSafe] = "\uEAA9",
         [WindowTileValue] = "\uE400",
         [WindowTileChart] = "\uE667", //"\uE6E1",
-        [ToolbarExportProgress] = "save_clock",
+        [ToolbarExportProgress] = "\uF398",
         [RefreshCircle] = "\uEF4A",
         [RefreshLoader10] = "\uF726",
         [RefreshLoader20] = "\uF725",
@@ -208,14 +213,32 @@ public static class MaterialIcons {
         [RefreshLoader60] = "\uF723",
         [RefreshLoader80] = "\uF722",
         [RefreshLoader90] = "\uF721",
-        [RefreshHourglass] = "hourglass",
-        [LinkGroupAlpha] = "counter_1",
-        [LinkGroupBravo] = "counter_2",
-        [LinkGroupCharlie] = "counter_3",
-        [LinkGroupDelta] = "counter_4",
-        [LinkGroupEcho] = "counter_5",
-        [LinkGroupFoxtrot] = "counter_6",
+        [RefreshHourglass] = "\uEBFF",
+        [LinkGroupAlpha] = "\uF784",
+        [LinkGroupBravo] = "\uF783",
+        [LinkGroupCharlie] = "\uF782",
+        [LinkGroupDelta] = "\uF781",
+        [LinkGroupEcho] = "\uF780",
+        [LinkGroupFoxtrot] = "\uF77F",
+        ["keyboard_double_arrow_up"] = "\uEACF",
+        ["keyboard_double_arrow_down"] = "\uEAD0",
+        ["output_circle"] = "\uF70E",
+        ["input_circle"] = "\uF71A",
+        ["dangerous"] = "\uE99A",
+        ["star"] = "\uE838",
+        ["star_outline"] = "\uE838",
+        ["open_in_full"] = "\uF1CE",
+        ["pause"] = "\uE034",
+        ["smooth"] = "\uE155",
     };
+
+    private static readonly HashSet<string> _filledIconNames = [
+        MessageBoxInfoFilled,
+        MessageBoxWarningFilled,
+        MessageBoxErrorFilled,
+        MessageBoxQuestionFilled,
+        "star",
+    ];
 
     private static readonly string[] _fontCandidates = [
         "Material Symbols Outlined",
@@ -224,6 +247,9 @@ public static class MaterialIcons {
     ];
 
     private static readonly string? _materialFontFamily = ResolveInstalledMaterialFont();
+    private static readonly string? _materialFontPath = ResolveMaterialFontPath();
+    private static readonly SKTypeface? _outlinedTypeface = ResolveTypeface(0f);
+    private static readonly SKTypeface? _filledTypeface = ResolveTypeface(1f);
 
     #endregion Private Fields
 
@@ -247,15 +273,16 @@ public static class MaterialIcons {
             return (Bitmap)cached.Clone();
         }
 
-        if (_materialFontFamily is null) {
+        if (_outlinedTypeface is null && _materialFontFamily is null) {
             return null;
         }
 
-        var glyph = _fontGlyphs.TryGetValue(normalizedName, out var mappedGlyph)
-            ? mappedGlyph
-            : normalizedName;
+        if (!_fontGlyphs.TryGetValue(normalizedName, out var glyph)) {
+            return null;
+        }
 
-        var bitmap = RenderFontIcon(glyph, color, size, glyphScale);
+        var isFilled = _filledIconNames.Contains(normalizedName);
+        var bitmap = RenderFontIcon(glyph, color, size, glyphScale, isFilled);
         _cache[key] = bitmap;
 
         return (Bitmap)bitmap.Clone();
@@ -303,8 +330,41 @@ public static class MaterialIcons {
 
     #region Private Methods
 
-    private static Bitmap RenderFontIcon(string glyph, Color color, int size, float glyphScale) {
-        var bitmap = new Bitmap(size, size, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+    private static Bitmap RenderFontIcon(string glyph, Color color, int size, float glyphScale, bool isFilled) {
+        var typeface = isFilled ? _filledTypeface ?? _outlinedTypeface : _outlinedTypeface;
+        if (typeface is not null) {
+            return RenderWithSkia(glyph, color, size, glyphScale, typeface);
+        }
+
+        return RenderWithSystemDrawing(glyph, color, size, glyphScale);
+    }
+
+    private static Bitmap RenderWithSkia(string glyph, Color color, int size, float glyphScale, SKTypeface typeface) {
+        using var surface = SKSurface.Create(new SKImageInfo(size, size, SKColorType.Bgra8888, SKAlphaType.Premul));
+        var canvas = surface.Canvas;
+        canvas.Clear(SKColors.Transparent);
+
+        using var paint = new SKPaint {
+            IsAntialias = true,
+            Typeface = typeface,
+            Color = new SKColor(color.R, color.G, color.B, color.A),
+            TextSize = size * Math.Clamp(glyphScale, 0.1f, 1.5f),
+            TextAlign = SKTextAlign.Center,
+            IsStroke = false,
+        };
+
+        var metrics = paint.FontMetrics;
+        var textY = (size / 2f) - ((metrics.Ascent + metrics.Descent) / 2f);
+        canvas.DrawText(glyph, size / 2f, textY, paint);
+
+        using var image = surface.Snapshot();
+        using var skBitmap = SKBitmap.FromImage(image);
+
+        return ToBitmap(skBitmap);
+    }
+
+    private static Bitmap RenderWithSystemDrawing(string glyph, Color color, int size, float glyphScale) {
+        var bitmap = new Bitmap(size, size, PixelFormat.Format32bppPArgb);
         using var g = Graphics.FromImage(bitmap);
         using var brush = new SolidBrush(color);
         using var sf = new StringFormat {
@@ -324,6 +384,85 @@ public static class MaterialIcons {
         return bitmap;
     }
 
+    private static Bitmap ToBitmap(SKBitmap source) {
+        using var image = SKImage.FromBitmap(source);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        using var stream = new MemoryStream(data.ToArray());
+
+        return new Bitmap(stream);
+    }
+
+    private static SKTypeface? ResolveTypeface(float fillValue) {
+        if (_materialFontPath is null) {
+            return null;
+        }
+
+        var baseTypeface = SKTypeface.FromFile(_materialFontPath);
+        if (baseTypeface is null) {
+            return null;
+        }
+
+        var fontArguments = BuildFontArgumentsObject(fillValue);
+        if (fontArguments is null) {
+            return baseTypeface;
+        }
+
+        try {
+            var withFontArgumentsMethod = typeof(SKTypeface).GetMethod("WithFontArguments");
+            if (withFontArgumentsMethod?.Invoke(baseTypeface, [fontArguments]) is SKTypeface variedTypeface) {
+                return variedTypeface;
+            }
+        }
+        catch {
+            // Ignore and use base typeface.
+        }
+
+        return baseTypeface;
+    }
+
+    private static object? BuildFontArgumentsObject(float fillValue) {
+        try {
+            var argumentsType = typeof(SKTypeface).Assembly.GetType("SkiaSharp.SKFontArguments");
+            if (argumentsType is null) {
+                return null;
+            }
+
+            var arguments = Activator.CreateInstance(argumentsType);
+            if (arguments is null) {
+                return null;
+            }
+
+            var variationPositionType = argumentsType.GetNestedType("VariationPosition");
+            var coordinateType = variationPositionType?.GetNestedType("Coordinate");
+            if (variationPositionType is null || coordinateType is null) {
+                return null;
+            }
+
+            var coordinates = Array.CreateInstance(coordinateType, 4);
+            coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('F', 'I', 'L', 'L'), fillValue), 0);
+            coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('w', 'g', 'h', 't'), 400f), 1);
+            coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('o', 'p', 's', 'z'), 24f), 2);
+            coordinates.SetValue(Activator.CreateInstance(coordinateType, MakeAxisTag('G', 'R', 'A', 'D'), 0f), 3);
+
+            var variationPosition = Activator.CreateInstance(variationPositionType, coordinates);
+            if (variationPosition is null) {
+                return null;
+            }
+
+            var setVariationMethod = argumentsType.GetMethod("SetVariationDesignPosition", [variationPositionType]);
+            setVariationMethod?.Invoke(arguments, [variationPosition]);
+
+            return arguments;
+        }
+        catch {
+            return null;
+        }
+    }
+
+    private static uint MakeAxisTag(char c1, char c2, char c3, char c4) {
+        return ((uint)c1 << 24) | ((uint)c2 << 16) | ((uint)c3 << 8) | c4;
+    }
+
     private static string? ResolveInstalledMaterialFont() {
         using var installedFonts = new InstalledFontCollection();
         var installed = installedFonts.Families.Select(f => f.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -335,6 +474,11 @@ public static class MaterialIcons {
         }
 
         return null;
+    }
+
+    private static string? ResolveMaterialFontPath() {
+        var fontPath = Path.Combine(AppContext.BaseDirectory, "Fonts", "MaterialSymbolsRounded[FILL,GRAD,opsz,wght].ttf");
+        return File.Exists(fontPath) ? fontPath : null;
     }
 
     #endregion Private Methods
