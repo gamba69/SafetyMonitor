@@ -458,7 +458,12 @@ public class ValueTile : Panel {
         }
 
         var texts = new List<string> { _valueLabel.Text };
-        if (_valueScheme != null && _valueScheme.Stops.Count > 0) {
+
+        // Only TextOnly mode renders transformed labels inside the value area.
+        // In TextAndValue mode transformed labels are shown by _textLabel, and pre-sizing
+        // against all scheme labels shrinks numeric values unnecessarily compared to sibling tiles.
+        var shouldIncludeTransformedTexts = _config.DisplayMode == ValueTileDisplayMode.TextOnly;
+        if (shouldIncludeTransformedTexts && _valueScheme != null && _valueScheme.Stops.Count > 0) {
             texts.AddRange(_valueScheme.Stops
                 .Select(s => s.Text)
                 .Where(t => !string.IsNullOrWhiteSpace(t))
