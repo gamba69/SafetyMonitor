@@ -1,12 +1,11 @@
 using SafetyMonitor.Models;
 using SkiaSharp;
 using System.Drawing.Imaging;
-using System.Drawing.Text;
 
 namespace SafetyMonitor.Services;
 
 /// <summary>
-/// Material Design icons rendered from installed Material font families.
+/// Material Design icons rendered from bundled Material Symbols variable font.
 /// </summary>
 public static class MaterialIcons {
 
@@ -240,13 +239,6 @@ public static class MaterialIcons {
         "star",
     ];
 
-    private static readonly string[] _fontCandidates = [
-        "Material Symbols Outlined",
-        "Material Symbols Rounded",
-        "Material Icons",
-    ];
-
-    private static readonly string? _materialFontFamily = ResolveInstalledMaterialFont();
     private static readonly string? _materialFontPath = ResolveMaterialFontPath();
     private static readonly SKTypeface? _outlinedTypeface = ResolveTypeface(0f);
     private static readonly SKTypeface? _filledTypeface = ResolveTypeface(1f);
@@ -274,7 +266,7 @@ public static class MaterialIcons {
             return (Bitmap)cached.Clone();
         }
 
-        if (_outlinedTypeface is null && _materialFontFamily is null) {
+        if (_outlinedTypeface is null) {
             return null;
         }
 
@@ -282,17 +274,11 @@ public static class MaterialIcons {
             return null;
         }
 
-        var useStarGlyphFallback = forceFilled.HasValue && normalizedName == "star" && _filledTypeface is null;
-        if (useStarGlyphFallback) {
-            // Fallback for environments where variable-font FILL axis cannot be applied:
-            // use dedicated glyphs from the font for filled/outlined star.
-            glyph = forceFilled.Value ? "\uE885" : "\uE83A";
-        }
-
-        var isFilled = useStarGlyphFallback
-            ? false
-            : forceFilled ?? _filledIconNames.Contains(normalizedName);
+        var isFilled = forceFilled ?? _filledIconNames.Contains(normalizedName);
         var bitmap = RenderFontIcon(glyph, color, size, glyphScale, isFilled);
+        if (bitmap is null) {
+            return null;
+        }
         _cache[key] = bitmap;
 
         return (Bitmap)bitmap.Clone();
@@ -340,13 +326,9 @@ public static class MaterialIcons {
 
     #region Private Methods
 
-    private static Bitmap RenderFontIcon(string glyph, Color color, int size, float glyphScale, bool isFilled) {
+    private static Bitmap? RenderFontIcon(string glyph, Color color, int size, float glyphScale, bool isFilled) {
         var typeface = isFilled ? _filledTypeface ?? _outlinedTypeface : _outlinedTypeface;
-        if (typeface is not null) {
-            return RenderWithSkia(glyph, color, size, glyphScale, typeface);
-        }
-
-        return RenderWithSystemDrawing(glyph, color, size, glyphScale);
+        return typeface is null ? null : RenderWithSkia(glyph, color, size, glyphScale, typeface);
     }
 
     private static Bitmap RenderWithSkia(string glyph, Color color, int size, float glyphScale, SKTypeface typeface) {
@@ -371,27 +353,6 @@ public static class MaterialIcons {
         using var skBitmap = SKBitmap.FromImage(image);
 
         return ToBitmap(skBitmap);
-    }
-
-    private static Bitmap RenderWithSystemDrawing(string glyph, Color color, int size, float glyphScale) {
-        var bitmap = new Bitmap(size, size, PixelFormat.Format32bppPArgb);
-        using var g = Graphics.FromImage(bitmap);
-        using var brush = new SolidBrush(color);
-        using var sf = new StringFormat {
-            Alignment = StringAlignment.Center,
-            LineAlignment = StringAlignment.Center,
-            FormatFlags = StringFormatFlags.NoClip,
-        };
-
-        g.Clear(Color.Transparent);
-        g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
-        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-        var fontSize = size * Math.Clamp(glyphScale, 0.1f, 1.5f);
-        using var font = new Font(_materialFontFamily!, fontSize, FontStyle.Regular, GraphicsUnit.Pixel);
-        g.DrawString(glyph, font, brush, new RectangleF(0, 0, size, size), sf);
-
-        return bitmap;
     }
 
     private static Bitmap ToBitmap(SKBitmap source) {
@@ -476,19 +437,6 @@ public static class MaterialIcons {
 
     private static uint MakeAxisTag(char c1, char c2, char c3, char c4) {
         return ((uint)c1 << 24) | ((uint)c2 << 16) | ((uint)c3 << 8) | c4;
-    }
-
-    private static string? ResolveInstalledMaterialFont() {
-        using var installedFonts = new InstalledFontCollection();
-        var installed = installedFonts.Families.Select(f => f.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var candidate in _fontCandidates) {
-            if (installed.Contains(candidate)) {
-                return candidate;
-            }
-        }
-
-        return null;
     }
 
     private static string? ResolveMaterialFontPath() {
