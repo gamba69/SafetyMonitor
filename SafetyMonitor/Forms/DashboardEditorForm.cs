@@ -220,7 +220,7 @@ public class DashboardEditorForm : ThemedCaptionForm {
         var titleFont = new Font("Segoe UI", 10f, FontStyle.Bold);
         var normalFont = new Font("Segoe UI", 10f);
         var italicFont = new Font("Segoe UI", 9f, FontStyle.Italic);
-        var helpFont = new Font("Segoe UI", 9f, FontStyle.Regular);
+        var helpFont = new Font("Segoe UI", HelpTextFontService.GetAdjustedSize(), FontStyle.Regular);
 
         // Main layout
         var mainLayout = new TableLayoutPanel {

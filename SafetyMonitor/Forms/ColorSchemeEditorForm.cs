@@ -232,8 +232,9 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
 
         var titleFont = new Font("Segoe UI", 9.5f, FontStyle.Bold);
         var normalFont = new Font("Segoe UI", 9.5f);
-        var helpTitleFont = new Font("Segoe UI", 9f, FontStyle.Bold);
-        var helpFont = new Font("Segoe UI", 9f);
+        var helpFontSize = HelpTextFontService.GetAdjustedSize();
+        var helpTitleFont = new Font("Segoe UI", helpFontSize, FontStyle.Bold);
+        var helpFont = new Font("Segoe UI", helpFontSize);
 
         // Root: TableLayoutPanel  2 columns × 2 rows
         // Row 0 (fill): scheme list and editor area.

@@ -85,8 +85,9 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
 
         var titleFont = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold);
         var normal = CreateSafeFont("Segoe UI", 9f, FontStyle.Regular);
-        var helpTitleFont = CreateSafeFont("Segoe UI", 9f, FontStyle.Bold);
-        var helpFont = CreateSafeFont("Segoe UI", 9f, FontStyle.Regular);
+        var helpFontSize = HelpTextFontService.GetAdjustedSize();
+        var helpTitleFont = CreateSafeFont("Segoe UI", helpFontSize, FontStyle.Bold);
+        var helpFont = CreateSafeFont("Segoe UI", helpFontSize, FontStyle.Regular);
 
         var layout = new TableLayoutPanel {
             Dock = DockStyle.Fill,

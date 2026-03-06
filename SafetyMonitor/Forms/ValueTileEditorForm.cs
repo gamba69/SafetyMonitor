@@ -322,8 +322,9 @@ public class ValueTileEditorForm : ThemedCaptionForm {
 
         var titleFont = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold);
         var normalFont = CreateSafeFont("Segoe UI", 9.5f);
-        var helpTitleFont = CreateSafeFont("Segoe UI", 9f, FontStyle.Bold);
-        var helpFont = CreateSafeFont("Segoe UI", 9f);
+        var helpFontSize = HelpTextFontService.GetAdjustedSize();
+        var helpTitleFont = CreateSafeFont("Segoe UI", helpFontSize, FontStyle.Bold);
+        var helpFont = CreateSafeFont("Segoe UI", helpFontSize);
 
         // Root layout with fixed footer buttons and scrollable content area
         var rootLayout = new TableLayoutPanel {

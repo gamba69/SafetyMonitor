@@ -360,8 +360,9 @@ public class SettingsForm : ThemedCaptionForm {
 
         var titleFont = new Font("Segoe UI", 10f, FontStyle.Bold);
         var normalFont = new Font("Segoe UI", 10f);
-        var descriptionFont = new Font("Segoe UI", 9f, FontStyle.Regular);
-        var headerHelpFont = new Font("Segoe UI", 9f);
+        var helpFontSize = HelpTextFontService.GetAdjustedSize();
+        var descriptionFont = new Font("Segoe UI", helpFontSize, FontStyle.Regular);
+        var headerHelpFont = new Font("Segoe UI", helpFontSize);
 
         // Outer layout: header, tabs, tab content, buttons.
         var mainLayout = new TableLayoutPanel {

@@ -173,7 +173,7 @@ public class DashboardManagementForm : ThemedCaptionForm {
     private void InitializeComponent() {
         var normalFont = new Font("Segoe UI", 10f, FontStyle.Regular);
         var emphasizedFont = new Font("Segoe UI", 10f, FontStyle.Bold);
-        var helpFont = new Font("Segoe UI", 9f, FontStyle.Regular);
+        var helpFont = new Font("Segoe UI", HelpTextFontService.GetAdjustedSize(), FontStyle.Regular);
 
         Text = "Manage Dashboards";
         AutoScaleMode = AutoScaleMode.Dpi;

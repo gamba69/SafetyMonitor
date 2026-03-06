@@ -62,7 +62,8 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         ClientSize = new Size(920, 560);
 
         var normalFont = CreateSafeFont("Segoe UI", 10f);
-        var helpFont = CreateSafeFont("Segoe UI", 9f);
+        var helpFontSize = HelpTextFontService.GetAdjustedSize();
+        var helpFont = CreateSafeFont("Segoe UI", helpFontSize);
         Font = normalFont;
 
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3 };
@@ -88,7 +89,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
             Margin = new Padding(0),
             MaximumSize = new Size(860, 0),
             Text = "Configure per-metric display settings. Metric list is fixed and cannot be changed.",
-            Font = CreateSafeFont("Segoe UI", 9f, FontStyle.Bold)
+            Font = CreateSafeFont("Segoe UI", helpFontSize, FontStyle.Bold)
         };
         headerPanel.Controls.Add(headerLabel, 0, 0);
 
