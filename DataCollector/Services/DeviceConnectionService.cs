@@ -3,9 +3,9 @@ using ASCOM.Alpaca.Discovery;
 using ASCOM.Common;
 using ASCOM.Common.DeviceInterfaces;
 using DataCollector.Configuration;
-using SafetyMonitorData.Utilities;
+using DataCollector.Utilities;
 
-namespace SafetyMonitorData.Services;
+namespace DataCollector.Services;
 
 /// <summary>
 /// Represents device connection service and encapsulates its related behavior and state.

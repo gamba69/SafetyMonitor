@@ -1,4 +1,4 @@
-namespace SafetyMonitorData.Utilities;
+namespace DataCollector.Utilities;
 
 /// <summary>
 /// Represents retry policy and encapsulates its related behavior and state.

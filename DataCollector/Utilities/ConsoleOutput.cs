@@ -1,6 +1,6 @@
 using DataStorage.Models;
 
-namespace SafetyMonitorData.Utilities;
+namespace DataCollector.Utilities;
 
 /// <summary>
 /// Represents console output and encapsulates its related behavior and state.

@@ -1,7 +1,7 @@
 using ASCOM.Common.DeviceInterfaces;
 using DataCollector.Configuration;
 using DataStorage.Models;
-using SafetyMonitorData.Utilities;
+using DataCollector.Utilities;
 
 namespace DataCollector.Services;
 

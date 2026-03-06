@@ -1,4 +1,4 @@
-# SafetyMonitorData
+# DataCollector
 
 Консольная утилита для сбора данных с устройств ASCOM Alpaca (ObservingConditions и SafetyMonitor) и сохранения в шардированную базу данных FireBird.
 
@@ -31,8 +31,8 @@
 YourWorkspace/
 ├── DataStorage/
 │   └── DataStorage.csproj
-└── SafetyMonitorData/
-    └── SafetyMonitorData.csproj
+└── DataCollector/
+    └── DataCollector.csproj
 ```
 
 ### Сборка
@@ -110,7 +110,7 @@ dotnet run -- \
 - **ASCOM.Alpaca.Components 3.0.0**
 - **ASCOM.Common.Components 3.0.0**
 - **System.CommandLine 2.0.2**
-- **Microsoft.Extensions.DependencyInjection 9.0.0** (только DI, без Logging)
+- **Microsoft.Extensions.DependencyInjection 10.0.2** (только DI, без Logging)
 - **DataStorage** (ProjectReference)
 
 ## Лицензия

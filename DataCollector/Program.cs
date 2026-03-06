@@ -2,11 +2,10 @@ using ASCOM.Common.DeviceInterfaces;
 using DataCollector.Configuration;
 using DataCollector.Services;
 using Microsoft.Extensions.DependencyInjection;
-using SafetyMonitorData.Services;
-using SafetyMonitorData.Utilities;
+using DataCollector.Utilities;
 using System.CommandLine;
 
-namespace SafetyMonitorData;
+namespace DataCollector;
 
 /// <summary>
 /// Represents program and encapsulates its related behavior and state.
