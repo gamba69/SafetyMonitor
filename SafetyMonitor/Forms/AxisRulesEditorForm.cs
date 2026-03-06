@@ -74,6 +74,8 @@ public class AxisRulesEditorForm : ThemedCaptionForm {
 
         var titleFont = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold);
         var normalFont = CreateSafeFont("Segoe UI", 9.5f);
+        var helpTitleFont = CreateSafeFont("Segoe UI", 9f, FontStyle.Bold);
+        var helpFont = CreateSafeFont("Segoe UI", 9f);
 
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
@@ -102,7 +104,7 @@ public class AxisRulesEditorForm : ThemedCaptionForm {
 
         _headerLabel = new Label {
             Text = "Configure Y-axis limits applied during chart zoom/pan. Leave numeric cells empty to disable a specific limit.",
-            Font = titleFont,
+            Font = helpTitleFont,
             AutoSize = true,
             MaximumSize = new Size(810, 0),
             Margin = new Padding(0),
@@ -151,13 +153,13 @@ public class AxisRulesEditorForm : ThemedCaptionForm {
 
             bulletPanel.Controls.Add(new Label {
                 Text = "•",
-                Font = normalFont,
+                Font = helpFont,
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 2)
             }, bulletColumn, row);
             bulletPanel.Controls.Add(new Label {
                 Text = details[index],
-                Font = normalFont,
+                Font = helpFont,
                 AutoSize = true,
                 MaximumSize = new Size(detailColumnWidth, 0),
                 Margin = visualColumn == 0 ? new Padding(0, 0, 12, 2) : new Padding(0, 0, 0, 2)

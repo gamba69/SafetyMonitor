@@ -219,7 +219,8 @@ public class DashboardEditorForm : ThemedCaptionForm {
 
         var titleFont = new Font("Segoe UI", 10f, FontStyle.Bold);
         var normalFont = new Font("Segoe UI", 10f);
-        var italicFont = new Font("Segoe UI", 10f, FontStyle.Italic);
+        var italicFont = new Font("Segoe UI", 9f, FontStyle.Italic);
+        var helpFont = new Font("Segoe UI", 9f, FontStyle.Regular);
 
         // Main layout
         var mainLayout = new TableLayoutPanel {
@@ -347,7 +348,7 @@ public class DashboardEditorForm : ThemedCaptionForm {
 
         linkSettingsContainer.Controls.Add(new Label {
             Text = "Groups define chart synchronization sets: charts inside one group share period changes without affecting other groups.",
-            Font = normalFont,
+            Font = helpFont,
             AutoSize = true,
             MaximumSize = new Size(1080, 0),
             Margin = new Padding(0, 0, 0, 6)

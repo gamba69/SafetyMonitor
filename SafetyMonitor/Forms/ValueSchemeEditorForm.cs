@@ -213,6 +213,8 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
 
         var titleFont = new Font("Segoe UI", 9.5f, FontStyle.Bold);
         var normalFont = new Font("Segoe UI", 9.5f);
+        var helpTitleFont = new Font("Segoe UI", 9f, FontStyle.Bold);
+        var helpFont = new Font("Segoe UI", 9f);
 
         var root = new TableLayoutPanel {
             Dock = DockStyle.Fill,
@@ -253,7 +255,7 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
 
         var headerLabel = new Label {
             Text = "Configure value schemes that transform metric values into descriptive text labels for value tiles and chart inspector.",
-            Font = titleFont,
+            Font = helpTitleFont,
             AutoSize = true,
             MaximumSize = new Size(810, 0),
             Margin = new Padding(0),
@@ -302,13 +304,13 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
 
             bulletPanel.Controls.Add(new Label {
                 Text = "•",
-                Font = normalFont,
+                Font = helpFont,
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 2)
             }, bulletColumn, row);
             bulletPanel.Controls.Add(new Label {
                 Text = details[index],
-                Font = normalFont,
+                Font = helpFont,
                 AutoSize = true,
                 MaximumSize = new Size(detailColumnWidth, 0),
                 Margin = visualColumn == 0 ? new Padding(0, 0, 12, 2) : new Padding(0, 0, 0, 2)

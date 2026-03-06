@@ -322,6 +322,8 @@ public class ValueTileEditorForm : ThemedCaptionForm {
 
         var titleFont = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold);
         var normalFont = CreateSafeFont("Segoe UI", 9.5f);
+        var helpTitleFont = CreateSafeFont("Segoe UI", 9f, FontStyle.Bold);
+        var helpFont = CreateSafeFont("Segoe UI", 9f);
 
         // Root layout with fixed footer buttons and scrollable content area
         var rootLayout = new TableLayoutPanel {
@@ -369,8 +371,8 @@ public class ValueTileEditorForm : ThemedCaptionForm {
                 "Toggle icon and unit visibility for the tile.",
                 "Enable top value gradient overlay (30% tile height)."
             ],
-            titleFont,
-            normalFont,
+            helpTitleFont,
+            helpFont,
             500);
         mainLayout.Controls.Add(descriptionSection, 0, 0);
 

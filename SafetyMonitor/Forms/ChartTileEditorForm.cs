@@ -376,6 +376,8 @@ public class ChartTileEditorForm : ThemedCaptionForm {
 
         var titleFont = CreateSafeFont("Segoe UI", 9.5f, FontStyle.Bold);
         var normalFont = CreateSafeFont("Segoe UI", 9.5f);
+        var helpTitleFont = CreateSafeFont("Segoe UI", 9f, FontStyle.Bold);
+        var helpFont = CreateSafeFont("Segoe UI", 9f);
 
         // Root layout with fixed footer buttons and scrollable content
         var rootLayout = new TableLayoutPanel {
@@ -420,8 +422,8 @@ public class ChartTileEditorForm : ThemedCaptionForm {
                 "Select a dashboard link group for this chart.",
                 "Enable or disable legend, grid, and inspector."
             ],
-            titleFont,
-            normalFont,
+            helpTitleFont,
+            helpFont,
             710);
         mainLayout.Controls.Add(descriptionSection, 0, 0);
 

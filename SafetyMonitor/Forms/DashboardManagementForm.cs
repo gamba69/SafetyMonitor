@@ -173,6 +173,7 @@ public class DashboardManagementForm : ThemedCaptionForm {
     private void InitializeComponent() {
         var normalFont = new Font("Segoe UI", 10f, FontStyle.Regular);
         var emphasizedFont = new Font("Segoe UI", 10f, FontStyle.Bold);
+        var helpFont = new Font("Segoe UI", 9f, FontStyle.Regular);
 
         Text = "Manage Dashboards";
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -201,7 +202,8 @@ public class DashboardManagementForm : ThemedCaptionForm {
             Dock = DockStyle.Fill,
             Margin = new Padding(0, 0, 0, 12),
             MaximumSize = new Size(640, 0),
-            Text = "Use this form to rename dashboards, mark favorites for quick access (up to 7), reorder items within each group, and remove dashboards you no longer need (at least one dashboard must remain)."
+            Text = "Use this form to rename dashboards, mark favorites for quick access (up to 7), reorder items within each group, and remove dashboards you no longer need (at least one dashboard must remain).",
+            Font = helpFont
         };
 
         _grid = new DataGridView {

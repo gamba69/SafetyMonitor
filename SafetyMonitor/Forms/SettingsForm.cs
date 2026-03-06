@@ -360,7 +360,8 @@ public class SettingsForm : ThemedCaptionForm {
 
         var titleFont = new Font("Segoe UI", 10f, FontStyle.Bold);
         var normalFont = new Font("Segoe UI", 10f);
-        var descriptionFont = new Font("Segoe UI", 8.5f, FontStyle.Regular);
+        var descriptionFont = new Font("Segoe UI", 9f, FontStyle.Regular);
+        var headerHelpFont = new Font("Segoe UI", 9f);
 
         // Outer layout: header, tabs, tab content, buttons.
         var mainLayout = new TableLayoutPanel {
@@ -378,7 +379,7 @@ public class SettingsForm : ThemedCaptionForm {
         // Row 0: ThemedCaptionForm header description.
         var headerLabel = new Label {
             Text = "Adjust refresh, storage, and chart behavior settings; changes apply after you click Save. Use these options to balance performance, readability, and trend analysis.",
-            Font = normalFont,
+            Font = headerHelpFont,
             AutoSize = true,
             MaximumSize = new Size(580, 0),
             Margin = new Padding(0, 0, 0, 14)

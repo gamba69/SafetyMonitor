@@ -232,6 +232,8 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
 
         var titleFont = new Font("Segoe UI", 9.5f, FontStyle.Bold);
         var normalFont = new Font("Segoe UI", 9.5f);
+        var helpTitleFont = new Font("Segoe UI", 9f, FontStyle.Bold);
+        var helpFont = new Font("Segoe UI", 9f);
 
         // Root: TableLayoutPanel  2 columns × 2 rows
         // Row 0 (fill): scheme list and editor area.
@@ -275,7 +277,7 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
 
         var headerLabel = new Label {
             Text = "Configure color schemes used by value tiles to visualize metric ranges, thresholds, and state severity in dashboards.",
-            Font = titleFont,
+            Font = helpTitleFont,
             AutoSize = true,
             MaximumSize = new Size(810, 0),
             Margin = new Padding(0),
@@ -324,13 +326,13 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
 
             bulletPanel.Controls.Add(new Label {
                 Text = "•",
-                Font = normalFont,
+                Font = helpFont,
                 AutoSize = true,
                 Margin = new Padding(0, 0, 0, 2)
             }, bulletColumn, row);
             bulletPanel.Controls.Add(new Label {
                 Text = details[index],
-                Font = normalFont,
+                Font = helpFont,
                 AutoSize = true,
                 MaximumSize = new Size(detailColumnWidth, 0),
                 Margin = visualColumn == 0 ? new Padding(0, 0, 12, 2) : new Padding(0, 0, 0, 2)
