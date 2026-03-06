@@ -145,7 +145,7 @@ public class ChartTile : Panel {
     }
 
     /// <summary>
-    /// Returns the set of <see cref="DataService.GetChartData"/> parameter tuples that
+    /// Returns the set of <see cref="DataService.GetChartData"/> parameter tuples that.
     /// <see cref="RefreshData"/> will request.  Called on the UI thread so that
     /// <see cref="DashboardPanel.RefreshDataAsync"/> can pre-fetch the data on a
     /// background thread before the synchronous RefreshData renders the chart.
@@ -630,8 +630,8 @@ public class ChartTile : Panel {
         }
     }
     /// <summary>
-    /// Applies per-metric color styling to a Y axis so it visually matches
-    /// the series that are plotted against it.
+    /// Applies per-metric color styling to a Y axis.
+    /// This keeps each axis visually aligned with its plotted series.
     /// </summary>
     private static void StyleAxis(ScottPlot.IYAxis axis, string labelText, ScottPlot.Color color) {
         axis.Label.Text = labelText;
@@ -748,7 +748,7 @@ public class ChartTile : Panel {
 
     /// <summary>
     /// Applies correct theme colors to all child controls of the tile.
-    /// Called from UpdateTheme and OnFontChanged to fight
+    /// Called from UpdateTheme and OnFontChanged to fight.
     /// MaterialSkinManager overwriting our colors.
     /// </summary>
     private void ApplyTileColors() {
@@ -1375,7 +1375,7 @@ public class ChartTile : Panel {
         _staticRangePanel.Controls.Add(_staticStartPicker);
         _staticRangePanel.Controls.Add(_staticEndPicker);
 
-        // ── Auto / Static mode switcher (rightmost in header) ──
+        // Auto / Static mode switcher (rightmost in header).
         _autoModeButton = new RadioButton {
             Text = string.Empty,
             Appearance = Appearance.Button,
@@ -1670,7 +1670,7 @@ public class ChartTile : Panel {
                         rule.MinBoundary.Value, rule.MaxBoundary.Value)));
             }
 
-            // MinimumBoundary вЂ” prevent panning/zooming below this Y value
+            // MinimumBoundary - prevent panning/zooming below this Y value
             if (rule.MinBoundary.HasValue && !rule.MaxBoundary.HasValue) {
                 _plot.Plot.Axes.Rules.Add(
                 new ScottPlot.AxisRules.MaximumBoundary(xAxis, yAxis,
@@ -1679,7 +1679,7 @@ public class ChartTile : Panel {
                         rule.MinBoundary.Value, double.PositiveInfinity)));
             }
 
-            // MaximumBoundary вЂ” prevent panning/zooming above this Y value
+            // MaximumBoundary - prevent panning/zooming above this Y value
             if (rule.MaxBoundary.HasValue && !rule.MinBoundary.HasValue) {
                 _plot.Plot.Axes.Rules.Add(
                 new ScottPlot.AxisRules.MaximumBoundary(xAxis, yAxis,
@@ -1688,13 +1688,13 @@ public class ChartTile : Panel {
                         double.NegativeInfinity, rule.MaxBoundary.Value)));
             }
 
-            // MaximumSpan вЂ” limit how far apart Y axis limits can be (limits zoom-out)
+            // MaximumSpan - limit how far apart Y axis limits can be (limits zoom-out)
             if (rule.MaxSpan.HasValue) {
                 _plot.Plot.Axes.Rules.Add(
                 new ScottPlot.AxisRules.MaximumSpan(xAxis, yAxis, double.PositiveInfinity, rule.MaxSpan.Value));
             }
 
-            // MinimumSpan вЂ” minimum Y-axis range (limits zoom-in)
+            // MinimumSpan - minimum Y-axis range (limits zoom-in)
             if (rule.MinSpan.HasValue) {
                 _plot.Plot.Axes.Rules.Add(
                 new ScottPlot.AxisRules.MinimumSpan(xAxis, yAxis, 0, rule.MinSpan.Value));
@@ -1789,7 +1789,6 @@ public class ChartTile : Panel {
     }
 
     private static bool TryGetVisibleLogYAxisBounds(ScottPlot.IYAxis axis, out double minExp, out double maxExp) {
-        minExp = 0;
         maxExp = 0;
 
         var axisType = axis.GetType();
@@ -2050,8 +2049,8 @@ public class ChartTile : Panel {
     }
 
     /// <summary>
-    /// When multiple Y axes are active, re-applies the per-metric color to each axis
-    /// so they remain visually distinguishable after a global theme color reset.
+    /// Reapplies per-metric axis colors when multiple Y axes are active.
+    /// This keeps axes distinguishable after a global theme color reset.
     /// </summary>
     private void ReapplyAxisColors() {
         if (_plot == null) {

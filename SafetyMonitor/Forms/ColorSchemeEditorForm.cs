@@ -97,7 +97,7 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         UpdateColorModeToggleAppearance();
     }
 
-    // ── Theme ──
+    // Theme.
     private static void ApplyThemeRecursive(Control parent, bool isLight) {
         foreach (Control control in parent.Controls) {
             InteractiveCursorStyler.Apply(control);
@@ -193,11 +193,9 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         var titleFont = new Font("Segoe UI", 9.5f, FontStyle.Bold);
         var normalFont = new Font("Segoe UI", 9.5f);
 
-        // ══════════════════════════════════════════════════════════
         // Root: TableLayoutPanel  2 columns × 2 rows
-        //   Row 0 (fill):   [scheme list]  [editor area]
-        //   Row 1 (45px):   [=== single bottom bar, ColumnSpan=2 ===]
-        // ══════════════════════════════════════════════════════════
+        // Row 0 (fill): scheme list and editor area.
+        // Row 1 (45px): single bottom bar spanning both columns.
         var root = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
@@ -210,7 +208,7 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 45));
 
-        // ── Row 0, Col 0: scheme list ───────────────────────
+        // Row 0, Col 0: scheme list.
         var leftPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 0, 10, 0) };
         var listLabel = new Label { Text = "Color Schemes:", Font = titleFont, Dock = DockStyle.Top, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
         _schemeList = new ListBox { Dock = DockStyle.Fill, Font = normalFont, IntegralHeight = false };
@@ -219,7 +217,7 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         leftPanel.Controls.Add(listLabel);
         root.Controls.Add(leftPanel, 0, 0);
 
-        // ── Row 0, Col 1: editor area ───────────────────────
+        // Row 0, Col 1: editor area.
         var rightPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(5, 0, 0, 0) };
 
         var headerPanel = new TableLayoutPanel {
@@ -436,7 +434,7 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         _previewPanel.Paint += PreviewPanel_Paint;
 
 
-        // ── Row 1: SINGLE bottom bar spanning both columns ──
+        // Row 1: SINGLE bottom bar spanning both columns.
         var bottomBar = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             Padding = new Padding(0),
@@ -634,7 +632,7 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         return scheme;
     }
 
-    // ── Stop row operations ──
+    // Stop row operations.
     private void RemoveStop_Click(object? sender, EventArgs e) {
         if (_stopsGrid.CurrentRow == null) {
             return;
@@ -645,7 +643,7 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         UpdatePreview();
     }
 
-    // ── CRUD operations ──
+    // CRUD operations.
     private void SaveButton_Click(object? sender, EventArgs e) {
         if (!SaveCurrentScheme()) {
             return;
@@ -691,7 +689,7 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         return true;
     }
 
-    // ── List management ──
+    // List management.
     private void SchemeList_SelectedIndexChanged(object? sender, EventArgs e) {
         if (_isDirty && _currentScheme != null) {
             var result = ThemedMessageBox.Show(this, $"Save changes to \"{_currentScheme.Name}\"?",
@@ -814,7 +812,7 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         _isLoading = false;
     }
 
-    // ── Preview ──
+    // Preview.
 
     private void PreviewUpdateTimer_Tick(object? sender, EventArgs e) {
         _previewUpdateTimer.Stop();

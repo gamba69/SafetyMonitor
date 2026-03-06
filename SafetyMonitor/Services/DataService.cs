@@ -169,9 +169,9 @@ public class DataService {
     }
 
     /// <summary>
-    /// Begin a chart data snapshot scope. While active, GetChartData results are cached
-    /// and DateTime.UtcNow is frozen so every tile in the same refresh cycle produces
-    /// identical time boundaries, enabling cross-tile cache hits.
+    /// Begins a chart data snapshot scope.
+    /// While active, GetChartData results are cached and DateTime.UtcNow is frozen.
+    /// This keeps tile time boundaries identical within one refresh cycle for cache reuse.
     /// </summary>
     public IDisposable BeginChartDataSnapshot() {
         lock (_chartSnapshotLock) {

@@ -43,7 +43,7 @@ public class ValueTile : Panel {
     private static readonly Color DarkThemeBorderColor = Color.FromArgb(53, 70, 76);
     private static readonly Color LightThemeGradientFallbackColor = Color.FromArgb(176, 130, 138, 145);
     private static readonly Color DarkThemeGradientFallbackColor = Color.FromArgb(168, 112, 122, 128);
-    private readonly Dictionary<(string Family, float Size, FontStyle Style), Font> _fontCache = new();
+    private readonly Dictionary<(string Family, float Size, FontStyle Style), Font> _fontCache = [];
 
     #endregion Private Fields
 
@@ -466,6 +466,18 @@ public class ValueTile : Panel {
             case ContentAlignment.BottomRight:
                 x = label.Right - textWidth;
                 break;
+            case ContentAlignment.TopLeft:
+                break;
+            case ContentAlignment.TopCenter:
+                break;
+            case ContentAlignment.MiddleLeft:
+                break;
+            case ContentAlignment.MiddleCenter:
+                break;
+            case ContentAlignment.BottomLeft:
+                break;
+            case ContentAlignment.BottomCenter:
+                break;
             default:
                 x = label.Left;
                 break;
@@ -481,6 +493,12 @@ public class ValueTile : Panel {
             case ContentAlignment.MiddleCenter:
             case ContentAlignment.MiddleRight:
                 y = label.Top + (label.Height - textHeight) / 2;
+                break;
+            case ContentAlignment.TopLeft:
+                break;
+            case ContentAlignment.TopCenter:
+                break;
+            case ContentAlignment.TopRight:
                 break;
             default:
                 y = label.Top;

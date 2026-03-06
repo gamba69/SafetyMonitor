@@ -472,7 +472,7 @@ public class ThemedDateTimePicker : UserControl {
             var totalHeight = _headerHeight + _dayHeaderHeight + MaxRows * _cellSize + _pad + bottomSectionHeight;
             ClientSize = new Size(totalWidth, totalHeight);
 
-            // ── Header: [◁][◀] Month Year [▶][▷] ──
+            // Header: [◁][◀] Month Year [▶][▷].
             _headerPanel = new BufferedPanel {
                 Dock = DockStyle.Top,
                 Height = _headerHeight,
@@ -508,7 +508,7 @@ public class ThemedDateTimePicker : UserControl {
             UpdateMonthLabel();
             _headerPanel.Controls.Add(_monthLabel);
 
-            // ── Day-of-week headers ──
+            // Day-of-week headers.
             _dayHeaderPanel = new BufferedPanel {
                 Dock = DockStyle.Top,
                 Height = _dayHeaderHeight,
@@ -516,7 +516,7 @@ public class ThemedDateTimePicker : UserControl {
             };
             _dayHeaderPanel.Paint += DayHeaderPanel_Paint;
 
-            // ── Calendar grid ──
+            // Calendar grid.
             _calendarPanel = new BufferedPanel {
                 Location = new Point(0, _headerHeight + _dayHeaderHeight),
                 Size = new Size(totalWidth, MaxRows * _cellSize + _pad),
@@ -532,7 +532,7 @@ public class ThemedDateTimePicker : UserControl {
             Controls.Add(_dayHeaderPanel);
             Controls.Add(_headerPanel);
 
-            // ── Time row ──
+            // Time row.
             if (_showTime) {
                 _timePanel = new BufferedPanel {
                     Location = new Point(0, _headerHeight + _dayHeaderHeight + MaxRows * _cellSize + _pad),

@@ -77,10 +77,9 @@ public class DashboardPanel : TableLayoutPanel {
 
     /// <summary>
     /// Asynchronous version of <see cref="RefreshData"/>.
-    /// Heavy database queries are executed on a background thread to keep the UI
-    /// responsive; the results are then applied on the UI thread via the existing
-    /// synchronous <c>RefreshData</c> methods of individual tiles which now hit
-    /// the warm <see cref="DataService"/> snapshot caches.
+    /// Heavy database queries run on a background thread to keep the UI responsive.
+    /// Results are applied on the UI thread via synchronous <c>RefreshData</c> calls.
+    /// Snapshot caches in <see cref="DataService"/> make that UI-thread apply step fast.
     /// </summary>
     public async Task RefreshDataAsync(CancellationToken cancellationToken = default) {
         // Start snapshot scopes — they enable cross-tile caching in DataService.
@@ -189,10 +188,10 @@ public class DashboardPanel : TableLayoutPanel {
 
     #region Protected Methods
 
-    // Защита от изменения шрифтов MaterialSkinManager - передаем на тайлы
+    // Reapply tile theme so MaterialSkin font changes do not leak into tile styling.
     protected override void OnFontChanged(EventArgs e) {
         base.OnFontChanged(e);
-        // Принудительно восстанавливаем шрифты на всех тайлах
+        // Force tile fonts back to their configured values.
         foreach (var control in _tileControls.Values) {
             if (control is ValueTile vt) {
                 vt.UpdateTheme();

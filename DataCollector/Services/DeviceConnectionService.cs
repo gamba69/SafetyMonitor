@@ -2,13 +2,13 @@ using ASCOM.Alpaca.Clients;
 using ASCOM.Alpaca.Discovery;
 using ASCOM.Common;
 using ASCOM.Common.DeviceInterfaces;
-using SafetyMonitorData.Configuration;
+using DataCollector.Configuration;
 using SafetyMonitorData.Utilities;
 
 namespace SafetyMonitorData.Services;
 
 /// <summary>
-/// Service for discovering and connecting to ASCOM Alpaca devices
+/// Service for discovering and connecting to ASCOM Alpaca devices.
 /// </summary>
 public class DeviceConnectionService(
     CommandLineOptions options) {
@@ -22,7 +22,7 @@ public class DeviceConnectionService(
     #region Public Methods
 
     /// <summary>
-    /// Connect to ObservingConditions device
+    /// Connect to ObservingConditions device.
     /// </summary>
     public async Task<IObservingConditions> ConnectObservingConditionsAsync(
         CancellationToken cancellationToken = default) {
@@ -43,7 +43,7 @@ public class DeviceConnectionService(
     }
 
     /// <summary>
-    /// Connect to SafetyMonitor device
+    /// Connect to SafetyMonitor device.
     /// </summary>
     public async Task<ISafetyMonitor> ConnectSafetyMonitorAsync(
         CancellationToken cancellationToken = default) {
@@ -68,7 +68,7 @@ public class DeviceConnectionService(
     #region Private Methods
 
     /// <summary>
-    /// Create Alpaca client for the specified device type
+    /// Create Alpaca client for the specified device type.
     /// </summary>
     private static T CreateClient<T>(DeviceTypes deviceType, string host, int port, int deviceNumber) where T : IAscomDevice {
         // Create client configuration (default settings)
@@ -88,7 +88,7 @@ public class DeviceConnectionService(
     }
 
     /// <summary>
-    /// Perform Alpaca discovery to find a device using AlpacaDiscovery static methods
+    /// Perform Alpaca discovery to find a device using AlpacaDiscovery static methods.
     /// </summary>
     private static async Task<AscomDevice?> DiscoverDeviceAsync(
         string deviceName,
@@ -110,7 +110,7 @@ public class DeviceConnectionService(
     }
 
     /// <summary>
-    /// Connect to device by address and port
+    /// Connect to device by address and port.
     /// </summary>
     private async Task<T> ConnectByAddressAsync<T>(
         string address,
@@ -127,7 +127,7 @@ public class DeviceConnectionService(
     }
 
     /// <summary>
-    /// Connect to the device with retry logic
+    /// Connect to the device with retry logic.
     /// </summary>
     private async Task ConnectClientAsync(IAscomDevice client, CancellationToken cancellationToken) {
         await RetryPolicy.ExecuteAsync(
@@ -153,7 +153,7 @@ public class DeviceConnectionService(
     }
 
     /// <summary>
-    /// Discover and connect to device by name
+    /// Discover and connect to device by name.
     /// </summary>
     private async Task<T> DiscoverAndConnectAsync<T>(
         string deviceName,

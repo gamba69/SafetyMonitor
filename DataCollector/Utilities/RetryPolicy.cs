@@ -1,14 +1,14 @@
 namespace SafetyMonitorData.Utilities;
 
 /// <summary>
-/// Provides retry policy for operations that may fail temporarily
+/// Provides retry policy for operations that may fail temporarily.
 /// </summary>
 public static class RetryPolicy {
 
     #region Public Methods
 
     /// <summary>
-    /// Execute an async operation with retry logic
+    /// Execute an async operation with retry logic.
     /// </summary>
     /// <typeparam name="T">Return type of the operation</typeparam>
     /// <param name="operation">The operation to execute</param>
@@ -54,7 +54,7 @@ public static class RetryPolicy {
     }
 
     /// <summary>
-    /// Execute a synchronous operation with retry logic (wraps in Task)
+    /// Execute a synchronous operation with retry logic (wraps in Task).
     /// </summary>
     public static async Task<T?> ExecuteAsync<T>(
         Func<T> operation,
@@ -71,7 +71,7 @@ public static class RetryPolicy {
     }
 
     /// <summary>
-    /// Execute an operation without a return value
+    /// Execute an operation without a return value.
     /// </summary>
     public static async Task ExecuteAsync(
         Func<Task> operation,

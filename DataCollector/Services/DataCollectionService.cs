@@ -1,12 +1,12 @@
 using ASCOM.Common.DeviceInterfaces;
+using DataCollector.Configuration;
 using DataStorage.Models;
-using SafetyMonitorData.Configuration;
 using SafetyMonitorData.Utilities;
 
-namespace SafetyMonitorData.Services;
+namespace DataCollector.Services;
 
 /// <summary>
-/// Service for collecting data from ASCOM Alpaca devices
+/// Service for collecting data from ASCOM Alpaca devices.
 /// </summary>
 public class DataCollectionService(
     CommandLineOptions options) {
@@ -22,7 +22,7 @@ public class DataCollectionService(
     #region Public Methods
 
     /// <summary>
-    /// Collect data from both devices
+    /// Collect data from both devices.
     /// </summary>
     public async Task<ObservingData> CollectDataAsync(CancellationToken cancellationToken = default) {
         if (_ocDevice == null || _smDevice == null) {
@@ -43,7 +43,7 @@ public class DataCollectionService(
     }
 
     /// <summary>
-    /// Initialize the service with connected devices
+    /// Initialize the service with connected devices.
     /// </summary>
     public void Initialize(IObservingConditions ocDevice, ISafetyMonitor smDevice) {
         _ocDevice = ocDevice;
@@ -55,7 +55,7 @@ public class DataCollectionService(
     #region Private Methods
 
     /// <summary>
-    /// Collect data from ObservingConditions device
+    /// Collect data from ObservingConditions device.
     /// </summary>
     private async Task CollectObservingConditionsDataAsync(
         ObservingData data,
@@ -99,7 +99,7 @@ public class DataCollectionService(
     }
 
     /// <summary>
-    /// Collect data from SafetyMonitor device
+    /// Collect data from SafetyMonitor device.
     /// </summary>
     private async Task CollectSafetyMonitorDataAsync(
         ObservingData data,
@@ -138,7 +138,7 @@ public class DataCollectionService(
     }
 
     /// <summary>
-    /// Get a property value with retry logic and exception handling
+    /// Get a property value with retry logic and exception handling.
     /// </summary>
     private async Task<double?> GetPropertyAsync(
         Func<double> getter,

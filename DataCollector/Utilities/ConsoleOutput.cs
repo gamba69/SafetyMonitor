@@ -3,28 +3,28 @@ using DataStorage.Models;
 namespace SafetyMonitorData.Utilities;
 
 /// <summary>
-/// Console output formatting utilities
+/// Console output formatting utilities.
 /// </summary>
 public static class ConsoleOutput {
 
     #region Public Methods
 
     /// <summary>
-    /// Print error message - unified format without color, output to stderr
+    /// Print error message - unified format without color, output to stderr.
     /// </summary>
     public static void Error(string message) {
         Console.Error.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [ERROR] {message}");
     }
 
     /// <summary>
-    /// Print info message - unified format without color
+    /// Print info message - unified format without color.
     /// </summary>
     public static void Info(string message) {
         Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [INFO] {message}");
     }
 
     /// <summary>
-    /// Print observing data to console
+    /// Print observing data to console.
     /// </summary>
     public static void PrintData(ObservingData data) {
         Console.WriteLine($"[{data.Timestamp:yyyy-MM-dd HH:mm:ss} UTC] DATA:");
@@ -97,7 +97,7 @@ public static class ConsoleOutput {
     }
 
     /// <summary>
-    /// Print warning message - unified format without color
+    /// Print warning message - unified format without color.
     /// </summary>
     public static void Warning(string message) {
         Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [WARN] {message}");
@@ -108,7 +108,7 @@ public static class ConsoleOutput {
     #region Private Methods
 
     /// <summary>
-    /// Get cardinal direction name from degrees
+    /// Get cardinal direction name from degrees.
     /// </summary>
     private static string GetWindDirectionName(double degrees) {
         // Normalize to 0-360

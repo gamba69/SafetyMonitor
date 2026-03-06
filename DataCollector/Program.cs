@@ -1,6 +1,7 @@
 using ASCOM.Common.DeviceInterfaces;
+using DataCollector.Configuration;
+using DataCollector.Services;
 using Microsoft.Extensions.DependencyInjection;
-using SafetyMonitorData.Configuration;
 using SafetyMonitorData.Services;
 using SafetyMonitorData.Utilities;
 using System.CommandLine;
@@ -12,7 +13,7 @@ class Program {
     #region Private Methods
 
     /// <summary>
-    /// Configure dependency injection services
+    /// Configure dependency injection services.
     /// </summary>
     static void ConfigureServices(IServiceCollection services, CommandLineOptions options) {
         // Add options as singleton
@@ -24,7 +25,7 @@ class Program {
     }
 
     /// <summary>
-    /// Disconnect from device safely
+    /// Disconnect from device safely.
     /// </summary>
     static void DisconnectDevice(IAscomDevice? device, string deviceName) {
         if (device != null) {
@@ -132,10 +133,10 @@ class Program {
         }
     }
     /// <summary>
-    /// Run continuous data collection
+    /// Run continuous data collection.
     /// </summary>
     /// <summary>
-    /// Parse command line arguments
+    /// Parse command line arguments.
     /// </summary>
     static CommandLineOptions? ParseCommandLine(string[] args) {
         var options = new CommandLineOptions();
@@ -254,7 +255,7 @@ class Program {
     }
 
     /// <summary>
-    /// Run continuous mode with automatic retry on any error
+    /// Run continuous mode with automatic retry on any error.
     /// </summary>
     static async Task RunContinuousModeWithRetryAsync(
         IServiceProvider serviceProvider,
@@ -368,7 +369,7 @@ class Program {
     }
 
     /// <summary>
-    /// Run single data collection
+    /// Run single data collection.
     /// </summary>
     static async Task RunOnceModeAsync(
         DataCollectionService collectionService,
@@ -391,7 +392,7 @@ class Program {
         }
     }
     /// <summary>
-    /// Validate command line options
+    /// Validate command line options.
     /// </summary>
     static bool ValidateOptions(CommandLineOptions options, out List<string> errors) {
         errors = [];

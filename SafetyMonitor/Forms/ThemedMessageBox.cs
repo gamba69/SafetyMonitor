@@ -128,12 +128,9 @@ public class ThemedMessageBox : ThemedCaptionForm {
     }
 
     /// <summary>
-    /// After ThemedCaptionForm's base.OnHandleCreated installs the custom title bar
-    /// (Win10 fallback), the FormBorderStyle changes to None. The window shrinks because
-    /// OS chrome is removed, but the custom title bar still needs space inside the
-    /// client area. This method compensates by enlarging the form.
-    /// On Win11 (native DWM theming), FormBorderStyle stays FixedDialog and no adjustment
-    /// is needed — the OS title bar lives outside the client area.
+    /// After ThemedCaptionForm installs a custom title bar on Win10 fallback mode,
+    /// FormBorderStyle becomes None and OS chrome is removed.
+    /// This method expands the form so the custom title bar still has client-area space.
     /// </summary>
     private void AdjustSizeForTitleBar() {
         if (FormBorderStyle != FormBorderStyle.None) {

@@ -268,7 +268,7 @@ public class SettingsForm : ThemedCaptionForm {
         var normalFont = new Font("Segoe UI", 10f);
         var descriptionFont = new Font("Segoe UI", 8.5f, FontStyle.Regular);
 
-        // ── Outer layout: header, tabs, tab content, buttons ──
+        // Outer layout: header, tabs, tab content, buttons.
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
@@ -281,7 +281,7 @@ public class SettingsForm : ThemedCaptionForm {
         mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 2: Tab content
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));    // 3: Save / Cancel
 
-        // ── Row 0: ThemedCaptionForm header description ──
+        // Row 0: ThemedCaptionForm header description.
         var headerLabel = new Label {
             Text = "Adjust refresh, storage, and chart behavior settings; changes apply after you click Save. Use these options to balance performance, readability, and trend analysis.",
             Font = normalFont,
@@ -291,7 +291,7 @@ public class SettingsForm : ThemedCaptionForm {
         };
         mainLayout.Controls.Add(headerLabel, 0, 0);
 
-        // ── Row 1: Segmented tab strip (same style as quick-access dashboard switcher) ──
+        // Row 1: Segmented tab strip (same style as quick-access dashboard switcher).
         _tabSegmentPanel = new Panel {
             Height = 34,
             Dock = DockStyle.Fill,
@@ -355,7 +355,7 @@ public class SettingsForm : ThemedCaptionForm {
 
         mainLayout.Controls.Add(_tabSegmentPanel, 0, 1);
 
-        // ── Row 2: Stacked tab pages (only one visible at a time) ──
+        // Row 2: Stacked tab pages (only one visible at a time).
         var contentHost = new Panel {
             Dock = DockStyle.Fill,
             Margin = new Padding(0)
@@ -379,7 +379,7 @@ public class SettingsForm : ThemedCaptionForm {
 
         mainLayout.Controls.Add(contentHost, 0, 2);
 
-        // ── Row 3: Save / Cancel buttons ──
+        // Row 3: Save / Cancel buttons.
         var buttonPanel = new FlowLayoutPanel {
             AutoSize = true,
             Dock = DockStyle.Fill,
@@ -528,9 +528,7 @@ public class SettingsForm : ThemedCaptionForm {
         AutoScroll = true
     };
 
-    // ════════════════════════════════════════════════════════════════
-    //  Tab pages
-    // ════════════════════════════════════════════════════════════════
+    // Tab pages.
 
     private Panel CreateGeneralTab(Font titleFont, Font normalFont, Font descriptionFont) {
         var page = new Panel {
@@ -938,9 +936,7 @@ public class SettingsForm : ThemedCaptionForm {
         return page;
     }
 
-    // ════════════════════════════════════════════════════════════════
-    //  Tab switching
-    // ════════════════════════════════════════════════════════════════
+    // Tab switching.
 
     private void SelectTab(int index) {
         if (_tabButtons.Count > index && !_tabButtons[index].Checked) {
@@ -961,9 +957,7 @@ public class SettingsForm : ThemedCaptionForm {
         ApplyTabSegmentTheme(isLight);
     }
 
-    // ════════════════════════════════════════════════════════════════
-    //  Helpers
-    // ════════════════════════════════════════════════════════════════
+    // Helper methods.
 
     private static Label CreateLabel(string text, Font font) => new() {
         Text = text,

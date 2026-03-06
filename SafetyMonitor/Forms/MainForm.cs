@@ -67,7 +67,7 @@ public class MainForm : MaterialForm {
     private Panel _statusSeparator = null!;
     private string _dataPathStatusText = "Storage: not configured";
 
-    // ── Refresh indicator fields ──
+    // Refresh indicator fields.
     private PictureBox _refreshIndicatorIcon = null!;
     private Label _refreshIndicatorTimeLabel = null!;
     private System.Windows.Forms.Timer? _refreshCountdownTimer;
@@ -87,7 +87,7 @@ public class MainForm : MaterialForm {
     private bool _startupReadyRaised;
     private FormWindowState _windowStateBeforeMinimize = FormWindowState.Normal;
 
-    // ── Tray icon fields ──
+    // Tray icon fields.
     private NotifyIcon? _trayIcon;
     private System.Windows.Forms.Timer? _trayRefreshTimer;
     private bool _isMinimizedToTray;
@@ -97,7 +97,7 @@ public class MainForm : MaterialForm {
     private bool _isQuickAccessLinkLayoutStaggeredUpdateInProgress;
     private QuickAccessLinkControlsLayoutState _pendingQuickAccessLinkLayoutState;
 
-    // ── Visor (забрало) fields ──
+    // Visor overlay fields.
     // The visor is a borderless overlay Form with real Opacity support.
     // It covers the dashboard area to hide layout/scaling artifacts during
     // initial startup, dashboard switching and theme changes.
@@ -113,7 +113,7 @@ public class MainForm : MaterialForm {
     // BeginInitialDashboardReveal called from OnShown.
     private bool _initialRevealCompleted;
 
-    // ── Visor timing constants (configurable) ──
+    // Visor timing constants.
     // Delay in OnShown before visor appears and dashboard starts building.
     // Gives the window time to fully stabilize (maximize, DPI, theme).
     private const int VisorStartupStabilizeMs = 50;
@@ -173,7 +173,7 @@ public class MainForm : MaterialForm {
         SetupRefreshTimer();
         SetupTrayIcon();
 
-        // Anti flicker hack
+        // Slightly below 1.0 opacity helps avoid initial paint flicker on startup.
         this.Opacity = 0.999;
         this.SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
 
@@ -239,7 +239,7 @@ public class MainForm : MaterialForm {
     protected override void OnMove(EventArgs e) {
         base.OnMove(e);
 
-        // ИЗМЕНЕНО: сохранять только после загрузки и в нормальном состоянии
+        // Persist window bounds only after startup and only in normal state.
         if (!_isLoading && WindowState == FormWindowState.Normal) {
             SaveWindowSettings();
         }
@@ -285,7 +285,7 @@ public class MainForm : MaterialForm {
             _windowStateBeforeMinimize = WindowState;
         }
 
-        // ИЗМЕНЕНО: сохранять только после загрузки
+        // Persist resized bounds only after startup completes.
         if (!_isLoading && (WindowState == FormWindowState.Maximized || WindowState == FormWindowState.Normal)) {
             SaveWindowSettings();
         }
@@ -331,9 +331,7 @@ public class MainForm : MaterialForm {
 
     #region Private Methods
 
-    // ════════════════════════════════════════════════════════════════
-    //  Visor (забрало) — hides layout artifacts during transitions
-    // ════════════════════════════════════════════════════════════════
+    // Visor overlay that hides layout artifacts during transitions.
 
     /// <summary>
     /// Returns the visor background color matching the current theme.
@@ -345,8 +343,8 @@ public class MainForm : MaterialForm {
 
     /// <summary>
     /// Shows an opaque visor overlay covering the dashboard area.
-    /// The visor is a borderless Form with real Opacity support, positioned
-    /// exactly over _dashboardContainer in screen coordinates.
+    /// The visor is a borderless Form with real Opacity support.
+    /// It is positioned exactly over _dashboardContainer in screen coordinates.
     /// </summary>
     private void ShowVisor() {
         HideVisorImmediate();
@@ -360,10 +358,10 @@ public class MainForm : MaterialForm {
         // Calculate screen-space bounds of the dashboard container
         Rectangle screenRect;
         try {
-            // ИЗМЕНЕНО: Так как _dashboardContainer изначально Visible = false, 
-            // его собственный RectangleToScreen может вернуть кривые координаты.
-            // Конвертируем его Bounds (которые уже рассчитаны Dock=Fill) 
-            // в экранные координаты через родительскую форму (this).
+            // Use parent coordinate conversion because hidden controls can report invalid screen bounds.
+            
+            
+            
             screenRect = this.RectangleToScreen(_dashboardContainer.Bounds);
         } catch {
             return;
@@ -464,8 +462,8 @@ public class MainForm : MaterialForm {
     }
 
     /// <summary>
-    /// Starts a fade-out animation on the visor, reducing its Opacity
-    /// from 1.0 to 0.0 over VisorFadeDurationMs, then disposes it.
+    /// Starts a visor fade-out animation.
+    /// It reduces opacity from 1.0 to 0.0 over VisorFadeDurationMs and then disposes the visor.
     /// </summary>
     private void FadeOutVisor(Action? onComplete = null) {
         if (_visorForm == null || _visorForm.IsDisposed) {
@@ -552,9 +550,9 @@ public class MainForm : MaterialForm {
 
     /// <summary>
     /// Initial dashboard reveal sequence on first launch.
-    /// 1. Show visor (opaque, theme-colored) — BEFORE anything becomes visible
-    /// 2. Apply theme fixup, make dashboard visible, refresh data — all behind visor
-    /// 3. Schedule visor fade-out
+    /// 1. Show visor (opaque, theme-colored) — BEFORE anything becomes visible.
+    /// 2. Apply theme fixup, make dashboard visible, refresh data — all behind visor.
+    /// 3. Schedule visor fade-out.
     /// </summary>
     private async void BeginInitialDashboardReveal() {
         // 1. Show visor FIRST — before any dashboard UI becomes visible
@@ -594,9 +592,7 @@ public class MainForm : MaterialForm {
         ScheduleVisorReveal();
     }
 
-    // ════════════════════════════════════════════════════════════════
-    //  Quick access helpers
-    // ════════════════════════════════════════════════════════════════
+    // Quick access helpers.
 
     private static void ApplyQuickAccessColors(Control parent, Color bg, Color fg) {
         foreach (Control control in parent.Controls) {
@@ -977,9 +973,7 @@ public class MainForm : MaterialForm {
             var targetDashboard = GetContextMenuTargetDashboard();
             var currentLinkMode = targetDashboard?.InitialChartLinkMode ?? DashboardChartLinkMode.Full;
             var showFavoriteToggle = targetDashboard != null;
-            if (_quickButtonFavoriteSeparator != null) {
-                _quickButtonFavoriteSeparator.Visible = showFavoriteToggle;
-            }
+            _quickButtonFavoriteSeparator?.Visible = showFavoriteToggle;
             if (_quickButtonFavoriteMenuItem != null) {
                 _quickButtonFavoriteMenuItem.Visible = showFavoriteToggle;
                 if (showFavoriteToggle) {
@@ -989,9 +983,7 @@ public class MainForm : MaterialForm {
                 }
             }
             var groupedModeAvailable = (targetDashboard?.UsedLinkGroups ?? _currentDashboard?.UsedLinkGroups ?? ChartLinkGroupInfo.MaxUsedGroups) > 1;
-            if (_groupedLinkModeMenuItem != null) {
-                _groupedLinkModeMenuItem.Visible = groupedModeAvailable;
-            }
+            _groupedLinkModeMenuItem?.Visible = groupedModeAvailable;
 
             foreach (var item in linkModeMenuItem.DropDownItems.OfType<ToolStripMenuItem>()) {
                 if (item.Tag is DashboardChartLinkMode mode) {
@@ -1024,12 +1016,12 @@ public class MainForm : MaterialForm {
 
     private readonly record struct QuickAccessLinkControlsLayoutState(bool ShowSection, bool ShowGroupedToggle);
 
-    private bool IsGroupedLinkModeAvailable(Dashboard? dashboard) => (dashboard?.UsedLinkGroups ?? ChartLinkGroupInfo.MaxUsedGroups) > 1;
+    private static bool IsGroupedLinkModeAvailable(Dashboard? dashboard) => (dashboard?.UsedLinkGroups ?? ChartLinkGroupInfo.MaxUsedGroups) > 1;
 
     private static bool ShouldShowQuickAccessLinkControls(Dashboard? dashboard)
         => dashboard?.Tiles.OfType<ChartTileConfig>().Take(2).Count() >= 2;
 
-    private QuickAccessLinkControlsLayoutState GetQuickAccessLinkControlsLayoutState(Dashboard? dashboard) {
+    private static QuickAccessLinkControlsLayoutState GetQuickAccessLinkControlsLayoutState(Dashboard? dashboard) {
         var showSection = ShouldShowQuickAccessLinkControls(dashboard);
         return new QuickAccessLinkControlsLayoutState(showSection, showSection && IsGroupedLinkModeAvailable(dashboard));
     }
@@ -1078,11 +1070,6 @@ public class MainForm : MaterialForm {
     }
 
     private void ScheduleQuickAccessLinkLayoutStep(Action nextStep) {
-        if (QuickAccessLinkLayoutStepDelayMs <= 0) {
-            BeginInvoke(nextStep);
-            return;
-        }
-
         var delayTimer = new System.Windows.Forms.Timer { Interval = QuickAccessLinkLayoutStepDelayMs };
         delayTimer.Tick += (_, _) => {
             delayTimer.Stop();
@@ -1418,8 +1405,8 @@ public class MainForm : MaterialForm {
 
     /// <summary>
     /// Loads a dashboard. During initial load (_initialRevealCompleted == false),
-    /// the panel is created invisible and NOT shown — BeginInitialDashboardReveal
-    /// handles the first reveal behind a visor.
+    /// the panel is created invisible and not shown.
+    /// BeginInitialDashboardReveal handles the first reveal behind a visor.
     /// After the initial reveal, every LoadDashboard call immediately shows a visor,
     /// builds the new dashboard behind it, then fades the visor out.
     /// </summary>
@@ -1787,7 +1774,7 @@ public class MainForm : MaterialForm {
             config.ShowLegend,
             config.ShowGrid,
             config.ShowInspector,
-            config.MetricAggregations.Select(aggregation => new MetricAggregationSnapshot(
+            [.. config.MetricAggregations.Select(aggregation => new MetricAggregationSnapshot(
                 aggregation.Metric,
                 aggregation.Function,
                 NormalizeSnapshotText(aggregation.Label),
@@ -1797,7 +1784,7 @@ public class MainForm : MaterialForm {
                 aggregation.Smooth,
                 aggregation.Tension,
                 aggregation.ShowMarkers,
-                NormalizeSnapshotText(aggregation.ValueSchemeName))).ToList());
+                NormalizeSnapshotText(aggregation.ValueSchemeName)))]);
     }
 
 
@@ -1979,12 +1966,12 @@ public class MainForm : MaterialForm {
     }
 
     /// <summary>
-    /// Switches theme with visor protection: visor appears immediately before
-    /// any theme colors start changing, then fades out after reapply completes.
+    /// Switches theme with visor protection.
+    /// The visor appears before theme colors change and fades out after reapply completes.
     /// </summary>
     private void SetTheme(MaterialSkinManager.Themes theme) {
         // Show visor BEFORE changing the theme to hide all repaint artifacts.
-        // На этом этапе забрало поднимется в старом цвете.
+        // The visor can still use the previous theme color at this point.
         if (_initialRevealCompleted) {
             ShowVisor();
         }
@@ -1993,9 +1980,9 @@ public class MainForm : MaterialForm {
         ApplyMaterialColorScheme();
         ApplyApplicationIcon();
 
-        // ИЗМЕНЕНО: Сразу после переключения темы обновляем цвет забрала на новый
-        // и форсируем отрисовку (Refresh), чтобы перекрытие перекрасилось ДО того, 
-        // как контролы снизу начнут тяжелый рендеринг.
+        // Repaint visor immediately so the overlay color matches the new theme.
+        
+        
         RefreshVisorColors();
 
         // MaterialSkinManager queues multiple deferred color updates.
@@ -2703,7 +2690,7 @@ public class MainForm : MaterialForm {
         return text[..low] + ellipsis;
     }
 
-    private void PositionLinkControls() { }
+    private static void PositionLinkControls() { }
 
     private bool UpdateQuickDashboards() {
         _quickDashboardsPanel.SuspendLayout();
@@ -2780,9 +2767,7 @@ public class MainForm : MaterialForm {
         UpdateDashboardSwitchAppearance();
     }
 
-    // ════════════════════════════════════════════════════════════════
-    //  Tray icon
-    // ════════════════════════════════════════════════════════════════
+    // Tray icon handling.
 
     private void SetupTrayIcon() {
         _trayIcon = new NotifyIcon {
@@ -2973,9 +2958,7 @@ public class MainForm : MaterialForm {
         _trayIcon.Text = text;
     }
 
-    // ════════════════════════════════════════════════════════════════
-    //  Dashboard refresh pause / resume
-    // ════════════════════════════════════════════════════════════════
+    // Dashboard refresh pause/resume.
 
     private void PauseDashboardRefresh() {
         _refreshTimer?.Stop();

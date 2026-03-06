@@ -1,40 +1,40 @@
 namespace DataStorage.Models {
     /// <summary>
-    /// Data model for ASCOM ObservingConditions and SafetyMonitor
-    /// Can represent both raw observations and aggregated data
+    /// Data model for ASCOM ObservingConditions and SafetyMonitor.
+    /// Can represent both raw observations and aggregated data.
     /// </summary>
     public class ObservingData {
 
         #region Public Properties
 
         /// <summary>
-        /// Cloud cover (%) - 0 = clear, 100 = completely overcast
+        /// Cloud cover (%) - 0 = clear, 100 = completely overcast.
         /// </summary>
         public double? CloudCover { get; set; }
 
         // ObservingConditions properties
         /// <summary>
-        /// Dew point (°C)
+        /// Dew point (°C).
         /// </summary>
         public double? DewPoint { get; set; }
 
         /// <summary>
-        /// Humidity (%)
+        /// Humidity (%).
         /// </summary>
         public double? Humidity { get; set; }
 
         /// <summary>
-        /// Unique identifier (auto-generated, only for raw data)
+        /// Unique identifier (auto-generated, only for raw data).
         /// </summary>
         public long Id { get; set; }
 
         /// <summary>
-        /// Indicates if this is aggregated data
+        /// Indicates if this is aggregated data.
         /// </summary>
         public bool IsAggregated => TimestampEnd.HasValue;
 
         /// <summary>
-        /// Safety monitor safe status (C# bool wrapper)
+        /// Safety monitor safe status (C# bool wrapper).
         /// </summary>
         public bool? IsSafe {
             get => IsSafeInt.HasValue ? IsSafeInt.Value == 100 : null;
@@ -42,85 +42,85 @@ namespace DataStorage.Models {
         }
 
         /// <summary>
-        /// Safety monitor safe status (for raw data)
-        /// For aggregated data, use SafePercentage instead
-        /// Stored as INTEGER in database (0/100/null)
+        /// Safety monitor safe status (for raw data).
+        /// For aggregated data, use SafePercentage instead.
+        /// Stored as INTEGER in database (0/100/null).
         /// </summary>
         public int? IsSafeInt { get; set; }
 
         /// <summary>
-        /// Additional notes or metadata
+        /// Additional notes or metadata.
         /// </summary>
         public string? Notes { get; set; }
 
         /// <summary>
-        /// Atmospheric pressure (hPa)
+        /// Atmospheric pressure (hPa).
         /// </summary>
         public double? Pressure { get; set; }
 
         /// <summary>
-        /// Rain rate (mm/hr)
+        /// Rain rate (mm/hr).
         /// </summary>
         public double? RainRate { get; set; }
 
         /// <summary>
-        /// Number of records (only for aggregated data, 1 for raw data)
+        /// Number of records (only for aggregated data, 1 for raw data).
         /// </summary>
         public int RecordCount { get; set; } = 1;
 
         // SafetyMonitor properties
         /// <summary>
-        /// Percentage of records where IsSafe was true (0-100)
-        /// Only for aggregated data, null for raw data
+        /// Percentage of records where IsSafe was true (0-100).
+        /// Only for aggregated data, null for raw data.
         /// </summary>
         public double? SafePercentage { get; set; }
 
         /// <summary>
-        /// Sky brightness (lux)
+        /// Sky brightness (lux).
         /// </summary>
         public double? SkyBrightness { get; set; }
 
         /// <summary>
-        /// Sky quality (mag/arcsec² mpsas)
+        /// Sky quality (mag/arcsec² mpsas).
         /// </summary>
         public double? SkyQuality { get; set; }
 
         /// <summary>
-        /// Sky temperature (°C)
+        /// Sky temperature (°C).
         /// </summary>
         public double? SkyTemperature { get; set; }
 
         /// <summary>
-        /// Star full width half maximum (arcsec)
+        /// Star full width half maximum (arcsec).
         /// </summary>
         public double? StarFwhm { get; set; }
 
         /// <summary>
-        /// Temperature (°C)
+        /// Temperature (°C).
         /// </summary>
         public double? Temperature { get; set; }
 
         /// <summary>
-        /// Timestamp of the observation (for raw data) or start of time slot (for aggregated data)
+        /// Timestamp of the observation (for raw data) or start of time slot (for aggregated data).
         /// </summary>
         public DateTime Timestamp { get; set; }
 
         /// <summary>
-        /// End of time slot (only for aggregated data, null for raw data)
+        /// End of time slot (only for aggregated data, null for raw data).
         /// </summary>
         public DateTime? TimestampEnd { get; set; }
         /// <summary>
-        /// Wind direction (degrees, 0 = North, 90 = East)
+        /// Wind direction (degrees, 0 = North, 90 = East).
         /// </summary>
         public double? WindDirection { get; set; }
 
         /// <summary>
-        /// Wind gust (m/s)
+        /// Wind gust (m/s).
         /// </summary>
         public double? WindGust { get; set; }
 
         /// <summary>
-        /// Wind speed (m/s)
+        /// Wind speed (m/s).
         /// </summary>
         public double? WindSpeed { get; set; }
 

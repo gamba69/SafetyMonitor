@@ -235,7 +235,7 @@ internal static class Program {
 
     private static ObservingData GenerateData(DateTime timestamp, Random random, RainTimeline rainTimeline, HumidityTimeline humidityTimeline) {
         var dayOfYear = timestamp.DayOfYear;
-        var solarPhase = Math.Sin(2 * Math.PI * (dayOfYear - 81) / 365.2422); // + летом, - зимой
+        var solarPhase = Math.Sin(2 * Math.PI * (dayOfYear - 81) / 365.2422); // Positive in summer, negative in winter.
         var daylightHours = 12 + 4 * solarPhase;
         var hour = timestamp.TimeOfDay.TotalHours;
         var solarNoonOffset = 14;

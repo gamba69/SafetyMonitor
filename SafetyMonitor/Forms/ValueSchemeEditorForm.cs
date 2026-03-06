@@ -190,7 +190,7 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 45));
 
-        // ── Row 0, Col 0: scheme list ───────────────────────
+        // Row 0, Col 0: scheme list.
         var leftPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0, 0, 10, 0) };
         var listLabel = new Label { Text = "Value Schemes:", Font = titleFont, Dock = DockStyle.Top, AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
         _schemeList = new ListBox { Dock = DockStyle.Fill, Font = normalFont, IntegralHeight = false };
@@ -199,7 +199,7 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         leftPanel.Controls.Add(listLabel);
         root.Controls.Add(leftPanel, 0, 0);
 
-        // ── Row 0, Col 1: editor area ───────────────────────
+        // Row 0, Col 1: editor area.
         var rightPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(5, 0, 0, 0) };
 
         var headerPanel = new TableLayoutPanel {
@@ -403,7 +403,7 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         _previewPanel = new PreviewPanel { Dock = DockStyle.Bottom, Height = 56, Padding = new Padding(0, 6, 0, 0) };
         _previewPanel.Paint += PreviewPanel_Paint;
 
-        // ── Row 1: SINGLE bottom bar spanning both columns ──
+        // Row 1: SINGLE bottom bar spanning both columns.
         var bottomBar = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             Padding = new Padding(0),

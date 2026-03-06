@@ -431,9 +431,7 @@ public class ThemedColorPicker : ThemedCaptionForm {
         _wheelSize = 220;
         _barHeight = 220;
 
-        // ============================================================
-        //  Root layout: 2 rows — [content] [buttons]
-        // ============================================================
+        // Root layout: content row and button row.
         var root = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
@@ -445,9 +443,7 @@ public class ThemedColorPicker : ThemedCaptionForm {
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-        // ============================================================
-        //  Content: 3 columns — [wheel] [brightness bar] [controls]
-        // ============================================================
+        // Content layout: wheel, brightness bar, and value controls.
         var content = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             AutoSize = false,
@@ -461,7 +457,7 @@ public class ThemedColorPicker : ThemedCaptionForm {
         content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         content.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        // --- Column 0: Color Wheel ---
+        // Column 0: color wheel.
         _wheelPanel = new Panel {
             Size = new Size(_wheelSize, _wheelSize),
             MinimumSize = new Size(_wheelSize, _wheelSize),
@@ -473,7 +469,7 @@ public class ThemedColorPicker : ThemedCaptionForm {
         _wheelPanel.MouseMove += WheelPanel_Mouse;
         content.Controls.Add(_wheelPanel, 0, 0);
 
-        // --- Column 1: Brightness Bar ---
+        // Column 1: brightness bar.
         _brightnessBar = new Panel {
             Size = new Size(BarWidth, _barHeight),
             MinimumSize = new Size(BarWidth, _barHeight),
@@ -485,14 +481,12 @@ public class ThemedColorPicker : ThemedCaptionForm {
         _brightnessBar.MouseMove += BrightnessBar_Mouse;
         content.Controls.Add(_brightnessBar, 1, 0);
 
-        // --- Column 2: Right panel with controls ---
+        // Column 2: numeric and hex controls.
         content.Controls.Add(CreateRightPanel(), 2, 0);
 
         root.Controls.Add(content, 0, 0);
 
-        // ============================================================
-        //  Buttons row
-        // ============================================================
+        // Bottom row with dialog action buttons.
         root.Controls.Add(CreateButtonPanel(), 0, 1);
 
         Controls.Add(root);

@@ -3,7 +3,7 @@ using MaterialSkin;
 namespace SafetyMonitor.Forms;
 
 /// <summary>
-/// Custom MenuStrip renderer with theme support (light/dark)
+/// Custom MenuStrip renderer with theme support (light/dark).
 /// </summary>
 public class ThemedMenuRenderer : ToolStripProfessionalRenderer {
     #region Private Fields
