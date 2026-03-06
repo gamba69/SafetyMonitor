@@ -27,7 +27,6 @@ public class ValueTileConfig : TileConfig {
 
     public string ColorSchemeName { get; set; } = "Temperature";
     public int DecimalPlaces { get; set; } = 1;
-    public string IconName { get; set; } = "";
     public string IconColorSchemeName { get; set; } = "";
     public MetricType Metric { get; set; }
     public ValueTileDisplayMode DisplayMode { get; set; } = ValueTileDisplayMode.TextOnly;
@@ -44,7 +43,9 @@ public class ChartTileConfig : TileConfig {
 
     #region Public Properties
 
+    [JsonIgnore]
     public TimeSpan? CustomAggregationInterval { get; set; }
+    [JsonIgnore]
     public TimeSpan? CustomPeriodDuration { get; set; }
     [JsonIgnore]
     public DateTime? CustomEndTime { get; set; }
@@ -52,7 +53,9 @@ public class ChartTileConfig : TileConfig {
     public DateTime? CustomStartTime { get; set; }
     public List<MetricAggregation> MetricAggregations { get; set; } = [];
     public ChartLinkGroup LinkGroup { get; set; } = ChartLinkGroup.Alpha;
+    [JsonIgnore]
     public ChartPeriod Period { get; set; } = ChartPeriod.Last24Hours;
+    [JsonIgnore]
     public string PeriodPresetUid { get; set; } = "";
     public bool ShowGrid { get; set; } = true;
     public bool ShowInspector { get; set; }

@@ -7,7 +7,6 @@ public static class AppSettingsDefaultsService {
         return new AppSettings {
             IsDarkTheme = true,
             IsMaximized = true,
-            LinkChartPeriods = true,
             MinimizeToTray = false,
             ShowRefreshIndicator = true,
             StartMinimized = false,

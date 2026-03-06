@@ -6,7 +6,6 @@ public class AppSettings {
     // Theme settings
     public bool IsDarkTheme { get; set; }
     public bool IsMaximized { get; set; }
-    public bool LinkChartPeriods { get; set; }
     public bool MinimizeToTray { get; set; }
     public bool ShowRefreshIndicator { get; set; }
     public bool StartMinimized { get; set; }

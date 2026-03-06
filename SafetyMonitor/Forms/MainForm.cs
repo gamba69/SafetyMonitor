@@ -2202,7 +2202,6 @@ public class MainForm : MaterialForm {
         target.IsDarkTheme = source.IsDarkTheme;
         target.MaterialColorScheme = source.MaterialColorScheme;
         target.IsMaximized = source.IsMaximized;
-        target.LinkChartPeriods = source.LinkChartPeriods;
         target.MinimizeToTray = source.MinimizeToTray;
         target.ShowRefreshIndicator = source.ShowRefreshIndicator;
         target.StartMinimized = source.StartMinimized;
