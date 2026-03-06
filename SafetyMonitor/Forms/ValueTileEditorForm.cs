@@ -373,7 +373,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         textSchemeColorPanel.Controls.Add(textSchemeColorLabel);
         textSchemeColorPanel.Controls.Add(_textColorSchemeComboBox);
 
-        _editSchemesButton = new Button { Text = "Color schemes...", Width = 160, Height = 30, Font = normalFont, Margin = new Padding(0, 24, 0, 0), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft };
+        _editSchemesButton = new Button { Text = "Color schemes…", Width = 160, Height = 30, Font = normalFont, Margin = new Padding(0, 24, 0, 0), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft };
         _editSchemesButton.Click += EditSchemesButton_Click;
 
         var schemesPanel = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Top, WrapContents = false, Margin = new Padding(0, 5, 0, 5) };
@@ -389,7 +389,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         textSchemePanel.Controls.Add(textSchemeLabel);
         textSchemePanel.Controls.Add(_valueSchemeComboBox);
 
-        _editValueSchemesButton = new Button { Text = "Value schemes...", Width = 180, Height = 30, Font = normalFont, Margin = new Padding(0, 24, 0, 0), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft };
+        _editValueSchemesButton = new Button { Text = "Value schemes…", Width = 180, Height = 30, Font = normalFont, Margin = new Padding(0, 24, 0, 0), TextImageRelation = TextImageRelation.ImageBeforeText, ImageAlign = ContentAlignment.MiddleLeft };
         _editValueSchemesButton.Click += EditValueSchemesButton_Click;
 
         var valueSchemesPanel = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Top, WrapContents = false, Margin = new Padding(0, 0, 0, 5) };

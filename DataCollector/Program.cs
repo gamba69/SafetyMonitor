@@ -64,7 +64,7 @@ class Program {
         ConfigureServices(services, options);
         var serviceProvider = services.BuildServiceProvider();
 
-        ConsoleOutput.Info("ASCOM Alpaca Data Collector starting...");
+        ConsoleOutput.Info("ASCOM Alpaca Data Collector starting…");
 
         // Initialize database storage if configured
         DataStorage.DataStorage? storage = null;
@@ -91,7 +91,7 @@ class Program {
         var cts = new CancellationTokenSource();
         Console.CancelKeyPress += (sender, eventArgs) => {
             eventArgs.Cancel = true;
-            ConsoleOutput.Info("Shutdown requested (Ctrl+C pressed)...");
+            ConsoleOutput.Info("Shutdown requested (Ctrl+C pressed)…");
             cts.Cancel();
         };
 
@@ -103,11 +103,11 @@ class Program {
                 // Single run mode - fail on errors
                 var connectionService = serviceProvider.GetRequiredService<DeviceConnectionService>();
 
-                ConsoleOutput.Info("Connecting to ObservingConditions device...");
+                ConsoleOutput.Info("Connecting to ObservingConditions device…");
                 ocDevice = await connectionService.ConnectObservingConditionsAsync();
                 ConsoleOutput.Info($"Connected to ObservingConditions: {ocDevice.Name}");
 
-                ConsoleOutput.Info("Connecting to SafetyMonitor device...");
+                ConsoleOutput.Info("Connecting to SafetyMonitor device…");
                 smDevice = await connectionService.ConnectSafetyMonitorAsync();
                 ConsoleOutput.Info($"Connected to SafetyMonitor: {smDevice.Name}");
 
@@ -277,15 +277,15 @@ class Program {
                 // Try to connect to devices if not connected
                 if (!devicesConnected) {
                     try {
-                        ConsoleOutput.Info("Attempting to connect to devices...");
+                        ConsoleOutput.Info("Attempting to connect to devices…");
 
                         var connectionService = serviceProvider.GetRequiredService<DeviceConnectionService>();
 
-                        ConsoleOutput.Info("Connecting to ObservingConditions device...");
+                        ConsoleOutput.Info("Connecting to ObservingConditions device…");
                         ocDevice = await connectionService.ConnectObservingConditionsAsync(cancellationToken);
                         ConsoleOutput.Info($"Connected to ObservingConditions: {ocDevice.Name}");
 
-                        ConsoleOutput.Info("Connecting to SafetyMonitor device...");
+                        ConsoleOutput.Info("Connecting to SafetyMonitor device…");
                         smDevice = await connectionService.ConnectSafetyMonitorAsync(cancellationToken);
                         ConsoleOutput.Info($"Connected to SafetyMonitor: {smDevice.Name}");
 
@@ -298,7 +298,7 @@ class Program {
                         throw;
                     } catch (Exception ex) {
                         ConsoleOutput.Error($"Failed to connect to devices: {ex.Message}");
-                        ConsoleOutput.Warning($"Will retry after {options.ErrorRetryDelay} seconds...");
+                        ConsoleOutput.Warning($"Will retry after {options.ErrorRetryDelay} seconds…");
 
                         // Clean up
                         DisconnectDevice(ocDevice, "ObservingConditions");
@@ -340,7 +340,7 @@ class Program {
                 break;
             } catch (Exception ex) {
                 ConsoleOutput.Error($"Error during data collection: {ex.Message}");
-                ConsoleOutput.Warning($"Will retry after {options.ErrorRetryDelay} seconds...");
+                ConsoleOutput.Warning($"Will retry after {options.ErrorRetryDelay} seconds…");
 
                 // Mark devices as disconnected to force reconnection
                 devicesConnected = false;
@@ -375,7 +375,7 @@ class Program {
         DataStorage.DataStorage? storage,
         CommandLineOptions options,
         CancellationToken cancellationToken) {
-        ConsoleOutput.Info("Running single data collection...");
+        ConsoleOutput.Info("Running single data collection…");
 
         var data = await collectionService.CollectDataAsync(cancellationToken);
 

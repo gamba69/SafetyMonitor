@@ -312,7 +312,7 @@ Size: 1 row × 1 column
 ### Settings
 ```
 Data Storage Path: C:\AlpacaData
-[Browse...] [Test Connection]
+[Browse…] [Test Connection]
 Refresh Interval: 5 seconds
 [Save] [Cancel]
 ```

@@ -34,7 +34,7 @@ public class ColorJsonConverter : JsonConverter<Color> {
                 return ColorTranslator.FromHtml(hex);
             } catch { return Color.Gray; }
         }
-        // Handle legacy object format: {"R":255,"G":0,"B":0,"A":255,...}
+        // Handle legacy object format: {"R":255,"G":0,"B":0,"A":255,…}
         if (reader.TokenType == JsonTokenType.StartObject) {
             int r = 0, g = 0, b = 0, a = 255;
             while (reader.Read() && reader.TokenType != JsonTokenType.EndObject) {

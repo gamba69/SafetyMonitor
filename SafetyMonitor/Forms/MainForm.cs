@@ -625,7 +625,7 @@ public class MainForm : MaterialForm {
 
     private static string GetIconNameForMenuItem(string text) {
         return text switch {
-            "Settings..." => MaterialIcons.MenuFileSettings,
+            "Settings…" => MaterialIcons.MenuFileSettings,
             "Exit" => MaterialIcons.MenuFileExitApp,
             "Restore" => "open_in_full",
             "Theme" => MaterialIcons.MenuViewTheme,
@@ -633,20 +633,20 @@ public class MainForm : MaterialForm {
             "Dark" => MaterialIcons.ThemeDarkMode,
             "About" => MaterialIcons.MenuHelpAbout,
             "New Dashboard" => MaterialIcons.DashboardCreateNew,
-            "Edit current..." => MaterialIcons.DashboardEditCurrent,
+            "Edit current…" => MaterialIcons.DashboardEditCurrent,
             "Duplicate Current" => MaterialIcons.DashboardDuplicateCurrent,
             "Delete Current" => MaterialIcons.DashboardDeleteCurrent,
-            "Manage Dashboards..." => MaterialIcons.DashboardManage,
-            "Edit Dashboard..." => MaterialIcons.CommonEdit,
+            "Manage Dashboards…" => MaterialIcons.DashboardManage,
+            "Edit Dashboard…" => MaterialIcons.CommonEdit,
             "Link Mode" => MaterialIcons.LinkedServices,
             "Full" => MaterialIcons.ToolbarChartsLink,
             "Grouped" => MaterialIcons.ToolbarChartsGroup,
             "Disabled" => MaterialIcons.ToolbarChartsUnlink,
-            "Axis Rules..." => MaterialIcons.MenuViewAxisRules,
-            "Metric Settings..." => MaterialIcons.MenuViewMetricSettings,
-            "Chart Periods..." => MaterialIcons.MenuViewChartPeriods,
-            "Color Schemes..." => MaterialIcons.MenuViewColorSchemes,
-            "Value Schemes..." => MaterialIcons.MenuViewValueSchemes,
+            "Axis Rules…" => MaterialIcons.MenuViewAxisRules,
+            "Metric Settings…" => MaterialIcons.MenuViewMetricSettings,
+            "Chart Periods…" => MaterialIcons.MenuViewChartPeriods,
+            "Color Schemes…" => MaterialIcons.MenuViewColorSchemes,
+            "Value Schemes…" => MaterialIcons.MenuViewValueSchemes,
             "Add to Favorites" => "star",
             "Remove from Favorites" => "star",
             _ => ""
@@ -729,7 +729,7 @@ public class MainForm : MaterialForm {
         var iconColor = isLight ? Color.Black : Color.White;
 
         var fileMenu = new ToolStripMenuItem("File");
-        fileMenu.DropDownItems.Add(CreateMenuItem("Settings...", MaterialIcons.MenuFileSettings, iconColor, (s, e) => ShowSettings()));
+        fileMenu.DropDownItems.Add(CreateMenuItem("Settings…", MaterialIcons.MenuFileSettings, iconColor, (s, e) => ShowSettings()));
         fileMenu.DropDownItems.Add(new ToolStripSeparator());
         fileMenu.DropDownItems.Add(CreateMenuItem("Exit", MaterialIcons.MenuFileExitApp, iconColor, (s, e) => Close()));
 
@@ -742,12 +742,12 @@ public class MainForm : MaterialForm {
         themeMenu.DropDownItems.Add(CreateMenuItem("Dark", MaterialIcons.ThemeDarkMode, iconColor, (s, e) => { _darkThemeButton.Checked = true; }));
         viewMenu.DropDownItems.Add(themeMenu);
         viewMenu.DropDownItems.Add(new ToolStripSeparator());
-        viewMenu.DropDownItems.Add(CreateMenuItem("Metric Settings...", MaterialIcons.MenuViewMetricSettings, iconColor, (s, e) => ShowMetricSettingsEditor()));
-        viewMenu.DropDownItems.Add(CreateMenuItem("Axis Rules...", MaterialIcons.MenuViewAxisRules, iconColor, (s, e) => ShowAxisRulesEditor()));
-        viewMenu.DropDownItems.Add(CreateMenuItem("Chart Periods...", MaterialIcons.MenuViewChartPeriods, iconColor, (s, e) => ShowChartPeriodPresetEditor()));
+        viewMenu.DropDownItems.Add(CreateMenuItem("Metric Settings…", MaterialIcons.MenuViewMetricSettings, iconColor, (s, e) => ShowMetricSettingsEditor()));
+        viewMenu.DropDownItems.Add(CreateMenuItem("Axis Rules…", MaterialIcons.MenuViewAxisRules, iconColor, (s, e) => ShowAxisRulesEditor()));
+        viewMenu.DropDownItems.Add(CreateMenuItem("Chart Periods…", MaterialIcons.MenuViewChartPeriods, iconColor, (s, e) => ShowChartPeriodPresetEditor()));
         viewMenu.DropDownItems.Add(new ToolStripSeparator());
-        viewMenu.DropDownItems.Add(CreateMenuItem("Color Schemes...", MaterialIcons.MenuViewColorSchemes, iconColor, (s, e) => ShowColorSchemeEditor()));
-        viewMenu.DropDownItems.Add(CreateMenuItem("Value Schemes...", MaterialIcons.MenuViewValueSchemes, iconColor, (s, e) => ShowValueSchemeEditor()));
+        viewMenu.DropDownItems.Add(CreateMenuItem("Color Schemes…", MaterialIcons.MenuViewColorSchemes, iconColor, (s, e) => ShowColorSchemeEditor()));
+        viewMenu.DropDownItems.Add(CreateMenuItem("Value Schemes…", MaterialIcons.MenuViewValueSchemes, iconColor, (s, e) => ShowValueSchemeEditor()));
 
         var helpMenu = new ToolStripMenuItem("Help");
         helpMenu.DropDownItems.Add(CreateMenuItem("About", MaterialIcons.MenuHelpAbout, iconColor, (s, e) => ShowAbout()));
@@ -958,9 +958,9 @@ public class MainForm : MaterialForm {
             Font = new Font("Segoe UI", QuickAccessContextMenuFontSize, FontStyle.Regular),
             Cursor = Cursors.Hand
         };
-        contextMenu.Items.Add(CreateMenuItem("Manage Dashboards...", MaterialIcons.DashboardManage, iconColor, (_, _) => ShowDashboardManager()));
+        contextMenu.Items.Add(CreateMenuItem("Manage Dashboards…", MaterialIcons.DashboardManage, iconColor, (_, _) => ShowDashboardManager()));
         contextMenu.Items.Add(new ToolStripSeparator());
-        contextMenu.Items.Add(CreateMenuItem("Edit Dashboard...", MaterialIcons.CommonEdit, iconColor, (_, _) => EditDashboardFromContextMenu()));
+        contextMenu.Items.Add(CreateMenuItem("Edit Dashboard…", MaterialIcons.CommonEdit, iconColor, (_, _) => EditDashboardFromContextMenu()));
         var linkModeMenuItem = CreateMenuItem("Link Mode", MaterialIcons.LinkedServices, iconColor, null);
         linkModeMenuItem.DropDownItems.Add(CreateLinkModeMenuItem("Full", MaterialIcons.ToolbarChartsLink, DashboardChartLinkMode.Full, iconColor));
         _groupedLinkModeMenuItem = CreateLinkModeMenuItem("Grouped", MaterialIcons.ToolbarChartsGroup, DashboardChartLinkMode.Grouped, iconColor);
@@ -2363,9 +2363,9 @@ public class MainForm : MaterialForm {
         }
 
         dashboardMenu.DropDownItems.Add(new ToolStripSeparator());
-        dashboardMenu.DropDownItems.Add(CreateMenuItem("Manage Dashboards...", MaterialIcons.DashboardManage, iconColor, (s, e) => ShowDashboardManager()));
+        dashboardMenu.DropDownItems.Add(CreateMenuItem("Manage Dashboards…", MaterialIcons.DashboardManage, iconColor, (s, e) => ShowDashboardManager()));
         dashboardMenu.DropDownItems.Add(CreateMenuItem("New Dashboard", MaterialIcons.DashboardCreateNew, iconColor, (s, e) => CreateNewDashboard()));
-        dashboardMenu.DropDownItems.Add(CreateMenuItem("Edit current...", MaterialIcons.DashboardEditCurrent, iconColor, (s, e) => EditCurrentDashboard()));
+        dashboardMenu.DropDownItems.Add(CreateMenuItem("Edit current…", MaterialIcons.DashboardEditCurrent, iconColor, (s, e) => EditCurrentDashboard()));
         dashboardMenu.DropDownItems.Add(CreateMenuItem("Duplicate Current", MaterialIcons.DashboardDuplicateCurrent, iconColor, (s, e) => DuplicateCurrentDashboard()));
         dashboardMenu.DropDownItems.Add(new ToolStripSeparator());
         dashboardMenu.DropDownItems.Add(CreateMenuItem("Delete Current", MaterialIcons.DashboardDeleteCurrent, iconColor, (s, e) => DeleteCurrentDashboard()));
@@ -2682,7 +2682,7 @@ public class MainForm : MaterialForm {
         if (string.IsNullOrEmpty(text) || maxWidth <= 0) { return string.Empty; }
         var flags = TextFormatFlags.SingleLine | TextFormatFlags.NoPadding;
         if (TextRenderer.MeasureText(text, font, new Size(int.MaxValue, int.MaxValue), flags).Width <= maxWidth) { return text; }
-        const string ellipsis = "...";
+        const string ellipsis = "…";
         var ellipsisWidth = TextRenderer.MeasureText(ellipsis, font, new Size(int.MaxValue, int.MaxValue), flags).Width;
         if (ellipsisWidth >= maxWidth) { return ellipsis; }
         int low = 0, high = text.Length;
@@ -2961,7 +2961,7 @@ public class MainForm : MaterialForm {
             ? string.Join("\n", lines)
             : "Safety Monitor";
 
-        if (text.Length > 127) { text = text[..124] + "..."; }
+        if (text.Length > 127) { text = text[..124] + "…"; }
         _trayIcon.Text = text;
     }
 

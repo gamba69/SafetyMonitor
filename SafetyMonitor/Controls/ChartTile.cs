@@ -837,9 +837,9 @@ public class ChartTile : Panel {
     private void RebuildPlotContextMenu(ContextMenuStrip contextMenu) {
         contextMenu.Items.Clear();
 
-        contextMenu.Items.Add(CreatePlotMenuItem("Edit Dashboard...", MaterialIcons.CommonEdit, (_, _) => EditDashboardRequested?.Invoke(this)));
+        contextMenu.Items.Add(CreatePlotMenuItem("Edit Dashboard…", MaterialIcons.CommonEdit, (_, _) => EditDashboardRequested?.Invoke(this)));
         contextMenu.Items.Add(new ToolStripSeparator());
-        contextMenu.Items.Add(CreatePlotMenuItem("Edit Tile...", MaterialIcons.CommonEdit, HandleEditTileClick));
+        contextMenu.Items.Add(CreatePlotMenuItem("Edit Tile…", MaterialIcons.CommonEdit, HandleEditTileClick));
 
         if (_availableLinkGroups > 1) {
             var linkGroupItem = CreatePlotMenuItem("Link group", MaterialIcons.ToolbarChartsGroup, (_, _) => { });

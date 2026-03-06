@@ -493,14 +493,14 @@ public class ValueTile : Panel {
 
         // At minimum font size, truncate with ellipsis.
         for (var i = fullTitle.Length - 1; i > 0; i--) {
-            var truncated = fullTitle[..i] + "...";
+            var truncated = fullTitle[..i] + "…";
             if (MeasureTextWidth(truncated, _titleLabel.Font) <= availableWidth) {
                 _titleLabel.Text = truncated;
                 return;
             }
         }
 
-        _titleLabel.Text = "...";
+        _titleLabel.Text = "…";
     }
 
     private List<string> GetValueTextsForSizing() {
@@ -679,9 +679,9 @@ public class ValueTile : Panel {
     private void RebuildContextMenu(ContextMenuStrip contextMenu) {
         contextMenu.Items.Clear();
 
-        contextMenu.Items.Add(CreateMenuItem("Edit Dashboard...", MaterialIcons.CommonEdit, (_, _) => EditDashboardRequested?.Invoke(this)));
+        contextMenu.Items.Add(CreateMenuItem("Edit Dashboard…", MaterialIcons.CommonEdit, (_, _) => EditDashboardRequested?.Invoke(this)));
         contextMenu.Items.Add(new ToolStripSeparator());
-        contextMenu.Items.Add(CreateMenuItem("Edit Tile...", MaterialIcons.CommonEdit, (_, _) => EditRequested?.Invoke(this)));
+        contextMenu.Items.Add(CreateMenuItem("Edit Tile…", MaterialIcons.CommonEdit, (_, _) => EditRequested?.Invoke(this)));
         contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add(CreateToggleMenuItem("Show Icon", MaterialIcons.ValueMenuNorthEast, _config.ShowIcon, (_, _) => {
             _config.ShowIcon = !_config.ShowIcon;

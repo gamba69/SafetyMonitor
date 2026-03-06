@@ -664,7 +664,7 @@ public class SettingsForm : ThemedCaptionForm {
         pathPanel.Controls.Add(_storagePathTextBox, 1, 0);
 
         _browseButton = new Button {
-            Text = "Browse...",
+            Text = "Browse…",
             Width = 110,
             Height = 35,
             Font = normalFont,
@@ -900,7 +900,7 @@ public class SettingsForm : ThemedCaptionForm {
         };
         layout.Controls.Add(_configColorSectionSeparator, 0, 1);
 
-        _exportSettingsButton = CreateSettingsActionButton("Export...", "output_circle", normalFont);
+        _exportSettingsButton = CreateSettingsActionButton("Export…", "output_circle", normalFont);
         _exportSettingsButton.Click += ExportSettingsButton_Click;
         layout.Controls.Add(CreateSettingRow(
             "Export settings",
@@ -912,7 +912,7 @@ public class SettingsForm : ThemedCaptionForm {
             descriptionFont,
             ConfigSettingValueColumnWidth), 0, 2);
 
-        _importSettingsButton = CreateSettingsActionButton("Import...", "input_circle", normalFont);
+        _importSettingsButton = CreateSettingsActionButton("Import…", "input_circle", normalFont);
         _importSettingsButton.Click += ImportSettingsButton_Click;
         layout.Controls.Add(CreateSettingRow(
             "Import settings",
@@ -924,7 +924,7 @@ public class SettingsForm : ThemedCaptionForm {
             descriptionFont,
             ConfigSettingValueColumnWidth), 0, 3);
 
-        _resetSettingsButton = CreateSettingsActionButton("Reset...", "dangerous", normalFont);
+        _resetSettingsButton = CreateSettingsActionButton("Reset…", "dangerous", normalFont);
         _resetSettingsButton.Click += ResetSettingsButton_Click;
         layout.Controls.Add(CreateSettingRow(
             "Reset settings",
@@ -1583,11 +1583,11 @@ public class SettingsForm : ThemedCaptionForm {
             var targetHeight = TextRenderer.MeasureText("Ag", font).Height * 2;
             var low = 1;
             var high = words.Length;
-            var best = words[0] + " ...";
+            var best = words[0] + " …";
 
             while (low <= high) {
                 var mid = (low + high) / 2;
-                var candidate = string.Join(" ", words.Take(mid)) + " ...";
+                var candidate = string.Join(" ", words.Take(mid)) + " …";
                 var size = TextRenderer.MeasureText(candidate, font, new Size(width, int.MaxValue), TextFormatFlags.WordBreak);
                 if (size.Height <= targetHeight) {
                     best = candidate;

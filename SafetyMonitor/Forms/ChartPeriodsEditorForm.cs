@@ -235,7 +235,7 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         _removeButton = new Button { Text = "Delete", Width = 100, Height = 32 };
         _moveUpButton = new Button { Text = "Up", Width = 100, Height = 32 };
         _moveDownButton = new Button { Text = "Down", Width = 100, Height = 32 };
-        _calculateButton = new Button { Text = "Auto...", Width = 120, Height = 32 };
+        _calculateButton = new Button { Text = "Auto…", Width = 120, Height = 32 };
         _addButton.Click += (_, _) => {
             var rowIndex = _grid.Rows.Add(Guid.NewGuid().ToString("N"), "Custom", "custom", 1, ChartPeriodUnit.Hours, "1m", string.Empty);
             if (rowIndex >= 0 && rowIndex < _grid.Rows.Count) {

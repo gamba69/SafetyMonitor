@@ -67,7 +67,7 @@ public class DataCollectionService(
         try {
             // Ensure device is connected
             if (!_ocDevice.Connected) {
-                ConsoleOutput.Warning("ObservingConditions device not connected, attempting to reconnect...");
+                ConsoleOutput.Warning("ObservingConditions device not connected, attempting to reconnect…");
                 await RetryPolicy.ExecuteAsync(
                     () => { _ocDevice.Connected = true; return Task.CompletedTask; },
                     _options.DataRetries,
@@ -111,7 +111,7 @@ public class DataCollectionService(
         try {
             // Ensure device is connected
             if (!_smDevice.Connected) {
-                ConsoleOutput.Warning("SafetyMonitor device not connected, attempting to reconnect...");
+                ConsoleOutput.Warning("SafetyMonitor device not connected, attempting to reconnect…");
                 await RetryPolicy.ExecuteAsync(
                     () => { _smDevice.Connected = true; return Task.CompletedTask; },
                     _options.DataRetries,

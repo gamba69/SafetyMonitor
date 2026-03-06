@@ -118,7 +118,7 @@ public class DeviceConnectionService(
         DeviceTypes deviceType,
         int deviceNumber,
         CancellationToken cancellationToken) where T : IAscomDevice {
-        ConsoleOutput.Info($"Connecting to {deviceType} device at {address}:{port}...");
+        ConsoleOutput.Info($"Connecting to {deviceType} device at {address}:{port}…");
 
         var client = CreateClient<T>(deviceType, address, port, deviceNumber);
         await ConnectClientAsync(client, cancellationToken);
@@ -160,14 +160,14 @@ public class DeviceConnectionService(
         DeviceTypes deviceType,
         int deviceNumber,
         CancellationToken cancellationToken) where T : IAscomDevice {
-        ConsoleOutput.Info($"Starting discovery for {deviceType} device '{deviceName}'...");
+        ConsoleOutput.Info($"Starting discovery for {deviceType} device '{deviceName}'…");
 
         // Perform discovery with retries
         AscomDevice? foundDevice = null;
 
         for (int attempt = 1; attempt <= _options.DiscoveryRetries; attempt++) {
             try {
-                ConsoleOutput.Info($"Discovery attempt {attempt}/{_options.DiscoveryRetries}...");
+                ConsoleOutput.Info($"Discovery attempt {attempt}/{_options.DiscoveryRetries}…");
 
                 foundDevice = await DiscoverDeviceAsync(deviceName, deviceType, cancellationToken);
 

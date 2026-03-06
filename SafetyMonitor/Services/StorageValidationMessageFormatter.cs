@@ -34,7 +34,7 @@ public static class StorageValidationMessageFormatter {
 
             var remaining = normalizedIssues.Count - MaxDisplayedIssues;
             if (remaining > 0) {
-                builder.AppendLine($"• ... and {remaining} more issue(s).");
+                builder.AppendLine($"• … and {remaining} more issue(s).");
             }
         }
 

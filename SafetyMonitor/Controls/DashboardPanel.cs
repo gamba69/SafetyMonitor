@@ -501,7 +501,7 @@ public class DashboardPanel : TableLayoutPanel {
             contextMenu.Renderer = _contextMenuRenderer;
         };
 
-        var menuItem = new ToolStripMenuItem("Edit Dashboard...") {
+        var menuItem = new ToolStripMenuItem("Edit Dashboard…") {
             DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
             TextImageRelation = TextImageRelation.ImageBeforeText,
             ImageAlign = ContentAlignment.MiddleLeft,
