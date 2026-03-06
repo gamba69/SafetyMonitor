@@ -66,6 +66,9 @@ public class ChartTile : Panel {
     private const int HeaderControlHeight = 28;
     private int _availableLinkGroups = ChartLinkGroupInfo.MaxUsedGroups;
     private readonly Dictionary<ChartLinkGroup, string> _linkGroupPeriodShortNames = [];
+    private static readonly Color LightThemePrimaryColor = Color.FromArgb(66, 66, 66);
+    private static readonly Color LightThemeBorderColor = Color.FromArgb(52, 52, 52);
+    private static readonly Color DarkThemeBorderColor = Color.FromArgb(53, 70, 76);
 
     private sealed class SeriesHoverSnapshot {
         public string Label { get; init; } = string.Empty;
@@ -101,7 +104,8 @@ public class ChartTile : Panel {
         _config = config;
         _dataService = dataService;
         Dock = DockStyle.Fill;
-        BorderStyle = BorderStyle.FixedSingle;
+        BorderStyle = BorderStyle.None;
+        Padding = new Padding(1);
         DoubleBuffered = true;
         SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
         UpdateStyles();
@@ -551,6 +555,11 @@ public class ChartTile : Panel {
         }
     }
 
+    protected override void OnPaint(PaintEventArgs e) {
+        base.OnPaint(e);
+        DrawTileBorder(e.Graphics);
+    }
+
     protected override void Dispose(bool disposing) {
         if (disposing) {
             ChartPeriodPresetStore.PresetsChanged -= HandlePresetsChanged;
@@ -693,7 +702,7 @@ public class ChartTile : Panel {
         SetAxisVisibility(axis, true);
 
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
-        var neutralColor = ScottPlot.Color.FromColor(isLight ? Color.Black : Color.White);
+        var neutralColor = ScottPlot.Color.FromColor(isLight ? LightThemePrimaryColor : Color.White);
         axis.Label.Text = string.Empty;
         axis.Label.ForeColor = neutralColor;
         axis.TickLabelStyle.ForeColor = neutralColor;
@@ -719,9 +728,9 @@ public class ChartTile : Panel {
         if (isLight) {
             _plot.Plot.FigureBackground.Color = ScottPlot.Color.FromColor(Color.White);
             _plot.Plot.DataBackground.Color = ScottPlot.Color.FromColor(Color.White);
-            _plot.Plot.Axes.Color(ScottPlot.Color.FromColor(Color.Black));
+            _plot.Plot.Axes.Color(ScottPlot.Color.FromColor(LightThemePrimaryColor));
             _plot.Plot.Legend.BackgroundColor = ScottPlot.Color.FromColor(Color.FromArgb(200, 255, 255, 255));
-            _plot.Plot.Legend.FontColor = ScottPlot.Color.FromColor(Color.Black);
+            _plot.Plot.Legend.FontColor = ScottPlot.Color.FromColor(LightThemePrimaryColor);
             _plot.Plot.Legend.OutlineColor = ScottPlot.Color.FromColor(Color.LightGray);
         } else {
             _plot.Plot.FigureBackground.Color = ScottPlot.Color.FromColor(Color.FromArgb(35, 47, 52));
@@ -750,7 +759,7 @@ public class ChartTile : Panel {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var tileBg = isLight ? Color.White : Color.FromArgb(35, 47, 52);
-        var fg = isLight ? Color.Black : Color.White;
+        var fg = isLight ? LightThemePrimaryColor : Color.White;
 
         if (BackColor != tileBg) {
             BackColor = tileBg;
@@ -787,6 +796,16 @@ public class ChartTile : Panel {
         }
     }
 
+    private void DrawTileBorder(Graphics graphics) {
+        if (ClientSize.Width <= 1 || ClientSize.Height <= 1) {
+            return;
+        }
+
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        var borderColor = isLight ? LightThemeBorderColor : DarkThemeBorderColor;
+        ControlPaint.DrawBorder(graphics, ClientRectangle, borderColor, ButtonBorderStyle.Solid);
+    }
+
     private void ApplyPlotContextMenuTheme() {
         if (_plotContextMenu == null) {
             return;
@@ -799,8 +818,8 @@ public class ChartTile : Panel {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var menuBackground = isLight ? Color.White : Color.FromArgb(38, 52, 57);
-        var menuText = isLight ? Color.FromArgb(33, 33, 33) : Color.FromArgb(240, 240, 240);
-        var menuIconColor = isLight ? Color.FromArgb(33, 33, 33) : Color.FromArgb(240, 240, 240);
+        var menuText = isLight ? Color.FromArgb(66, 66, 66) : Color.FromArgb(240, 240, 240);
+        var menuIconColor = isLight ? Color.FromArgb(66, 66, 66) : Color.FromArgb(240, 240, 240);
 
         _contextMenuRenderer.UpdateTheme();
 
@@ -957,7 +976,7 @@ public class ChartTile : Panel {
 
     private static ToolStripMenuItem CreatePlotMenuItem(string text, string iconName, EventHandler onClick) {
         var iconColor = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT
-            ? Color.FromArgb(33, 33, 33)
+            ? Color.FromArgb(66, 66, 66)
             : Color.FromArgb(240, 240, 240);
 
         var item = new ToolStripMenuItem(text) {
@@ -1307,7 +1326,7 @@ public class ChartTile : Panel {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var tileBg = isLight ? Color.White : Color.FromArgb(35, 47, 52);
-        var fg = isLight ? Color.Black : Color.White;
+        var fg = isLight ? LightThemePrimaryColor : Color.White;
 
         _topPanel = new Panel {
             Dock = DockStyle.Top,
@@ -1571,7 +1590,7 @@ public class ChartTile : Panel {
             TabStop = false,
             ShortcutsEnabled = false,
             BackColor = tileBg,
-            ForeColor = isLight ? Color.Black : Color.White,
+            ForeColor = isLight ? LightThemePrimaryColor : Color.White,
             Font = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular),
             Text = string.Empty
         };
@@ -1588,7 +1607,7 @@ public class ChartTile : Panel {
             TabStop = false,
             ShortcutsEnabled = false,
             BackColor = tileBg,
-            ForeColor = isLight ? Color.Black : Color.White,
+            ForeColor = isLight ? LightThemePrimaryColor : Color.White,
             Font = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular),
             Text = string.Empty
         };
@@ -1894,7 +1913,7 @@ public class ChartTile : Panel {
         }
 
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
-        var color = isLight ? Color.Black : Color.White;
+        var color = isLight ? LightThemePrimaryColor : Color.White;
         var valueText = ChartAggregationHelper.FormatAggregationLabel(interval);
 
         _aggregationInfoTextBox.Clear();
@@ -2390,7 +2409,7 @@ public class ChartTile : Panel {
 
         _lastHoverAnchorX = anchorX;
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
-        var baseTextColor = isLight ? Color.Black : Color.White;
+        var baseTextColor = isLight ? LightThemePrimaryColor : Color.White;
         var timestamp = DateTime.FromOADate(anchorX).ToString("yyyy-MM-dd HH:mm:ss");
 
         _hoverInfoTextBox.SuspendLayout();

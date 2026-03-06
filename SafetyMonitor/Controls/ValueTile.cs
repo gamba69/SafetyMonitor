@@ -38,6 +38,9 @@ public class ValueTile : Panel {
     private const float MaxValueFontSize = 33.6f;
     private const int HorizontalFitPadding = 8;
     private const float TopGradientHeightRatio = 0.50f;
+    private static readonly Color LightThemePrimaryColor = Color.FromArgb(66, 66, 66);
+    private static readonly Color LightThemeBorderColor = Color.FromArgb(52, 52, 52);
+    private static readonly Color DarkThemeBorderColor = Color.FromArgb(53, 70, 76);
     private readonly Dictionary<(string Family, float Size, FontStyle Style), Font> _fontCache = new();
 
     #endregion Private Fields
@@ -60,7 +63,7 @@ public class ValueTile : Panel {
 
         Dock = DockStyle.Fill;
         Padding = new Padding(8);
-        BorderStyle = BorderStyle.FixedSingle;
+        BorderStyle = BorderStyle.None;
         DoubleBuffered = true;
         SetStyle(ControlStyles.ResizeRedraw, true);
 
@@ -144,13 +147,13 @@ public class ValueTile : Panel {
 
         DrawTopValueGradient(e.Graphics);
 
-        if (_iconImage == null || _iconBounds.IsEmpty || !_config.ShowIcon) {
-            return;
+        if (_iconImage != null && !_iconBounds.IsEmpty && _config.ShowIcon) {
+            e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            e.Graphics.DrawImage(_iconImage, _iconBounds);
         }
 
-        e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-        e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-        e.Graphics.DrawImage(_iconImage, _iconBounds);
+        DrawTileBorder(e.Graphics);
     }
 
     protected override void Dispose(bool disposing) {
@@ -213,7 +216,7 @@ public class ValueTile : Panel {
         BackColor = isLight ? Color.White : Color.FromArgb(35, 47, 52);
         ApplyTransparentChildBackgrounds();
 
-        var primaryColor = isLight ? Color.Black : Color.White;
+        var primaryColor = isLight ? LightThemePrimaryColor : Color.White;
         _titleLabel.ForeColor = primaryColor;
         _textLabel.ForeColor = primaryColor;
         _unitLabel.ForeColor = primaryColor;
@@ -245,7 +248,7 @@ public class ValueTile : Panel {
         } else {
             var skinManager = MaterialSkinManager.Instance;
             var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
-            _valueLabel.ForeColor = isLight ? Color.Black : Color.White;
+            _valueLabel.ForeColor = isLight ? LightThemePrimaryColor : Color.White;
         }
 
         if (_currentValue.HasValue && _textColorScheme != null && HasTransformedTextForCurrentValue()) {
@@ -400,7 +403,17 @@ public class ValueTile : Panel {
         // Value label uses primary theme color when no data / no scheme
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
-        _valueLabel.ForeColor = isLight ? Color.Black : Color.White;
+        _valueLabel.ForeColor = isLight ? LightThemePrimaryColor : Color.White;
+    }
+
+    private void DrawTileBorder(Graphics graphics) {
+        if (ClientSize.Width <= 1 || ClientSize.Height <= 1) {
+            return;
+        }
+
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        var borderColor = isLight ? LightThemeBorderColor : DarkThemeBorderColor;
+        ControlPaint.DrawBorder(graphics, ClientRectangle, borderColor, ButtonBorderStyle.Solid);
     }
 
     private void SetIconColor(Color color) {
@@ -734,8 +747,8 @@ public class ValueTile : Panel {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var menuBackground = isLight ? Color.FromArgb(255, 255, 255) : Color.FromArgb(38, 52, 57);
-        var menuText = isLight ? Color.FromArgb(33, 33, 33) : Color.FromArgb(240, 240, 240);
-        var menuIconColor = isLight ? Color.FromArgb(33, 33, 33) : Color.FromArgb(240, 240, 240);
+        var menuText = isLight ? Color.FromArgb(66, 66, 66) : Color.FromArgb(240, 240, 240);
+        var menuIconColor = isLight ? Color.FromArgb(66, 66, 66) : Color.FromArgb(240, 240, 240);
 
         _contextMenuRenderer.UpdateTheme();
 
@@ -777,7 +790,7 @@ public class ValueTile : Panel {
 
     private static ToolStripMenuItem CreateMenuItem(string text, string iconName, EventHandler onClick) {
         var iconColor = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT
-            ? Color.FromArgb(33, 33, 33)
+            ? Color.FromArgb(66, 66, 66)
             : Color.FromArgb(240, 240, 240);
 
         var item = new ToolStripMenuItem(text) {
