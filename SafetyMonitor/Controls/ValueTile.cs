@@ -41,6 +41,8 @@ public class ValueTile : Panel {
     private static readonly Color LightThemePrimaryColor = Color.FromArgb(66, 66, 66);
     private static readonly Color LightThemeBorderColor = Color.FromArgb(52, 52, 52);
     private static readonly Color DarkThemeBorderColor = Color.FromArgb(53, 70, 76);
+    private static readonly Color LightThemeGradientFallbackColor = Color.FromArgb(176, 130, 138, 145);
+    private static readonly Color DarkThemeGradientFallbackColor = Color.FromArgb(168, 112, 122, 128);
     private readonly Dictionary<(string Family, float Size, FontStyle Style), Font> _fontCache = new();
 
     #endregion Private Fields
@@ -270,11 +272,14 @@ public class ValueTile : Panel {
     }
 
     private void DrawTopValueGradient(Graphics graphics) {
-        if (!_config.ShowTopValueGradient || !_currentValue.HasValue || _colorScheme == null || ClientSize.Width <= 0 || ClientSize.Height <= 0) {
+        if (!_config.ShowTopValueGradient || !_currentValue.HasValue || ClientSize.Width <= 0 || ClientSize.Height <= 0) {
             return;
         }
 
-        var gradientColor = _colorScheme.GetColor(_currentValue.Value);
+        var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
+        var gradientColor = _colorScheme != null
+            ? _colorScheme.GetColor(_currentValue.Value)
+            : (isLight ? LightThemeGradientFallbackColor : DarkThemeGradientFallbackColor);
         var gradientHeight = Math.Max(1, (int)Math.Round(ClientSize.Height * TopGradientHeightRatio));
         var gradientRect = new Rectangle(0, 0, ClientSize.Width, gradientHeight);
 
