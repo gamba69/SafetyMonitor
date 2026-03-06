@@ -26,7 +26,7 @@ public class MetricAggregation {
     /// <summary>
     /// Gets or sets the line width for metric aggregation. Defines layout or geometry used to position and size UI elements.
     /// </summary>
-    public float LineWidth { get; set; } = 2f;
+    public float LineWidth { get; set; } = 1f;
     /// <summary>
     /// Gets or sets the metric for metric aggregation. Holds part of the component state used by higher-level application logic.
     /// </summary>

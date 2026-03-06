@@ -210,6 +210,7 @@ public class Dashboard {
     /// <returns>The result of the operation.</returns>
     private static Dashboard CreateOverviewDashboard() {
         var dashboard = new Dashboard {
+            Id = Guid.Parse("9ce8eb4f-08be-4cd8-a3f2-79f88e13779e"),
             Name = "Overview",
             Rows = 4,
             Columns = 4,
@@ -308,6 +309,7 @@ public class Dashboard {
     /// <returns>The result of the operation.</returns>
     private static Dashboard CreateNightDashboard() {
         var dashboard = new Dashboard {
+            Id = Guid.Parse("d03e4506-d5d5-4be6-98d9-2b4ce6d5f4e5"),
             Name = "Night Watch",
             Rows = 4,
             Columns = 4
@@ -338,6 +340,7 @@ public class Dashboard {
     /// <returns>The result of the operation.</returns>
     private static Dashboard CreateHistoryDashboard() {
         var dashboard = new Dashboard {
+            Id = Guid.Parse("e0c3109e-3537-4372-8c78-2efc9f8504b1"),
             Name = "History",
             Rows = 5,
             Columns = 4
@@ -373,6 +376,7 @@ public class Dashboard {
     /// <returns>The result of the operation.</returns>
     private static Dashboard CreateObservatoryDashboard() {
         var dashboard = new Dashboard {
+            Id = Guid.Parse("3958ac73-15ca-4bf3-8a6a-467fe3b3bb4f"),
             Name = "Observatory",
             Rows = 4,
             Columns = 5
