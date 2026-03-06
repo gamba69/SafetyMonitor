@@ -21,6 +21,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
     private Button _editValueSchemesButton = null!;
     private Button _saveButton = null!;
     private CheckBox _showIconCheckBox = null!;
+    private CheckBox _showTopValueGradientCheckBox = null!;
     private CheckBox _showUnitCheckBox = null!;
     private TextBox _titleTextBox = null!;
     private MetricType? _lastMetricForSchemeDefaults;
@@ -313,7 +314,8 @@ public class ValueTileEditorForm : ThemedCaptionForm {
                 "Choose whether to show value, scheme text, or both.",
                 "Pick color schemes for value, text and icon.",
                 "Choose an optional text value scheme.",
-                "Toggle icon and unit visibility for the tile."
+                "Toggle icon and unit visibility for the tile.",
+                "Enable top value gradient overlay (30% tile height)."
             ],
             titleFont,
             normalFont,
@@ -397,9 +399,11 @@ public class ValueTileEditorForm : ThemedCaptionForm {
 
         var iconPanel = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true, Margin = new Padding(0, 10, 0, 5) };
         _showIconCheckBox = new CheckBox { Text = "Show Icon", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 3, 12, 0) };
-        _showUnitCheckBox = new CheckBox { Text = "Show Unit", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 3, 0, 0) };
+        _showUnitCheckBox = new CheckBox { Text = "Show Unit", Font = normalFont, AutoSize = true, Checked = true, Margin = new Padding(0, 3, 12, 0) };
+        _showTopValueGradientCheckBox = new CheckBox { Text = "Gradient", Font = normalFont, AutoSize = true, Checked = false, Margin = new Padding(0, 3, 0, 0) };
         iconPanel.Controls.Add(_showIconCheckBox);
         iconPanel.Controls.Add(_showUnitCheckBox);
+        iconPanel.Controls.Add(_showTopValueGradientCheckBox);
         mainLayout.Controls.Add(valueSchemesPanel, 0, 5);
         mainLayout.Controls.Add(iconPanel, 0, 6);
 
@@ -440,6 +444,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
 
         _showIconCheckBox.Checked = _config.ShowIcon;
         _showUnitCheckBox.Checked = _config.ShowUnit;
+        _showTopValueGradientCheckBox.Checked = _config.ShowTopValueGradient;
 
         if (string.IsNullOrEmpty(_config.IconColorSchemeName)) {
             _iconColorSchemeComboBox.SelectedIndex = 0; // "(None)"
@@ -587,6 +592,7 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         };
         _config.ShowIcon = _showIconCheckBox.Checked;
         _config.ShowUnit = _showUnitCheckBox.Checked;
+        _config.ShowTopValueGradient = _showTopValueGradientCheckBox.Checked;
 
         DialogResult = DialogResult.OK;
         Close();

@@ -1,3 +1,4 @@
+using System.Drawing.Drawing2D;
 using MaterialSkin;
 using SafetyMonitor.Forms;
 using SafetyMonitor.Models;
@@ -36,6 +37,8 @@ public class ValueTile : Panel {
     private const float MinValueFontSize = 10f;
     private const float MaxValueFontSize = 33.6f;
     private const int HorizontalFitPadding = 8;
+    private const float TopGradientHeightRatio = 0.50f;
+    private readonly Dictionary<(string Family, float Size, FontStyle Style), Font> _fontCache = new();
 
     #endregion Private Fields
 
@@ -139,12 +142,14 @@ public class ValueTile : Panel {
     protected override void OnPaint(PaintEventArgs e) {
         base.OnPaint(e);
 
+        DrawTopValueGradient(e.Graphics);
+
         if (_iconImage == null || _iconBounds.IsEmpty || !_config.ShowIcon) {
             return;
         }
 
-        e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-        e.Graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+        e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+        e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
         e.Graphics.DrawImage(_iconImage, _iconBounds);
     }
 
@@ -152,6 +157,11 @@ public class ValueTile : Panel {
         if (disposing) {
             _iconImage?.Dispose();
             _iconImage = null;
+
+            foreach (var cachedFont in _fontCache.Values) {
+                cachedFont.Dispose();
+            }
+            _fontCache.Clear();
         }
 
         base.Dispose(disposing);
@@ -172,13 +182,20 @@ public class ValueTile : Panel {
         }
     }
 
-    private static void UpdateFont(Label label, string fontFamily, float size, FontStyle style) {
-        var newFont = CreateSafeFont(fontFamily, size, style);
-        var oldFont = label.Font;
-        label.Font = newFont;
-        if (oldFont != null && oldFont != newFont) {
-            oldFont.Dispose();
+    private Font GetCachedFont(string fontFamily, float size, FontStyle style) {
+        var normalizedSize = MathF.Round(size, 1);
+        var key = (fontFamily, normalizedSize, style);
+        if (_fontCache.TryGetValue(key, out var cachedFont)) {
+            return cachedFont;
         }
+
+        var createdFont = CreateSafeFont(fontFamily, normalizedSize, style);
+        _fontCache[key] = createdFont;
+        return createdFont;
+    }
+
+    private void UpdateFont(Label label, string fontFamily, float size, FontStyle style) {
+        label.Font = GetCachedFont(fontFamily, size, style);
     }
 
     /// <summary>
@@ -249,13 +266,31 @@ public class ValueTile : Panel {
         return brightness > 128 ? Color.Black : Color.White;
     }
 
+    private void DrawTopValueGradient(Graphics graphics) {
+        if (!_config.ShowTopValueGradient || !_currentValue.HasValue || _colorScheme == null || ClientSize.Width <= 0 || ClientSize.Height <= 0) {
+            return;
+        }
+
+        var gradientColor = _colorScheme.GetColor(_currentValue.Value);
+        var gradientHeight = Math.Max(1, (int)Math.Round(ClientSize.Height * TopGradientHeightRatio));
+        var gradientRect = new Rectangle(0, 0, ClientSize.Width, gradientHeight);
+
+        using var brush = new LinearGradientBrush(
+            gradientRect,
+            gradientColor,
+            Color.FromArgb(0, gradientColor),
+            LinearGradientMode.Vertical);
+        graphics.FillRectangle(brush, gradientRect);
+    }
+
     private void InitializeUI() {
         // Title: small, top-left
         _titleLabel = new Label {
             Text = string.IsNullOrEmpty(_config.Title) ? _config.Metric.GetDisplayName() : _config.Title,
             AutoSize = false,
             TextAlign = ContentAlignment.TopLeft,
-            BackColor = Color.Transparent
+            BackColor = Color.Transparent,
+            UseCompatibleTextRendering = true
         };
 
 
