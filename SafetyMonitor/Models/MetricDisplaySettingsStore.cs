@@ -4,6 +4,7 @@ namespace SafetyMonitor.Models;
 
 public static class MetricDisplaySettingsStore {
 
+
     private static List<MetricDisplaySetting> _settings = [];
 
     public static event Action? SettingsChanged;

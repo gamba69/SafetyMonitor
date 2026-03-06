@@ -31,16 +31,17 @@ public class ValueSchemeService {
     #region Public Methods
 
     public static string GetDefaultSchemeName(MetricType metric) => metric switch {
-        MetricType.Temperature => "Temperature Status",
-        MetricType.Humidity => "Humidity Status",
-        MetricType.Pressure => "Pressure Status",
-        MetricType.CloudCover => "Cloud Cover Status",
-        MetricType.SkyBrightness => "Sky Brightness Status",
-        MetricType.SkyQuality => "Sky Quality Status",
-        MetricType.RainRate => "Rain Rate Status",
-        MetricType.WindSpeed => "Wind Speed Status",
-        MetricType.WindGust => "Wind Gust Status",
-        MetricType.IsSafe => "Safety Status",
+        MetricType.Temperature => "Temperature",
+        MetricType.Humidity => "Humidity",
+        MetricType.Pressure => "Pressure",
+        MetricType.CloudCover => "Cloud Cover",
+        MetricType.SkyBrightness => "Sky Brightness",
+        MetricType.SkyQuality => "Sky Quality",
+        MetricType.RainRate => "Rain Rate",
+        MetricType.WindSpeed => "Wind Speed",
+        MetricType.WindGust => "Wind Gust",
+        MetricType.WindDirection => "Wind Direction",
+        MetricType.IsSafe => "Safety",
         _ => string.Empty
     };
 
@@ -103,10 +104,11 @@ public class ValueSchemeService {
         yield return CreateRainRateScheme();
         yield return CreateWindSpeedScheme();
         yield return CreateWindGustScheme();
+        yield return CreateWindDirectionScheme();
     }
 
     private static ValueScheme CreateSafetyStatusScheme() => new() {
-        Name = "Safety Status",
+        Name = "Safety",
         Descending = true,
         Stops =
         [
@@ -116,7 +118,7 @@ public class ValueSchemeService {
     };
 
     private static ValueScheme CreateTemperatureScheme() => new() {
-        Name = "Temperature Status",
+        Name = "Temperature",
         Descending = true,
         Stops =
         [
@@ -132,7 +134,7 @@ public class ValueSchemeService {
     };
 
     private static ValueScheme CreateHumidityScheme() => new() {
-        Name = "Humidity Status",
+        Name = "Humidity",
         Descending = true,
         Stops =
         [
@@ -145,7 +147,7 @@ public class ValueSchemeService {
     };
 
     private static ValueScheme CreatePressureScheme() => new() {
-        Name = "Pressure Status",
+        Name = "Pressure",
         Descending = true,
         Stops =
         [
@@ -158,7 +160,7 @@ public class ValueSchemeService {
     };
 
     private static ValueScheme CreateCloudCoverScheme() => new() {
-        Name = "Cloud Cover Status",
+        Name = "Cloud Cover",
         Descending = true,
         Stops =
         [
@@ -171,7 +173,7 @@ public class ValueSchemeService {
     };
 
     private static ValueScheme CreateSkyBrightnessScheme() => new() {
-        Name = "Sky Brightness Status",
+        Name = "Sky Brightness",
         Descending = true,
         Stops =
         [
@@ -184,7 +186,7 @@ public class ValueSchemeService {
     };
 
     private static ValueScheme CreateSkyQualityScheme() => new() {
-        Name = "Sky Quality Status",
+        Name = "Sky Quality",
         Descending = true,
         Stops =
         [
@@ -197,7 +199,7 @@ public class ValueSchemeService {
     };
 
     private static ValueScheme CreateRainRateScheme() => new() {
-        Name = "Rain Rate Status",
+        Name = "Rain Rate",
         Descending = true,
         Stops =
         [
@@ -210,7 +212,7 @@ public class ValueSchemeService {
     };
 
     private static ValueScheme CreateWindSpeedScheme() => new() {
-        Name = "Wind Speed Status",
+        Name = "Wind Speed",
         Descending = true,
         Stops =
         [
@@ -226,7 +228,7 @@ public class ValueSchemeService {
     };
 
     private static ValueScheme CreateWindGustScheme() => new() {
-        Name = "Wind Gust Status",
+        Name = "Wind Gust",
         Descending = true,
         Stops =
         [
@@ -238,6 +240,31 @@ public class ValueSchemeService {
             new() { Value = 0, Text = "BREATH", Description = "Breath (from 0 m/s)" }
         ]
     };
+    private static ValueScheme CreateWindDirectionScheme() => new() {
+        Name = "Wind Direction",
+        Descending = false,
+        Stops =
+        [
+            new() { Value = 11.25, Text = "N", Description = "North (348.75°–11.25°)" },
+            new() { Value = 33.75, Text = "NNE", Description = "North-northeast (11.25°–33.75°)" },
+            new() { Value = 56.25, Text = "NE", Description = "Northeast (33.75°–56.25°)" },
+            new() { Value = 78.75, Text = "ENE", Description = "East-northeast (56.25°–78.75°)" },
+            new() { Value = 101.25, Text = "E", Description = "East (78.75°–101.25°)" },
+            new() { Value = 123.75, Text = "ESE", Description = "East-southeast (101.25°–123.75°)" },
+            new() { Value = 146.25, Text = "SE", Description = "Southeast (123.75°–146.25°)" },
+            new() { Value = 168.75, Text = "SSE", Description = "South-southeast (146.25°–168.75°)" },
+            new() { Value = 191.25, Text = "S", Description = "South (168.75°–191.25°)" },
+            new() { Value = 213.75, Text = "SSW", Description = "South-southwest (191.25°–213.75°)" },
+            new() { Value = 236.25, Text = "SW", Description = "Southwest (213.75°–236.25°)" },
+            new() { Value = 258.75, Text = "WSW", Description = "West-southwest (236.25°–258.75°)" },
+            new() { Value = 281.25, Text = "W", Description = "West (258.75°–281.25°)" },
+            new() { Value = 303.75, Text = "WNW", Description = "West-northwest (281.25°–303.75°)" },
+            new() { Value = 326.25, Text = "NW", Description = "Northwest (303.75°–326.25°)" },
+            new() { Value = 348.75, Text = "NNW", Description = "North-northwest (326.25°–348.75°)" },
+            new() { Value = 360, Text = "N", Description = "North (348.75°–360°)" }
+        ]
+    };
+
 
     #endregion Private Methods
 }

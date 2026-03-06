@@ -24,16 +24,6 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
     private ListBox _schemeList = null!;
     private List<ValueScheme> _schemes;
     private Panel _sortSegmentPanel = null!;
-    private static Bitmap? MirrorIconVertically(Bitmap? source) {
-        if (source == null) {
-            return null;
-        }
-
-        var mirrored = (Bitmap)source.Clone();
-        mirrored.RotateFlip(RotateFlipType.RotateNoneFlipY);
-        source.Dispose();
-        return mirrored;
-    }
     private DataGridView _stopsGrid = null!;
 
     #endregion Private Fields
@@ -828,8 +818,12 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         _descendingButton.ForeColor = _descendingButton.Checked ? activeFg : inactiveFg;
 
         var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
-        _ascendingButton.Image = MirrorIconVertically(MaterialIcons.GetIcon(MaterialIcons.Sort, iconColor, 22, IconRenderPreset.DarkOutlined));
-        _descendingButton.Image = MaterialIcons.GetIcon(MaterialIcons.Sort, iconColor, 22, IconRenderPreset.DarkOutlined);
+        var previousAscendingImage = _ascendingButton.Image;
+        var previousDescendingImage = _descendingButton.Image;
+        _ascendingButton.Image = MaterialIcons.GetIcon(MaterialIcons.SortAscending, iconColor, 22, IconRenderPreset.DarkOutlined);
+        _descendingButton.Image = MaterialIcons.GetIcon(MaterialIcons.SortDescending, iconColor, 22, IconRenderPreset.DarkOutlined);
+        previousAscendingImage?.Dispose();
+        previousDescendingImage?.Dispose();
         _ascendingButton.ImageAlign = ContentAlignment.MiddleLeft;
         _descendingButton.ImageAlign = ContentAlignment.MiddleLeft;
         _ascendingButton.TextAlign = ContentAlignment.MiddleLeft;
