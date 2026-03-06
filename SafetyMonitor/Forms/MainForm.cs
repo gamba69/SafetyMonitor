@@ -93,6 +93,9 @@ public class MainForm : MaterialForm {
     private bool _isMinimizedToTray;
     private bool _isTrayRefreshing;
     private bool _quickAccessLayoutRefreshPending;
+    private bool _isQuickAccessLinkLayoutTransitionPending;
+    private bool _isQuickAccessLinkLayoutStaggeredUpdateInProgress;
+    private QuickAccessLinkControlsLayoutState _pendingQuickAccessLinkLayoutState;
 
     // ── Visor (забрало) fields ──
     // The visor is a borderless overlay Form with real Opacity support.
@@ -121,6 +124,7 @@ public class MainForm : MaterialForm {
     // Timer interval between individual fade-out opacity steps.
     private const int VisorFadeStepMs = 10;
     private const int VisorLoaderStepMs = 180;
+    private const int QuickAccessLinkLayoutStepDelayMs = 25;
 
     #endregion Private Fields
 
@@ -521,6 +525,10 @@ public class MainForm : MaterialForm {
             _visorForm.Dispose();
         }
         _visorForm = null;
+
+        if (_isQuickAccessLinkLayoutTransitionPending && !_isQuickAccessLinkLayoutStaggeredUpdateInProgress) {
+            CompleteQuickAccessLinkLayoutTransitionIfNeeded();
+        }
     }
 
     /// <summary>
@@ -1014,7 +1022,17 @@ public class MainForm : MaterialForm {
     }
 
 
+    private readonly record struct QuickAccessLinkControlsLayoutState(bool ShowSection, bool ShowGroupedToggle);
+
     private bool IsGroupedLinkModeAvailable(Dashboard? dashboard) => (dashboard?.UsedLinkGroups ?? ChartLinkGroupInfo.MaxUsedGroups) > 1;
+
+    private static bool ShouldShowQuickAccessLinkControls(Dashboard? dashboard)
+        => dashboard?.Tiles.OfType<ChartTileConfig>().Take(2).Count() >= 2;
+
+    private QuickAccessLinkControlsLayoutState GetQuickAccessLinkControlsLayoutState(Dashboard? dashboard) {
+        var showSection = ShouldShowQuickAccessLinkControls(dashboard);
+        return new QuickAccessLinkControlsLayoutState(showSection, showSection && IsGroupedLinkModeAvailable(dashboard));
+    }
 
     private bool SetGroupedLinkToggleVisibility(bool visible) {
         if (_groupLinkedChartsButton == null) {
@@ -1024,6 +1042,165 @@ public class MainForm : MaterialForm {
         var changed = _groupLinkedChartsButton.Visible != visible;
         _groupLinkedChartsButton.Visible = visible;
         return changed;
+    }
+
+    private void ApplyQuickAccessLinkControlsLayoutState(QuickAccessLinkControlsLayoutState state, bool forceLayoutRefresh = false) {
+        var sectionVisibilityChanged = _linkSegmentPanel.Visible != state.ShowSection;
+        var groupedVisibilityChanged = SetGroupedLinkToggleVisibility(state.ShowGroupedToggle);
+
+        if (!sectionVisibilityChanged && !groupedVisibilityChanged && !forceLayoutRefresh) {
+            return;
+        }
+
+        _quickAccessPanel.SuspendLayout();
+        try {
+            _chartsLabel.Visible = state.ShowSection;
+            _chartsLabelIcon.Visible = state.ShowSection;
+            _linkSegmentPanel.Visible = state.ShowSection;
+            _resetChartLinkButton.Visible = state.ShowSection;
+            UpdateThemeSwitchLayout();
+        } finally {
+            _quickAccessPanel.ResumeLayout(true);
+        }
+    }
+
+    private void SetRefreshIndicatorVisibility(bool visible) {
+        _refreshIndicatorIcon.Visible = visible;
+        _refreshIndicatorTimeLabel.Visible = visible;
+    }
+
+    private void SetExportIndicatorVisibility(bool visible) {
+        _exportProgressIcon.Visible = visible;
+        _exportProgressLabel.Visible = visible;
+        if (visible) {
+            _exportProgressLabel.Text = $"{ExcelExportStateService.ProgressPercent}%";
+        }
+    }
+
+    private void ScheduleQuickAccessLinkLayoutStep(Action nextStep) {
+        if (QuickAccessLinkLayoutStepDelayMs <= 0) {
+            BeginInvoke(nextStep);
+            return;
+        }
+
+        var delayTimer = new System.Windows.Forms.Timer { Interval = QuickAccessLinkLayoutStepDelayMs };
+        delayTimer.Tick += (_, _) => {
+            delayTimer.Stop();
+            delayTimer.Dispose();
+            BeginInvoke(nextStep);
+        };
+        delayTimer.Start();
+    }
+
+    private void BeginQuickAccessLinkLayoutStaggeredUpdate(QuickAccessLinkControlsLayoutState targetState) {
+        if (_isQuickAccessLinkLayoutStaggeredUpdateInProgress) {
+            _pendingQuickAccessLinkLayoutState = targetState;
+            _isQuickAccessLinkLayoutTransitionPending = true;
+            return;
+        }
+
+        _isQuickAccessLinkLayoutStaggeredUpdateInProgress = true;
+
+        var shouldShowRefreshIndicator = _appSettings.ShowRefreshIndicator;
+        var shouldShowExportIndicator = ExcelExportStateService.IsExporting;
+
+        void Finish() {
+            _isQuickAccessLinkLayoutStaggeredUpdateInProgress = false;
+            if (_isQuickAccessLinkLayoutTransitionPending) {
+                CompleteQuickAccessLinkLayoutTransitionIfNeeded();
+            }
+        }
+
+        void ShowRefreshStep() {
+            if (shouldShowRefreshIndicator) {
+                SetRefreshIndicatorVisibility(true);
+                UpdateRefreshIndicatorAppearance();
+            }
+
+            RefreshQuickAccessLayout();
+            Finish();
+        }
+
+        void ShowExportStep() {
+            if (shouldShowExportIndicator) {
+                SetExportIndicatorVisibility(true);
+                UpdateExportProgressAppearance();
+            }
+
+            RefreshQuickAccessLayout();
+            ScheduleQuickAccessLinkLayoutStep((Action)ShowRefreshStep);
+        }
+
+        void ShowLinkBlockStep() {
+            var linkBlockState = targetState.ShowSection
+                ? targetState
+                : new QuickAccessLinkControlsLayoutState(false, false);
+
+            ApplyQuickAccessLinkControlsLayoutState(linkBlockState, forceLayoutRefresh: true);
+            RefreshQuickAccessLayout();
+            ScheduleQuickAccessLinkLayoutStep((Action)ShowExportStep);
+        }
+
+        _quickAccessPanel.SuspendLayout();
+        try {
+            SetRefreshIndicatorVisibility(false);
+            SetExportIndicatorVisibility(false);
+            ApplyQuickAccessLinkControlsLayoutState(new QuickAccessLinkControlsLayoutState(false, false), forceLayoutRefresh: true);
+        } finally {
+            _quickAccessPanel.ResumeLayout(true);
+        }
+
+        RefreshQuickAccessLayout();
+        ScheduleQuickAccessLinkLayoutStep((Action)ShowLinkBlockStep);
+    }
+
+    private bool TryStartQuickAccessLinkLayoutTransition(Dashboard? previousDashboard, Dashboard? targetDashboard, bool isDashboardSwitch) {
+        if (!isDashboardSwitch || previousDashboard == null || targetDashboard == null) {
+            return false;
+        }
+
+        var previousState = GetQuickAccessLinkControlsLayoutState(previousDashboard);
+        var targetState = GetQuickAccessLinkControlsLayoutState(targetDashboard);
+        if (previousState == targetState) {
+            return false;
+        }
+
+        _pendingQuickAccessLinkLayoutState = targetState;
+        _isQuickAccessLinkLayoutTransitionPending = true;
+
+        _quickAccessPanel.SuspendLayout();
+        try {
+            SetRefreshIndicatorVisibility(false);
+            SetExportIndicatorVisibility(false);
+            ApplyQuickAccessLinkControlsLayoutState(new QuickAccessLinkControlsLayoutState(false, false), forceLayoutRefresh: true);
+        } finally {
+            _quickAccessPanel.ResumeLayout(true);
+        }
+
+        RefreshQuickAccessLayout();
+        return true;
+    }
+
+    private QuickAccessLinkControlsLayoutState GetCurrentQuickAccessLinkControlsLayoutState(Dashboard? dashboard, bool deferLayoutChange) {
+        if (deferLayoutChange && _isQuickAccessLinkLayoutTransitionPending) {
+            return _pendingQuickAccessLinkLayoutState;
+        }
+
+        return GetQuickAccessLinkControlsLayoutState(dashboard);
+    }
+
+    private void CompleteQuickAccessLinkLayoutTransitionIfNeeded() {
+        if (!_isQuickAccessLinkLayoutTransitionPending) {
+            return;
+        }
+
+        if (_isQuickAccessLinkLayoutStaggeredUpdateInProgress) {
+            return;
+        }
+
+        var pendingState = _pendingQuickAccessLinkLayoutState;
+        _isQuickAccessLinkLayoutTransitionPending = false;
+        BeginQuickAccessLinkLayoutStaggeredUpdate(pendingState);
     }
 
     private Dashboard? GetContextMenuTargetDashboard() {
@@ -1187,6 +1364,7 @@ public class MainForm : MaterialForm {
         CreateMenuItems();
 
         _quickAccessPanel = new Panel { Dock = DockStyle.Top, Height = 50, Padding = new Padding(10, 5, 10, 5) };
+        EnableDoubleBuffer(_quickAccessPanel);
         CreateQuickAccessControls();
         UpdateQuickAccessPanelTheme();
 
@@ -1299,8 +1477,16 @@ public class MainForm : MaterialForm {
         if (shouldResetDashboardState) {
             _dashboardLinkModes[dashboard.Id] = dashboard.InitialChartLinkMode;
         }
-        _ = SetGroupedLinkToggleVisibility(IsGroupedLinkModeAvailable(dashboard));
-        if (!_groupLinkedChartsButton.Visible && _dashboardLinkModes[dashboard.Id] == DashboardChartLinkMode.Grouped) {
+
+        var deferQuickAccessLinkLayoutChange = TryStartQuickAccessLinkLayoutTransition(previousDashboard, dashboard, isDashboardSwitch);
+        var targetQuickAccessLinkLayoutState = GetCurrentQuickAccessLinkControlsLayoutState(dashboard, deferQuickAccessLinkLayoutChange);
+        if (!deferQuickAccessLinkLayoutChange) {
+            _isQuickAccessLinkLayoutTransitionPending = false;
+            _isQuickAccessLinkLayoutStaggeredUpdateInProgress = false;
+            ApplyQuickAccessLinkControlsLayoutState(targetQuickAccessLinkLayoutState);
+        }
+
+        if (!targetQuickAccessLinkLayoutState.ShowGroupedToggle && _dashboardLinkModes[dashboard.Id] == DashboardChartLinkMode.Grouped) {
             _dashboardLinkModes[dashboard.Id] = DashboardChartLinkMode.Full;
         }
 
@@ -1384,6 +1570,7 @@ public class MainForm : MaterialForm {
                     if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) { HideVisorImmediate(); return; }
                     _dashboardContainer.Visible = true;
                     RemoveOldDashboardPanel(previousPanel, panel);
+                    CompleteQuickAccessLinkLayoutTransitionIfNeeded();
                     ScheduleVisorReveal();
                 });
                 return;
@@ -1407,6 +1594,7 @@ public class MainForm : MaterialForm {
         panel.BringToFront();
         _dashboardContainer.Visible = true;
         RemoveOldDashboardPanel(previousPanel, panel);
+        CompleteQuickAccessLinkLayoutTransitionIfNeeded();
 
         // Dashboard is fully built. Schedule visor fade-out.
         ScheduleVisorReveal();
@@ -1510,8 +1698,9 @@ public class MainForm : MaterialForm {
         _dashboardLinkModes[_currentDashboard.Id] = _currentDashboard.InitialChartLinkMode;
         _dashboardPanel.ResetLinkStateToDashboardDefaults();
         _linkedChartsButton.Checked = _currentDashboard.InitialChartLinkMode == DashboardChartLinkMode.Full;
-        _ = SetGroupedLinkToggleVisibility(IsGroupedLinkModeAvailable(_currentDashboard));
-        if (!_groupLinkedChartsButton.Visible && _currentDashboard.InitialChartLinkMode == DashboardChartLinkMode.Grouped) {
+        var currentLayoutState = GetQuickAccessLinkControlsLayoutState(_currentDashboard);
+        ApplyQuickAccessLinkControlsLayoutState(currentLayoutState);
+        if (!currentLayoutState.ShowGroupedToggle && _currentDashboard.InitialChartLinkMode == DashboardChartLinkMode.Grouped) {
             _currentDashboard.InitialChartLinkMode = DashboardChartLinkMode.Full;
         }
         _groupLinkedChartsButton.Checked = _currentDashboard.InitialChartLinkMode == DashboardChartLinkMode.Grouped;
@@ -2421,23 +2610,27 @@ public class MainForm : MaterialForm {
             labelIconTop + Math.Max((_themeLabelIcon.Height - _themeLabel.PreferredHeight) / 2, 0));
         _themeLabelIcon.Location = new Point(_themeLabel.Left - labelIconGap - _themeLabelIcon.Width, labelIconTop);
 
-        var linkToggleCount = _groupLinkedChartsButton.Visible ? 3 : 2;
-        var linkPanelWidth = segmentWidth * (linkToggleCount + 1) + 2 + segmentGap;
-        _linkSegmentPanel.Location = new Point(_themeLabelIcon.Left - sectionGap - linkPanelWidth, top);
-        _linkSegmentPanel.Size = new Size(linkPanelWidth, 32);
+        var chartsSectionLeftBound = _themeLabelIcon.Left;
+        if (_linkSegmentPanel.Visible) {
+            var linkToggleCount = _groupLinkedChartsButton.Visible ? 3 : 2;
+            var linkPanelWidth = segmentWidth * (linkToggleCount + 1) + 2 + segmentGap;
+            _linkSegmentPanel.Location = new Point(_themeLabelIcon.Left - sectionGap - linkPanelWidth, top);
+            _linkSegmentPanel.Size = new Size(linkPanelWidth, 32);
 
-        _chartsLabel.Location = new Point(_linkSegmentPanel.Left - textGap - _chartsLabel.PreferredWidth,
-            labelIconTop + Math.Max((_chartsLabelIcon.Height - _chartsLabel.PreferredHeight) / 2, 0));
-        _chartsLabelIcon.Location = new Point(_chartsLabel.Left - labelIconGap - _chartsLabelIcon.Width, labelIconTop);
+            _chartsLabel.Location = new Point(_linkSegmentPanel.Left - textGap - _chartsLabel.PreferredWidth,
+                labelIconTop + Math.Max((_chartsLabelIcon.Height - _chartsLabel.PreferredHeight) / 2, 0));
+            _chartsLabelIcon.Location = new Point(_chartsLabel.Left - labelIconGap - _chartsLabelIcon.Width, labelIconTop);
+            chartsSectionLeftBound = _chartsLabelIcon.Left;
+        }
 
         if (_exportProgressLabel.Visible) {
             const int exportIconGap = 4;
-            _exportProgressLabel.Location = new Point(_chartsLabelIcon.Left - sectionGap - _exportProgressLabel.PreferredWidth, 17);
+            _exportProgressLabel.Location = new Point(chartsSectionLeftBound - sectionGap - _exportProgressLabel.PreferredWidth, 17);
             _exportProgressIcon.Location = new Point(_exportProgressLabel.Left - exportIconGap - _exportProgressIcon.Width, 14);
         }
 
         if (_refreshIndicatorTimeLabel.Visible) {
-            var indicatorRightBound = _exportProgressIcon.Visible ? _exportProgressIcon.Left : _chartsLabelIcon.Left;
+            var indicatorRightBound = _exportProgressIcon.Visible ? _exportProgressIcon.Left : chartsSectionLeftBound;
             const int indicatorSectionGap = 16;
             const int indicatorIconGap = 4;
             _refreshIndicatorTimeLabel.Location = new Point(indicatorRightBound - indicatorSectionGap - _refreshIndicatorTimeLabel.PreferredWidth, 17);
