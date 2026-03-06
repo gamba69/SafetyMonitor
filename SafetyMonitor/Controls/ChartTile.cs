@@ -2367,8 +2367,10 @@ public class ChartTile : Panel {
 
         if (_hoverVerticalLine == null) {
             var line = _plot.Plot.Add.VerticalLine(x);
-            line.LinePattern = LinePattern.Dashed;
-            line.LineWidth = 1.5f;
+            // Inspector marker should be clearly visible against dense chart data.
+            // Use a dotted pattern to create a subtle "textured" appearance.
+            line.LinePattern = LinePattern.Dotted;
+            line.LineWidth = 0.8f;
             line.IsVisible = true;
             _hoverVerticalLine = line;
         }
@@ -2377,7 +2379,7 @@ public class ChartTile : Panel {
             verticalLine.X = x;
             verticalLine.IsVisible = true;
             var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
-            verticalLine.Color = ScottPlot.Color.FromColor(isLight ? Color.FromArgb(50, 80, 80, 80) : Color.FromArgb(60, 195, 200, 205));
+            verticalLine.Color = ScottPlot.Color.FromColor(isLight ? Color.FromArgb(165, 55, 70, 78) : Color.FromArgb(185, 214, 228, 236));
         }
     }
 
