@@ -8,7 +8,7 @@ using SafetyMonitorData.Utilities;
 namespace SafetyMonitorData.Services;
 
 /// <summary>
-/// Service for discovering and connecting to ASCOM Alpaca devices.
+/// Represents device connection service and encapsulates its related behavior and state.
 /// </summary>
 public class DeviceConnectionService(
     CommandLineOptions options) {
@@ -22,8 +22,10 @@ public class DeviceConnectionService(
     #region Public Methods
 
     /// <summary>
-    /// Connect to ObservingConditions device.
+    /// Connects the observing conditions async for device connection service.
     /// </summary>
+    /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+    /// <returns>A task that returns the operation result.</returns>
     public async Task<IObservingConditions> ConnectObservingConditionsAsync(
         CancellationToken cancellationToken = default) {
         if (_options.OcUsesDiscovery) {
@@ -43,8 +45,10 @@ public class DeviceConnectionService(
     }
 
     /// <summary>
-    /// Connect to SafetyMonitor device.
+    /// Connects the safety monitor async for device connection service.
     /// </summary>
+    /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+    /// <returns>A task that returns the operation result.</returns>
     public async Task<ISafetyMonitor> ConnectSafetyMonitorAsync(
         CancellationToken cancellationToken = default) {
         if (_options.SmUsesDiscovery) {
@@ -88,8 +92,12 @@ public class DeviceConnectionService(
     }
 
     /// <summary>
-    /// Perform Alpaca discovery to find a device using AlpacaDiscovery static methods.
+    /// Executes discover device async as part of device connection service processing.
     /// </summary>
+    /// <param name="deviceName">Input value for device name.</param>
+    /// <param name="deviceType">Input value for device type.</param>
+    /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+    /// <returns>A task that returns the operation result.</returns>
     private static async Task<AscomDevice?> DiscoverDeviceAsync(
         string deviceName,
         DeviceTypes deviceType,
@@ -127,8 +135,11 @@ public class DeviceConnectionService(
     }
 
     /// <summary>
-    /// Connect to the device with retry logic.
+    /// Connects the client async for device connection service.
     /// </summary>
+    /// <param name="client">Input value for client.</param>
+    /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     private async Task ConnectClientAsync(IAscomDevice client, CancellationToken cancellationToken) {
         await RetryPolicy.ExecuteAsync(
             async () => {

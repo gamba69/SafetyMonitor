@@ -2,8 +2,15 @@ using SafetyMonitor.Controls;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents interactive cursor styler and encapsulates its related behavior and state.
+/// </summary>
 internal static class InteractiveCursorStyler {
 
+    /// <summary>
+    /// Applies the state for interactive cursor styler.
+    /// </summary>
+    /// <param name="control">Input value for control.</param>
     public static void Apply(Control control) {
         if (!control.Enabled) {
             if (ShouldUseHandCursor(control)) {
@@ -18,6 +25,10 @@ internal static class InteractiveCursorStyler {
         }
     }
 
+    /// <summary>
+    /// Applies the state for interactive cursor styler.
+    /// </summary>
+    /// <param name="items">Input value for items.</param>
     public static void Apply(ToolStripItemCollection items) {
         foreach (ToolStripItem item in items) {
             if (item is ToolStripSeparator) {
@@ -33,6 +44,14 @@ internal static class InteractiveCursorStyler {
         }
     }
 
+    /// <summary>
+    /// Determines whether should use hand cursor for interactive cursor styler.
+    /// </summary>
+    /// <param name="control">Input value for control.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool ShouldUseHandCursor(Control control) => control switch {
         ButtonBase => true,
         ComboBox => true,

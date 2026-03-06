@@ -3,8 +3,16 @@ using System.CommandLine;
 
 namespace DataAggregator;
 
+/// <summary>
+/// Represents program and encapsulates its related behavior and state.
+/// </summary>
 internal static class Program {
 
+    /// <summary>
+    /// Defines the application entry point and startup workflow.
+    /// </summary>
+    /// <param name="args">Input value for args.</param>
+    /// <returns>A task that returns the operation result.</returns>
     private static async Task<int> Main(string[] args) {
         if (args.Any(arg => arg is "--version" or "-v")) {
             Console.WriteLine(GetVersionString());
@@ -76,6 +84,11 @@ internal static class Program {
         return await RecalculateAsync(options);
     }
 
+    /// <summary>
+    /// Executes recalculate async as part of program processing.
+    /// </summary>
+    /// <param name="options">Input value for options.</param>
+    /// <returns>A task that returns the operation result.</returns>
     private static Task<int> RecalculateAsync(AggregatorOptions options) {
         var startTime = ParseTimestamp(options.StartRaw) ?? DateTime.UtcNow.AddDays(-1);
         var endTime = ParseTimestamp(options.EndRaw) ?? DateTime.UtcNow;
@@ -97,6 +110,11 @@ internal static class Program {
         return Task.FromResult(0);
     }
 
+    /// <summary>
+    /// Parses the timestamp for program.
+    /// </summary>
+    /// <param name="raw">Input value for raw.</param>
+    /// <returns>The result of the operation.</returns>
     private static DateTime? ParseTimestamp(string? raw) {
         if (string.IsNullOrWhiteSpace(raw)) {
             return null;
@@ -111,6 +129,13 @@ internal static class Program {
     }
 
 
+    /// <summary>
+    /// Calculates the remaining time for program.
+    /// </summary>
+    /// <param name="elapsed">Input value for elapsed.</param>
+    /// <param name="done">Input value for done.</param>
+    /// <param name="total">Input value for total.</param>
+    /// <returns>The result of the operation.</returns>
     private static TimeSpan CalculateRemainingTime(TimeSpan elapsed, int done, int total) {
         if (done <= 0 || total <= done) {
             return TimeSpan.Zero;
@@ -120,6 +145,11 @@ internal static class Program {
         return TimeSpan.FromSeconds(avgPerItem * (total - done));
     }
 
+    /// <summary>
+    /// Formats the duration for program.
+    /// </summary>
+    /// <param name="duration">Input value for duration.</param>
+    /// <returns>The resulting string value.</returns>
     private static string FormatDuration(TimeSpan duration) {
         if (duration < TimeSpan.Zero) {
             duration = TimeSpan.Zero;
@@ -128,15 +158,40 @@ internal static class Program {
         return $"{(int)duration.TotalHours:00}:{duration.Minutes:00}:{duration.Seconds:00}";
     }
 
+    /// <summary>
+    /// Represents aggregator options and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class AggregatorOptions {
+        /// <summary>
+        /// Gets or sets the storage path for aggregator options. Specifies a filesystem location used to load or persist application data.
+        /// </summary>
         public string StoragePath { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the start raw for aggregator options. Stores textual configuration or display metadata used by application flows.
+        /// </summary>
         public string? StartRaw { get; set; }
+        /// <summary>
+        /// Gets or sets the end raw for aggregator options. Stores textual configuration or display metadata used by application flows.
+        /// </summary>
         public string? EndRaw { get; set; }
+        /// <summary>
+        /// Gets or sets the db user for aggregator options. Stores textual configuration or display metadata used by application flows.
+        /// </summary>
         public string DbUser { get; set; } = "SYSDBA";
+        /// <summary>
+        /// Gets or sets the db password for aggregator options. Stores textual configuration or display metadata used by application flows.
+        /// </summary>
         public string DbPassword { get; set; } = "masterkey";
+        /// <summary>
+        /// Gets or sets the batch size for aggregator options. Specifies sizing or boundary constraints used by runtime calculations.
+        /// </summary>
         public int BatchSize { get; set; } = 1000;
     }
 
+    /// <summary>
+    /// Gets the version string for aggregator options.
+    /// </summary>
+    /// <returns>The resulting string value.</returns>
     private static string GetVersionString() {
         return $"v{SafetyMonitor.Versioning.BuildVersion.Major}.{SafetyMonitor.Versioning.BuildVersion.Minor}.{SafetyMonitor.Versioning.BuildVersion.Patch} build {SafetyMonitor.Versioning.BuildVersion.Build} {SafetyMonitor.Versioning.BuildVersion.BuildDateUtc:dd.MM.yyyy}";
     }

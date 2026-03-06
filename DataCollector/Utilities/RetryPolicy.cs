@@ -1,7 +1,7 @@
 namespace SafetyMonitorData.Utilities;
 
 /// <summary>
-/// Provides retry policy for operations that may fail temporarily.
+/// Represents retry policy and encapsulates its related behavior and state.
 /// </summary>
 public static class RetryPolicy {
 
@@ -71,8 +71,14 @@ public static class RetryPolicy {
     }
 
     /// <summary>
-    /// Execute an operation without a return value.
+    /// Executes execute async as part of retry policy processing.
     /// </summary>
+    /// <param name="operation">Input value for operation.</param>
+    /// <param name="maxRetries">Input value for max retries.</param>
+    /// <param name="delay">Input value for delay.</param>
+    /// <param name="onRetry">Input value for on retry.</param>
+    /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public static async Task ExecuteAsync(
         Func<Task> operation,
         int maxRetries,

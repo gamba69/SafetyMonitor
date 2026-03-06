@@ -4,6 +4,9 @@ using SafetyMonitor.Services;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents axis rules editor form and encapsulates its related behavior and state.
+/// </summary>
 public class AxisRulesEditorForm : ThemedCaptionForm {
 
     #region Private Fields
@@ -20,6 +23,13 @@ public class AxisRulesEditorForm : ThemedCaptionForm {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AxisRulesEditorForm"/> class.
+    /// </summary>
+    /// <param name="rules">Collection of rules items used by the operation.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public AxisRulesEditorForm(IEnumerable<MetricAxisRuleSetting> rules) {
         _rules = [.. rules.Select(r => new MetricAxisRuleSetting {
             Metric = r.Metric,
@@ -40,12 +50,18 @@ public class AxisRulesEditorForm : ThemedCaptionForm {
 
     #region Public Properties
 
+    /// <summary>
+    /// Gets or sets the rules for axis rules editor form. Contains a collection of values that drive configuration, rendering, or data processing.
+    /// </summary>
     public List<MetricAxisRuleSetting> Rules { get; private set; } = [];
 
     #endregion Public Properties
 
     #region Private Methods
 
+    /// <summary>
+    /// Initializes axis rules editor form state and required resources.
+    /// </summary>
     private void InitializeComponent() {
         Text = "Axis Rules";
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -258,6 +274,9 @@ public class AxisRulesEditorForm : ThemedCaptionForm {
         ClientSize = new Size(860, 500);
     }
 
+    /// <summary>
+    /// Loads the rules for axis rules editor form.
+    /// </summary>
     private void LoadRules() {
         _rulesGrid.Rows.Clear();
         foreach (var rule in _rules) {
@@ -271,10 +290,20 @@ public class AxisRulesEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Adds the button click for axis rules editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void AddButton_Click(object? sender, EventArgs e) {
         _rulesGrid.Rows.Add(MetricType.Temperature.GetDisplayName(), true, "", "", "", "");
     }
 
+    /// <summary>
+    /// Removes the button click for axis rules editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void RemoveButton_Click(object? sender, EventArgs e) {
         foreach (DataGridViewRow row in _rulesGrid.SelectedRows) {
             if (!row.IsNewRow) {
@@ -283,6 +312,11 @@ public class AxisRulesEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes rules grid cell validating as part of axis rules editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void RulesGrid_CellValidating(object? sender, DataGridViewCellValidatingEventArgs e) {
         var columnName = _rulesGrid.Columns[e.ColumnIndex].Name;
         if (columnName is not ("MinBoundary" or "MaxBoundary" or "MinSpan" or "MaxSpan")) {
@@ -302,6 +336,11 @@ public class AxisRulesEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Saves the button click for axis rules editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void SaveButton_Click(object? sender, EventArgs e) {
         var newRules = new List<MetricAxisRuleSetting>();
         var metricNames = Enum.GetValues<MetricType>().ToDictionary(m => m.GetDisplayName(), m => m);
@@ -336,6 +375,11 @@ public class AxisRulesEditorForm : ThemedCaptionForm {
         Close();
     }
 
+    /// <summary>
+    /// Parses the nullable double for axis rules editor form.
+    /// </summary>
+    /// <param name="value">Input value for value.</param>
+    /// <returns>The result of the operation.</returns>
     private static double? ParseNullableDouble(object? value) {
         var text = value?.ToString() ?? "";
         if (string.IsNullOrWhiteSpace(text)) {
@@ -344,6 +388,9 @@ public class AxisRulesEditorForm : ThemedCaptionForm {
         return double.TryParse(text, out var result) ? result : null;
     }
 
+    /// <summary>
+    /// Applies the theme for axis rules editor form.
+    /// </summary>
     private void ApplyTheme() {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -375,6 +422,11 @@ public class AxisRulesEditorForm : ThemedCaptionForm {
         ApplyThemeRecursive(this, isLight);
     }
 
+    /// <summary>
+    /// Applies the theme recursive for axis rules editor form.
+    /// </summary>
+    /// <param name="parent">Input value for parent.</param>
+    /// <param name="isLight">Input value for is light.</param>
     private static void ApplyThemeRecursive(Control parent, bool isLight) {
         foreach (Control control in parent.Controls) {
             InteractiveCursorStyler.Apply(control);
@@ -390,6 +442,11 @@ public class AxisRulesEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes rules grid editing control showing as part of axis rules editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void RulesGrid_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e) {
         if (_rulesGrid.CurrentCell?.OwningColumn?.Name != "Metric" || e.Control is not ComboBox comboBox) {
             return;
@@ -401,6 +458,13 @@ public class AxisRulesEditorForm : ThemedCaptionForm {
         ThemedComboBoxStyler.Apply(comboBox, isLight);
     }
 
+    /// <summary>
+    /// Creates the safe font for axis rules editor form.
+    /// </summary>
+    /// <param name="familyName">Input value for family name.</param>
+    /// <param name="emSize">Input value for em size.</param>
+    /// <param name="style">Input value for style.</param>
+    /// <returns>The result of the operation.</returns>
     private static Font CreateSafeFont(string familyName, float emSize, FontStyle style = FontStyle.Regular) {
         try {
             var font = new Font(familyName, emSize, style);

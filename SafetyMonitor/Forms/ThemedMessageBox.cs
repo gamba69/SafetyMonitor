@@ -4,9 +4,7 @@ using SafetyMonitor.Services;
 namespace SafetyMonitor.Forms;
 
 /// <summary>
-/// Custom MessageBox with theme support (light/dark).
-/// DPI-aware layout that works correctly at 100%, 125%, 150% and other scaling levels.
-/// Properly compensates for ThemedCaptionForm's custom title bar on Win10.
+/// Represents themed message box and encapsulates its related behavior and state.
 /// </summary>
 public class ThemedMessageBox : ThemedCaptionForm {
     #region Private Fields
@@ -30,6 +28,16 @@ public class ThemedMessageBox : ThemedCaptionForm {
 
     #region Private Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ThemedMessageBox"/> class.
+    /// </summary>
+    /// <param name="message">Input value for message.</param>
+    /// <param name="caption">Input value for caption.</param>
+    /// <param name="buttons">Input value for buttons.</param>
+    /// <param name="icon">Input value for icon.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     private ThemedMessageBox(string message, string caption, MessageBoxButtons buttons, MessageBoxIcon icon) {
         _message = message;
         _caption = caption;
@@ -52,36 +60,92 @@ public class ThemedMessageBox : ThemedCaptionForm {
 
     #region Public Methods
 
+    /// <summary>
+    /// Shows the state for themed message box.
+    /// </summary>
+    /// <param name="message">Input value for message.</param>
+    /// <returns>The result of the operation.</returns>
     public static DialogResult Show(string message) {
         return Show(message, "", MessageBoxButtons.OK, MessageBoxIcon.None);
     }
 
+    /// <summary>
+    /// Shows the state for themed message box.
+    /// </summary>
+    /// <param name="message">Input value for message.</param>
+    /// <param name="caption">Input value for caption.</param>
+    /// <returns>The result of the operation.</returns>
     public static DialogResult Show(string message, string caption) {
         return Show(message, caption, MessageBoxButtons.OK, MessageBoxIcon.None);
     }
 
+    /// <summary>
+    /// Shows the state for themed message box.
+    /// </summary>
+    /// <param name="message">Input value for message.</param>
+    /// <param name="caption">Input value for caption.</param>
+    /// <param name="buttons">Input value for buttons.</param>
+    /// <returns>The result of the operation.</returns>
     public static DialogResult Show(string message, string caption, MessageBoxButtons buttons) {
         return Show(message, caption, buttons, MessageBoxIcon.None);
     }
 
+    /// <summary>
+    /// Shows the state for themed message box.
+    /// </summary>
+    /// <param name="message">Input value for message.</param>
+    /// <param name="caption">Input value for caption.</param>
+    /// <param name="buttons">Input value for buttons.</param>
+    /// <param name="icon">Input value for icon.</param>
+    /// <returns>The result of the operation.</returns>
     public static DialogResult Show(string message, string caption, MessageBoxButtons buttons, MessageBoxIcon icon) {
         using var dialog = new ThemedMessageBox(message, caption, buttons, icon);
         dialog.StartPosition = FormStartPosition.CenterScreen;
         return dialog.ShowDialog();
     }
 
+    /// <summary>
+    /// Shows the state for themed message box.
+    /// </summary>
+    /// <param name="owner">Input value for owner.</param>
+    /// <param name="message">Input value for message.</param>
+    /// <returns>The result of the operation.</returns>
     public static DialogResult Show(IWin32Window? owner, string message) {
         return Show(owner, message, "", MessageBoxButtons.OK, MessageBoxIcon.None);
     }
 
+    /// <summary>
+    /// Shows the state for themed message box.
+    /// </summary>
+    /// <param name="owner">Input value for owner.</param>
+    /// <param name="message">Input value for message.</param>
+    /// <param name="caption">Input value for caption.</param>
+    /// <returns>The result of the operation.</returns>
     public static DialogResult Show(IWin32Window? owner, string message, string caption) {
         return Show(owner, message, caption, MessageBoxButtons.OK, MessageBoxIcon.None);
     }
 
+    /// <summary>
+    /// Shows the state for themed message box.
+    /// </summary>
+    /// <param name="owner">Input value for owner.</param>
+    /// <param name="message">Input value for message.</param>
+    /// <param name="caption">Input value for caption.</param>
+    /// <param name="buttons">Input value for buttons.</param>
+    /// <returns>The result of the operation.</returns>
     public static DialogResult Show(IWin32Window? owner, string message, string caption, MessageBoxButtons buttons) {
         return Show(owner, message, caption, buttons, MessageBoxIcon.None);
     }
 
+    /// <summary>
+    /// Shows the state for themed message box.
+    /// </summary>
+    /// <param name="owner">Input value for owner.</param>
+    /// <param name="message">Input value for message.</param>
+    /// <param name="caption">Input value for caption.</param>
+    /// <param name="buttons">Input value for buttons.</param>
+    /// <param name="icon">Input value for icon.</param>
+    /// <returns>The result of the operation.</returns>
     public static DialogResult Show(IWin32Window? owner, string message, string caption, MessageBoxButtons buttons, MessageBoxIcon icon) {
         using var dialog = new ThemedMessageBox(message, caption, buttons, icon);
         if (owner == null) {
@@ -96,16 +160,28 @@ public class ThemedMessageBox : ThemedCaptionForm {
 
     #region Protected Methods
 
+    /// <summary>
+    /// Executes on handle created as part of themed message box processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnHandleCreated(EventArgs e) {
         base.OnHandleCreated(e);
         AdjustSizeForTitleBar();
     }
 
+    /// <summary>
+    /// Executes on shown as part of themed message box processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnShown(EventArgs e) {
         base.OnShown(e);
         RenderIcon();
     }
 
+    /// <summary>
+    /// Executes dispose as part of themed message box processing.
+    /// </summary>
+    /// <param name="disposing">Input value for disposing.</param>
     protected override void Dispose(bool disposing) {
         if (disposing) {
             _iconPicture?.Image?.Dispose();
@@ -119,18 +195,17 @@ public class ThemedMessageBox : ThemedCaptionForm {
     #region Private Methods
 
     /// <summary>
-    /// Scale a logical pixel value (designed at 96 DPI) to physical pixels.
-    /// Uses the desktop DC because DeviceDpi is not available before handle creation.
+    /// Executes dpi as part of themed message box processing.
     /// </summary>
+    /// <param name="logicalPixels">Input value for logical pixels.</param>
+    /// <returns>The result of the operation.</returns>
     private static int Dpi(int logicalPixels) {
         using var g = Graphics.FromHwnd(IntPtr.Zero);
         return Math.Max(1, (int)Math.Round(logicalPixels * g.DpiX / 96.0));
     }
 
     /// <summary>
-    /// After ThemedCaptionForm installs a custom title bar on Win10 fallback mode,
-    /// FormBorderStyle becomes None and OS chrome is removed.
-    /// This method expands the form so the custom title bar still has client-area space.
+    /// Executes adjust size for title bar as part of themed message box processing.
     /// </summary>
     private void AdjustSizeForTitleBar() {
         if (FormBorderStyle != FormBorderStyle.None) {
@@ -147,8 +222,7 @@ public class ThemedMessageBox : ThemedCaptionForm {
     }
 
     /// <summary>
-    /// Render the message box icon at the actual physical size of the PictureBox.
-    /// Called in OnShown when auto-scaling and layout are complete.
+    /// Renders the icon for themed message box.
     /// </summary>
     private void RenderIcon() {
         var skinManager = MaterialSkinManager.Instance;
@@ -159,6 +233,9 @@ public class ThemedMessageBox : ThemedCaptionForm {
         _iconPicture.Visible = _iconPicture.Image != null;
     }
 
+    /// <summary>
+    /// Initializes themed message box state and required resources.
+    /// </summary>
     private void InitializeComponent() {
         Text = _caption;
         AutoScaleMode = AutoScaleMode.None;
@@ -263,6 +340,16 @@ public class ThemedMessageBox : ThemedCaptionForm {
         ClientSize = _contentAreaSize;
     }
 
+    /// <summary>
+    /// Adds the button for themed message box.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <param name="result">Input value for result.</param>
+    /// <param name="isPrimary">Input value for is primary.</param>
+    /// <param name="font">Input value for font.</param>
+    /// <param name="height">Input value for height.</param>
+    /// <param name="minWidth">Input value for min width.</param>
+    /// <param name="spacing">Input value for spacing.</param>
     private void AddButton(string text, DialogResult result, bool isPrimary, Font font, int height, int minWidth, int spacing) {
         var textWidth = TextRenderer.MeasureText(text, new Font(font, FontStyle.Bold)).Width;
         var btnWidth = Math.Max(minWidth, textWidth + Dpi(50));
@@ -288,6 +375,9 @@ public class ThemedMessageBox : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Applies the theme for themed message box.
+    /// </summary>
     private void ApplyTheme() {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -310,6 +400,13 @@ public class ThemedMessageBox : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Creates the buttons for themed message box.
+    /// </summary>
+    /// <param name="font">Input value for font.</param>
+    /// <param name="height">Input value for height.</param>
+    /// <param name="minWidth">Input value for min width.</param>
+    /// <param name="spacing">Input value for spacing.</param>
     private void CreateButtons(Font font, int height, int minWidth, int spacing) {
         switch (_buttons) {
             case MessageBoxButtons.OK:

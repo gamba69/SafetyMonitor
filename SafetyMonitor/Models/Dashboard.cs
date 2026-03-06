@@ -4,22 +4,64 @@ using System.Text.Json.Serialization;
 
 namespace SafetyMonitor.Models;
 
+/// <summary>
+/// Represents dashboard and encapsulates its related behavior and state.
+/// </summary>
 public class Dashboard {
 
     #region Public Properties
+    /// <summary>
+    /// Gets or sets the columns for dashboard. Stores a numeric value used by calculations, thresholds, or telemetry display.
+    /// </summary>
     public int Columns { get; set; } = 4;
+    /// <summary>
+    /// Gets or sets the created at for dashboard. Stores a timestamp used for ordering, filtering, or range calculations.
+    /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.Now;
+    /// <summary>
+    /// Gets or sets the id for dashboard. Identifies the related entity and is used for lookups, linking, or persistence.
+    /// </summary>
     public Guid Id { get; set; } = Guid.NewGuid();
+    /// <summary>
+    /// Gets or sets the is quick access for dashboard. Represents a state flag that enables or disables related behavior.
+    /// </summary>
     public bool IsQuickAccess { get; set; } = false;
     [JsonIgnore]
+    /// <summary>
+    /// Gets or sets the needs startup reset for dashboard. Represents a state flag that enables or disables related behavior.
+    /// </summary>
     public bool NeedsStartupReset { get; set; }
+    /// <summary>
+    /// Gets or sets the initial chart link mode for dashboard. Holds part of the component state used by higher-level application logic.
+    /// </summary>
     public DashboardChartLinkMode InitialChartLinkMode { get; set; } = DashboardChartLinkMode.Full;
+    /// <summary>
+    /// Gets or sets the used link groups for dashboard. Stores a numeric value used by calculations, thresholds, or telemetry display.
+    /// </summary>
     public int UsedLinkGroups { get; set; } = ChartLinkGroupInfo.MaxUsedGroups;
+    /// <summary>
+    /// Gets or sets the link group period preset uids for dashboard. Defines timing behavior that affects refresh cadence, scheduling, or time-window processing.
+    /// </summary>
     public Dictionary<ChartLinkGroup, string> LinkGroupPeriodPresetUids { get; set; } = new();
+    /// <summary>
+    /// Gets or sets the modified at for dashboard. Stores a timestamp used for ordering, filtering, or range calculations.
+    /// </summary>
     public DateTime ModifiedAt { get; set; } = DateTime.Now;
+    /// <summary>
+    /// Gets or sets the name for dashboard. Stores textual configuration or display metadata used by application flows.
+    /// </summary>
     public string Name { get; set; } = "New Dashboard";
+    /// <summary>
+    /// Gets or sets the rows for dashboard. Stores a numeric value used by calculations, thresholds, or telemetry display.
+    /// </summary>
     public int Rows { get; set; } = 4;
+    /// <summary>
+    /// Gets or sets the sort order for dashboard. Stores a numeric value used by calculations, thresholds, or telemetry display.
+    /// </summary>
     public int SortOrder { get; set; }
+    /// <summary>
+    /// Gets or sets the tiles for dashboard. Contains a collection of values that drive configuration, rendering, or data processing.
+    /// </summary>
     public List<TileConfig> Tiles { get; set; } = [];
 
     #endregion Public Properties
@@ -28,6 +70,10 @@ public class Dashboard {
 
     public static Dashboard CreateDefault() => CreateDefaultSet().First();
 
+    /// <summary>
+    /// Creates the default set for dashboard.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     public static List<Dashboard> CreateDefaultSet() {
         var dashboards = new List<Dashboard> {
             CreateOverviewDashboard(),
@@ -44,6 +90,14 @@ public class Dashboard {
         return dashboards;
     }
 
+    /// <summary>
+    /// Determines whether can place tile for dashboard.
+    /// </summary>
+    /// <param name="tile">Input value for tile.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     public bool CanPlaceTile(TileConfig tile) {
         if (tile.Row < 0 || tile.Column < 0 || tile.Row + tile.RowSpan > Rows || tile.Column + tile.ColumnSpan > Columns) {
             return false;
@@ -61,16 +115,31 @@ public class Dashboard {
         return true;
     }
 
+    /// <summary>
+    /// Gets the link group period preset uid for dashboard.
+    /// </summary>
+    /// <param name="group">Input value for group.</param>
+    /// <returns>The resulting string value.</returns>
     public string GetLinkGroupPeriodPresetUid(ChartLinkGroup group) {
         EnsureLinkGroupPeriodDefaults();
         return LinkGroupPeriodPresetUids[group];
     }
 
+    /// <summary>
+    /// Sets the link group period preset uid for dashboard.
+    /// </summary>
+    /// <param name="group">Input value for group.</param>
+    /// <param name="periodPresetUid">Identifier of period preset.</param>
     public void SetLinkGroupPeriodPresetUid(ChartLinkGroup group, string periodPresetUid) {
         EnsureLinkGroupPeriodDefaults();
         LinkGroupPeriodPresetUids[group] = periodPresetUid;
     }
 
+    /// <summary>
+    /// Gets the link group period short name for dashboard.
+    /// </summary>
+    /// <param name="group">Input value for group.</param>
+    /// <returns>The resulting string value.</returns>
     public string GetLinkGroupPeriodShortName(ChartLinkGroup group) {
         var presetUid = GetLinkGroupPeriodPresetUid(group);
         var preset = ChartPeriodPresetStore
@@ -82,6 +151,9 @@ public class Dashboard {
             : preset.ShortLabel;
     }
 
+    /// <summary>
+    /// Ensures the link group period defaults for dashboard.
+    /// </summary>
     public void EnsureLinkGroupPeriodDefaults() {
         UsedLinkGroups = ChartLinkGroupInfo.NormalizeUsedGroups(UsedLinkGroups);
         var fallbackPresetUid = ChartPeriodPresetStore
@@ -97,6 +169,13 @@ public class Dashboard {
 
     public IReadOnlyList<ChartLinkGroup> GetAvailableLinkGroups() => ChartLinkGroupInfo.GetAvailable(UsedLinkGroups);
 
+    /// <summary>
+    /// Ensures the link group configuration for dashboard.
+    /// </summary>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     public bool EnsureLinkGroupConfiguration() {
         var changed = false;
         var normalizedUsedGroups = ChartLinkGroupInfo.NormalizeUsedGroups(UsedLinkGroups);
@@ -125,6 +204,10 @@ public class Dashboard {
 
     #region Private Methods
 
+    /// <summary>
+    /// Creates the overview dashboard for dashboard.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static Dashboard CreateOverviewDashboard() {
         var dashboard = new Dashboard {
             Name = "Overview",
@@ -176,6 +259,10 @@ public class Dashboard {
         return dashboard;
     }
 
+    /// <summary>
+    /// Creates the now dashboard for dashboard.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static Dashboard CreateNowDashboard() {
         var dashboard = new Dashboard {
             Id = Guid.Parse("586a05ad-74cc-4ae4-a321-55cd69b86817"),
@@ -215,6 +302,10 @@ public class Dashboard {
         return dashboard;
     }
 
+    /// <summary>
+    /// Creates the night dashboard for dashboard.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static Dashboard CreateNightDashboard() {
         var dashboard = new Dashboard {
             Name = "Night Watch",
@@ -241,6 +332,10 @@ public class Dashboard {
         return dashboard;
     }
 
+    /// <summary>
+    /// Creates the history dashboard for dashboard.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static Dashboard CreateHistoryDashboard() {
         var dashboard = new Dashboard {
             Name = "History",
@@ -272,6 +367,10 @@ public class Dashboard {
         return dashboard;
     }
 
+    /// <summary>
+    /// Creates the observatory dashboard for dashboard.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static Dashboard CreateObservatoryDashboard() {
         var dashboard = new Dashboard {
             Name = "Observatory",
@@ -299,6 +398,23 @@ public class Dashboard {
         return dashboard;
     }
 
+    /// <summary>
+    /// Executes value tile as part of dashboard processing.
+    /// </summary>
+    /// <param name="title">Input value for title.</param>
+    /// <param name="metric">Input value for metric.</param>
+    /// <param name="row">Input value for row.</param>
+    /// <param name="column">Input value for column.</param>
+    /// <param name="displayMode">Input value for display mode.</param>
+    /// <param name="showUnit">Input value for show unit.</param>
+    /// <param name="showIcon">Input value for show icon.</param>
+    /// <param name="decimalPlaces">Input value for decimal places.</param>
+    /// <param name="iconColorSchemeName">Input value for icon color scheme name.</param>
+    /// <param name="colorSchemeName">Input value for color scheme name.</param>
+    /// <param name="textColorSchemeName">Input value for text color scheme name.</param>
+    /// <param name="valueSchemeName">Input value for value scheme name.</param>
+    /// <param name="id">Identifier of id.</param>
+    /// <returns>The result of the operation.</returns>
     private static ValueTileConfig ValueTile(string title, MetricType metric, int row, int column, ValueTileDisplayMode displayMode = ValueTileDisplayMode.TextAndValue, bool showUnit = true, bool showIcon = true, int decimalPlaces = 1, string? iconColorSchemeName = null, string? colorSchemeName = null, string? textColorSchemeName = null, string? valueSchemeName = null, Guid? id = null) {
         return new ValueTileConfig {
             Id = id ?? Guid.NewGuid(),
@@ -317,6 +433,17 @@ public class Dashboard {
         };
     }
 
+    /// <summary>
+    /// Executes chart tile as part of dashboard processing.
+    /// </summary>
+    /// <param name="title">Input value for title.</param>
+    /// <param name="row">Input value for row.</param>
+    /// <param name="column">Input value for column.</param>
+    /// <param name="rowSpan">Input value for row span.</param>
+    /// <param name="columnSpan">Input value for column span.</param>
+    /// <param name="period">Input value for period.</param>
+    /// <param name="series">Input value for series.</param>
+    /// <returns>The result of the operation.</returns>
     private static ChartTileConfig ChartTile(string title, int row, int column, int rowSpan, int columnSpan, ChartPeriod period, params MetricAggregation[] series) {
         return ChartTile(title, row, column, rowSpan, columnSpan, period, ChartLinkGroup.Alpha, string.Empty, null, series);
     }
@@ -347,6 +474,14 @@ public class Dashboard {
         };
     }
 
+    /// <summary>
+    /// Executes aggregation as part of dashboard processing.
+    /// </summary>
+    /// <param name="metric">Input value for metric.</param>
+    /// <param name="function">Input value for function.</param>
+    /// <param name="color">Input value for color.</param>
+    /// <param name="label">Input value for label.</param>
+    /// <returns>The result of the operation.</returns>
     private static MetricAggregation Aggregation(MetricType metric, AggregationFunction function, Color color, string label) {
         return new MetricAggregation {
             Metric = metric,
@@ -357,6 +492,11 @@ public class Dashboard {
         };
     }
 
+    /// <summary>
+    /// Creates the dark theme series color for dashboard.
+    /// </summary>
+    /// <param name="lightThemeColor">Input value for light theme color.</param>
+    /// <returns>The result of the operation.</returns>
     private static Color CreateDarkThemeSeriesColor(Color lightThemeColor) {
         var hue = lightThemeColor.GetHue();
         var saturation = lightThemeColor.GetSaturation();
@@ -367,6 +507,13 @@ public class Dashboard {
         return ColorFromHsv(hue, saturation, adjustedBrightness);
     }
 
+    /// <summary>
+    /// Executes color from hsv as part of dashboard processing.
+    /// </summary>
+    /// <param name="hue">Input value for hue.</param>
+    /// <param name="saturation">Input value for saturation.</param>
+    /// <param name="value">Input value for value.</param>
+    /// <returns>The result of the operation.</returns>
     private static Color ColorFromHsv(double hue, double saturation, double value) {
         var h = (hue % 360 + 360) % 360;
         var c = value * saturation;

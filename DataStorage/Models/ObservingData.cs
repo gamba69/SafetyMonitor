@@ -1,30 +1,29 @@
 namespace DataStorage.Models {
     /// <summary>
-    /// Data model for ASCOM ObservingConditions and SafetyMonitor.
-    /// Can represent both raw observations and aggregated data.
+    /// Represents observing data and encapsulates its related behavior and state.
     /// </summary>
     public class ObservingData {
 
         #region Public Properties
 
         /// <summary>
-        /// Cloud cover (%) - 0 = clear, 100 = completely overcast.
+        /// Gets or sets the cloud cover for observing data. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
         public double? CloudCover { get; set; }
 
         // ObservingConditions properties
         /// <summary>
-        /// Dew point (°C).
+        /// Gets or sets the dew point for observing data. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
         public double? DewPoint { get; set; }
 
         /// <summary>
-        /// Humidity (%).
+        /// Gets or sets the humidity for observing data. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
         public double? Humidity { get; set; }
 
         /// <summary>
-        /// Unique identifier (auto-generated, only for raw data).
+        /// Gets or sets the id for observing data. Identifies the related entity and is used for lookups, linking, or persistence.
         /// </summary>
         public long Id { get; set; }
 
@@ -42,85 +41,82 @@ namespace DataStorage.Models {
         }
 
         /// <summary>
-        /// Safety monitor safe status (for raw data).
-        /// For aggregated data, use SafePercentage instead.
-        /// Stored as INTEGER in database (0/100/null).
+        /// Gets or sets the is safe int for observing data. Represents a state flag that enables or disables related behavior.
         /// </summary>
         public int? IsSafeInt { get; set; }
 
         /// <summary>
-        /// Additional notes or metadata.
+        /// Gets or sets the notes for observing data. Stores textual configuration or display metadata used by application flows.
         /// </summary>
         public string? Notes { get; set; }
 
         /// <summary>
-        /// Atmospheric pressure (hPa).
+        /// Gets or sets the pressure for observing data. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
         public double? Pressure { get; set; }
 
         /// <summary>
-        /// Rain rate (mm/hr).
+        /// Gets or sets the rain rate for observing data. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
         public double? RainRate { get; set; }
 
         /// <summary>
-        /// Number of records (only for aggregated data, 1 for raw data).
+        /// Gets or sets the record count for observing data. Specifies sizing or boundary constraints used by runtime calculations.
         /// </summary>
         public int RecordCount { get; set; } = 1;
 
         // SafetyMonitor properties
         /// <summary>
-        /// Percentage of records where IsSafe was true (0-100).
-        /// Only for aggregated data, null for raw data.
+        /// Gets or sets the safe percentage for observing data. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
         public double? SafePercentage { get; set; }
 
         /// <summary>
-        /// Sky brightness (lux).
+        /// Gets or sets the sky brightness for observing data. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
         public double? SkyBrightness { get; set; }
 
         /// <summary>
-        /// Sky quality (mag/arcsec² mpsas).
+        /// Gets or sets the sky quality for observing data. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
         public double? SkyQuality { get; set; }
 
         /// <summary>
-        /// Sky temperature (°C).
+        /// Gets or sets the sky temperature for observing data. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
         public double? SkyTemperature { get; set; }
 
         /// <summary>
-        /// Star full width half maximum (arcsec).
+        /// Gets or sets the star fwhm for observing data. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
         public double? StarFwhm { get; set; }
 
         /// <summary>
-        /// Temperature (°C).
+        /// Gets or sets the temperature for observing data. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
         public double? Temperature { get; set; }
 
         /// <summary>
-        /// Timestamp of the observation (for raw data) or start of time slot (for aggregated data).
+        /// Gets or sets the timestamp for observing data. Stores a timestamp used for ordering, filtering, or range calculations.
         /// </summary>
         public DateTime Timestamp { get; set; }
 
         /// <summary>
-        /// End of time slot (only for aggregated data, null for raw data).
+        /// Gets or sets the timestamp end for observing data. Stores a timestamp used for ordering, filtering, or range calculations.
         /// </summary>
         public DateTime? TimestampEnd { get; set; }
         /// <summary>
-        /// Wind direction (degrees, 0 = North, 90 = East).
+        /// Gets or sets the wind direction for observing data. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
         public double? WindDirection { get; set; }
 
         /// <summary>
-        /// Wind gust (m/s).
+        /// Gets or sets the wind gust for observing data. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
         public double? WindGust { get; set; }
 
         /// <summary>
-        /// Wind speed (m/s).
+        /// Gets or sets the wind speed for observing data. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
         public double? WindSpeed { get; set; }
 

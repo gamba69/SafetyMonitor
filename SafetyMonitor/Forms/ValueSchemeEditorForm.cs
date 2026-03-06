@@ -4,6 +4,9 @@ using SafetyMonitor.Services;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents value scheme editor form and encapsulates its related behavior and state.
+/// </summary>
 public class ValueSchemeEditorForm : ThemedCaptionForm {
     #region Private Fields
 
@@ -30,6 +33,9 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ValueSchemeEditorForm"/> class.
+    /// </summary>
     public ValueSchemeEditorForm() {
         _valueSchemeService = new ValueSchemeService();
         _schemes = _valueSchemeService.LoadSchemes();
@@ -48,6 +54,10 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
 
     #region Protected Methods
 
+    /// <summary>
+    /// Executes on form closing as part of value scheme editor form processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnFormClosing(FormClosingEventArgs e) {
         if (_isDirty && _currentScheme != null) {
             var result = ThemedMessageBox.Show(this, $"Save changes to \"{_currentScheme.Name}\"?",
@@ -66,6 +76,11 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
 
     #region Private Methods
 
+    /// <summary>
+    /// Adds the stop click for value scheme editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void AddStop_Click(object? sender, EventArgs e) {
         _stopsGrid.Rows.Add("0", "", "");
         SortGridByValue();
@@ -73,6 +88,9 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         UpdatePreview();
     }
 
+    /// <summary>
+    /// Applies the theme for value scheme editor form.
+    /// </summary>
     private void ApplyTheme() {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -83,6 +101,11 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         ApplyThemeRecursive(this, isLight);
     }
 
+    /// <summary>
+    /// Applies the theme recursive for value scheme editor form.
+    /// </summary>
+    /// <param name="parent">Input value for parent.</param>
+    /// <param name="isLight">Input value for is light.</param>
     private static void ApplyThemeRecursive(Control parent, bool isLight) {
         foreach (Control control in parent.Controls) {
             InteractiveCursorStyler.Apply(control);
@@ -122,6 +145,11 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Deletes the button click for value scheme editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void DeleteButton_Click(object? sender, EventArgs e) {
         if (_currentScheme == null) {
             return;
@@ -142,6 +170,11 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes duplicate button click as part of value scheme editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void DuplicateButton_Click(object? sender, EventArgs e) {
         if (_currentScheme == null) {
             return;
@@ -163,6 +196,9 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         _isDirty = false;
     }
 
+    /// <summary>
+    /// Initializes value scheme editor form state and required resources.
+    /// </summary>
     private void InitializeComponent() {
         Text = "Value Schemes";
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -464,12 +500,21 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         root.Controls.Add(rightPanel, 1, 0);
     }
 
+    /// <summary>
+    /// Executes value scheme editor form shown as part of value scheme editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void ValueSchemeEditorForm_Shown(object? sender, EventArgs e) {
         _isPreviewPrimed = true;
         UpdatePreview();
         UpdateSortToggleAppearance();
     }
 
+    /// <summary>
+    /// Loads the scheme to editor for value scheme editor form.
+    /// </summary>
+    /// <param name="scheme">Input value for scheme.</param>
     private void LoadSchemeToEditor(ValueScheme scheme) {
         _isLoading = true;
         _nameTextBox.Text = scheme.Name;
@@ -492,6 +537,11 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         _isLoading = false;
     }
 
+    /// <summary>
+    /// Executes new button click as part of value scheme editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void NewButton_Click(object? sender, EventArgs e) {
         var name = "New Scheme";
         var counter = 1;
@@ -514,6 +564,9 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         _isDirty = false;
     }
 
+    /// <summary>
+    /// Executes populate scheme list as part of value scheme editor form processing.
+    /// </summary>
     private void PopulateSchemeList() {
         _schemeList.Items.Clear();
         foreach (var s in _schemes) {
@@ -521,6 +574,11 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes preview panel paint as part of value scheme editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void PreviewPanel_Paint(object? sender, PaintEventArgs e) {
         var g = e.Graphics;
         g.Clear(_previewPanel.BackColor);
@@ -601,6 +659,14 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         smallFont.Dispose();
     }
 
+    /// <summary>
+    /// Executes truncate for width as part of value scheme editor form processing.
+    /// </summary>
+    /// <param name="graphics">Input value for graphics.</param>
+    /// <param name="text">Input value for text.</param>
+    /// <param name="font">Input value for font.</param>
+    /// <param name="maxWidth">Input value for max width.</param>
+    /// <returns>The resulting string value.</returns>
     private static string TruncateForWidth(Graphics graphics, string text, Font font, float maxWidth) {
         const string ellipsis = "…";
         if (string.IsNullOrEmpty(text)) {
@@ -630,6 +696,10 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         return low <= 0 ? ellipsis : text[..low] + ellipsis;
     }
 
+    /// <summary>
+    /// Executes read scheme from editor as part of value scheme editor form processing.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private ValueScheme ReadSchemeFromEditor() {
         var scheme = new ValueScheme {
             Name = _nameTextBox.Text.Trim(),
@@ -655,6 +725,11 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         return scheme;
     }
 
+    /// <summary>
+    /// Removes the stop click for value scheme editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void RemoveStop_Click(object? sender, EventArgs e) {
         if (_stopsGrid.CurrentRow == null) {
             return;
@@ -665,6 +740,11 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         UpdatePreview();
     }
 
+    /// <summary>
+    /// Saves the button click for value scheme editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void SaveButton_Click(object? sender, EventArgs e) {
         if (!SaveCurrentScheme()) {
             return;
@@ -674,6 +754,13 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         Close();
     }
 
+    /// <summary>
+    /// Saves the current scheme for value scheme editor form.
+    /// </summary>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private bool SaveCurrentScheme() {
         if (_currentScheme == null) {
             return false;
@@ -709,6 +796,11 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         return true;
     }
 
+    /// <summary>
+    /// Executes scheme list selected index changed as part of value scheme editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void SchemeList_SelectedIndexChanged(object? sender, EventArgs e) {
         if (_isDirty && _currentScheme != null) {
             var result = ThemedMessageBox.Show(this, $"Save changes to \"{_currentScheme.Name}\"?",
@@ -731,6 +823,9 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Sets the up grid columns for value scheme editor form.
+    /// </summary>
     private void SetupGridColumns() {
         _stopsGrid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "Value",
@@ -760,6 +855,9 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes sort grid by value as part of value scheme editor form processing.
+    /// </summary>
     private void SortGridByValue() {
         if (_isLoading || _stopsGrid.Rows.Count <= 1) {
             return;
@@ -799,6 +897,9 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         _isLoading = false;
     }
 
+    /// <summary>
+    /// Updates the sort toggle appearance for value scheme editor form.
+    /// </summary>
     private void UpdateSortToggleAppearance() {
         if (_sortSegmentPanel == null || _ascendingButton == null || _descendingButton == null) {
             return;
@@ -830,6 +931,9 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         _descendingButton.TextAlign = ContentAlignment.MiddleLeft;
     }
 
+    /// <summary>
+    /// Updates the preview for value scheme editor form.
+    /// </summary>
     private void UpdatePreview() {
         if (!_isPreviewPrimed) {
             return;
@@ -842,6 +946,9 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         _previewPanel.Invalidate();
     }
 
+    /// <summary>
+    /// Updates the dirty state for value scheme editor form.
+    /// </summary>
     private void UpdateDirtyState() {
         if (_isLoading) {
             return;
@@ -855,6 +962,15 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         _isDirty = !AreSchemesEqual(_currentScheme, ReadSchemeFromEditor());
     }
 
+    /// <summary>
+    /// Determines whether are schemes equal for value scheme editor form.
+    /// </summary>
+    /// <param name="original">Input value for original.</param>
+    /// <param name="updated">Input value for updated.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool AreSchemesEqual(ValueScheme original, ValueScheme updated) {
         if (!string.Equals(original.Name?.Trim() ?? "", updated.Name?.Trim() ?? "", StringComparison.Ordinal)) {
             return false;
@@ -888,7 +1004,13 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         return true;
     }
 
+    /// <summary>
+    /// Represents preview panel and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class PreviewPanel : Panel {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PreviewPanel"/> class.
+        /// </summary>
         public PreviewPanel() {
             DoubleBuffered = true;
             ResizeRedraw = true;

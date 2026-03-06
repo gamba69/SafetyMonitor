@@ -4,11 +4,19 @@ using System.Diagnostics;
 
 namespace SafetyMonitorDataGenerator;
 
+/// <summary>
+/// Represents program and encapsulates its related behavior and state.
+/// </summary>
 internal static class Program {
 
     private const int DefaultIntervalSeconds = 60;
     private const int DefaultBatchSize = 1000;
 
+    /// <summary>
+    /// Defines the application entry point and startup workflow.
+    /// </summary>
+    /// <param name="args">Input value for args.</param>
+    /// <returns>A task that returns the operation result.</returns>
     private static async Task<int> Main(string[] args) {
         if (args.Any(arg => arg is "--version" or "-v")) {
             Console.WriteLine(GetVersionString());
@@ -106,6 +114,11 @@ internal static class Program {
         return await GenerateAsync(options);
     }
 
+    /// <summary>
+    /// Executes generate async as part of program processing.
+    /// </summary>
+    /// <param name="options">Input value for options.</param>
+    /// <returns>A task that returns the operation result.</returns>
     private static Task<int> GenerateAsync(GeneratorOptions options) {
         var interval = TimeSpan.FromSeconds(options.IntervalSeconds);
         if (interval <= TimeSpan.Zero) {
@@ -182,19 +195,59 @@ internal static class Program {
         return Task.FromResult(0);
     }
 
+    /// <summary>
+    /// Represents generator options and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class GeneratorOptions {
+        /// <summary>
+        /// Gets or sets the storage path for generator options. Specifies a filesystem location used to load or persist application data.
+        /// </summary>
         public string StoragePath { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the start raw for generator options. Stores textual configuration or display metadata used by application flows.
+        /// </summary>
         public string? StartRaw { get; set; }
+        /// <summary>
+        /// Gets or sets the end raw for generator options. Stores textual configuration or display metadata used by application flows.
+        /// </summary>
         public string? EndRaw { get; set; }
+        /// <summary>
+        /// Gets or sets the interval seconds for generator options. Defines timing behavior that affects refresh cadence, scheduling, or time-window processing.
+        /// </summary>
         public int IntervalSeconds { get; set; } = DefaultIntervalSeconds;
+        /// <summary>
+        /// Gets or sets the count for generator options. Specifies sizing or boundary constraints used by runtime calculations.
+        /// </summary>
         public int? Count { get; set; }
+        /// <summary>
+        /// Gets or sets the seed for generator options. Stores a numeric value used by calculations, thresholds, or telemetry display.
+        /// </summary>
         public int? Seed { get; set; }
+        /// <summary>
+        /// Gets or sets the batch size for generator options. Specifies sizing or boundary constraints used by runtime calculations.
+        /// </summary>
         public int BatchSize { get; set; } = DefaultBatchSize;
+        /// <summary>
+        /// Gets or sets the clean for generator options. Represents a state flag that enables or disables related behavior.
+        /// </summary>
         public bool Clean { get; set; }
+        /// <summary>
+        /// Gets or sets the db user for generator options. Stores textual configuration or display metadata used by application flows.
+        /// </summary>
         public string DbUser { get; set; } = "SYSDBA";
+        /// <summary>
+        /// Gets or sets the db password for generator options. Stores textual configuration or display metadata used by application flows.
+        /// </summary>
         public string DbPassword { get; set; } = "masterkey";
     }
 
+    /// <summary>
+    /// Calculates the total records for generator options.
+    /// </summary>
+    /// <param name="startTime">Input value for start time.</param>
+    /// <param name="endTime">Input value for end time.</param>
+    /// <param name="interval">Input value for interval.</param>
+    /// <returns>The result of the operation.</returns>
     private static int CalculateTotalRecords(DateTime startTime, DateTime endTime, TimeSpan interval) {
         if (endTime < startTime) {
             return 0;
@@ -203,6 +256,13 @@ internal static class Program {
         return (int)((endTime - startTime).Ticks / interval.Ticks) + 1;
     }
 
+    /// <summary>
+    /// Calculates the remaining time for generator options.
+    /// </summary>
+    /// <param name="elapsed">Input value for elapsed.</param>
+    /// <param name="generated">Input value for generated.</param>
+    /// <param name="totalPlanned">Input value for total planned.</param>
+    /// <returns>The result of the operation.</returns>
     private static TimeSpan CalculateRemainingTime(TimeSpan elapsed, int generated, int totalPlanned) {
         if (generated <= 0 || totalPlanned <= generated) {
             return TimeSpan.Zero;
@@ -212,6 +272,11 @@ internal static class Program {
         return TimeSpan.FromSeconds(avgPerRecord * (totalPlanned - generated));
     }
 
+    /// <summary>
+    /// Formats the duration for generator options.
+    /// </summary>
+    /// <param name="duration">Input value for duration.</param>
+    /// <returns>The resulting string value.</returns>
     private static string FormatDuration(TimeSpan duration) {
         if (duration < TimeSpan.Zero) {
             duration = TimeSpan.Zero;
@@ -220,6 +285,11 @@ internal static class Program {
         return $"{(int)duration.TotalHours:00}:{duration.Minutes:00}:{duration.Seconds:00}";
     }
 
+    /// <summary>
+    /// Parses the timestamp for generator options.
+    /// </summary>
+    /// <param name="raw">Input value for raw.</param>
+    /// <returns>The result of the operation.</returns>
     private static DateTime? ParseTimestamp(string? raw) {
         if (string.IsNullOrWhiteSpace(raw)) {
             return null;
@@ -233,6 +303,14 @@ internal static class Program {
         return null;
     }
 
+    /// <summary>
+    /// Executes generate data as part of generator options processing.
+    /// </summary>
+    /// <param name="timestamp">Input value for timestamp.</param>
+    /// <param name="random">Input value for random.</param>
+    /// <param name="rainTimeline">Input value for rain timeline.</param>
+    /// <param name="humidityTimeline">Input value for humidity timeline.</param>
+    /// <returns>The result of the operation.</returns>
     private static ObservingData GenerateData(DateTime timestamp, Random random, RainTimeline rainTimeline, HumidityTimeline humidityTimeline) {
         var dayOfYear = timestamp.DayOfYear;
         var solarPhase = Math.Sin(2 * Math.PI * (dayOfYear - 81) / 365.2422); // Positive in summer, negative in winter.
@@ -374,10 +452,20 @@ internal static class Program {
         };
     }
 
+    /// <summary>
+    /// Executes next range as part of generator options processing.
+    /// </summary>
+    /// <param name="random">Input value for random.</param>
+    /// <param name="min">Input value for min.</param>
+    /// <param name="max">Input value for max.</param>
+    /// <returns>The result of the operation.</returns>
     private static double NextRange(Random random, double min, double max) {
         return min + random.NextDouble() * (max - min);
     }
 
+    /// <summary>
+    /// Represents rain timeline and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class RainTimeline {
         private readonly Random _random;
         private DateTime _phaseStartedAt;
@@ -385,12 +473,28 @@ internal static class Program {
         private bool _isRaining;
         private double _eventPeakRate;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RainTimeline"/> class.
+        /// </summary>
+        /// <param name="random">Input value for random.</param>
+        /// <param name="startTime">Input value for start time.</param>
+        /// <remarks>
+        /// The constructor wires required dependencies and initial state.
+        /// </remarks>
         public RainTimeline(Random random, DateTime startTime) {
             _random = random;
             _phaseStartedAt = startTime;
             _phaseEndsAt = startTime;
         }
 
+        /// <summary>
+        /// Gets the rain rate for rain timeline.
+        /// </summary>
+        /// <param name="timestamp">Input value for timestamp.</param>
+        /// <param name="seasonalRainChance">Input value for seasonal rain chance.</param>
+        /// <param name="humidity">Input value for humidity.</param>
+        /// <param name="cloudOpacity">Input value for cloud opacity.</param>
+        /// <returns>The result of the operation.</returns>
         public double GetRainRate(DateTime timestamp, double seasonalRainChance, double humidity, double cloudOpacity) {
             AdvancePhase(timestamp, seasonalRainChance, humidity, cloudOpacity);
 
@@ -410,6 +514,13 @@ internal static class Program {
             return Math.Clamp(rainRate, 0, 9.5);
         }
 
+        /// <summary>
+        /// Executes advance phase as part of rain timeline processing.
+        /// </summary>
+        /// <param name="timestamp">Input value for timestamp.</param>
+        /// <param name="seasonalRainChance">Input value for seasonal rain chance.</param>
+        /// <param name="humidity">Input value for humidity.</param>
+        /// <param name="cloudOpacity">Input value for cloud opacity.</param>
         private void AdvancePhase(DateTime timestamp, double seasonalRainChance, double humidity, double cloudOpacity) {
             while (timestamp >= _phaseEndsAt) {
                 _phaseStartedAt = _phaseEndsAt;
@@ -430,16 +541,34 @@ internal static class Program {
         }
     }
 
+    /// <summary>
+    /// Represents humidity timeline and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class HumidityTimeline {
         private readonly Random _random;
         private bool _initialized;
         private double _lastHumidity;
         private DateTime _lastTimestamp;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HumidityTimeline"/> class.
+        /// </summary>
+        /// <param name="random">Input value for random.</param>
+        /// <remarks>
+        /// The constructor wires required dependencies and initial state.
+        /// </remarks>
         public HumidityTimeline(Random random) {
             _random = random;
         }
 
+        /// <summary>
+        /// Executes next as part of humidity timeline processing.
+        /// </summary>
+        /// <param name="timestamp">Input value for timestamp.</param>
+        /// <param name="target">Input value for target.</param>
+        /// <param name="min">Input value for min.</param>
+        /// <param name="max">Input value for max.</param>
+        /// <returns>The result of the operation.</returns>
         public double Next(DateTime timestamp, double target, double min, double max) {
             var clampedTarget = Math.Clamp(target, min, max);
 
@@ -463,6 +592,10 @@ internal static class Program {
         }
     }
 
+    /// <summary>
+    /// Gets the version string for humidity timeline.
+    /// </summary>
+    /// <returns>The resulting string value.</returns>
     private static string GetVersionString() {
         return $"v{SafetyMonitor.Versioning.BuildVersion.Major}.{SafetyMonitor.Versioning.BuildVersion.Minor}.{SafetyMonitor.Versioning.BuildVersion.Patch} build {SafetyMonitor.Versioning.BuildVersion.Build} {SafetyMonitor.Versioning.BuildVersion.BuildDateUtc:dd.MM.yyyy}";
     }

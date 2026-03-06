@@ -4,6 +4,9 @@ using SafetyMonitor.Services;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents value tile editor form and encapsulates its related behavior and state.
+/// </summary>
 public class ValueTileEditorForm : ThemedCaptionForm {
     #region Private Fields
 
@@ -30,6 +33,13 @@ public class ValueTileEditorForm : ThemedCaptionForm {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ValueTileEditorForm"/> class.
+    /// </summary>
+    /// <param name="config">Input value for config.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public ValueTileEditorForm(ValueTileConfig config) {
         _config = config;
         _colorSchemeService = new ColorSchemeService();
@@ -45,6 +55,13 @@ public class ValueTileEditorForm : ThemedCaptionForm {
 
     #region Private Methods
 
+    /// <summary>
+    /// Creates the labeled control for value tile editor form.
+    /// </summary>
+    /// <param name="labelText">Input value for label text.</param>
+    /// <param name="control">Input value for control.</param>
+    /// <param name="labelFont">Input value for label font.</param>
+    /// <returns>The result of the operation.</returns>
     private static Panel CreateLabeledControl(string labelText, Control control, Font labelFont) {
         var panel = new Panel { AutoSize = true, Dock = DockStyle.Fill, Margin = new Padding(0, 5, 0, 5) };
         var label = new Label { Text = labelText, Font = labelFont, AutoSize = true, Dock = DockStyle.Top, Margin = new Padding(0, 0, 0, 5) };
@@ -54,6 +71,16 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         return panel;
     }
 
+    /// <summary>
+    /// Creates the description section for value tile editor form.
+    /// </summary>
+    /// <param name="title">Input value for title.</param>
+    /// <param name="subtitle">Input value for subtitle.</param>
+    /// <param name="details">Input value for details.</param>
+    /// <param name="titleFont">Input value for title font.</param>
+    /// <param name="textFont">Input value for text font.</param>
+    /// <param name="maxWidth">Input value for max width.</param>
+    /// <returns>The result of the operation.</returns>
     private static Panel CreateDescriptionSection(string title, string? subtitle, string[] details, Font titleFont, Font textFont, int maxWidth) {
         var headerPanel = new TableLayoutPanel {
             AutoSize = true,
@@ -188,6 +215,9 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         return headerPanel;
     }
 
+    /// <summary>
+    /// Applies the theme for value tile editor form.
+    /// </summary>
     private void ApplyTheme() {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -199,6 +229,11 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         UpdateSchemeEditorButtonIcons(isLight);
     }
 
+    /// <summary>
+    /// Applies the theme recursive for value tile editor form.
+    /// </summary>
+    /// <param name="parent">Input value for parent.</param>
+    /// <param name="isLight">Input value for is light.</param>
     private static void ApplyThemeRecursive(Control parent, bool isLight) {
         foreach (Control control in parent.Controls) {
             InteractiveCursorStyler.Apply(control);
@@ -224,6 +259,11 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes edit schemes button click as part of value tile editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void EditSchemesButton_Click(object? sender, EventArgs e) {
         using var editor = new ColorSchemeEditorForm();
         editor.ShowDialog(this);
@@ -233,6 +273,11 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         RefreshTextColorSchemeCombo();
     }
 
+    /// <summary>
+    /// Executes edit value schemes button click as part of value tile editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void EditValueSchemesButton_Click(object? sender, EventArgs e) {
         using var editor = new ValueSchemeEditorForm();
         editor.ShowDialog(this);
@@ -240,6 +285,10 @@ public class ValueTileEditorForm : ThemedCaptionForm {
     }
 
 
+    /// <summary>
+    /// Updates the scheme editor button icons for value tile editor form.
+    /// </summary>
+    /// <param name="isLight">Input value for is light.</param>
     private void UpdateSchemeEditorButtonIcons(bool isLight) {
         var iconColor = isLight ? Color.FromArgb(48, 48, 48) : Color.White;
 
@@ -258,6 +307,9 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Initializes value tile editor form state and required resources.
+    /// </summary>
     private void InitializeComponent() {
         Text = "Value Tile Editor";
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -430,6 +482,9 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         ClientSize = new Size(560, 560);
     }
 
+    /// <summary>
+    /// Loads the config for value tile editor form.
+    /// </summary>
     private void LoadConfig() {
         _titleTextBox.Text = _config.Title;
         _metricComboBox.SelectedIndex = (int)_config.Metric;
@@ -474,6 +529,9 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         };
     }
 
+    /// <summary>
+    /// Refreshes the color scheme combo for value tile editor form.
+    /// </summary>
     private void RefreshColorSchemeCombo() {
         var currentSelection = _colorSchemeComboBox.SelectedItem?.ToString();
         _colorSchemeComboBox.Items.Clear();
@@ -489,6 +547,9 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Refreshes the icon color scheme combo for value tile editor form.
+    /// </summary>
     private void RefreshIconColorSchemeCombo() {
         var currentSelection = _iconColorSchemeComboBox.SelectedItem?.ToString();
         _iconColorSchemeComboBox.Items.Clear();
@@ -503,6 +564,9 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Refreshes the text color scheme combo for value tile editor form.
+    /// </summary>
     private void RefreshTextColorSchemeCombo() {
         var currentSelection = _textColorSchemeComboBox.SelectedItem?.ToString();
         _textColorSchemeComboBox.Items.Clear();
@@ -517,6 +581,9 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Refreshes the value scheme combo for value tile editor form.
+    /// </summary>
     private void RefreshValueSchemeCombo() {
         var currentSelection = _valueSchemeComboBox.SelectedItem?.ToString();
         _valueSchemeComboBox.Items.Clear();
@@ -531,6 +598,11 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes metric combo box selected index changed as part of value tile editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void MetricComboBox_SelectedIndexChanged(object? sender, EventArgs e) {
         if (_metricComboBox.SelectedIndex < 0 || _metricComboBox.SelectedIndex >= Enum.GetValues<MetricType>().Length) {
             return;
@@ -539,6 +611,11 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         ApplyMetricDefaultSchemes((MetricType)_metricComboBox.SelectedIndex);
     }
 
+    /// <summary>
+    /// Applies the metric default schemes for value tile editor form.
+    /// </summary>
+    /// <param name="metric">Input value for metric.</param>
+    /// <param name="force">Input value for force.</param>
     private void ApplyMetricDefaultSchemes(MetricType metric, bool force = false) {
         var previousMetric = _lastMetricForSchemeDefaults;
         ApplyDefaultToCombo(_colorSchemeComboBox, ColorSchemeService.GetDefaultSchemeName(metric), previousMetric, ColorSchemeService.GetDefaultSchemeName, force);
@@ -574,6 +651,11 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Saves the button click for value tile editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void SaveButton_Click(object? sender, EventArgs e) {
         _config.Title = _titleTextBox.Text;
         _config.Metric = (MetricType)_metricComboBox.SelectedIndex;
@@ -598,6 +680,13 @@ public class ValueTileEditorForm : ThemedCaptionForm {
         Close();
     }
 
+    /// <summary>
+    /// Creates the safe font for value tile editor form.
+    /// </summary>
+    /// <param name="familyName">Input value for family name.</param>
+    /// <param name="emSize">Input value for em size.</param>
+    /// <param name="style">Input value for style.</param>
+    /// <returns>The result of the operation.</returns>
     private static Font CreateSafeFont(string familyName, float emSize, FontStyle style = FontStyle.Regular) {
         try {
             var font = new Font(familyName, emSize, style);

@@ -4,7 +4,7 @@ using SkiaSharp;
 namespace SafetyMonitor.Services;
 
 /// <summary>
-/// Material Design icons rendered from bundled Material Symbols variable font.
+/// Represents material icons and encapsulates its related behavior and state.
 /// </summary>
 public static class MaterialIcons {
 
@@ -253,11 +253,27 @@ public static class MaterialIcons {
 
     public static IEnumerable<string> GetAvailableIcons() => _fontGlyphs.Keys;
 
+    /// <summary>
+    /// Gets the icon for material icons.
+    /// </summary>
+    /// <param name="name">Input value for name.</param>
+    /// <param name="color">Input value for color.</param>
+    /// <param name="size">Input value for size.</param>
+    /// <param name="preset">Input value for preset.</param>
+    /// <returns>The result of the operation.</returns>
     public static Bitmap? GetIcon(string name, Color color, int size, IconRenderPreset preset) {
         var presetOptions = IconRenderPresetService.Get(preset);
         return GetIcon(name, color, size, presetOptions);
     }
 
+    /// <summary>
+    /// Gets the icon for material icons.
+    /// </summary>
+    /// <param name="name">Input value for name.</param>
+    /// <param name="color">Input value for color.</param>
+    /// <param name="size">Input value for size.</param>
+    /// <param name="options">Input value for options.</param>
+    /// <returns>The result of the operation.</returns>
     public static Bitmap? GetIcon(string name, Color color, int size, IconRenderOptions options) {
         var normalizedName = name.ToLowerInvariant();
         var cacheKey = BuildCacheKey(normalizedName, color, size, options);
@@ -284,6 +300,13 @@ public static class MaterialIcons {
         return bitmap;
     }
 
+    /// <summary>
+    /// Gets the message box icon for material icons.
+    /// </summary>
+    /// <param name="icon">Input value for icon.</param>
+    /// <param name="isLightTheme">Input value for is light theme.</param>
+    /// <param name="size">Input value for size.</param>
+    /// <returns>The result of the operation.</returns>
     public static Bitmap? GetMessageBoxIcon(MessageBoxIcon icon, bool isLightTheme, int size = 28) {
         if (icon == MessageBoxIcon.None) {
             return null;
@@ -305,6 +328,11 @@ public static class MaterialIcons {
         return GetIcon(iconName, color, size, preset);
     }
 
+    /// <summary>
+    /// Gets the metric icon name for material icons.
+    /// </summary>
+    /// <param name="metric">Input value for metric.</param>
+    /// <returns>The resulting string value.</returns>
     public static string GetMetricIconName(MetricType metric) => metric switch {
         MetricType.Temperature => MetricTemperature,
         MetricType.Humidity => MetricHumidity,
@@ -327,6 +355,14 @@ public static class MaterialIcons {
 
     #region Private Methods
 
+    /// <summary>
+    /// Renders the font icon for material icons.
+    /// </summary>
+    /// <param name="glyph">Input value for glyph.</param>
+    /// <param name="color">Input value for color.</param>
+    /// <param name="size">Input value for size.</param>
+    /// <param name="options">Input value for options.</param>
+    /// <returns>The result of the operation.</returns>
     private static Bitmap? RenderFontIcon(string glyph, Color color, int size, IconRenderOptions options) {
         if (_defaultTypeface is null) {
             return null;
@@ -340,6 +376,12 @@ public static class MaterialIcons {
         return RenderWithSkiaPath(glyph, color, size, options, _defaultTypeface);
     }
 
+    /// <summary>
+    /// Renders the filled star with skia for material icons.
+    /// </summary>
+    /// <param name="color">Input value for color.</param>
+    /// <param name="size">Input value for size.</param>
+    /// <returns>The result of the operation.</returns>
     private static Bitmap RenderFilledStarWithSkia(Color color, int size) {
         using var surface = SKSurface.Create(new SKImageInfo(size, size, SKColorType.Bgra8888, SKAlphaType.Premul));
         var canvas = surface.Canvas;
@@ -378,6 +420,15 @@ public static class MaterialIcons {
         return ToBitmap(skBitmap);
     }
 
+    /// <summary>
+    /// Renders the with skia path for material icons.
+    /// </summary>
+    /// <param name="glyph">Input value for glyph.</param>
+    /// <param name="color">Input value for color.</param>
+    /// <param name="size">Input value for size.</param>
+    /// <param name="options">Input value for options.</param>
+    /// <param name="typeface">Input value for typeface.</param>
+    /// <returns>The result of the operation.</returns>
     private static Bitmap RenderWithSkiaPath(string glyph, Color color, int size, IconRenderOptions options, SKTypeface typeface) {
         using var surface = SKSurface.Create(new SKImageInfo(size, size, SKColorType.Bgra8888, SKAlphaType.Premul));
         var canvas = surface.Canvas;
@@ -409,6 +460,11 @@ public static class MaterialIcons {
         return ToBitmap(skBitmap);
     }
 
+    /// <summary>
+    /// Executes to bitmap as part of material icons processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
+    /// <returns>The result of the operation.</returns>
     private static Bitmap ToBitmap(SKBitmap source) {
         using var image = SKImage.FromBitmap(source);
         using var data = image.Encode(SKEncodedImageFormat.Png, 100);
@@ -417,6 +473,10 @@ public static class MaterialIcons {
         return new Bitmap(stream);
     }
 
+    /// <summary>
+    /// Resolves the typeface for material icons.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static SKTypeface? ResolveTypeface() {
         if (_materialFontPath is null) {
             return null;
@@ -425,6 +485,13 @@ public static class MaterialIcons {
         return SKTypeface.FromFile(_materialFontPath);
     }
 
+    /// <summary>
+    /// Creates the variable sk font for material icons.
+    /// </summary>
+    /// <param name="typeface">Input value for typeface.</param>
+    /// <param name="textSize">Input value for text size.</param>
+    /// <param name="axes">Input value for axes.</param>
+    /// <returns>The result of the operation.</returns>
     private static SKFont CreateVariableSkFont(SKTypeface typeface, float textSize, IReadOnlyDictionary<string, float> axes) {
         _ = axes;
 
@@ -434,6 +501,14 @@ public static class MaterialIcons {
         };
     }
 
+    /// <summary>
+    /// Builds the cache key for material icons.
+    /// </summary>
+    /// <param name="normalizedName">Input value for normalized name.</param>
+    /// <param name="color">Input value for color.</param>
+    /// <param name="size">Input value for size.</param>
+    /// <param name="options">Input value for options.</param>
+    /// <returns>The resulting string value.</returns>
     private static string BuildCacheKey(string normalizedName, Color color, int size, IconRenderOptions options) {
         var axisToken = options.Axes.Count == 0
             ? "none"
@@ -442,6 +517,10 @@ public static class MaterialIcons {
         return $"icon::{normalizedName}::{size}::{options.GlyphScale:F2}::{color.ToArgb()}::{axisToken}";
     }
 
+    /// <summary>
+    /// Resolves the material font path for material icons.
+    /// </summary>
+    /// <returns>The resulting string value.</returns>
     private static string? ResolveMaterialFontPath() {
         var fontPath = Path.Combine(AppContext.BaseDirectory, "Fonts", "MaterialSymbolsRounded[FILL,GRAD,opsz,wght].ttf");
         return File.Exists(fontPath) ? fontPath : null;

@@ -8,10 +8,21 @@ using SpreadsheetFont = DocumentFormat.OpenXml.Spreadsheet.Font;
 
 namespace SafetyMonitor.Services;
 
+/// <summary>
+/// Represents chart table export service and encapsulates its related behavior and state.
+/// </summary>
 public class ChartTableExportService {
 
     #region Public Methods
 
+    /// <summary>
+    /// Exports the state for chart table export service.
+    /// </summary>
+    /// <param name="filePath">Path value for file path.</param>
+    /// <param name="metricAggregations">Input value for metric aggregations.</param>
+    /// <param name="aggregatedData">Input value for aggregated data.</param>
+    /// <param name="rawData">Input value for raw data.</param>
+    /// <param name="progress">Input value for progress.</param>
     public static void Export(string filePath, IReadOnlyList<MetricAggregation> metricAggregations, IReadOnlyList<ObservingData> aggregatedData, IReadOnlyList<ObservingData> rawData, Action<int>? progress = null) {
         progress?.Invoke(0);
         Thread.Sleep(250);
@@ -40,6 +51,15 @@ public class ChartTableExportService {
 
     #region Private Methods
 
+    /// <summary>
+    /// Saves the with progress for chart table export service.
+    /// </summary>
+    /// <param name="filePath">Path value for file path.</param>
+    /// <param name="sheets">Input value for sheets.</param>
+    /// <param name="totalRows">Input value for total rows.</param>
+    /// <param name="progress">Input value for progress.</param>
+    /// <param name="progressStart">Input value for progress start.</param>
+    /// <param name="progressEnd">Input value for progress end.</param>
     private static void SaveWithProgress(string filePath, Dictionary<string, object> sheets, int totalRows, Action<int>? progress, int progressStart, int progressEnd) {
         if (progress == null) {
             MiniExcel.SaveAs(filePath, sheets, overwriteFile: true);
@@ -135,6 +155,13 @@ public class ChartTableExportService {
         return rows;
     }
 
+    /// <summary>
+    /// Applies the workbook formatting for chart table export service.
+    /// </summary>
+    /// <param name="filePath">Path value for file path.</param>
+    /// <param name="progress">Input value for progress.</param>
+    /// <param name="progressStart">Input value for progress start.</param>
+    /// <param name="progressEnd">Input value for progress end.</param>
     private static void ApplyWorkbookFormatting(string filePath, Action<int>? progress, int progressStart, int progressEnd) {
         using var document = SpreadsheetDocument.Open(filePath, true);
         var workbookPart = document.WorkbookPart;
@@ -174,6 +201,14 @@ public class ChartTableExportService {
         }
     }
 
+    /// <summary>
+    /// Executes report step progress as part of chart table export service processing.
+    /// </summary>
+    /// <param name="progress">Input value for progress.</param>
+    /// <param name="start">Input value for start.</param>
+    /// <param name="end">Input value for end.</param>
+    /// <param name="completed">Input value for completed.</param>
+    /// <param name="total">Input value for total.</param>
     private static void ReportStepProgress(Action<int>? progress, int start, int end, int completed, int total) {
         if (progress == null || total <= 0) {
             return;
@@ -188,6 +223,15 @@ public class ChartTableExportService {
 
 
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="static"/> class.
+    /// </summary>
+    /// <param name="headerBoldStyleIndex">Input value for header bold style index.</param>
+    /// <param name="dateTimeStyleIndex">Input value for date time style index.</param>
+    /// <param name="workbookPart">Input value for workbook part.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     private static (uint headerBoldStyleIndex, uint dateTimeStyleIndex, uint noBorderStyleIndex) EnsureStyles(WorkbookPart workbookPart) {
         var stylesPart = workbookPart.WorkbookStylesPart ?? workbookPart.AddNewPart<WorkbookStylesPart>();
         stylesPart.Stylesheet ??= new Stylesheet();
@@ -235,12 +279,22 @@ public class ChartTableExportService {
         return (headerBoldStyleIndex, dateTimeStyleIndex, noBorderStyleIndex);
     }
 
+    /// <summary>
+    /// Executes append bold font as part of chart table export service processing.
+    /// </summary>
+    /// <param name="fonts">Input value for fonts.</param>
+    /// <returns>The result of the operation.</returns>
     private static uint AppendBoldFont(Fonts fonts) {
         fonts.AppendChild(new SpreadsheetFont(new Bold()));
         fonts.Count = (uint)fonts.ChildElements.Count;
         return fonts.Count!.Value - 1;
     }
 
+    /// <summary>
+    /// Executes append date time number format as part of chart table export service processing.
+    /// </summary>
+    /// <param name="numberingFormats">Input value for numbering formats.</param>
+    /// <returns>The result of the operation.</returns>
     private static uint AppendDateTimeNumberFormat(NumberingFormats numberingFormats) {
         var existing = numberingFormats.Elements<NumberingFormat>()
             .FirstOrDefault(x => string.Equals(x.FormatCode?.Value, "yyyy-mm-dd hh:mm:ss", StringComparison.Ordinal));
@@ -261,12 +315,25 @@ public class ChartTableExportService {
         return nextId;
     }
 
+    /// <summary>
+    /// Executes append cell format as part of chart table export service processing.
+    /// </summary>
+    /// <param name="cellFormats">Input value for cell formats.</param>
+    /// <param name="format">Input value for format.</param>
+    /// <returns>The result of the operation.</returns>
     private static uint AppendCellFormat(CellFormats cellFormats, CellFormat format) {
         cellFormats.AppendChild(format);
         cellFormats.Count = (uint)cellFormats.ChildElements.Count;
         return cellFormats.Count!.Value - 1;
     }
 
+    /// <summary>
+    /// Applies the cell styles for chart table export service.
+    /// </summary>
+    /// <param name="worksheet">Input value for worksheet.</param>
+    /// <param name="headerBoldStyleIndex">Input value for header bold style index.</param>
+    /// <param name="dateTimeStyleIndex">Input value for date time style index.</param>
+    /// <param name="noBorderStyleIndex">Input value for no border style index.</param>
     private static void ApplyCellStyles(Worksheet worksheet, uint headerBoldStyleIndex, uint dateTimeStyleIndex, uint noBorderStyleIndex) {
         var sheetData = worksheet.GetFirstChild<SheetData>();
         if (sheetData == null) {
@@ -288,10 +355,18 @@ public class ChartTableExportService {
         }
     }
 
+    /// <summary>
+    /// Removes the auto filter for chart table export service.
+    /// </summary>
+    /// <param name="worksheet">Input value for worksheet.</param>
     private static void RemoveAutoFilter(Worksheet worksheet) {
         worksheet.RemoveAllChildren<AutoFilter>();
     }
 
+    /// <summary>
+    /// Executes freeze header row as part of chart table export service processing.
+    /// </summary>
+    /// <param name="worksheet">Input value for worksheet.</param>
     private static void FreezeHeaderRow(Worksheet worksheet) {
         worksheet.SheetViews ??= new SheetViews(new SheetView { WorkbookViewId = 0U });
         var sheetView = worksheet.SheetViews.Elements<SheetView>().FirstOrDefault();
@@ -314,6 +389,11 @@ public class ChartTableExportService {
 
 
 
+    /// <summary>
+    /// Executes auto fit columns as part of chart table export service processing.
+    /// </summary>
+    /// <param name="worksheet">Input value for worksheet.</param>
+    /// <param name="sharedStringTable">Input value for shared string table.</param>
     private static void AutoFitColumns(Worksheet worksheet, SharedStringTable? sharedStringTable) {
         var sheetData = worksheet.GetFirstChild<SheetData>();
         if (sheetData == null) {
@@ -377,6 +457,11 @@ public class ChartTableExportService {
         }
     }
 
+    /// <summary>
+    /// Gets the or create columns for chart table export service.
+    /// </summary>
+    /// <param name="worksheet">Input value for worksheet.</param>
+    /// <returns>The result of the operation.</returns>
     private static Columns GetOrCreateColumns(Worksheet worksheet) {
         var columns = worksheet.GetFirstChild<Columns>();
         if (columns != null) {
@@ -397,6 +482,12 @@ public class ChartTableExportService {
 
 
 
+    /// <summary>
+    /// Gets the cell text for chart table export service.
+    /// </summary>
+    /// <param name="cell">Input value for cell.</param>
+    /// <param name="sharedStringTable">Input value for shared string table.</param>
+    /// <returns>The resulting string value.</returns>
     private static string GetCellText(Cell cell, SharedStringTable? sharedStringTable) {
         var value = cell.InnerText ?? string.Empty;
 
@@ -411,6 +502,11 @@ public class ChartTableExportService {
         return value;
     }
 
+    /// <summary>
+    /// Gets the column index for chart table export service.
+    /// </summary>
+    /// <param name="cellReference">Input value for cell reference.</param>
+    /// <returns>The result of the operation.</returns>
     private static uint GetColumnIndex(string cellReference) {
         uint columnIndex = 0;
 
@@ -425,6 +521,12 @@ public class ChartTableExportService {
         return columnIndex;
     }
 
+    /// <summary>
+    /// Executes round metric value as part of chart table export service processing.
+    /// </summary>
+    /// <param name="metric">Input value for metric.</param>
+    /// <param name="value">Input value for value.</param>
+    /// <returns>The result of the operation.</returns>
     private static double? RoundMetricValue(MetricType metric, double? value) {
         if (!value.HasValue) {
             return null;
@@ -437,6 +539,11 @@ public class ChartTableExportService {
         return Math.Round(value.Value, decimals, MidpointRounding.AwayFromZero);
     }
 
+    /// <summary>
+    /// Gets the aggregated column name for chart table export service.
+    /// </summary>
+    /// <param name="aggregation">Input value for aggregation.</param>
+    /// <returns>The resulting string value.</returns>
     private static string GetAggregatedColumnName(MetricAggregation aggregation) {
         if (!string.IsNullOrWhiteSpace(aggregation.Label)) {
             return aggregation.Label;
@@ -445,6 +552,11 @@ public class ChartTableExportService {
         return $"{aggregation.Metric.GetDisplayName()} ({aggregation.Function})";
     }
 
+    /// <summary>
+    /// Ensures the utc for chart table export service.
+    /// </summary>
+    /// <param name="value">Input value for value.</param>
+    /// <returns>The result of the operation.</returns>
     private static DateTime EnsureUtc(DateTime value) => value.Kind switch {
         DateTimeKind.Utc => value,
         DateTimeKind.Local => value.ToUniversalTime(),
@@ -455,6 +567,9 @@ public class ChartTableExportService {
 
     #region Private Classes
 
+    /// <summary>
+    /// Represents progress stream and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class ProgressStream(Stream inner, long estimatedTotal, Action<int> onProgress) : Stream {
 
         private readonly Stream _inner = inner;
@@ -463,28 +578,54 @@ public class ChartTableExportService {
         private long _bytesWritten;
         private int _lastReported = -1;
 
+        /// <summary>
+        /// Saves the as for progress stream.
+        /// </summary>
+        /// <param name="sheets">Input value for sheets.</param>
         public void SaveAs(Dictionary<string, object> sheets) {
             MiniExcel.SaveAs(this, sheets);
         }
 
+        /// <summary>
+        /// Executes write as part of progress stream processing.
+        /// </summary>
+        /// <param name="buffer">Input value for buffer.</param>
+        /// <param name="offset">Input value for offset.</param>
+        /// <param name="count">Input value for count.</param>
         public override void Write(byte[] buffer, int offset, int count) {
             _inner.Write(buffer, offset, count);
             _bytesWritten += count;
             ReportProgress();
         }
 
+        /// <summary>
+        /// Executes write as part of progress stream processing.
+        /// </summary>
+        /// <param name="buffer">Input value for buffer.</param>
         public override void Write(ReadOnlySpan<byte> buffer) {
             _inner.Write(buffer);
             _bytesWritten += buffer.Length;
             ReportProgress();
         }
 
+        /// <summary>
+        /// Executes write byte as part of progress stream processing.
+        /// </summary>
+        /// <param name="value">Input value for value.</param>
         public override void WriteByte(byte value) {
             _inner.WriteByte(value);
             _bytesWritten++;
             ReportProgress();
         }
 
+        /// <summary>
+        /// Executes write async as part of progress stream processing.
+        /// </summary>
+        /// <param name="buffer">Input value for buffer.</param>
+        /// <param name="offset">Input value for offset.</param>
+        /// <param name="count">Input value for count.</param>
+        /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) {
             _bytesWritten += count;
             var task = _inner.WriteAsync(buffer, offset, count, cancellationToken);
@@ -492,6 +633,12 @@ public class ChartTableExportService {
             return task;
         }
 
+        /// <summary>
+        /// Executes write async as part of progress stream processing.
+        /// </summary>
+        /// <param name="buffer">Input value for buffer.</param>
+        /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+        /// <returns>The result of the operation.</returns>
         public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default) {
             _bytesWritten += buffer.Length;
             var task = _inner.WriteAsync(buffer, cancellationToken);
@@ -499,6 +646,9 @@ public class ChartTableExportService {
             return task;
         }
 
+        /// <summary>
+        /// Executes report progress as part of progress stream processing.
+        /// </summary>
         private void ReportProgress() {
             var pct = (int)Math.Min(_bytesWritten * 100 / _estimatedTotal, 99);
             if (pct != _lastReported) {
@@ -522,6 +672,10 @@ public class ChartTableExportService {
         public override long Seek(long offset, SeekOrigin origin) => _inner.Seek(offset, origin);
         public override void SetLength(long value) => _inner.SetLength(value);
 
+        /// <summary>
+        /// Executes dispose as part of progress stream processing.
+        /// </summary>
+        /// <param name="disposing">Input value for disposing.</param>
         protected override void Dispose(bool disposing) {
             if (disposing) {
                 _inner.Flush();

@@ -5,6 +5,9 @@ using SafetyMonitor.Services;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents chart periods editor form and encapsulates its related behavior and state.
+/// </summary>
 public class ChartPeriodsEditorForm : ThemedCaptionForm {
     private readonly List<ChartPeriodPresetDefinition> _presets;
     private readonly int _autoAggregationTargetPointCount;
@@ -38,6 +41,15 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
     ];
     private static readonly string[] Buckets = [.. BucketDefinitions.Select(x => x.Bucket)];
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ChartPeriodsEditorForm"/> class.
+    /// </summary>
+    /// <param name="presets">Collection of presets items used by the operation.</param>
+    /// <param name="autoAggregationTargetPointCount">Input value for auto aggregation target point count.</param>
+    /// <param name="rawDataPointIntervalSeconds">Input value for raw data point interval seconds.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public ChartPeriodsEditorForm(IEnumerable<ChartPeriodPresetDefinition> presets, int autoAggregationTargetPointCount, int rawDataPointIntervalSeconds) {
         _presets = [.. presets.Select(p => new ChartPeriodPresetDefinition {
             Uid = p.Uid,
@@ -56,8 +68,14 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         LoadPresets();
     }
 
+    /// <summary>
+    /// Gets or sets the presets for chart periods editor form. Contains a collection of values that drive configuration, rendering, or data processing.
+    /// </summary>
     public List<ChartPeriodPresetDefinition> Presets { get; private set; } = [];
 
+    /// <summary>
+    /// Initializes chart periods editor form state and required resources.
+    /// </summary>
     private void InitializeComponent() {
         Text = "Chart Period Presets";
         StartPosition = FormStartPosition.CenterParent;
@@ -265,6 +283,9 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         ClientSize = new Size(860, 520);
     }
 
+    /// <summary>
+    /// Applies the theme for chart periods editor form.
+    /// </summary>
     private void ApplyTheme() {
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
         BackColor = isLight ? Color.FromArgb(250, 250, 250) : Color.FromArgb(38, 52, 57);
@@ -288,6 +309,10 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         ApplyThemeRecursive(this, isLight);
     }
 
+    /// <summary>
+    /// Applies the combo column theme for chart periods editor form.
+    /// </summary>
+    /// <param name="columnName">Input value for column name.</param>
     private void ApplyComboColumnTheme(string columnName) {
         if (_grid.Columns[columnName] is not DataGridViewComboBoxColumn comboColumn) {
             return;
@@ -301,6 +326,11 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         comboColumn.DefaultCellStyle.SelectionForeColor = _grid.DefaultCellStyle.SelectionForeColor;
     }
 
+    /// <summary>
+    /// Executes grid editing control showing as part of chart periods editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void Grid_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e) {
         if (_grid.CurrentCell?.OwningColumn is not DataGridViewComboBoxColumn || e.Control is not ComboBox comboBox) {
             return;
@@ -312,6 +342,11 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         ThemedComboBoxStyler.Apply(comboBox, isLight);
     }
 
+    /// <summary>
+    /// Applies the theme recursive for chart periods editor form.
+    /// </summary>
+    /// <param name="parent">Input value for parent.</param>
+    /// <param name="isLight">Input value for is light.</param>
     private static void ApplyThemeRecursive(Control parent, bool isLight) {
         foreach (Control control in parent.Controls) {
             InteractiveCursorStyler.Apply(control);
@@ -323,6 +358,9 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Loads the presets for chart periods editor form.
+    /// </summary>
     private void LoadPresets() {
         _grid.Rows.Clear();
         foreach (var p in _presets) {
@@ -333,6 +371,9 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes recalculate all as part of chart periods editor form processing.
+    /// </summary>
     private void RecalculateAll() {
         foreach (DataGridViewRow row in _grid.Rows) {
             if (row.IsNewRow) continue;
@@ -344,6 +385,10 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes move selected row as part of chart periods editor form processing.
+    /// </summary>
+    /// <param name="direction">Input value for direction.</param>
     private void MoveSelectedRow(int direction) {
         if (direction == 0 || _grid.CurrentRow is null || _grid.CurrentRow.IsNewRow) {
             return;
@@ -368,6 +413,11 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         _grid.CurrentCell = _grid.Rows[targetIndex].Cells["Name"];
     }
 
+    /// <summary>
+    /// Executes swap row values as part of chart periods editor form processing.
+    /// </summary>
+    /// <param name="firstRow">Input value for first row.</param>
+    /// <param name="secondRow">Input value for second row.</param>
     private static void SwapRowValues(DataGridViewRow firstRow, DataGridViewRow secondRow) {
         var firstValues = firstRow.Cells.Cast<DataGridViewCell>().Select(cell => cell.Value).ToArray();
         var secondValues = secondRow.Cells.Cast<DataGridViewCell>().Select(cell => cell.Value).ToArray();
@@ -378,6 +428,9 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes recalculate all with confirmation as part of chart periods editor form processing.
+    /// </summary>
     private void RecalculateAllWithConfirmation() {
         var decision = ThemedMessageBox.Show(
             this,
@@ -393,6 +446,11 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         RecalculateAll();
     }
 
+    /// <summary>
+    /// Saves the button click for chart periods editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void SaveButton_Click(object? sender, EventArgs e) {
         var output = new List<ChartPeriodPresetDefinition>();
         var adjustedPresetNames = new List<string>();
@@ -452,12 +510,22 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         Close();
     }
 
+    /// <summary>
+    /// Executes grid current cell dirty state changed as part of chart periods editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void Grid_CurrentCellDirtyStateChanged(object? sender, EventArgs e) {
         if (_grid.IsCurrentCellDirty) {
             _grid.CommitEdit(DataGridViewDataErrorContexts.Commit);
         }
     }
 
+    /// <summary>
+    /// Executes grid cell value changed as part of chart periods editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void Grid_CellValueChanged(object? sender, DataGridViewCellEventArgs e) {
         if (e.RowIndex < 0 || e.RowIndex >= _grid.Rows.Count) {
             return;
@@ -479,6 +547,10 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         UpdateRowPoints(row);
     }
 
+    /// <summary>
+    /// Normalizes the unit cell value for chart periods editor form.
+    /// </summary>
+    /// <param name="row">Input value for row.</param>
     private static void NormalizeUnitCellValue(DataGridViewRow row) {
         if (row.Cells["Unit"] is not DataGridViewComboBoxCell unitCell) {
             return;
@@ -494,6 +566,11 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Updates the row aggregation options for chart periods editor form.
+    /// </summary>
+    /// <param name="row">Input value for row.</param>
+    /// <param name="showWarningIfAdjusted">Input value for show warning if adjusted.</param>
     private void UpdateRowAggregationOptions(DataGridViewRow row, bool showWarningIfAdjusted) {
         if (row.IsNewRow || row.Cells["Aggregation"] is not DataGridViewComboBoxCell aggregationCell) {
             return;
@@ -529,6 +606,10 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         UpdateRowPoints(row);
     }
 
+    /// <summary>
+    /// Updates the row points for chart periods editor form.
+    /// </summary>
+    /// <param name="row">Input value for row.</param>
     private void UpdateRowPoints(DataGridViewRow row) {
         if (row.IsNewRow || row.Cells["Points"] is not DataGridViewTextBoxCell pointsCell) {
             return;
@@ -546,6 +627,15 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         pointsCell.Value = points;
     }
 
+    /// <summary>
+    /// Attempts to build duration for chart periods editor form.
+    /// </summary>
+    /// <param name="row">Input value for row.</param>
+    /// <param name="duration">Input value for duration.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private bool TryBuildDuration(DataGridViewRow row, out TimeSpan duration) {
         duration = TimeSpan.Zero;
         if (!double.TryParse(row.Cells["Value"].Value?.ToString(), out var value) || value <= 0) {
@@ -557,6 +647,11 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         return duration > TimeSpan.Zero;
     }
 
+    /// <summary>
+    /// Gets the unit value for chart periods editor form.
+    /// </summary>
+    /// <param name="row">Input value for row.</param>
+    /// <returns>The result of the operation.</returns>
     private static ChartPeriodUnit GetUnitValue(DataGridViewRow row) {
         if (TryParseUnit(row.Cells["Unit"].Value, out var unit)) {
             return unit;
@@ -569,6 +664,15 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         return ChartPeriodUnit.Hours;
     }
 
+    /// <summary>
+    /// Attempts to parse unit for chart periods editor form.
+    /// </summary>
+    /// <param name="rawValue">Input value for raw value.</param>
+    /// <param name="unit">Input value for unit.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool TryParseUnit(object? rawValue, out ChartPeriodUnit unit) {
         if (rawValue is ChartPeriodUnit enumValue) {
             unit = enumValue;
@@ -591,6 +695,15 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         return false;
     }
 
+    /// <summary>
+    /// Determines whether is bucket within allowed range for chart periods editor form.
+    /// </summary>
+    /// <param name="bucket">Input value for bucket.</param>
+    /// <param name="duration">Input value for duration.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private bool IsBucketWithinAllowedRange(string bucket, TimeSpan duration) {
         if (string.IsNullOrWhiteSpace(bucket)) {
             return false;
@@ -599,6 +712,11 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         return GetAllowedBuckets(duration).Contains(bucket, StringComparer.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Gets the allowed buckets for chart periods editor form.
+    /// </summary>
+    /// <param name="duration">Input value for duration.</param>
+    /// <returns>The result of the operation.</returns>
     private string[] GetAllowedBuckets(TimeSpan duration) {
         var optimalIndex = GetOptimalBucketIndex(duration);
         var minIndex = Math.Max(0, optimalIndex - 1);
@@ -608,6 +726,11 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
 
     private string GetOptimalBucket(TimeSpan duration) => BucketDefinitions[GetOptimalBucketIndex(duration)].Bucket;
 
+    /// <summary>
+    /// Gets the optimal bucket index for chart periods editor form.
+    /// </summary>
+    /// <param name="duration">Input value for duration.</param>
+    /// <returns>The result of the operation.</returns>
     private int GetOptimalBucketIndex(TimeSpan duration) {
         var target = Math.Max(1, (int)Math.Ceiling(duration.TotalSeconds / _autoAggregationTargetPointCount));
         var targetInterval = TimeSpan.FromSeconds(target);
@@ -616,6 +739,13 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         return foundIndex >= 0 ? foundIndex : 0;
     }
 
+    /// <summary>
+    /// Creates the safe font for chart periods editor form.
+    /// </summary>
+    /// <param name="familyName">Input value for family name.</param>
+    /// <param name="emSize">Input value for em size.</param>
+    /// <param name="style">Input value for style.</param>
+    /// <returns>The result of the operation.</returns>
     private static Font CreateSafeFont(string familyName, float emSize, FontStyle style = FontStyle.Regular) {
         try {
             return new Font(familyName, emSize, style);
@@ -624,6 +754,11 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes bucket from interval as part of chart periods editor form processing.
+    /// </summary>
+    /// <param name="interval">Input value for interval.</param>
+    /// <returns>The resulting string value.</returns>
     private string BucketFromInterval(TimeSpan interval) {
         if (interval <= TimeSpan.FromSeconds(_rawDataPointIntervalSeconds)) return "raw";
         if (interval <= TimeSpan.FromSeconds(10)) return "10s";
@@ -639,6 +774,11 @@ public class ChartPeriodsEditorForm : ThemedCaptionForm {
         return "1w";
     }
 
+    /// <summary>
+    /// Executes interval from bucket as part of chart periods editor form processing.
+    /// </summary>
+    /// <param name="bucket)">Input value for bucket.</param>
+    /// <returns>The result of the operation.</returns>
     private static TimeSpan IntervalFromBucket(string bucket) => bucket.ToLowerInvariant() switch {
         "raw" => TimeSpan.Zero,
         "10s" => TimeSpan.FromSeconds(10),

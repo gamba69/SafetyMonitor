@@ -5,6 +5,9 @@ using System.Threading;
 
 namespace SafetyMonitor.Services;
 
+/// <summary>
+/// Represents data service and encapsulates its related behavior and state.
+/// </summary>
 public class DataService {
 
     #region Private Fields
@@ -27,6 +30,14 @@ public class DataService {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DataService"/> class.
+    /// </summary>
+    /// <param name="storagePath">Path value for storage path.</param>
+    /// <param name="valueTileLookbackMinutes">Input value for value tile lookback minutes.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public DataService(string? storagePath = null, int valueTileLookbackMinutes = 60) {
         _valueTileLookbackMinutes = Math.Max(1, valueTileLookbackMinutes);
         if (!string.IsNullOrEmpty(storagePath) && Directory.Exists(storagePath)) {
@@ -48,6 +59,11 @@ public class DataService {
 
     #region Public Methods
 
+    /// <summary>
+    /// Gets the recommended aggregation interval for data service.
+    /// </summary>
+    /// <param name="period">Input value for period.</param>
+    /// <returns>The result of the operation.</returns>
     public static TimeSpan? GetRecommendedAggregationInterval(ChartPeriod period) => period switch {
         ChartPeriod.Last15Minutes => null,
         ChartPeriod.LastHour => TimeSpan.FromMinutes(1),
@@ -121,6 +137,10 @@ public class DataService {
         }
     }
 
+    /// <summary>
+    /// Gets the latest data for data service.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     public ObservingData? GetLatestData() {
         if (_storage == null) {
             return null;
@@ -158,6 +178,10 @@ public class DataService {
         }
     }
 
+    /// <summary>
+    /// Executes begin value tile snapshot as part of data service processing.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     public IDisposable BeginValueTileSnapshot() {
         lock (_valueTileSnapshotLock) {
             _isValueTileSnapshotActive = true;
@@ -169,10 +193,9 @@ public class DataService {
     }
 
     /// <summary>
-    /// Begins a chart data snapshot scope.
-    /// While active, GetChartData results are cached and DateTime.UtcNow is frozen.
-    /// This keeps tile time boundaries identical within one refresh cycle for cache reuse.
+    /// Executes begin chart data snapshot as part of data service processing.
     /// </summary>
+    /// <returns>The result of the operation.</returns>
     public IDisposable BeginChartDataSnapshot() {
         lock (_chartSnapshotLock) {
             _chartSnapshotNow = DateTime.UtcNow;
@@ -186,6 +209,14 @@ public class DataService {
 
     #region Private Methods
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="static"/> class.
+    /// </summary>
+    /// <param name="start">Input value for start.</param>
+    /// <param name="end">Input value for end.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     private static (DateTime start, DateTime end) GetPeriodRange(
         ChartPeriod period,
         DateTime? customStart,
@@ -206,6 +237,10 @@ public class DataService {
         return (startTime, endTime);
     }
 
+    /// <summary>
+    /// Handles the connection failure for data service.
+    /// </summary>
+    /// <param name="details">Input value for details.</param>
     private void HandleConnectionFailure(string details) {
         if (_isConnectionFailed) {
             return;
@@ -215,6 +250,9 @@ public class DataService {
         ConnectionFailed?.Invoke(details);
     }
 
+    /// <summary>
+    /// Executes end value tile snapshot as part of data service processing.
+    /// </summary>
     private void EndValueTileSnapshot() {
         lock (_valueTileSnapshotLock) {
             _isValueTileSnapshotActive = false;
@@ -223,6 +261,9 @@ public class DataService {
         }
     }
 
+    /// <summary>
+    /// Executes end chart data snapshot as part of data service processing.
+    /// </summary>
     private void EndChartDataSnapshot() {
         lock (_chartSnapshotLock) {
             _chartSnapshotNow = null;
@@ -230,6 +271,9 @@ public class DataService {
         }
     }
 
+    /// <summary>
+    /// Represents value tile snapshot scope and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class ValueTileSnapshotScope(DataService owner) : IDisposable {
 
         #region Private Fields
@@ -243,6 +287,9 @@ public class DataService {
 
         #region Public Methods
 
+        /// <summary>
+        /// Executes dispose as part of value tile snapshot scope processing.
+        /// </summary>
         public void Dispose() {
             var owner = Interlocked.Exchange(ref _owner, null);
             owner?.EndValueTileSnapshot();
@@ -251,6 +298,9 @@ public class DataService {
         #endregion Public Methods
     }
 
+    /// <summary>
+    /// Represents chart data snapshot scope and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class ChartDataSnapshotScope(DataService owner) : IDisposable {
 
         #region Private Fields
@@ -264,6 +314,9 @@ public class DataService {
 
         #region Public Methods
 
+        /// <summary>
+        /// Executes dispose as part of chart data snapshot scope processing.
+        /// </summary>
         public void Dispose() {
             var owner = Interlocked.Exchange(ref _owner, null);
             owner?.EndChartDataSnapshot();

@@ -6,7 +6,7 @@ using SafetyMonitorData.Utilities;
 namespace DataCollector.Services;
 
 /// <summary>
-/// Service for collecting data from ASCOM Alpaca devices.
+/// Represents data collection service and encapsulates its related behavior and state.
 /// </summary>
 public class DataCollectionService(
     CommandLineOptions options) {
@@ -22,8 +22,10 @@ public class DataCollectionService(
     #region Public Methods
 
     /// <summary>
-    /// Collect data from both devices.
+    /// Collects the data async for data collection service.
     /// </summary>
+    /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+    /// <returns>A task that returns the operation result.</returns>
     public async Task<ObservingData> CollectDataAsync(CancellationToken cancellationToken = default) {
         if (_ocDevice == null || _smDevice == null) {
             throw new InvalidOperationException("Devices not initialized. Call Initialize() first.");
@@ -43,8 +45,10 @@ public class DataCollectionService(
     }
 
     /// <summary>
-    /// Initialize the service with connected devices.
+    /// Initializes data collection service state and required resources.
     /// </summary>
+    /// <param name="ocDevice">Input value for oc device.</param>
+    /// <param name="smDevice">Input value for sm device.</param>
     public void Initialize(IObservingConditions ocDevice, ISafetyMonitor smDevice) {
         _ocDevice = ocDevice;
         _smDevice = smDevice;
@@ -55,8 +59,11 @@ public class DataCollectionService(
     #region Private Methods
 
     /// <summary>
-    /// Collect data from ObservingConditions device.
+    /// Collects the observing conditions data async for data collection service.
     /// </summary>
+    /// <param name="data">Input value for data.</param>
+    /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     private async Task CollectObservingConditionsDataAsync(
         ObservingData data,
         CancellationToken cancellationToken) {
@@ -99,8 +106,11 @@ public class DataCollectionService(
     }
 
     /// <summary>
-    /// Collect data from SafetyMonitor device.
+    /// Collects the safety monitor data async for data collection service.
     /// </summary>
+    /// <param name="data">Input value for data.</param>
+    /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     private async Task CollectSafetyMonitorDataAsync(
         ObservingData data,
         CancellationToken cancellationToken) {
@@ -138,8 +148,12 @@ public class DataCollectionService(
     }
 
     /// <summary>
-    /// Get a property value with retry logic and exception handling.
+    /// Gets the property async for data collection service.
     /// </summary>
+    /// <param name="getter">Input value for getter.</param>
+    /// <param name="propertyName">Input value for property name.</param>
+    /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+    /// <returns>A task that returns the operation result.</returns>
     private async Task<double?> GetPropertyAsync(
         Func<double> getter,
         string propertyName,

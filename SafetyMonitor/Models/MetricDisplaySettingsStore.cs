@@ -2,6 +2,9 @@ using SafetyMonitor.Services;
 
 namespace SafetyMonitor.Models;
 
+/// <summary>
+/// Represents metric display settings store and encapsulates its related behavior and state.
+/// </summary>
 public static class MetricDisplaySettingsStore {
 
 
@@ -11,14 +14,30 @@ public static class MetricDisplaySettingsStore {
 
     public static IReadOnlyList<MetricDisplaySetting> Settings => _settings;
 
+    /// <summary>
+    /// Gets the setting or default for metric display settings store.
+    /// </summary>
+    /// <param name="metric">Input value for metric.</param>
+    /// <returns>The result of the operation.</returns>
     public static MetricDisplaySetting GetSettingOrDefault(MetricType metric) {
         return _settings.FirstOrDefault(s => s.Metric == metric) ?? CreateDefaultSetting(metric);
     }
 
+    /// <summary>
+    /// Gets the default setting for metric display settings store.
+    /// </summary>
+    /// <param name="metric">Input value for metric.</param>
+    /// <returns>The result of the operation.</returns>
     public static MetricDisplaySetting GetDefaultSetting(MetricType metric) {
         return CreateDefaultSetting(metric);
     }
 
+    /// <summary>
+    /// Formats the metric value for metric display settings store.
+    /// </summary>
+    /// <param name="metric">Input value for metric.</param>
+    /// <param name="value">Input value for value.</param>
+    /// <returns>The resulting string value.</returns>
     public static string FormatMetricValue(MetricType metric, double value) {
         var setting = GetSettingOrDefault(metric);
         var decimals = Math.Max(0, setting.Decimals);
@@ -34,6 +53,10 @@ public static class MetricDisplaySettingsStore {
         return value.ToString($"F{decimals}").TrimEnd('0').TrimEnd('.');
     }
 
+    /// <summary>
+    /// Sets the settings for metric display settings store.
+    /// </summary>
+    /// <param name="settings">Collection of settings items used by the operation.</param>
     public static void SetSettings(IEnumerable<MetricDisplaySetting>? settings) {
         var loadedSettings = settings != null
             ? new List<MetricDisplaySetting>(settings.Select(s => new MetricDisplaySetting {
@@ -59,6 +82,11 @@ public static class MetricDisplaySettingsStore {
         SettingsChanged?.Invoke();
     }
 
+    /// <summary>
+    /// Creates the default setting for metric display settings store.
+    /// </summary>
+    /// <param name="metric">Input value for metric.</param>
+    /// <returns>The result of the operation.</returns>
     private static MetricDisplaySetting CreateDefaultSetting(MetricType metric) {
         var setting = new MetricDisplaySetting {
             Metric = metric,

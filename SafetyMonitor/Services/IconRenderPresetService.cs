@@ -9,9 +9,12 @@ public enum IconRenderPreset {
     DarkFilled,
 }
 
+/// <summary>
+/// Represents icon render preset service and encapsulates its related behavior and state.
+/// </summary>
 internal static class IconRenderPresetService {
-    private static readonly IReadOnlyDictionary<IconRenderPreset, IconRenderOptions> _presets =
-        new Dictionary<IconRenderPreset, IconRenderOptions> {
+    private static readonly Dictionary<IconRenderPreset, IconRenderOptions> _presets =
+        new() {
             [IconRenderPreset.LightOutlined] = new() {
                 GlyphScale = 0.78f,
                 Axes = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase) {
@@ -52,6 +55,12 @@ internal static class IconRenderPresetService {
 
     public static IconRenderOptions Get(IconRenderPreset preset) => _presets[preset];
 
+    /// <summary>
+    /// Resolves the theme preset for icon render preset service.
+    /// </summary>
+    /// <param name="isLightTheme">Input value for is light theme.</param>
+    /// <param name="filled)">Input value for filled.</param>
+    /// <returns>The result of the operation.</returns>
     public static IconRenderPreset ResolveThemePreset(bool isLightTheme, bool filled) => (isLightTheme, filled) switch {
         (true, true) => IconRenderPreset.LightFilled,
         (true, false) => IconRenderPreset.LightOutlined,

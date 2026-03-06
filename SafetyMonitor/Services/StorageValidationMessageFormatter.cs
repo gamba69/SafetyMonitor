@@ -3,6 +3,9 @@ using System.Text;
 
 namespace SafetyMonitor.Services;
 
+/// <summary>
+/// Represents storage validation message formatter and encapsulates its related behavior and state.
+/// </summary>
 public static class StorageValidationMessageFormatter {
 
     #region Private Fields
@@ -13,6 +16,13 @@ public static class StorageValidationMessageFormatter {
 
     #region Public Methods
 
+    /// <summary>
+    /// Builds the message for storage validation message formatter.
+    /// </summary>
+    /// <param name="issues">Collection of issues items used by the operation.</param>
+    /// <param name="intro">Input value for intro.</param>
+    /// <param name="actionHint">Input value for action hint.</param>
+    /// <returns>The resulting string value.</returns>
     public static string BuildMessage(IEnumerable<DataStorage.DataStorage.StorageValidationIssue> issues, string intro, string actionHint) {
         var normalizedIssues = issues
             .Select(x => x.Message?.Trim())

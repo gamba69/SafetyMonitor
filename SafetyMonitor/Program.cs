@@ -7,8 +7,17 @@ using System.Threading;
 
 namespace SafetyMonitor;
 
+/// <summary>
+/// Represents program and encapsulates its related behavior and state.
+/// </summary>
 static class Program {
+    /// <summary>
+    /// Represents startup launch options and encapsulates its related behavior and state.
+    /// </summary>
     internal static class StartupLaunchOptions {
+        /// <summary>
+        /// Gets or sets the ignore start minimized for startup launch options. Represents a state flag that enables or disables related behavior.
+        /// </summary>
         public static bool IgnoreStartMinimized { get; set; }
     }
 
@@ -18,6 +27,9 @@ static class Program {
     #region Private Methods
 
     [STAThread]
+    /// <summary>
+    /// Defines the application entry point and startup workflow.
+    /// </summary>
     static void Main() {
         using Mutex singleInstanceMutex = new(false, SingleInstanceMutexName, out bool isFirstInstance);
         if (!isFirstInstance) {
@@ -46,6 +58,9 @@ static class Program {
 
     #endregion Private Methods
 
+    /// <summary>
+    /// Represents splash application context and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class SplashApplicationContext : ApplicationContext {
         private readonly int _minimumVisibleMs;
         private readonly SplashForm _splashForm;
@@ -58,6 +73,17 @@ static class Program {
         private bool _startupAborted;
         private bool _splashHiddenForStartupDialogs;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SplashApplicationContext"/> class.
+        /// </summary>
+        /// <param name="isDarkTheme">Input value for is dark theme.</param>
+        /// <param name="minimumVisibleMs">Input value for minimum visible ms.</param>
+        /// <param name="appSettingsService">Input value for app settings service.</param>
+        /// <param name="settingsMaintenanceService">Input value for settings maintenance service.</param>
+        /// <param name="appSettings">Input value for app settings.</param>
+        /// <remarks>
+        /// The constructor wires required dependencies and initial state.
+        /// </remarks>
         public SplashApplicationContext(bool isDarkTheme, int minimumVisibleMs, AppSettingsService appSettingsService, AppSettingsMaintenanceService settingsMaintenanceService, AppSettings appSettings) {
             _minimumVisibleMs = minimumVisibleMs;
             _appSettingsService = appSettingsService;
@@ -69,6 +95,11 @@ static class Program {
             _splashForm.Show();
         }
 
+        /// <summary>
+        /// Executes on splash closed as part of splash application context processing.
+        /// </summary>
+        /// <param name="sender">Input value for sender.</param>
+        /// <param name="e">Input value for e.</param>
         private void OnSplashClosed(object? sender, FormClosedEventArgs e) {
             if (_splashHiddenForStartupDialogs) {
                 return;
@@ -79,6 +110,11 @@ static class Program {
             }
         }
 
+        /// <summary>
+        /// Executes on splash shown as part of splash application context processing.
+        /// </summary>
+        /// <param name="sender">Input value for sender.</param>
+        /// <param name="e">Input value for e.</param>
         private void OnSplashShown(object? sender, EventArgs e) {
             _splashForm.Shown -= OnSplashShown;
 
@@ -92,6 +128,9 @@ static class Program {
         }
 
 
+        /// <summary>
+        /// Applies the startup theme for splash application context.
+        /// </summary>
         private void ApplyStartupTheme() {
             var skinManager = MaterialSkin.MaterialSkinManager.Instance;
             skinManager.Theme = _appSettings.IsDarkTheme
@@ -100,6 +139,9 @@ static class Program {
             skinManager.ColorScheme = AppColorizationService.Instance.GetMaterialColorScheme(_appSettings.MaterialColorScheme);
         }
 
+        /// <summary>
+        /// Hides the splash for startup dialogs for splash application context.
+        /// </summary>
         private void HideSplashForStartupDialogs() {
             if (_splashHiddenForStartupDialogs || _splashForm.IsDisposed) {
                 return;
@@ -109,6 +151,9 @@ static class Program {
             _splashForm.Hide();
         }
 
+        /// <summary>
+        /// Handles the startup validation and start for splash application context.
+        /// </summary>
         private void HandleStartupValidationAndStart() {
             ApplyStartupTheme();
 
@@ -128,6 +173,13 @@ static class Program {
             StartMainForm();
         }
 
+        /// <summary>
+        /// Ensures the storage configuration at startup for splash application context.
+        /// </summary>
+        /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+        /// <remarks>
+        /// Use the boolean result to branch success and fallback logic.
+        /// </remarks>
         private bool EnsureStorageConfigurationAtStartup() {
             var validation = DataStorage.DataStorage.ValidateStorageStructure(_appSettings.StoragePath, _appSettings.ValidateDatabaseStructureOnStartup);
 
@@ -165,6 +217,9 @@ static class Program {
             return false;
         }
 
+        /// <summary>
+        /// Shows the startup settings dialog for splash application context.
+        /// </summary>
         private void ShowStartupSettingsDialog() {
             ApplyStartupTheme();
 
@@ -213,6 +268,9 @@ static class Program {
             _appSettingsService.SaveSettings(_appSettings);
         }
 
+        /// <summary>
+        /// Starts the main form for splash application context.
+        /// </summary>
         private void StartMainForm() {
             try {
                 _mainForm = new MainForm();
@@ -230,6 +288,11 @@ static class Program {
             }
         }
 
+        /// <summary>
+        /// Executes on main form startup ready as part of splash application context processing.
+        /// </summary>
+        /// <param name="sender">Input value for sender.</param>
+        /// <param name="e">Input value for e.</param>
         private async void OnMainFormStartupReady(object? sender, EventArgs e) {
             if (_startupReady) {
                 return;
@@ -250,6 +313,11 @@ static class Program {
             }
         }
 
+        /// <summary>
+        /// Executes on main form closed as part of splash application context processing.
+        /// </summary>
+        /// <param name="sender">Input value for sender.</param>
+        /// <param name="e">Input value for e.</param>
         private void OnMainFormClosed(object? sender, FormClosedEventArgs e) {
             if (_mainForm != null) {
                 _mainForm.StartupReady -= OnMainFormStartupReady;

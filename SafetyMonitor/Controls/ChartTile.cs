@@ -10,6 +10,9 @@ using Label = System.Windows.Forms.Label;
 
 namespace SafetyMonitor.Controls;
 
+/// <summary>
+/// Represents chart tile and encapsulates its related behavior and state.
+/// </summary>
 public class ChartTile : Panel {
 
     #region Private Fields
@@ -70,13 +73,37 @@ public class ChartTile : Panel {
     private static readonly Color LightThemeBorderColor = Color.FromArgb(52, 52, 52);
     private static readonly Color DarkThemeBorderColor = Color.FromArgb(53, 70, 76);
 
+    /// <summary>
+    /// Represents series hover snapshot and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class SeriesHoverSnapshot {
+        /// <summary>
+        /// Gets or sets the label for series hover snapshot. Stores textual configuration or display metadata used by application flows.
+        /// </summary>
         public string Label { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the unit for series hover snapshot. Stores textual configuration or display metadata used by application flows.
+        /// </summary>
         public string Unit { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the metric for series hover snapshot. Holds part of the component state used by higher-level application logic.
+        /// </summary>
         public MetricType Metric { get; init; }
+        /// <summary>
+        /// Gets or sets the series color for series hover snapshot. Controls visual presentation used by themed rendering and UI styling.
+        /// </summary>
         public Color SeriesColor { get; init; } = Color.White;
+        /// <summary>
+        /// Gets or sets the xs for series hover snapshot. Stores a numeric value used by calculations, thresholds, or telemetry display.
+        /// </summary>
         public double[] Xs { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the ys for series hover snapshot. Stores a numeric value used by calculations, thresholds, or telemetry display.
+        /// </summary>
         public double[] Ys { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the value scheme name for series hover snapshot. Controls visual presentation used by themed rendering and UI styling.
+        /// </summary>
         public string ValueSchemeName { get; init; } = string.Empty;
     }
 
@@ -100,6 +127,14 @@ public class ChartTile : Panel {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ChartTile"/> class.
+    /// </summary>
+    /// <param name="config">Input value for config.</param>
+    /// <param name="dataService">Input value for data service.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public ChartTile(ChartTileConfig config, DataService dataService) {
         _config = config;
         _dataService = dataService;
@@ -132,11 +167,19 @@ public class ChartTile : Panel {
 
     #region Public Methods
 
+    /// <summary>
+    /// Sets the available link groups for series hover snapshot.
+    /// </summary>
+    /// <param name="usedGroups">Input value for used groups.</param>
     public void SetAvailableLinkGroups(int usedGroups) {
         _availableLinkGroups = ChartLinkGroupInfo.NormalizeUsedGroups(usedGroups);
         _config.LinkGroup = ChartLinkGroupInfo.NormalizeGroup(_config.LinkGroup, _availableLinkGroups);
     }
 
+    /// <summary>
+    /// Sets the link group period short names for series hover snapshot.
+    /// </summary>
+    /// <param name="periodShortNames">Input value for period short names.</param>
     public void SetLinkGroupPeriodShortNames(IReadOnlyDictionary<ChartLinkGroup, string> periodShortNames) {
         _linkGroupPeriodShortNames.Clear();
         foreach (var pair in periodShortNames) {
@@ -166,6 +209,9 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Refreshes the data for series hover snapshot.
+    /// </summary>
     public void RefreshData() {
         if (_plot == null) {
             return;
@@ -369,6 +415,9 @@ public class ChartTile : Panel {
         _plot.Refresh();
     }
 
+    /// <summary>
+    /// Updates the theme for series hover snapshot.
+    /// </summary>
     public void UpdateTheme() {
         if (_plot == null || _titleLabel == null) {
             return;
@@ -393,6 +442,11 @@ public class ChartTile : Panel {
         Invalidate(true);
     }
 
+    /// <summary>
+    /// Sets the period preset for series hover snapshot.
+    /// </summary>
+    /// <param name="periodPresetUid">Identifier of period preset.</param>
+    /// <param name="refreshData">Input value for refresh data.</param>
     public void SetPeriodPreset(string periodPresetUid, bool refreshData = true) {
         if (_isStaticMode) {
             SetStaticMode(false);
@@ -414,12 +468,21 @@ public class ChartTile : Panel {
     }
 
 
+    /// <summary>
+    /// Sets the static mode timeout for series hover snapshot.
+    /// </summary>
+    /// <param name="timeout">Input value for timeout.</param>
     public void SetStaticModeTimeout(TimeSpan timeout) {
         _staticModeTimeout = timeout < TimeSpan.FromSeconds(10)
             ? TimeSpan.FromSeconds(10)
             : timeout;
     }
 
+    /// <summary>
+    /// Sets the static aggregation settings for series hover snapshot.
+    /// </summary>
+    /// <param name="presetMatchTolerancePercent">Input value for preset match tolerance percent.</param>
+    /// <param name="targetPointCount">Input value for target point count.</param>
     public void SetStaticAggregationSettings(double presetMatchTolerancePercent, int targetPointCount) {
         _staticAggregationPresetMatchTolerancePercent = Math.Clamp(presetMatchTolerancePercent, 0, 100);
         _staticAggregationTargetPointCount = Math.Max(2, targetPointCount);
@@ -431,6 +494,12 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Sets the static range for series hover snapshot.
+    /// </summary>
+    /// <param name="startLocal">Input value for start local.</param>
+    /// <param name="endLocal">Input value for end local.</param>
+    /// <param name="raiseEvents">Input value for raise events.</param>
     public void SetStaticRange(DateTime startLocal, DateTime endLocal, bool raiseEvents = true) {
         if (endLocal <= startLocal) {
             return;
@@ -439,6 +508,10 @@ public class ChartTile : Panel {
         EnterStaticMode(startLocal, endLocal, raiseEvents);
     }
 
+    /// <summary>
+    /// Executes exit static mode as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="raiseEvents">Input value for raise events.</param>
     public void ExitStaticMode(bool raiseEvents = true) {
         if (!_isStaticMode) {
             return;
@@ -459,6 +532,11 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Sets the static paused for series hover snapshot.
+    /// </summary>
+    /// <param name="paused">Input value for paused.</param>
+    /// <param name="raiseEvents">Input value for raise events.</param>
     public void SetStaticPaused(bool paused, bool raiseEvents = true) {
         if (_staticModePaused == paused && _config.StaticModePaused == paused) {
             return;
@@ -489,6 +567,11 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Sets the inspector enabled for series hover snapshot.
+    /// </summary>
+    /// <param name="enabled">Input value for enabled.</param>
+    /// <param name="raiseEvents">Input value for raise events.</param>
     public void SetInspectorEnabled(bool enabled, bool raiseEvents = true) {
         if (_config.ShowInspector == enabled && _inspectorActive == enabled) {
             return;
@@ -507,6 +590,10 @@ public class ChartTile : Panel {
     public bool IsInspectorEnabled => _config.ShowInspector;
     public ChartTileConfig Config => _config;
 
+    /// <summary>
+    /// Shows the inspector at for series hover snapshot.
+    /// </summary>
+    /// <param name="x">Input value for x.</param>
     public void ShowInspectorAt(double x) {
         if (!_inspectorActive || _plot == null || _hoverSeries.Count == 0) {
             return;
@@ -522,6 +609,9 @@ public class ChartTile : Panel {
         _plot.Refresh();
     }
 
+    /// <summary>
+    /// Executes clear inspector display as part of series hover snapshot processing.
+    /// </summary>
     public void ClearInspectorDisplay() {
         HideInspector();
     }
@@ -531,8 +621,9 @@ public class ChartTile : Panel {
     #region Protected Methods
 
     /// <summary>
-    /// Prevents MaterialSkinManager font propagation from overwriting tile fonts.
+    /// Executes on font changed as part of series hover snapshot processing.
     /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnFontChanged(EventArgs e) {
         base.OnFontChanged(e);
         if (_initialized) {
@@ -545,6 +636,10 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Executes on handle created as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnHandleCreated(EventArgs e) {
         base.OnHandleCreated(e);
 
@@ -555,11 +650,19 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Executes on paint as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnPaint(PaintEventArgs e) {
         base.OnPaint(e);
         DrawTileBorder(e.Graphics);
     }
 
+    /// <summary>
+    /// Executes dispose as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="disposing">Input value for disposing.</param>
     protected override void Dispose(bool disposing) {
         if (disposing) {
             ChartPeriodPresetStore.PresetsChanged -= HandlePresetsChanged;
@@ -589,9 +692,10 @@ public class ChartTile : Panel {
     #region Private Methods
 
     /// <summary>
-    /// Builds a human-readable axis label from a MetricType,
-    /// e.g. "Temperature (°C)" or just "Safety" when no unit exists.
+    /// Builds the axis label for series hover snapshot.
     /// </summary>
+    /// <param name="metric">Input value for metric.</param>
+    /// <returns>The resulting string value.</returns>
     private static string BuildAxisLabel(MetricType metric) {
         var unit = metric.GetUnit();
         return string.IsNullOrEmpty(unit)
@@ -599,6 +703,11 @@ public class ChartTile : Panel {
             : $"{metric.GetDisplayName()} ({unit})";
     }
 
+    /// <summary>
+    /// Applies the smooth tension for series hover snapshot.
+    /// </summary>
+    /// <param name="scatter">Input value for scatter.</param>
+    /// <param name="aggregation">Input value for aggregation.</param>
     private static void ApplySmoothTension(object scatter, MetricAggregation aggregation) {
         if (!aggregation.Smooth) {
             return;
@@ -614,8 +723,12 @@ public class ChartTile : Panel {
     }
 
     /// <summary>
-    /// Safely creates a font with fallback to system default if the requested font is not available.
+    /// Creates the safe font for series hover snapshot.
     /// </summary>
+    /// <param name="familyName">Input value for family name.</param>
+    /// <param name="emSize">Input value for em size.</param>
+    /// <param name="style">Input value for style.</param>
+    /// <returns>The result of the operation.</returns>
     private static Font CreateSafeFont(string familyName, float emSize, System.Drawing.FontStyle style = System.Drawing.FontStyle.Regular) {
         try {
             var font = new Font(familyName, emSize, style);
@@ -630,9 +743,11 @@ public class ChartTile : Panel {
         }
     }
     /// <summary>
-    /// Applies per-metric color styling to a Y axis.
-    /// This keeps each axis visually aligned with its plotted series.
+    /// Executes style axis as part of series hover snapshot processing.
     /// </summary>
+    /// <param name="axis">Input value for axis.</param>
+    /// <param name="labelText">Input value for label text.</param>
+    /// <param name="color">Input value for color.</param>
     private static void StyleAxis(ScottPlot.IYAxis axis, string labelText, ScottPlot.Color color) {
         axis.Label.Text = labelText;
         axis.Label.ForeColor = color;
@@ -665,6 +780,11 @@ public class ChartTile : Panel {
         return (startTime, endTime);
     }
 
+    /// <summary>
+    /// Executes to local chart time as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="value">Input value for value.</param>
+    /// <returns>The result of the operation.</returns>
     private static DateTime ToLocalChartTime(DateTime value) => value.Kind switch {
         DateTimeKind.Utc => value.ToLocalTime(),
         DateTimeKind.Local => value,
@@ -698,6 +818,10 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Sets the axis neutral state for series hover snapshot.
+    /// </summary>
+    /// <param name="axis">Input value for axis.</param>
     private static void SetAxisNeutralState(ScottPlot.IYAxis axis) {
         SetAxisVisibility(axis, true);
 
@@ -711,6 +835,11 @@ public class ChartTile : Panel {
         axis.MinorTickStyle.Color = neutralColor;
     }
 
+    /// <summary>
+    /// Sets the axis visibility for series hover snapshot.
+    /// </summary>
+    /// <param name="axis">Input value for axis.</param>
+    /// <param name="isVisible">Input value for is visible.</param>
     private static void SetAxisVisibility(object axis, bool isVisible) {
         var property = axis.GetType().GetProperty("IsVisible");
         if (property?.CanWrite == true && property.PropertyType == typeof(bool)) {
@@ -718,6 +847,9 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Applies the theme colors for series hover snapshot.
+    /// </summary>
     private void ApplyThemeColors() {
         if (_plot == null) {
             return;
@@ -747,9 +879,7 @@ public class ChartTile : Panel {
     }
 
     /// <summary>
-    /// Applies correct theme colors to all child controls of the tile.
-    /// Called from UpdateTheme and OnFontChanged to fight.
-    /// MaterialSkinManager overwriting our colors.
+    /// Applies the tile colors for series hover snapshot.
     /// </summary>
     private void ApplyTileColors() {
         if (_titleLabel == null) {
@@ -796,6 +926,10 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Executes draw tile border as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="graphics">Input value for graphics.</param>
     private void DrawTileBorder(Graphics graphics) {
         if (ClientSize.Width <= 1 || ClientSize.Height <= 1) {
             return;
@@ -806,6 +940,9 @@ public class ChartTile : Panel {
         ControlPaint.DrawBorder(graphics, ClientRectangle, borderColor, ButtonBorderStyle.Solid);
     }
 
+    /// <summary>
+    /// Applies the plot context menu theme for series hover snapshot.
+    /// </summary>
     private void ApplyPlotContextMenuTheme() {
         if (_plotContextMenu == null) {
             return;
@@ -814,6 +951,10 @@ public class ChartTile : Panel {
         ApplyPlotContextMenuTheme(_plotContextMenu);
     }
 
+    /// <summary>
+    /// Applies the plot context menu theme for series hover snapshot.
+    /// </summary>
+    /// <param name="contextMenu">Input value for context menu.</param>
     private void ApplyPlotContextMenuTheme(ContextMenuStrip contextMenu) {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -836,6 +977,10 @@ public class ChartTile : Panel {
         UpdateContextMenuIcons(contextMenu.Items, menuIconColor);
     }
 
+    /// <summary>
+    /// Creates the plot context menu for series hover snapshot.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private ContextMenuStrip CreatePlotContextMenu() {
         var contextMenu = new ContextMenuStrip {
             ShowImageMargin = true,
@@ -853,6 +998,10 @@ public class ChartTile : Panel {
         return contextMenu;
     }
 
+    /// <summary>
+    /// Rebuilds the plot context menu for series hover snapshot.
+    /// </summary>
+    /// <param name="contextMenu">Input value for context menu.</param>
     private void RebuildPlotContextMenu(ContextMenuStrip contextMenu) {
         contextMenu.Items.Clear();
 
@@ -896,6 +1045,10 @@ public class ChartTile : Panel {
         InteractiveCursorStyler.Apply(contextMenu.Items);
     }
 
+    /// <summary>
+    /// Adds the toggle menu items for series hover snapshot.
+    /// </summary>
+    /// <param name="contextMenu">Input value for context menu.</param>
     private void AddToggleMenuItems(ContextMenuStrip contextMenu) {
         var legendItem = CreateToggleMenuItem("Legend", MaterialIcons.PlotMenuLegendToggle, _config.ShowLegend, (_, _) => {
             _config.ShowLegend = !_config.ShowLegend;
@@ -945,6 +1098,11 @@ public class ChartTile : Panel {
         }));
     }
 
+    /// <summary>
+    /// Gets the aggregation display name for series hover snapshot.
+    /// </summary>
+    /// <param name="aggregation">Input value for aggregation.</param>
+    /// <returns>The resulting string value.</returns>
     private static string GetAggregationDisplayName(MetricAggregation aggregation) {
         if (!string.IsNullOrWhiteSpace(aggregation.Label)) {
             return aggregation.Label;
@@ -953,6 +1111,11 @@ public class ChartTile : Panel {
         return $"{aggregation.Metric.GetDisplayName()} ({aggregation.Function})";
     }
 
+    /// <summary>
+    /// Gets the link group icon for series hover snapshot.
+    /// </summary>
+    /// <param name="group">Input value for group.</param>
+    /// <returns>The resulting string value.</returns>
     private static string GetLinkGroupIcon(ChartLinkGroup group) => group switch {
         ChartLinkGroup.Alpha => MaterialIcons.LinkGroupAlpha,
         ChartLinkGroup.Bravo => MaterialIcons.LinkGroupBravo,
@@ -963,17 +1126,35 @@ public class ChartTile : Panel {
         _ => MaterialIcons.LinkGroupAlpha
     };
 
+    /// <summary>
+    /// Applies the view settings for series hover snapshot.
+    /// </summary>
     private void ApplyViewSettings() {
         RefreshData();
         ViewSettingsChanged?.Invoke(this);
     }
 
+    /// <summary>
+    /// Creates the toggle menu item for series hover snapshot.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <param name="iconName">Input value for icon name.</param>
+    /// <param name="isChecked">Input value for is checked.</param>
+    /// <param name="onClick">Input value for on click.</param>
+    /// <returns>The result of the operation.</returns>
     private static ToolStripMenuItem CreateToggleMenuItem(string text, string iconName, bool isChecked, EventHandler onClick) {
         var item = CreatePlotMenuItem(text, iconName, onClick);
         item.Checked = isChecked;
         return item;
     }
 
+    /// <summary>
+    /// Creates the plot menu item for series hover snapshot.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <param name="iconName">Input value for icon name.</param>
+    /// <param name="onClick">Input value for on click.</param>
+    /// <returns>The result of the operation.</returns>
     private static ToolStripMenuItem CreatePlotMenuItem(string text, string iconName, EventHandler onClick) {
         var iconColor = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT
             ? Color.FromArgb(66, 66, 66)
@@ -995,6 +1176,11 @@ public class ChartTile : Panel {
         return item;
     }
 
+    /// <summary>
+    /// Updates the context menu icons for series hover snapshot.
+    /// </summary>
+    /// <param name="items">Input value for items.</param>
+    /// <param name="iconColor">Input value for icon color.</param>
     private static void UpdateContextMenuIcons(ToolStripItemCollection items, Color iconColor) {
         foreach (ToolStripItem item in items) {
             if (item is not ToolStripMenuItem menuItem) {
@@ -1012,10 +1198,20 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Handles the edit tile click for series hover snapshot.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void HandleEditTileClick(object? sender, EventArgs e) {
         EditRequested?.Invoke(this);
     }
 
+    /// <summary>
+    /// Handles the save image click for series hover snapshot.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void HandleSaveImageClick(object? sender, EventArgs e) {
         if (_plot == null) {
             return;
@@ -1036,6 +1232,11 @@ public class ChartTile : Panel {
         bmp?.Save(dialog.FileName, System.Drawing.Imaging.ImageFormat.Png);
     }
 
+    /// <summary>
+    /// Handles the save table click for series hover snapshot.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void HandleSaveTableClick(object? sender, EventArgs e) {
         if (ExcelExportStateService.IsExporting) {
             return;
@@ -1089,6 +1290,11 @@ public class ChartTile : Panel {
         });
     }
 
+    /// <summary>
+    /// Gets the aggregated export data for series hover snapshot.
+    /// </summary>
+    /// <param name="aggregationInterval">Input value for aggregation interval.</param>
+    /// <returns>The result of the operation.</returns>
     private List<DataStorage.Models.ObservingData> GetAggregatedExportData(TimeSpan? aggregationInterval) {
         var exportRows = new Dictionary<DateTime, DataStorage.Models.ObservingData>();
 
@@ -1119,6 +1325,10 @@ public class ChartTile : Panel {
         return [.. exportRows.Values.OrderBy(x => x.Timestamp)];
     }
 
+    /// <summary>
+    /// Gets the raw export data for series hover snapshot.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private List<DataStorage.Models.ObservingData> GetRawExportData() {
         return _dataService.GetChartData(
             _config.Period,
@@ -1129,6 +1339,12 @@ public class ChartTile : Panel {
             null);
     }
 
+    /// <summary>
+    /// Sets the metric value for series hover snapshot.
+    /// </summary>
+    /// <param name="target">Input value for target.</param>
+    /// <param name="metric">Input value for metric.</param>
+    /// <param name="value">Input value for value.</param>
     private static void SetMetricValue(DataStorage.Models.ObservingData target, MetricType metric, double? value) {
         switch (metric) {
             case MetricType.Temperature:
@@ -1176,6 +1392,11 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Handles the copy image click for series hover snapshot.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void HandleCopyImageClick(object? sender, EventArgs e) {
         using var bmp = CapturePlotBitmap();
         if (bmp != null) {
@@ -1183,6 +1404,11 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Handles the autoscale click for series hover snapshot.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void HandleAutoscaleClick(object? sender, EventArgs e) {
         if (_plot == null) {
             return;
@@ -1194,6 +1420,11 @@ public class ChartTile : Panel {
         _plot.Refresh();
     }
 
+    /// <summary>
+    /// Handles the open in window click for series hover snapshot.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void HandleOpenInWindowClick(object? sender, EventArgs e) {
         if (_plot == null) {
             return;
@@ -1223,6 +1454,10 @@ public class ChartTile : Panel {
         previewForm.Show(this);
     }
 
+    /// <summary>
+    /// Executes capture plot bitmap as part of series hover snapshot processing.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private Bitmap? CapturePlotBitmap() {
         if (_plot == null || _plot.Width <= 0 || _plot.Height <= 0) {
             return null;
@@ -1233,6 +1468,11 @@ public class ChartTile : Panel {
         return bmp;
     }
 
+    /// <summary>
+    /// Executes plot mouse up as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void Plot_MouseUp(object? sender, MouseEventArgs e) {
         DetectXAxisInteraction();
 
@@ -1244,6 +1484,11 @@ public class ChartTile : Panel {
         _plotContextMenu.Show(_plot, e.Location);
     }
 
+    /// <summary>
+    /// Executes tile mouse up as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void Tile_MouseUp(object? sender, MouseEventArgs e) {
         if (e.Button != MouseButtons.Right || _plotContextMenu == null || sender is not Control sourceControl) {
             return;
@@ -1253,6 +1498,10 @@ public class ChartTile : Panel {
         _plotContextMenu.Show(sourceControl, e.Location);
     }
 
+    /// <summary>
+    /// Executes attach tile context menu handlers as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="root">Input value for root.</param>
     private void AttachTileContextMenuHandlers(Control root) {
         if (root is FormsPlot) {
             return;
@@ -1266,6 +1515,10 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Executes detach tile context menu handlers as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="root">Input value for root.</param>
     private void DetachTileContextMenuHandlers(Control root) {
         if (root is FormsPlot) {
             return;
@@ -1278,6 +1531,9 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Executes disable scott plot interaction overlays as part of series hover snapshot processing.
+    /// </summary>
     private void DisableScottPlotInteractionOverlays() {
         if (_plot == null) {
             return;
@@ -1287,6 +1543,12 @@ public class ChartTile : Panel {
         _plot.UserInputProcessor.RemoveAll<ScottPlot.Interactivity.UserActionResponses.DoubleClickBenchmark>();
     }
 
+    /// <summary>
+    /// Applies the context menu item colors for series hover snapshot.
+    /// </summary>
+    /// <param name="items">Input value for items.</param>
+    /// <param name="backColor">Input value for back color.</param>
+    /// <param name="foreColor">Input value for fore color.</param>
     private static void ApplyContextMenuItemColors(ToolStripItemCollection items, Color backColor, Color foreColor) {
         foreach (ToolStripItem item in items) {
             item.BackColor = backColor;
@@ -1298,6 +1560,11 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Applies the context menu item font for series hover snapshot.
+    /// </summary>
+    /// <param name="items">Input value for items.</param>
+    /// <param name="menuFont">Input value for menu font.</param>
     private static void ApplyContextMenuItemFont(ToolStripItemCollection items, Font menuFont) {
         foreach (ToolStripItem item in items) {
             item.Font = menuFont;
@@ -1309,7 +1576,7 @@ public class ChartTile : Panel {
     }
 
     /// <summary>
-    /// Removes any extra axes added during the previous RefreshData call.
+    /// Executes clear extra axes as part of series hover snapshot processing.
     /// </summary>
     private void ClearExtraAxes() {
         if (_plot == null) {
@@ -1322,6 +1589,9 @@ public class ChartTile : Panel {
         _extraAxes.Clear();
     }
 
+    /// <summary>
+    /// Initializes series hover snapshot state and required resources.
+    /// </summary>
     private void InitializeUI() {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -1645,6 +1915,10 @@ public class ChartTile : Panel {
             UpdateTheme();
         });
     }
+    /// <summary>
+    /// Applies the axis rules for series hover snapshot.
+    /// </summary>
+    /// <param name="axisMap">Input value for axis map.</param>
     private void ApplyAxisRules(Dictionary<MetricType, ScottPlot.IYAxis> axisMap) {
         if (_plot == null) {
             return;
@@ -1704,6 +1978,11 @@ public class ChartTile : Panel {
 
 
 
+    /// <summary>
+    /// Configures the axis ticks for log y for series hover snapshot.
+    /// </summary>
+    /// <param name="axis">Input value for axis.</param>
+    /// <param name="useLogarithmicScale">Input value for use logarithmic scale.</param>
     private static void ConfigureAxisTicksForLogY(ScottPlot.IYAxis axis, bool useLogarithmicScale) {
         if (useLogarithmicScale) {
             var tickGen = new ScottPlot.TickGenerators.NumericAutomatic {
@@ -1723,6 +2002,12 @@ public class ChartTile : Panel {
         axis.TickGenerator = new ScottPlot.TickGenerators.NumericAutomatic();
     }
 
+    /// <summary>
+    /// Gets the log y axis fraction digits for series hover snapshot.
+    /// </summary>
+    /// <param name="axis">Input value for axis.</param>
+    /// <param name="linearValue">Input value for linear value.</param>
+    /// <returns>The result of the operation.</returns>
     private static int GetLogYAxisFractionDigits(ScottPlot.IYAxis axis, double linearValue) {
         var safeLinearValue = double.IsFinite(linearValue) && linearValue > 0 ? linearValue : 1d;
         var minVisibleValue = TryGetVisibleLogYAxisMinValue(axis, out var axisMinValue)
@@ -1738,6 +2023,11 @@ public class ChartTile : Panel {
         return Math.Clamp(Math.Max(minValueDigits, spanDigits), 0, 8);
     }
 
+    /// <summary>
+    /// Gets the digits by smallest value for series hover snapshot.
+    /// </summary>
+    /// <param name="minValue">Input value for min value.</param>
+    /// <returns>The result of the operation.</returns>
     private static int GetDigitsBySmallestValue(double minValue) {
         if (!double.IsFinite(minValue) || minValue <= 0) {
             return 0;
@@ -1750,6 +2040,11 @@ public class ChartTile : Panel {
         return (int)Math.Ceiling(-Math.Log10(minValue));
     }
 
+    /// <summary>
+    /// Gets the digits by range for series hover snapshot.
+    /// </summary>
+    /// <param name="span">Input value for span.</param>
+    /// <returns>The result of the operation.</returns>
     private static int GetDigitsByRange(double span) {
         if (!double.IsFinite(span) || span <= 0) {
             return 0;
@@ -1762,6 +2057,15 @@ public class ChartTile : Panel {
         return (int)Math.Ceiling(-Math.Log10(span));
     }
 
+    /// <summary>
+    /// Attempts to get visible log y axis min value for series hover snapshot.
+    /// </summary>
+    /// <param name="axis">Input value for axis.</param>
+    /// <param name="minValue">Input value for min value.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool TryGetVisibleLogYAxisMinValue(ScottPlot.IYAxis axis, out double minValue) {
         minValue = 0;
         if (!TryGetVisibleLogYAxisBounds(axis, out var minExp, out _)) {
@@ -1772,6 +2076,15 @@ public class ChartTile : Panel {
         return double.IsFinite(minValue) && minValue > 0;
     }
 
+    /// <summary>
+    /// Attempts to get visible log y axis span for series hover snapshot.
+    /// </summary>
+    /// <param name="axis">Input value for axis.</param>
+    /// <param name="span">Input value for span.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool TryGetVisibleLogYAxisSpan(ScottPlot.IYAxis axis, out double span) {
         span = 0;
         if (!TryGetVisibleLogYAxisBounds(axis, out var minExp, out var maxExp)) {
@@ -1788,6 +2101,16 @@ public class ChartTile : Panel {
         return double.IsFinite(span) && span >= 0;
     }
 
+    /// <summary>
+    /// Attempts to get visible log y axis bounds for series hover snapshot.
+    /// </summary>
+    /// <param name="axis">Input value for axis.</param>
+    /// <param name="minExp">Input value for min exp.</param>
+    /// <param name="maxExp">Input value for max exp.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool TryGetVisibleLogYAxisBounds(ScottPlot.IYAxis axis, out double minExp, out double maxExp) {
         maxExp = 0;
 
@@ -1809,6 +2132,16 @@ public class ChartTile : Panel {
         return false;
     }
 
+    /// <summary>
+    /// Attempts to get numeric value for series hover snapshot.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
+    /// <param name="memberName">Input value for member name.</param>
+    /// <param name="value">Input value for value.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool TryGetNumericValue(object source, string memberName, out double value) {
         value = 0;
         var sourceType = source.GetType();
@@ -1832,6 +2165,15 @@ public class ChartTile : Panel {
         return false;
     }
 
+    /// <summary>
+    /// Attempts to convert to double for series hover snapshot.
+    /// </summary>
+    /// <param name="rawValue">Input value for raw value.</param>
+    /// <param name="value">Input value for value.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool TryConvertToDouble(object? rawValue, out double value) {
         value = 0;
         if (rawValue == null) {
@@ -1848,6 +2190,11 @@ public class ChartTile : Panel {
         };
     }
 
+    /// <summary>
+    /// Sets the axis inversion for series hover snapshot.
+    /// </summary>
+    /// <param name="axis">Input value for axis.</param>
+    /// <param name="isInverted">Input value for is inverted.</param>
     private static void SetAxisInversion(object axis, bool isInverted) {
         var axisType = axis.GetType();
 
@@ -1876,6 +2223,10 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Resolves the aggregation interval for series hover snapshot.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private TimeSpan? ResolveAggregationInterval() {
         if (_isStaticMode && _config.CustomPeriodDuration.HasValue && _config.CustomPeriodDuration.Value > TimeSpan.Zero) {
             var staticInterval = ResolveStaticAggregationInterval(_config.CustomPeriodDuration.Value);
@@ -1897,6 +2248,11 @@ public class ChartTile : Panel {
         return DataService.GetRecommendedAggregationInterval(_config.Period);
     }
 
+    /// <summary>
+    /// Resolves the static aggregation interval for series hover snapshot.
+    /// </summary>
+    /// <param name="range">Input value for range.</param>
+    /// <returns>The result of the operation.</returns>
     private TimeSpan ResolveStaticAggregationInterval(TimeSpan range) {
         return ChartAggregationHelper.CalculateAutomaticAggregationInterval(
             range,
@@ -1906,6 +2262,10 @@ public class ChartTile : Panel {
             applyPeriodMatching: true);
     }
 
+    /// <summary>
+    /// Updates the aggregation info label for series hover snapshot.
+    /// </summary>
+    /// <param name="interval">Input value for interval.</param>
     private void UpdateAggregationInfoLabel(TimeSpan? interval) {
         if (_aggregationInfoTextBox == null) {
             return;
@@ -1935,6 +2295,9 @@ public class ChartTile : Panel {
         _aggregationInfoTextBox.SelectionLength = 0;
     }
 
+    /// <summary>
+    /// Handles the axis rules changed for series hover snapshot.
+    /// </summary>
     private void HandleAxisRulesChanged() {
         if (_plot == null) {
             return;
@@ -1948,6 +2311,9 @@ public class ChartTile : Panel {
         RefreshData();
     }
 
+    /// <summary>
+    /// Handles the presets changed for series hover snapshot.
+    /// </summary>
     private void HandlePresetsChanged() {
         if (_periodSelector == null) {
             return;
@@ -1962,6 +2328,9 @@ public class ChartTile : Panel {
         SetSelectedPeriodPreset();
     }
 
+    /// <summary>
+    /// Loads the period presets for series hover snapshot.
+    /// </summary>
     private void LoadPeriodPresets() {
         if (_periodSelector == null) {
             return;
@@ -1974,6 +2343,9 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Sets the selected period preset for series hover snapshot.
+    /// </summary>
     private void SetSelectedPeriodPreset() {
         if (_periodSelector == null) {
             return;
@@ -2024,6 +2396,9 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Updates the period from selection for series hover snapshot.
+    /// </summary>
     private void UpdatePeriodFromSelection() {
         if (_periodSelector == null || _suppressPeriodChange) {
             return;
@@ -2049,8 +2424,7 @@ public class ChartTile : Panel {
     }
 
     /// <summary>
-    /// Reapplies per-metric axis colors when multiple Y axes are active.
-    /// This keeps axes distinguishable after a global theme color reset.
+    /// Executes reapply axis colors as part of series hover snapshot processing.
     /// </summary>
     private void ReapplyAxisColors() {
         if (_plot == null) {
@@ -2085,6 +2459,10 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Creates the static date picker for series hover snapshot.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static ThemedDateTimePicker CreateStaticDatePicker() {
         return new ThemedDateTimePicker {
             Width = 170,
@@ -2094,6 +2472,13 @@ public class ChartTile : Panel {
         };
     }
 
+    /// <summary>
+    /// Determines whether has persisted static range for series hover snapshot.
+    /// </summary>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private bool HasPersistedStaticRange() {
         if (_config.Period != ChartPeriod.Custom
             || !_config.CustomStartTime.HasValue
@@ -2106,6 +2491,9 @@ public class ChartTile : Panel {
         return endLocal > startLocal;
     }
 
+    /// <summary>
+    /// Executes restore persisted static state as part of series hover snapshot processing.
+    /// </summary>
     private void RestorePersistedStaticState() {
         if (!HasPersistedStaticRange()) {
             _staticModePaused = false;
@@ -2126,6 +2514,9 @@ public class ChartTile : Panel {
         _lastChartInteractionUtc = _staticModePaused ? DateTime.MinValue : DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// Updates the mode switch appearance for series hover snapshot.
+    /// </summary>
     private void UpdateModeSwitchAppearance() {
         if (_modeSegmentPanel == null || _inspectorHostPanel == null || _inspectorSegmentPanel == null || _autoModeButton == null
             || _staticModeButton == null || _pauseModeButton == null || _countdownLabel == null
@@ -2182,6 +2573,9 @@ public class ChartTile : Panel {
         _countdownLabel.Visible = _isStaticMode && !_staticModePaused;
     }
 
+    /// <summary>
+    /// Updates the countdown label for series hover snapshot.
+    /// </summary>
     private void UpdateCountdownLabel() {
         if (_countdownLabel == null) {
             return;
@@ -2205,6 +2599,10 @@ public class ChartTile : Panel {
         _countdownLabel.Visible = true;
     }
 
+    /// <summary>
+    /// Sets the static mode for series hover snapshot.
+    /// </summary>
+    /// <param name="enabled">Input value for enabled.</param>
     private void SetStaticMode(bool enabled) {
         _isStaticMode = enabled;
         _periodSelector?.Visible = !enabled;
@@ -2231,6 +2629,12 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Executes enter static mode as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="startLocal">Input value for start local.</param>
+    /// <param name="endLocal">Input value for end local.</param>
+    /// <param name="raiseEvents">Input value for raise events.</param>
     private void EnterStaticMode(DateTime startLocal, DateTime endLocal, bool raiseEvents) {
         if (!_isStaticMode) {
             _autoPeriod = _config.Period;
@@ -2252,6 +2656,11 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Executes sync static pickers as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="startLocal">Input value for start local.</param>
+    /// <param name="endLocal">Input value for end local.</param>
     private void SyncStaticPickers(DateTime startLocal, DateTime endLocal) {
         if (_staticStartPicker == null || _staticEndPicker == null) {
             return;
@@ -2266,6 +2675,11 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Executes static picker value changed as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void StaticPicker_ValueChanged(object? sender, EventArgs e) {
         if (_suppressStaticRangeChange || _staticStartPicker == null || _staticEndPicker == null) {
             return;
@@ -2280,6 +2694,11 @@ public class ChartTile : Panel {
         EnterStaticMode(start, end, raiseEvents: true);
     }
 
+    /// <summary>
+    /// Executes static mode timer tick as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void StaticModeTimer_Tick(object? sender, EventArgs e) {
         if (!_isStaticMode || _staticModePaused || _lastChartInteractionUtc == DateTime.MinValue) {
             return;
@@ -2292,6 +2711,9 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Ensures the inspector state for series hover snapshot.
+    /// </summary>
     private void EnsureInspectorState() {
         _inspectorActive = _config.ShowInspector;
 
@@ -2304,6 +2726,11 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Executes plot mouse move as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void Plot_MouseMove(object? sender, MouseEventArgs e) {
         if (!_inspectorActive || _plot == null || _hoverSeries.Count == 0) {
             return;
@@ -2321,14 +2748,29 @@ public class ChartTile : Panel {
         HoverAnchorChanged?.Invoke(this, anchor.Value);
     }
 
+    /// <summary>
+    /// Executes plot mouse enter as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void Plot_MouseEnter(object? sender, EventArgs e) {
         PlotHoverPresenceChanged?.Invoke(this, true);
     }
 
+    /// <summary>
+    /// Executes plot mouse leave as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void Plot_MouseLeave(object? sender, EventArgs e) {
         PlotHoverPresenceChanged?.Invoke(this, false);
     }
 
+    /// <summary>
+    /// Finds the nearest anchor x for series hover snapshot.
+    /// </summary>
+    /// <param name="x">Input value for x.</param>
+    /// <returns>The result of the operation.</returns>
     private double? FindNearestAnchorX(double x) {
         double? bestX = null;
         var bestDelta = double.PositiveInfinity;
@@ -2353,6 +2795,12 @@ public class ChartTile : Panel {
         return bestX;
     }
 
+    /// <summary>
+    /// Finds the nearest index for series hover snapshot.
+    /// </summary>
+    /// <param name="sortedValues">Input value for sorted values.</param>
+    /// <param name="value">Input value for value.</param>
+    /// <returns>The result of the operation.</returns>
     private static int FindNearestIndex(double[] sortedValues, double value) {
         if (sortedValues.Length == 0) {
             return -1;
@@ -2378,6 +2826,10 @@ public class ChartTile : Panel {
             : next;
     }
 
+    /// <summary>
+    /// Updates the hover vertical line for series hover snapshot.
+    /// </summary>
+    /// <param name="x">Input value for x.</param>
     private void UpdateHoverVerticalLine(double x) {
         if (_plot == null) {
             return;
@@ -2401,6 +2853,10 @@ public class ChartTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Updates the hover info for series hover snapshot.
+    /// </summary>
+    /// <param name="anchorX">Input value for anchor x.</param>
     private void UpdateHoverInfo(double anchorX) {
         if (_hoverInfoTextBox == null) {
             return;
@@ -2460,6 +2916,13 @@ public class ChartTile : Panel {
         _hoverInfoTextBox.ResumeLayout();
     }
 
+    /// <summary>
+    /// Executes append hover info chunk as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <param name="isBold">Input value for is bold.</param>
+    /// <param name="color">Input value for color.</param>
+    /// <param name="addSeparator">Input value for add separator.</param>
     private void AppendHoverInfoChunk(string text, bool isBold, Color color, bool addSeparator) {
         if (_hoverInfoTextBox == null || string.IsNullOrEmpty(text)) {
             return;
@@ -2483,6 +2946,9 @@ public class ChartTile : Panel {
         _hoverInfoTextBox.AppendText("  |  ");
     }
 
+    /// <summary>
+    /// Hides the inspector for series hover snapshot.
+    /// </summary>
     private void HideInspector() {
         if (_hoverVerticalLine is ScottPlot.Plottables.VerticalLine verticalLine) {
             verticalLine.IsVisible = false;
@@ -2493,14 +2959,27 @@ public class ChartTile : Panel {
         _lastHoverAnchorX = null;
     }
 
+    /// <summary>
+    /// Executes plot mouse wheel as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void Plot_MouseWheel(object? sender, MouseEventArgs e) {
         DetectXAxisInteraction();
     }
 
+    /// <summary>
+    /// Executes plot mouse double click as part of series hover snapshot processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void Plot_MouseDoubleClick(object? sender, MouseEventArgs e) {
         DetectXAxisInteraction();
     }
 
+    /// <summary>
+    /// Executes detect x axis interaction as part of series hover snapshot processing.
+    /// </summary>
     private void DetectXAxisInteraction() {
         if (_plot == null) {
             return;
@@ -2522,6 +3001,9 @@ public class ChartTile : Panel {
         EnterStaticMode(start, end, raiseEvents: true);
     }
 
+    /// <summary>
+    /// Executes remember current x axis limits as part of series hover snapshot processing.
+    /// </summary>
     private void RememberCurrentXAxisLimits() {
         if (_plot == null) {
             return;

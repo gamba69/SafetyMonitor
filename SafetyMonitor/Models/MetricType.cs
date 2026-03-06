@@ -1,10 +1,18 @@
 namespace SafetyMonitor.Models;
 
 public enum MetricType { Temperature, Humidity, Pressure, DewPoint, CloudCover, SkyTemperature, SkyBrightness, SkyQuality, RainRate, WindSpeed, WindGust, WindDirection, StarFwhm, IsSafe }
+/// <summary>
+/// Represents metric type extensions and encapsulates its related behavior and state.
+/// </summary>
 public static class MetricTypeExtensions {
 
     #region Public Methods
 
+    /// <summary>
+    /// Gets the display name for metric type extensions.
+    /// </summary>
+    /// <param name="type">Input value for type.</param>
+    /// <returns>The resulting string value.</returns>
     public static string GetDisplayName(this MetricType type) => type switch {
         MetricType.Temperature => "Temperature",
         MetricType.Humidity => "Humidity",
@@ -22,6 +30,11 @@ public static class MetricTypeExtensions {
         MetricType.IsSafe => "Safety",
         _ => type.ToString()
     };
+    /// <summary>
+    /// Gets the unit for metric type extensions.
+    /// </summary>
+    /// <param name="type">Input value for type.</param>
+    /// <returns>The resulting string value.</returns>
     public static string GetUnit(this MetricType type) => type switch {
         MetricType.Temperature => "°C",
         MetricType.Humidity => "%",
@@ -39,6 +52,12 @@ public static class MetricTypeExtensions {
         MetricType.IsSafe => "%",
         _ => ""
     };
+    /// <summary>
+    /// Gets the value for metric type extensions.
+    /// </summary>
+    /// <param name="type">Input value for type.</param>
+    /// <param name="data">Input value for data.</param>
+    /// <returns>The result of the operation.</returns>
     public static double? GetValue(this MetricType type, DataStorage.Models.ObservingData data) => type switch {
         MetricType.Temperature => data.Temperature,
         MetricType.Humidity => data.Humidity,

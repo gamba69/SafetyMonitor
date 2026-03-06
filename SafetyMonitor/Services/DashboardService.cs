@@ -3,6 +3,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 namespace SafetyMonitor.Services;
 
+/// <summary>
+/// Represents dashboard service and encapsulates its related behavior and state.
+/// </summary>
 public class DashboardService {
 
     #region Private Fields
@@ -14,6 +17,9 @@ public class DashboardService {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DashboardService"/> class.
+    /// </summary>
     public DashboardService() {
         _configDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SafetyMonitor", "Dashboards");
         _jsonOptions = new JsonSerializerOptions { WriteIndented = true, Converters = { new JsonStringEnumConverter(), new ColorJsonConverter() } };
@@ -23,6 +29,10 @@ public class DashboardService {
     #endregion Public Constructors
 
     #region Public Methods
+    /// <summary>
+    /// Deletes the dashboard for dashboard service.
+    /// </summary>
+    /// <param name="dashboard">Input value for dashboard.</param>
     public void DeleteDashboard(Dashboard dashboard) {
         EnsureConfigDirectoryExists();
         var path = Path.Combine(_configDirectory, $"{dashboard.Id}.json");
@@ -31,6 +41,11 @@ public class DashboardService {
         }
     }
 
+    /// <summary>
+    /// Executes duplicate dashboard as part of dashboard service processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
+    /// <returns>The result of the operation.</returns>
     public Dashboard DuplicateDashboard(Dashboard source) {
         var copy = JsonSerializer.Deserialize<Dashboard>(JsonSerializer.Serialize(source, _jsonOptions), _jsonOptions)!;
         copy.Id = Guid.NewGuid();
@@ -45,6 +60,10 @@ public class DashboardService {
         return copy;
     }
 
+    /// <summary>
+    /// Loads the dashboards for dashboard service.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     public List<Dashboard> LoadDashboards() {
         EnsureConfigDirectoryExists();
         var dashboards = new List<Dashboard>();
@@ -76,6 +95,10 @@ public class DashboardService {
             .ThenBy(d => d.Name)];
     }
 
+    /// <summary>
+    /// Resets the to single default dashboard for dashboard service.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     public Dashboard ResetToSingleDefaultDashboard() {
         EnsureConfigDirectoryExists();
 
@@ -91,12 +114,24 @@ public class DashboardService {
         return defaults.First();
     }
 
+    /// <summary>
+    /// Saves the dashboard for dashboard service.
+    /// </summary>
+    /// <param name="dashboard">Input value for dashboard.</param>
     public void SaveDashboard(Dashboard dashboard) {
         EnsureConfigDirectoryExists();
         dashboard.ModifiedAt = DateTime.Now;
         File.WriteAllText(Path.Combine(_configDirectory, $"{dashboard.Id}.json"), JsonSerializer.Serialize(dashboard, _jsonOptions));
     }
 
+    /// <summary>
+    /// Ensures the dashboard defaults for dashboard service.
+    /// </summary>
+    /// <param name="dashboard">Input value for dashboard.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool EnsureDashboardDefaults(Dashboard dashboard) {
         var hadAllLinkGroupPeriodDefaults = ChartLinkGroupInfo.All
             .All(group => dashboard.LinkGroupPeriodPresetUids.TryGetValue(group, out var uid)
@@ -108,6 +143,9 @@ public class DashboardService {
         return !hadAllLinkGroupPeriodDefaults || !hadValidLinkGroupConfiguration;
     }
 
+    /// <summary>
+    /// Ensures the config directory exists for dashboard service.
+    /// </summary>
     private void EnsureConfigDirectoryExists() {
         Directory.CreateDirectory(_configDirectory);
     }

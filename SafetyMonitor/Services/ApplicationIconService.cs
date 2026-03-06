@@ -3,10 +3,18 @@ using SafetyMonitor.Properties;
 
 namespace SafetyMonitor.Services;
 
+/// <summary>
+/// Represents application icon service and encapsulates its related behavior and state.
+/// </summary>
 internal static class ApplicationIconService {
 
     #region Public Methods
 
+    /// <summary>
+    /// Gets the theme icon for application icon service.
+    /// </summary>
+    /// <param name="theme">Input value for theme.</param>
+    /// <returns>The result of the operation.</returns>
     public static Icon GetThemeIcon(MaterialSkinManager.Themes theme) {
         var key = $"app_icon::{theme}";
         var cached = HeavyRenderCache.GetBitmap(key);

@@ -8,9 +8,7 @@ using SafetyMonitor.Services;
 namespace SafetyMonitor.Controls;
 
 /// <summary>
-/// Fully custom DateTimePicker with complete dark/light theme support.
-/// Replaces standard DateTimePicker which cannot be fully themed.
-/// Owner-draws the text area, dropdown button, and calendar popup.
+/// Represents themed date time picker and encapsulates its related behavior and state.
 /// </summary>
 public class ThemedDateTimePicker : UserControl {
 
@@ -44,6 +42,9 @@ public class ThemedDateTimePicker : UserControl {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ThemedDateTimePicker"/> class.
+    /// </summary>
     public ThemedDateTimePicker() {
         SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
                  ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
@@ -147,8 +148,7 @@ public class ThemedDateTimePicker : UserControl {
     #region Public Methods
 
     /// <summary>
-    /// Re-reads theme from MaterialSkinManager and repaints.
-    /// Call after theme switch or from ApplyThemeRecursive.
+    /// Applies the theme for themed date time picker.
     /// </summary>
     public void ApplyTheme() {
         var sm = MaterialSkinManager.Instance;
@@ -169,6 +169,10 @@ public class ThemedDateTimePicker : UserControl {
 
     #region Protected Methods
 
+    /// <summary>
+    /// Executes on paint as part of themed date time picker processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnPaint(PaintEventArgs e) {
         var g = e.Graphics;
         var bg = Enabled ? _backColor : _disabledBackColor;
@@ -180,6 +184,10 @@ public class ThemedDateTimePicker : UserControl {
         g.DrawRectangle(borderPen, 0, 0, Width - 1, Height - 1);
     }
 
+    /// <summary>
+    /// Executes on enabled changed as part of themed date time picker processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnEnabledChanged(EventArgs e) {
         base.OnEnabledChanged(e);
         _textPanel.Cursor = Enabled ? Cursors.Hand : Cursors.Default;
@@ -187,11 +195,19 @@ public class ThemedDateTimePicker : UserControl {
         Invalidate(true);
     }
 
+    /// <summary>
+    /// Executes on got focus as part of themed date time picker processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnGotFocus(EventArgs e) {
         base.OnGotFocus(e);
         Invalidate(true);
     }
 
+    /// <summary>
+    /// Executes on lost focus as part of themed date time picker processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnLostFocus(EventArgs e) {
         base.OnLostFocus(e);
         Invalidate(true);
@@ -199,6 +215,10 @@ public class ThemedDateTimePicker : UserControl {
 
     #endregion Protected Methods
 
+    /// <summary>
+    /// Executes on font changed as part of themed date time picker processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnFontChanged(EventArgs e) {
         base.OnFontChanged(e);
 
@@ -216,10 +236,22 @@ public class ThemedDateTimePicker : UserControl {
         }
     }
 
+    /// <summary>
+    /// Creates the safe font for themed date time picker.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static Font CreateSafeFont() {
         return new Font("Segoe UI", 9f, FontStyle.Regular);
     }
 
+    /// <summary>
+    /// Determines whether is installed font for themed date time picker.
+    /// </summary>
+    /// <param name="familyName">Input value for family name.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool IsInstalledFont(string? familyName) {
         if (string.IsNullOrWhiteSpace(familyName)) {
             return false;
@@ -232,6 +264,10 @@ public class ThemedDateTimePicker : UserControl {
 
     #region Private Methods
 
+    /// <summary>
+    /// Gets the formatted text for themed date time picker.
+    /// </summary>
+    /// <returns>The resulting string value.</returns>
     private string GetFormattedText() {
         var normalizedCustomFormat = NormalizeTimeFormat(_customFormat);
         return _format switch {
@@ -243,6 +279,11 @@ public class ThemedDateTimePicker : UserControl {
         };
     }
 
+    /// <summary>
+    /// Normalizes the time format for themed date time picker.
+    /// </summary>
+    /// <param name="format">Input value for format.</param>
+    /// <returns>The resulting string value.</returns>
     private static string NormalizeTimeFormat(string format) {
         if (string.IsNullOrWhiteSpace(format)) {
             return format;
@@ -254,6 +295,11 @@ public class ThemedDateTimePicker : UserControl {
         return normalized;
     }
 
+    /// <summary>
+    /// Executes text panel paint as part of themed date time picker processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void TextPanel_Paint(object? sender, PaintEventArgs e) {
         var g = e.Graphics;
         g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
@@ -275,6 +321,11 @@ public class ThemedDateTimePicker : UserControl {
         g.DrawLine(borderPen, 0, 0, 0, _textPanel.Height - 1);
     }
 
+    /// <summary>
+    /// Executes button panel paint as part of themed date time picker processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void ButtonPanel_Paint(object? sender, PaintEventArgs e) {
         var g = e.Graphics;
         g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -298,12 +349,19 @@ public class ThemedDateTimePicker : UserControl {
         g.DrawLine(borderPen, 0, _buttonPanel.Height - 1, _buttonPanel.Width - 1, _buttonPanel.Height - 1);
     }
 
+    /// <summary>
+    /// Gets the border color for themed date time picker.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private Color GetBorderColor() {
         return _isHovering && Enabled
             ? MaterialSkinManager.Instance.ColorScheme.PrimaryColor
             : _borderColorOverride ?? _borderColor;
     }
 
+    /// <summary>
+    /// Executes toggle popup as part of themed date time picker processing.
+    /// </summary>
     private void TogglePopup() {
         if (!Enabled) {
             return;
@@ -317,6 +375,9 @@ public class ThemedDateTimePicker : UserControl {
         ShowPopup();
     }
 
+    /// <summary>
+    /// Shows the popup for themed date time picker.
+    /// </summary>
     private void ShowPopup() {
         _popup = new CalendarPopup(_value, _minDate, _maxDate, _format, _customFormat);
         _popup.DateSelected += (_, dt) => { Value = dt; };
@@ -343,9 +404,12 @@ public class ThemedDateTimePicker : UserControl {
     #region Helpers
 
     /// <summary>
-    /// Panel with DoubleBuffered enabled to prevent flicker on repaint.
+    /// Represents buffered panel and encapsulates its related behavior and state.
     /// </summary>
     private sealed class BufferedPanel : Panel {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BufferedPanel"/> class.
+        /// </summary>
         public BufferedPanel() {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
                      ControlStyles.OptimizedDoubleBuffer, true);
@@ -357,10 +421,7 @@ public class ThemedDateTimePicker : UserControl {
     #region CalendarPopup
 
     /// <summary>
-    /// Themed calendar dropdown with month navigation, day grid, and optional time editing.
-    /// All custom-painted panels are double-buffered.
-    /// Layout uses DPI-aware sizing. Month names always in English.
-    /// Hover only invalidates the changed cell, not the whole grid.
+    /// Represents calendar popup and encapsulates its related behavior and state.
     /// </summary>
     private sealed class CalendarPopup : Form {
 
@@ -422,6 +483,17 @@ public class ThemedDateTimePicker : UserControl {
 
         public event EventHandler<DateTime>? DateSelected;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CalendarPopup"/> class.
+        /// </summary>
+        /// <param name="value">Input value for value.</param>
+        /// <param name="minDate">Input value for min date.</param>
+        /// <param name="maxDate">Input value for max date.</param>
+        /// <param name="format">Input value for format.</param>
+        /// <param name="customFormat">Input value for custom format.</param>
+        /// <remarks>
+        /// The constructor wires required dependencies and initial state.
+        /// </remarks>
         public CalendarPopup(DateTime value, DateTime minDate, DateTime maxDate,
                              DateTimePickerFormat format, string customFormat) {
             _selectedDate = value;
@@ -555,12 +627,20 @@ public class ThemedDateTimePicker : UserControl {
             }
         }
 
+        /// <summary>
+        /// Executes on paint as part of calendar popup processing.
+        /// </summary>
+        /// <param name="e">Input value for e.</param>
         protected override void OnPaint(PaintEventArgs e) {
             base.OnPaint(e);
             using var borderPen = new Pen(_borderColor);
             e.Graphics.DrawRectangle(borderPen, 0, 0, Width - 1, Height - 1);
         }
 
+        /// <summary>
+        /// Executes on form closed as part of calendar popup processing.
+        /// </summary>
+        /// <param name="e">Input value for e.</param>
         protected override void OnFormClosed(FormClosedEventArgs e) {
             _fadeTimer?.Stop();
             _fadeTimer?.Dispose();
@@ -570,6 +650,10 @@ public class ThemedDateTimePicker : UserControl {
             base.OnFormClosed(e);
         }
 
+        /// <summary>
+        /// Executes on shown as part of calendar popup processing.
+        /// </summary>
+        /// <param name="e">Input value for e.</param>
         protected override void OnShown(EventArgs e) {
             base.OnShown(e);
             StartFadeIn();
@@ -577,6 +661,9 @@ public class ThemedDateTimePicker : UserControl {
 
         #region Animation
 
+        /// <summary>
+        /// Starts the fade in for calendar popup.
+        /// </summary>
         private void StartFadeIn() {
             _fadeTimer?.Dispose();
             _fadeTimer = new System.Windows.Forms.Timer { Interval = FadeIntervalMs };
@@ -594,6 +681,9 @@ public class ThemedDateTimePicker : UserControl {
             _fadeTimer.Start();
         }
 
+        /// <summary>
+        /// Executes animate close as part of calendar popup processing.
+        /// </summary>
         private void AnimateClose() {
             if (_isClosing) {
                 return;
@@ -621,6 +711,10 @@ public class ThemedDateTimePicker : UserControl {
 
         #region DPI helpers
 
+        /// <summary>
+        /// Gets the dpi scale for calendar popup.
+        /// </summary>
+        /// <returns>The result of the operation.</returns>
         private static float GetDpiScale() {
             using var g = Graphics.FromHwnd(IntPtr.Zero);
             var nativeScale = g.DpiX / 96f;
@@ -628,6 +722,12 @@ public class ThemedDateTimePicker : UserControl {
             return Math.Max(1f, softenedScale);
         }
 
+        /// <summary>
+        /// Executes scale as part of calendar popup processing.
+        /// </summary>
+        /// <param name="value">Input value for value.</param>
+        /// <param name="dpiScale">Input value for dpi scale.</param>
+        /// <returns>The result of the operation.</returns>
         private static int Scale(int value, float dpiScale) =>
             (int)Math.Round(value * dpiScale);
 
@@ -635,6 +735,14 @@ public class ThemedDateTimePicker : UserControl {
 
         #region Header / Navigation
 
+        /// <summary>
+        /// Creates the nav button for calendar popup.
+        /// </summary>
+        /// <param name="materialGlyph">Input value for material glyph.</param>
+        /// <param name="fallbackText">Input value for fallback text.</param>
+        /// <param name="monthDelta">Input value for month delta.</param>
+        /// <param name="size">Input value for size.</param>
+        /// <returns>The result of the operation.</returns>
         private Button CreateNavButton(string materialGlyph, string fallbackText, int monthDelta, int size) {
             var btn = new Button {
                 Text = GetNavigationButtonText(materialGlyph, fallbackText),
@@ -657,6 +765,14 @@ public class ThemedDateTimePicker : UserControl {
             return btn;
         }
 
+        /// <summary>
+        /// Creates the year nav button for calendar popup.
+        /// </summary>
+        /// <param name="materialGlyph">Input value for material glyph.</param>
+        /// <param name="fallbackText">Input value for fallback text.</param>
+        /// <param name="yearDelta">Input value for year delta.</param>
+        /// <param name="size">Input value for size.</param>
+        /// <returns>The result of the operation.</returns>
         private Button CreateYearNavButton(string materialGlyph, string fallbackText, int yearDelta, int size) {
             var btn = new Button {
                 Text = GetNavigationButtonText(materialGlyph, fallbackText),
@@ -680,10 +796,21 @@ public class ThemedDateTimePicker : UserControl {
         }
 
 
+        /// <summary>
+        /// Gets the navigation button text for calendar popup.
+        /// </summary>
+        /// <param name="materialGlyph">Input value for material glyph.</param>
+        /// <param name="fallbackText">Input value for fallback text.</param>
+        /// <returns>The resulting string value.</returns>
         private string GetNavigationButtonText(string materialGlyph, string fallbackText) {
             return _materialIconFontFamily is null ? fallbackText : materialGlyph;
         }
 
+        /// <summary>
+        /// Creates the navigation button font for calendar popup.
+        /// </summary>
+        /// <param name="buttonSize">Input value for button size.</param>
+        /// <returns>The result of the operation.</returns>
         private Font CreateNavigationButtonFont(int buttonSize) {
             if (_materialIconFontFamily is null) {
                 return new Font("Segoe UI", 10f, FontStyle.Bold);
@@ -693,6 +820,10 @@ public class ThemedDateTimePicker : UserControl {
             return new Font(_materialIconFontFamily, fontSize, FontStyle.Regular, GraphicsUnit.Pixel);
         }
 
+        /// <summary>
+        /// Resolves the material font family for calendar popup.
+        /// </summary>
+        /// <returns>The resulting string value.</returns>
         private static string? ResolveMaterialFontFamily() {
             var candidates = new[] { "Material Symbols Outlined", "Material Symbols Rounded", "Material Icons" };
             using var installedFonts = new InstalledFontCollection();
@@ -707,6 +838,9 @@ public class ThemedDateTimePicker : UserControl {
             return null;
         }
 
+        /// <summary>
+        /// Updates the month label for calendar popup.
+        /// </summary>
         private void UpdateMonthLabel() {
             _monthLabel.Text = _displayMonth.ToString("MMMM yyyy", CultureInfo.InvariantCulture);
         }
@@ -715,6 +849,11 @@ public class ThemedDateTimePicker : UserControl {
 
         #region Day header painting
 
+        /// <summary>
+        /// Executes day header panel paint as part of calendar popup processing.
+        /// </summary>
+        /// <param name="sender">Input value for sender.</param>
+        /// <param name="e">Input value for e.</param>
         private void DayHeaderPanel_Paint(object? sender, PaintEventArgs e) {
             var g = e.Graphics;
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
@@ -733,6 +872,11 @@ public class ThemedDateTimePicker : UserControl {
 
         #region Calendar grid painting
 
+        /// <summary>
+        /// Executes calendar panel paint as part of calendar popup processing.
+        /// </summary>
+        /// <param name="sender">Input value for sender.</param>
+        /// <param name="e">Input value for e.</param>
         private void CalendarPanel_Paint(object? sender, PaintEventArgs e) {
             var g = e.Graphics;
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
@@ -824,6 +968,12 @@ public class ThemedDateTimePicker : UserControl {
             return (row, col);
         }
 
+        /// <summary>
+        /// Gets the date from cell for calendar popup.
+        /// </summary>
+        /// <param name="row">Input value for row.</param>
+        /// <param name="col">Input value for col.</param>
+        /// <returns>The result of the operation.</returns>
         private DateTime? GetDateFromCell(int row, int col) {
             var startOffset = ((int)_displayMonth.DayOfWeek + 6) % 7;
             var dayIndex = row * Cols + col - startOffset;
@@ -835,6 +985,11 @@ public class ThemedDateTimePicker : UserControl {
             return new DateTime(_displayMonth.Year, _displayMonth.Month, dayIndex + 1);
         }
 
+        /// <summary>
+        /// Executes calendar panel mouse move as part of calendar popup processing.
+        /// </summary>
+        /// <param name="sender">Input value for sender.</param>
+        /// <param name="e">Input value for e.</param>
         private void CalendarPanel_MouseMove(object? sender, MouseEventArgs e) {
             var (row, col) = HitTest(e.Location);
             if (row == _hoverRow && col == _hoverCol) {
@@ -851,6 +1006,11 @@ public class ThemedDateTimePicker : UserControl {
             InvalidateCell(row, col);
         }
 
+        /// <summary>
+        /// Executes calendar panel mouse leave as part of calendar popup processing.
+        /// </summary>
+        /// <param name="sender">Input value for sender.</param>
+        /// <param name="e">Input value for e.</param>
         private void CalendarPanel_MouseLeave(object? sender, EventArgs e) {
             if (_hoverRow < 0 && _hoverCol < 0) {
                 return;
@@ -863,6 +1023,11 @@ public class ThemedDateTimePicker : UserControl {
             InvalidateCell(prevRow, prevCol);
         }
 
+        /// <summary>
+        /// Executes invalidate cell as part of calendar popup processing.
+        /// </summary>
+        /// <param name="row">Input value for row.</param>
+        /// <param name="col">Input value for col.</param>
         private void InvalidateCell(int row, int col) {
             if (row < 0 || col < 0) {
                 return;
@@ -872,6 +1037,11 @@ public class ThemedDateTimePicker : UserControl {
                 _pad + col * _cellSize, row * _cellSize, _cellSize, _cellSize));
         }
 
+        /// <summary>
+        /// Executes calendar panel mouse click as part of calendar popup processing.
+        /// </summary>
+        /// <param name="sender">Input value for sender.</param>
+        /// <param name="e">Input value for e.</param>
         private void CalendarPanel_MouseClick(object? sender, MouseEventArgs e) {
             var (row, col) = HitTest(e.Location);
             var date = GetDateFromCell(row, col);
@@ -901,6 +1071,10 @@ public class ThemedDateTimePicker : UserControl {
 
         #region Time controls
 
+        /// <summary>
+        /// Builds the time controls for calendar popup.
+        /// </summary>
+        /// <param name="dpiScale">Input value for dpi scale.</param>
         private void BuildTimeControls(float dpiScale) {
             if (_timePanel == null) {
                 return;
@@ -1019,6 +1193,10 @@ public class ThemedDateTimePicker : UserControl {
             EnsureLeadingZeros(_minuteSpin);
         }
 
+        /// <summary>
+        /// Ensures the leading zeros for calendar popup.
+        /// </summary>
+        /// <param name="numericUpDown">Input value for numeric up down.</param>
         private static void EnsureLeadingZeros(NumericUpDown? numericUpDown) {
             if (numericUpDown?.Controls.Count > 1 && numericUpDown.Controls[1] is TextBox textBox) {
                 textBox.Text = ((int)numericUpDown.Value).ToString("00", CultureInfo.InvariantCulture);

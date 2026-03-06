@@ -6,6 +6,9 @@ using SafetyMonitor.Services;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents main form and encapsulates its related behavior and state.
+/// </summary>
 public class MainForm : MaterialForm {
 
     #region Public Events
@@ -130,6 +133,9 @@ public class MainForm : MaterialForm {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MainForm"/> class.
+    /// </summary>
     public MainForm() {
         _skinManager = MaterialSkinManager.Instance;
         _skinManager.AddFormToManage(this);
@@ -184,6 +190,10 @@ public class MainForm : MaterialForm {
 
     #region Protected Methods
 
+    /// <summary>
+    /// Executes on form closing as part of main form processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnFormClosing(FormClosingEventArgs e) {
         if (!_isExitConfirmed && e.CloseReason == CloseReason.UserClosing) {
             var confirmExit = ThemedMessageBox.Show(
@@ -236,6 +246,10 @@ public class MainForm : MaterialForm {
         base.OnFormClosing(e);
     }
 
+    /// <summary>
+    /// Executes on move as part of main form processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnMove(EventArgs e) {
         base.OnMove(e);
 
@@ -245,6 +259,10 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Executes on resize as part of main form processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnResize(EventArgs e) {
         base.OnResize(e);
 
@@ -291,6 +309,10 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Executes on shown as part of main form processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnShown(EventArgs e) {
         base.OnShown(e);
 
@@ -334,17 +356,16 @@ public class MainForm : MaterialForm {
     // Visor overlay that hides layout artifacts during transitions.
 
     /// <summary>
-    /// Returns the visor background color matching the current theme.
+    /// Gets the visor color for main form.
     /// </summary>
+    /// <returns>The result of the operation.</returns>
     private Color GetVisorColor() {
         var isLightTheme = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         return AppColorizationService.Instance.GetNeutralPalette(isLightTheme).FormBackground;
     }
 
     /// <summary>
-    /// Shows an opaque visor overlay covering the dashboard area.
-    /// The visor is a borderless Form with real Opacity support.
-    /// It is positioned exactly over _dashboardContainer in screen coordinates.
+    /// Shows the visor for main form.
     /// </summary>
     private void ShowVisor() {
         HideVisorImmediate();
@@ -383,6 +404,10 @@ public class MainForm : MaterialForm {
         _visorForm.Show(this);
     }
 
+    /// <summary>
+    /// Sets the up visor loader for main form.
+    /// </summary>
+    /// <param name="visorForm">Input value for visor form.</param>
     private void SetupVisorLoader(Form visorForm) {
         _visorLoaderTimer?.Stop();
         _visorLoaderTimer?.Dispose();
@@ -445,6 +470,9 @@ public class MainForm : MaterialForm {
         _visorLoaderTimer.Start();
     }
 
+    /// <summary>
+    /// Refreshes the visor colors for main form.
+    /// </summary>
     private void RefreshVisorColors() {
         if (_visorForm == null || _visorForm.IsDisposed) {
             return;
@@ -462,9 +490,9 @@ public class MainForm : MaterialForm {
     }
 
     /// <summary>
-    /// Starts a visor fade-out animation.
-    /// It reduces opacity from 1.0 to 0.0 over VisorFadeDurationMs and then disposes the visor.
+    /// Executes fade out visor as part of main form processing.
     /// </summary>
+    /// <param name="onComplete">Input value for on complete.</param>
     private void FadeOutVisor(Action? onComplete = null) {
         if (_visorForm == null || _visorForm.IsDisposed) {
             onComplete?.Invoke();
@@ -504,8 +532,7 @@ public class MainForm : MaterialForm {
     }
 
     /// <summary>
-    /// Immediately hides and disposes the visor without animation.
-    /// Safe to call even when no visor is active.
+    /// Hides the visor immediate for main form.
     /// </summary>
     private void HideVisorImmediate() {
         _visorFadeTimer?.Stop();
@@ -530,9 +557,7 @@ public class MainForm : MaterialForm {
     }
 
     /// <summary>
-    /// Schedules the visor fade-out after a configurable delay.
-    /// Called when the dashboard is fully built and ready.
-    /// If no visor is currently displayed, does nothing.
+    /// Executes schedule visor reveal as part of main form processing.
     /// </summary>
     private void ScheduleVisorReveal() {
         if (_visorForm == null || _visorForm.IsDisposed) {
@@ -549,10 +574,7 @@ public class MainForm : MaterialForm {
     }
 
     /// <summary>
-    /// Initial dashboard reveal sequence on first launch.
-    /// 1. Show visor (opaque, theme-colored) — BEFORE anything becomes visible.
-    /// 2. Apply theme fixup, make dashboard visible, refresh data — all behind visor.
-    /// 3. Schedule visor fade-out.
+    /// Executes begin initial dashboard reveal as part of main form processing.
     /// </summary>
     private async void BeginInitialDashboardReveal() {
         // 1. Show visor FIRST — before any dashboard UI becomes visible
@@ -594,6 +616,12 @@ public class MainForm : MaterialForm {
 
     // Quick access helpers.
 
+    /// <summary>
+    /// Applies the quick access colors for main form.
+    /// </summary>
+    /// <param name="parent">Input value for parent.</param>
+    /// <param name="bg">Input value for bg.</param>
+    /// <param name="fg">Input value for fg.</param>
     private static void ApplyQuickAccessColors(Control parent, Color bg, Color fg) {
         foreach (Control control in parent.Controls) {
             if (control is RadioButton { Appearance: Appearance.Button }) {
@@ -608,6 +636,15 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Creates the menu item for main form.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <param name="iconName">Input value for icon name.</param>
+    /// <param name="iconColor">Input value for icon color.</param>
+    /// <param name="onClick">Input value for on click.</param>
+    /// <param name="forceFilled">Input value for force filled.</param>
+    /// <returns>The result of the operation.</returns>
     private static ToolStripMenuItem CreateMenuItem(string text, string iconName, Color iconColor, EventHandler? onClick, bool? forceFilled = null) {
         var item = new ToolStripMenuItem(text) {
             Image = MaterialIcons.GetIcon(iconName, iconColor, MenuIconSize, forceFilled == true ? IconRenderPreset.DarkFilled : IconRenderPreset.DarkOutlined),
@@ -619,6 +656,11 @@ public class MainForm : MaterialForm {
         return item;
     }
 
+    /// <summary>
+    /// Gets the icon name for menu item for main form.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <returns>The resulting string value.</returns>
     private static string GetIconNameForMenuItem(string text) {
         return text switch {
             "Settings…" => MaterialIcons.MenuFileSettings,
@@ -649,6 +691,11 @@ public class MainForm : MaterialForm {
         };
     }
 
+    /// <summary>
+    /// Updates the menu items icons for main form.
+    /// </summary>
+    /// <param name="items">Input value for items.</param>
+    /// <param name="iconColor">Input value for icon color.</param>
     private static void UpdateMenuItemsIcons(ToolStripItemCollection items, Color iconColor) {
         foreach (ToolStripItem item in items) {
             if (item is ToolStripMenuItem menuItem) {
@@ -671,6 +718,11 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Applies the context menu item font for main form.
+    /// </summary>
+    /// <param name="items">Input value for items.</param>
+    /// <param name="menuFont">Input value for menu font.</param>
     private static void ApplyContextMenuItemFont(ToolStripItemCollection items, Font menuFont) {
         foreach (ToolStripItem item in items) {
             item.Font = menuFont;
@@ -680,6 +732,9 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Applies the application icon for main form.
+    /// </summary>
     private void ApplyApplicationIcon() {
         var newIcon = ApplicationIconService.GetThemeIcon(_skinManager.Theme);
         var previousOwnedIcon = _themeApplicationIcon;
@@ -690,6 +745,9 @@ public class MainForm : MaterialForm {
         previousOwnedIcon?.Dispose();
     }
 
+    /// <summary>
+    /// Applies the window settings for main form.
+    /// </summary>
     private void ApplyWindowSettings() {
         if (_appSettings.WindowWidth > 0 && _appSettings.WindowHeight > 0) {
             Size = new Size(_appSettings.WindowWidth, _appSettings.WindowHeight);
@@ -720,6 +778,9 @@ public class MainForm : MaterialForm {
         _shouldStartMaximized = _appSettings.IsMaximized;
     }
 
+    /// <summary>
+    /// Creates the menu items for main form.
+    /// </summary>
     private void CreateMenuItems() {
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var iconColor = isLight ? Color.Black : Color.White;
@@ -752,6 +813,9 @@ public class MainForm : MaterialForm {
         InteractiveCursorStyler.Apply(_mainMenu.Items);
     }
 
+    /// <summary>
+    /// Creates the new dashboard for main form.
+    /// </summary>
     private void CreateNewDashboard() {
         var dashboard = new Dashboard {
             Name = $"New Dashboard {_dashboards.Count + 1}",
@@ -766,6 +830,9 @@ public class MainForm : MaterialForm {
         LoadDashboard(dashboard);
     }
 
+    /// <summary>
+    /// Creates the quick access controls for main form.
+    /// </summary>
     private void CreateQuickAccessControls() {
         _dashboardLabel = new Label {
             Text = "Dashboards",
@@ -946,6 +1013,10 @@ public class MainForm : MaterialForm {
         _quickAccessPanel.SizeChanged += (s, e) => RefreshQuickAccessLayout();
     }
 
+    /// <summary>
+    /// Creates the edit dashboard context menu for main form.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private ContextMenuStrip CreateEditDashboardContextMenu() {
         var iconColor = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT ? Color.Black : Color.White;
         var contextMenu = new ContextMenuStrip {
@@ -1006,6 +1077,14 @@ public class MainForm : MaterialForm {
         return contextMenu;
     }
 
+    /// <summary>
+    /// Creates the link mode menu item for main form.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <param name="iconName">Input value for icon name.</param>
+    /// <param name="mode">Input value for mode.</param>
+    /// <param name="iconColor">Input value for icon color.</param>
+    /// <returns>The result of the operation.</returns>
     private ToolStripMenuItem CreateLinkModeMenuItem(string text, string iconName, DashboardChartLinkMode mode, Color iconColor) {
         var item = CreateMenuItem(text, iconName, iconColor, (_, _) => SaveDashboardLinkModeAndReload(mode));
         item.CheckOnClick = false;
@@ -1014,18 +1093,42 @@ public class MainForm : MaterialForm {
     }
 
 
+    /// <summary>
+    /// Performs the quick access link controls layout state operation.
+    /// </summary>
     private readonly record struct QuickAccessLinkControlsLayoutState(bool ShowSection, bool ShowGroupedToggle);
 
     private static bool IsGroupedLinkModeAvailable(Dashboard? dashboard) => (dashboard?.UsedLinkGroups ?? ChartLinkGroupInfo.MaxUsedGroups) > 1;
 
+    /// <summary>
+    /// Determines whether should show quick access link controls for main form.
+    /// </summary>
+    /// <param name="dashboard">Input value for dashboard.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool ShouldShowQuickAccessLinkControls(Dashboard? dashboard)
         => dashboard?.Tiles.OfType<ChartTileConfig>().Take(2).Count() >= 2;
 
+    /// <summary>
+    /// Gets the quick access link controls layout state for main form.
+    /// </summary>
+    /// <param name="dashboard">Input value for dashboard.</param>
+    /// <returns>The result of the operation.</returns>
     private static QuickAccessLinkControlsLayoutState GetQuickAccessLinkControlsLayoutState(Dashboard? dashboard) {
         var showSection = ShouldShowQuickAccessLinkControls(dashboard);
         return new QuickAccessLinkControlsLayoutState(showSection, showSection && IsGroupedLinkModeAvailable(dashboard));
     }
 
+    /// <summary>
+    /// Sets the grouped link toggle visibility for main form.
+    /// </summary>
+    /// <param name="visible">Input value for visible.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private bool SetGroupedLinkToggleVisibility(bool visible) {
         if (_groupLinkedChartsButton == null) {
             return false;
@@ -1036,6 +1139,11 @@ public class MainForm : MaterialForm {
         return changed;
     }
 
+    /// <summary>
+    /// Applies the quick access link controls layout state for main form.
+    /// </summary>
+    /// <param name="state">Input value for state.</param>
+    /// <param name="forceLayoutRefresh">Input value for force layout refresh.</param>
     private void ApplyQuickAccessLinkControlsLayoutState(QuickAccessLinkControlsLayoutState state, bool forceLayoutRefresh = false) {
         var sectionVisibilityChanged = _linkSegmentPanel.Visible != state.ShowSection;
         var groupedVisibilityChanged = SetGroupedLinkToggleVisibility(state.ShowGroupedToggle);
@@ -1056,11 +1164,19 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Sets the refresh indicator visibility for main form.
+    /// </summary>
+    /// <param name="visible">Input value for visible.</param>
     private void SetRefreshIndicatorVisibility(bool visible) {
         _refreshIndicatorIcon.Visible = visible;
         _refreshIndicatorTimeLabel.Visible = visible;
     }
 
+    /// <summary>
+    /// Sets the export indicator visibility for main form.
+    /// </summary>
+    /// <param name="visible">Input value for visible.</param>
     private void SetExportIndicatorVisibility(bool visible) {
         _exportProgressIcon.Visible = visible;
         _exportProgressLabel.Visible = visible;
@@ -1069,6 +1185,10 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Executes schedule quick access link layout step as part of main form processing.
+    /// </summary>
+    /// <param name="nextStep">Input value for next step.</param>
     private void ScheduleQuickAccessLinkLayoutStep(Action nextStep) {
         var delayTimer = new System.Windows.Forms.Timer { Interval = QuickAccessLinkLayoutStepDelayMs };
         delayTimer.Tick += (_, _) => {
@@ -1079,6 +1199,10 @@ public class MainForm : MaterialForm {
         delayTimer.Start();
     }
 
+    /// <summary>
+    /// Executes begin quick access link layout staggered update as part of main form processing.
+    /// </summary>
+    /// <param name="targetState">Input value for target state.</param>
     private void BeginQuickAccessLinkLayoutStaggeredUpdate(QuickAccessLinkControlsLayoutState targetState) {
         if (_isQuickAccessLinkLayoutStaggeredUpdateInProgress) {
             _pendingQuickAccessLinkLayoutState = targetState;
@@ -1141,6 +1265,16 @@ public class MainForm : MaterialForm {
         ScheduleQuickAccessLinkLayoutStep((Action)ShowLinkBlockStep);
     }
 
+    /// <summary>
+    /// Attempts to start quick access link layout transition for main form.
+    /// </summary>
+    /// <param name="previousDashboard">Input value for previous dashboard.</param>
+    /// <param name="targetDashboard">Input value for target dashboard.</param>
+    /// <param name="isDashboardSwitch">Input value for is dashboard switch.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private bool TryStartQuickAccessLinkLayoutTransition(Dashboard? previousDashboard, Dashboard? targetDashboard, bool isDashboardSwitch) {
         if (!isDashboardSwitch || previousDashboard == null || targetDashboard == null) {
             return false;
@@ -1168,6 +1302,12 @@ public class MainForm : MaterialForm {
         return true;
     }
 
+    /// <summary>
+    /// Gets the current quick access link controls layout state for main form.
+    /// </summary>
+    /// <param name="dashboard">Input value for dashboard.</param>
+    /// <param name="deferLayoutChange">Input value for defer layout change.</param>
+    /// <returns>The result of the operation.</returns>
     private QuickAccessLinkControlsLayoutState GetCurrentQuickAccessLinkControlsLayoutState(Dashboard? dashboard, bool deferLayoutChange) {
         if (deferLayoutChange && _isQuickAccessLinkLayoutTransitionPending) {
             return _pendingQuickAccessLinkLayoutState;
@@ -1176,6 +1316,9 @@ public class MainForm : MaterialForm {
         return GetQuickAccessLinkControlsLayoutState(dashboard);
     }
 
+    /// <summary>
+    /// Executes complete quick access link layout transition if needed as part of main form processing.
+    /// </summary>
     private void CompleteQuickAccessLinkLayoutTransitionIfNeeded() {
         if (!_isQuickAccessLinkLayoutTransitionPending) {
             return;
@@ -1190,6 +1333,10 @@ public class MainForm : MaterialForm {
         BeginQuickAccessLinkLayoutStaggeredUpdate(pendingState);
     }
 
+    /// <summary>
+    /// Gets the context menu target dashboard for main form.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private Dashboard? GetContextMenuTargetDashboard() {
         if (_quickButtonContextDashboardId.HasValue) {
             return _dashboards.FirstOrDefault(d => d.Id == _quickButtonContextDashboardId.Value);
@@ -1198,6 +1345,11 @@ public class MainForm : MaterialForm {
         return _currentDashboard;
     }
 
+    /// <summary>
+    /// Executes quick panel mouse up as part of main form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void QuickPanel_MouseUp(object? sender, MouseEventArgs e) {
         if (e.Button != MouseButtons.Right || _editDashboardContextMenu == null || sender is not Control control) {
             return;
@@ -1211,6 +1363,11 @@ public class MainForm : MaterialForm {
         _editDashboardContextMenu.Show(control, e.Location);
     }
 
+    /// <summary>
+    /// Executes quick dashboards panel mouse up as part of main form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void QuickDashboardsPanel_MouseUp(object? sender, MouseEventArgs e) {
         if (e.Button != MouseButtons.Right || _editDashboardContextMenu == null || sender is not Control control) {
             return;
@@ -1225,6 +1382,12 @@ public class MainForm : MaterialForm {
         _editDashboardContextMenu.Show(control, e.Location);
     }
 
+    /// <summary>
+    /// Executes quick dashboard button mouse up as part of main form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
+    /// <param name="dashboard">Input value for dashboard.</param>
     private void QuickDashboardButton_MouseUp(object? sender, MouseEventArgs e, Dashboard dashboard) {
         if (e.Button != MouseButtons.Right || _editDashboardContextMenu == null || sender is not Control control) {
             return;
@@ -1234,6 +1397,9 @@ public class MainForm : MaterialForm {
         _editDashboardContextMenu.Show(control, e.Location);
     }
 
+    /// <summary>
+    /// Executes toggle dashboard favorite from quick button as part of main form processing.
+    /// </summary>
     private void ToggleDashboardFavoriteFromQuickButton() {
         var dashboard = GetContextMenuTargetDashboard();
         if (dashboard == null) {
@@ -1271,12 +1437,18 @@ public class MainForm : MaterialForm {
         RefreshQuickAccessLayout();
     }
 
+    /// <summary>
+    /// Deletes the current dashboard for main form.
+    /// </summary>
     private void DeleteCurrentDashboard() {
         if (_currentDashboard == null || _dashboards.Count <= 1) { ThemedMessageBox.Show(this, "Cannot delete the last dashboard", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
         var result = ThemedMessageBox.Show(this, $"Delete dashboard '{_currentDashboard.Name}'?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
         if (result == DialogResult.Yes) { InvalidateDashboardPanelCache(_currentDashboard.Id); _dashboardService.DeleteDashboard(_currentDashboard); _dashboards.Remove(_currentDashboard); LoadDashboard(_dashboards[0]); UpdateQuickDashboards(); }
     }
 
+    /// <summary>
+    /// Executes duplicate current dashboard as part of main form processing.
+    /// </summary>
     private void DuplicateCurrentDashboard() {
         if (_currentDashboard == null) { return; }
         var copy = _dashboardService.DuplicateDashboard(_currentDashboard);
@@ -1289,17 +1461,28 @@ public class MainForm : MaterialForm {
         LoadDashboard(copy);
     }
 
+    /// <summary>
+    /// Executes edit current dashboard as part of main form processing.
+    /// </summary>
     private void EditCurrentDashboard() {
         if (_currentDashboard == null) { return; }
         EditDashboard(_currentDashboard, switchToEditedDashboardOnSave: false);
     }
 
+    /// <summary>
+    /// Executes edit dashboard from context menu as part of main form processing.
+    /// </summary>
     private void EditDashboardFromContextMenu() {
         var targetDashboard = GetContextMenuTargetDashboard();
         if (targetDashboard == null) { return; }
         EditDashboard(targetDashboard, switchToEditedDashboardOnSave: true);
     }
 
+    /// <summary>
+    /// Executes edit dashboard as part of main form processing.
+    /// </summary>
+    /// <param name="dashboard">Input value for dashboard.</param>
+    /// <param name="switchToEditedDashboardOnSave">Input value for switch to edited dashboard on save.</param>
     private void EditDashboard(Dashboard dashboard, bool switchToEditedDashboardOnSave) {
         using var editor = new DashboardEditorForm(dashboard);
         if (editor.ShowDialog() != DialogResult.OK) {
@@ -1337,6 +1520,9 @@ public class MainForm : MaterialForm {
         UpdateQuickDashboards();
     }
 
+    /// <summary>
+    /// Initializes main form state and required resources.
+    /// </summary>
     private void InitializeComponent() {
         SuspendLayout();
         Text = "⛨  DreamSky Observatory | Safety Monitor";
@@ -1404,12 +1590,10 @@ public class MainForm : MaterialForm {
     }
 
     /// <summary>
-    /// Loads a dashboard. During initial load (_initialRevealCompleted == false),
-    /// the panel is created invisible and not shown.
-    /// BeginInitialDashboardReveal handles the first reveal behind a visor.
-    /// After the initial reveal, every LoadDashboard call immediately shows a visor,
-    /// builds the new dashboard behind it, then fades the visor out.
+    /// Loads the dashboard for main form.
     /// </summary>
+    /// <param name="dashboard">Input value for dashboard.</param>
+    /// <param name="visorAlreadyShown">Input value for visor already shown.</param>
     private void LoadDashboard(Dashboard dashboard, bool visorAlreadyShown = false) {
         // Show visor BEFORE building the new panel — but only when the initial
         // reveal is already completed (not during the very first load from constructor).
@@ -1501,12 +1685,25 @@ public class MainForm : MaterialForm {
         RestartRefreshTimerInterval();
     }
 
+    /// <summary>
+    /// Determines whether should rebuild quick dashboards for main form.
+    /// </summary>
+    /// <param name="previousDashboard">Input value for previous dashboard.</param>
+    /// <param name="currentDashboard">Input value for current dashboard.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool ShouldRebuildQuickDashboards(Dashboard? previousDashboard, Dashboard currentDashboard) {
         var previousWasQuickAccess = previousDashboard != null && previousDashboard.IsQuickAccess;
         var currentIsQuickAccess = currentDashboard.IsQuickAccess;
         return !(previousWasQuickAccess && currentIsQuickAccess);
     }
 
+    /// <summary>
+    /// Loads the dashboards for main form.
+    /// </summary>
+    /// <param name="initializeStartupReset">Input value for initialize startup reset.</param>
     private void LoadDashboards(bool initializeStartupReset = false) {
         _dashboards = _dashboardService.LoadDashboards();
         SortDashboardsForDisplay();
@@ -1529,6 +1726,11 @@ public class MainForm : MaterialForm {
         UpdateQuickDashboards();
     }
 
+    /// <summary>
+    /// Executes on first handle created as part of main form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnFirstHandleCreated(object? sender, EventArgs e) {
         HandleCreated -= OnFirstHandleCreated;
         if (_dashboardPanel != null) {
@@ -1536,6 +1738,12 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Executes queue dashboard initial render as part of main form processing.
+    /// </summary>
+    /// <param name="panel">Input value for panel.</param>
+    /// <param name="previousPanel">Input value for previous panel.</param>
+    /// <param name="applyStartupReset">Input value for apply startup reset.</param>
     private void QueueDashboardInitialRender(DashboardPanel panel, DashboardPanel? previousPanel, bool applyStartupReset) {
         if (!IsHandleCreated) {
             HandleCreated -= OnFirstHandleCreated;
@@ -1567,6 +1775,13 @@ public class MainForm : MaterialForm {
         BeginInvoke(async () => await RefreshAndShowDashboardAsync(panel, previousPanel, applyStartupReset));
     }
 
+    /// <summary>
+    /// Refreshes the and show dashboard async for main form.
+    /// </summary>
+    /// <param name="panel">Input value for panel.</param>
+    /// <param name="previousPanel">Input value for previous panel.</param>
+    /// <param name="applyStartupReset">Input value for apply startup reset.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     private async Task RefreshAndShowDashboardAsync(DashboardPanel panel, DashboardPanel? previousPanel, bool applyStartupReset) {
         if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) { HideVisorImmediate(); return; }
 
@@ -1587,6 +1802,9 @@ public class MainForm : MaterialForm {
         ScheduleVisorReveal();
     }
 
+    /// <summary>
+    /// Executes mark current dashboard startup reset handled as part of main form processing.
+    /// </summary>
     private void MarkCurrentDashboardStartupResetHandled() {
         if (_currentDashboard == null || !_currentDashboard.NeedsStartupReset) {
             return;
@@ -1596,12 +1814,20 @@ public class MainForm : MaterialForm {
         _dashboardService.SaveDashboard(_currentDashboard);
     }
 
+    /// <summary>
+    /// Removes the old dashboard panel for main form.
+    /// </summary>
+    /// <param name="previousPanel">Input value for previous panel.</param>
+    /// <param name="newPanel">Input value for new panel.</param>
     private void RemoveOldDashboardPanel(DashboardPanel? previousPanel, DashboardPanel newPanel) {
         if (previousPanel == null || ReferenceEquals(previousPanel, newPanel) || previousPanel.IsDisposed) { return; }
         previousPanel.Visible = false;
         if (_dashboardContainer.Controls.Contains(previousPanel)) { _dashboardContainer.Controls.Remove(previousPanel); }
     }
 
+    /// <summary>
+    /// Executes purge all dashboard panels as part of main form processing.
+    /// </summary>
     private void PurgeAllDashboardPanels() {
         var uniquePanels = new HashSet<DashboardPanel>(_dashboardPanelCache.Values);
         if (_dashboardPanel != null) {
@@ -1624,6 +1850,10 @@ public class MainForm : MaterialForm {
         _dashboardPanel = null;
     }
 
+    /// <summary>
+    /// Executes invalidate dashboard panel cache as part of main form processing.
+    /// </summary>
+    /// <param name="dashboardId">Identifier of dashboard.</param>
     private void InvalidateDashboardPanelCache(Guid dashboardId) {
         if (_dashboardPanelCache.Remove(dashboardId, out var panel) && !panel.IsDisposed) {
             if (_dashboardContainer.Controls.Contains(panel)) { _dashboardContainer.Controls.Remove(panel); }
@@ -1631,6 +1861,9 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Executes clear dashboard panel cache as part of main form processing.
+    /// </summary>
     private void ClearDashboardPanelCache() {
         foreach (var (_, panel) in _dashboardPanelCache) {
             if (panel.IsDisposed) { continue; }
@@ -1641,11 +1874,18 @@ public class MainForm : MaterialForm {
         _dashboardPanelCache.Clear();
     }
 
+    /// <summary>
+    /// Executes on dashboard changed as part of main form processing.
+    /// </summary>
     private void OnDashboardChanged() {
         if (_currentDashboard == null) { return; }
         _dashboardService.SaveDashboard(_currentDashboard);
     }
 
+    /// <summary>
+    /// Sets the current dashboard link mode for main form.
+    /// </summary>
+    /// <param name="mode">Input value for mode.</param>
     private void SetCurrentDashboardLinkMode(DashboardChartLinkMode mode) {
         if (_currentDashboard == null || _dashboardPanel == null) {
             return;
@@ -1656,6 +1896,10 @@ public class MainForm : MaterialForm {
         UpdateLinkSwitchAppearance();
     }
 
+    /// <summary>
+    /// Saves the dashboard link mode and reload for main form.
+    /// </summary>
+    /// <param name="mode">Input value for mode.</param>
     private void SaveDashboardLinkModeAndReload(DashboardChartLinkMode mode) {
         var targetDashboard = GetContextMenuTargetDashboard();
         if (targetDashboard == null) {
@@ -1686,6 +1930,9 @@ public class MainForm : MaterialForm {
         UpdateQuickDashboards();
     }
 
+    /// <summary>
+    /// Resets the current dashboard link state for main form.
+    /// </summary>
     private void ResetCurrentDashboardLinkState() {
         if (_currentDashboard == null || _dashboardPanel == null) {
             return;
@@ -1705,6 +1952,9 @@ public class MainForm : MaterialForm {
         UpdateLinkSwitchAppearance();
     }
 
+    /// <summary>
+    /// Executes on dashboard reset to default requested as part of main form processing.
+    /// </summary>
     private void OnDashboardResetToDefaultRequested() {
         if (_currentDashboard == null) {
             return;
@@ -1714,6 +1964,10 @@ public class MainForm : MaterialForm {
         ResetCurrentDashboardLinkState();
     }
 
+    /// <summary>
+    /// Executes on tile edit requested as part of main form processing.
+    /// </summary>
+    /// <param name="tileConfig">Input value for tile config.</param>
     private void OnTileEditRequested(TileConfig tileConfig) {
         if (_currentDashboard == null) { return; }
 
@@ -1759,6 +2013,11 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Executes capture chart tile edit snapshot as part of main form processing.
+    /// </summary>
+    /// <param name="config">Input value for config.</param>
+    /// <returns>The result of the operation.</returns>
     private static ChartTileEditSnapshot CaptureChartTileEditSnapshot(ChartTileConfig config) {
         return new ChartTileEditSnapshot(
             NormalizeSnapshotText(config.Title),
@@ -1788,10 +2047,24 @@ public class MainForm : MaterialForm {
     }
 
 
+    /// <summary>
+    /// Normalizes the snapshot text for main form.
+    /// </summary>
+    /// <param name="value">Input value for value.</param>
+    /// <returns>The resulting string value.</returns>
     private static string NormalizeSnapshotText(string? value) {
         return value ?? string.Empty;
     }
 
+    /// <summary>
+    /// Determines whether chart tile edit snapshot equals for main form.
+    /// </summary>
+    /// <param name="left">Input value for left.</param>
+    /// <param name="right">Input value for right.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool ChartTileEditSnapshotEquals(ChartTileEditSnapshot left, ChartTileEditSnapshot right) {
         if (!string.Equals(left.Title, right.Title, StringComparison.Ordinal)
             || left.Row != right.Row
@@ -1821,6 +2094,9 @@ public class MainForm : MaterialForm {
         return true;
     }
 
+    /// <summary>
+    /// Represents chart tile edit snapshot and encapsulates its related behavior and state.
+    /// </summary>
     private sealed record ChartTileEditSnapshot(
         string Title,
         int Row,
@@ -1837,6 +2113,9 @@ public class MainForm : MaterialForm {
         bool ShowInspector,
         List<MetricAggregationSnapshot> MetricAggregations);
 
+    /// <summary>
+    /// Represents metric aggregation snapshot and encapsulates its related behavior and state.
+    /// </summary>
     private sealed record MetricAggregationSnapshot(
         MetricType Metric,
         DataStorage.Models.AggregationFunction Function,
@@ -1849,6 +2128,9 @@ public class MainForm : MaterialForm {
         bool ShowMarkers,
         string ValueSchemeName);
 
+    /// <summary>
+    /// Saves the window settings for metric aggregation snapshot.
+    /// </summary>
     private void SaveWindowSettings() {
         _appSettings.IsMaximized = WindowState == FormWindowState.Maximized;
         var normalBounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
@@ -1862,9 +2144,11 @@ public class MainForm : MaterialForm {
     }
 
     /// <summary>
-    /// Schedules a deferred theme reapply. When a visor is active (theme switch),
-    /// the callback calls ScheduleVisorReveal after all colors are set.
+    /// Executes schedule theme reapply as part of metric aggregation snapshot processing.
     /// </summary>
+    /// <param name="skipVisorReveal">Input value for skip visor reveal.</param>
+    /// <param name="skipDataRefresh">Input value for skip data refresh.</param>
+    /// <param name="rebuildDashboardPanels">Input value for rebuild dashboard panels.</param>
     private void ScheduleThemeReapply(bool skipVisorReveal = false, bool skipDataRefresh = false, bool rebuildDashboardPanels = false) {
         if (_themeTimer != null) { _themeTimer.Stop(); _themeTimer.Dispose(); }
         _themeTimer = new System.Windows.Forms.Timer { Interval = 50 };
@@ -1901,6 +2185,9 @@ public class MainForm : MaterialForm {
         _themeTimer.Start();
     }
 
+    /// <summary>
+    /// Updates the theme for cached dashboard panels for metric aggregation snapshot.
+    /// </summary>
     private void UpdateThemeForCachedDashboardPanels() {
         foreach (var panel in _dashboardPanelCache.Values) {
             if (panel.IsDisposed) {
@@ -1911,6 +2198,9 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Executes request immediate theme repaint as part of metric aggregation snapshot processing.
+    /// </summary>
     private void RequestImmediateThemeRepaint() {
         SuspendLayout();
         Invalidate(true);
@@ -1925,6 +2215,11 @@ public class MainForm : MaterialForm {
         _dashboardPanel?.Update();
     }
 
+    /// <summary>
+    /// Refreshes the dashboard data async for metric aggregation snapshot.
+    /// </summary>
+    /// <param name="targetPanel">Input value for target panel.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     private async Task RefreshDashboardDataAsync(DashboardPanel? targetPanel = null) {
         var panel = targetPanel ?? _dashboardPanel;
         if (panel == null) {
@@ -1955,20 +2250,26 @@ public class MainForm : MaterialForm {
         RestartRefreshTimerInterval();
     }
 
+    /// <summary>
+    /// Executes restart refresh timer interval as part of metric aggregation snapshot processing.
+    /// </summary>
     private void RestartRefreshTimerInterval() {
         if (_refreshTimer == null) { return; }
         _refreshTimer.Stop();
         _refreshTimer.Start();
     }
 
+    /// <summary>
+    /// Applies the material color scheme for metric aggregation snapshot.
+    /// </summary>
     private void ApplyMaterialColorScheme() {
         _skinManager.ColorScheme = AppColorizationService.Instance.GetMaterialColorScheme(_appSettings.MaterialColorScheme);
     }
 
     /// <summary>
-    /// Switches theme with visor protection.
-    /// The visor appears before theme colors change and fades out after reapply completes.
+    /// Sets the theme for metric aggregation snapshot.
     /// </summary>
+    /// <param name="theme">Input value for theme.</param>
     private void SetTheme(MaterialSkinManager.Themes theme) {
         // Show visor BEFORE changing the theme to hide all repaint artifacts.
         // The visor can still use the previous theme color at this point.
@@ -1991,6 +2292,9 @@ public class MainForm : MaterialForm {
         ScheduleThemeReapply(skipVisorReveal: true, skipDataRefresh: true, rebuildDashboardPanels: true);
     }
 
+    /// <summary>
+    /// Sets the up refresh timer for metric aggregation snapshot.
+    /// </summary>
     private void SetupRefreshTimer() {
         _refreshTimer = new System.Windows.Forms.Timer { Interval = _appSettings.RefreshInterval * 1000 };
         _refreshTimer.Tick += async (s, e) => {
@@ -2007,11 +2311,17 @@ public class MainForm : MaterialForm {
         _refreshCountdownTimer.Start();
     }
 
+    /// <summary>
+    /// Updates the refresh indicator timestamp for metric aggregation snapshot.
+    /// </summary>
     private void UpdateRefreshIndicatorTimestamp() {
         _lastRefreshTime = DateTime.Now;
         _refreshIndicatorTimeLabel?.Text = _lastRefreshTime.ToString("HH:mm:ss");
     }
 
+    /// <summary>
+    /// Updates the refresh countdown icon for metric aggregation snapshot.
+    /// </summary>
     private void UpdateRefreshCountdownIcon() {
         if (_refreshIndicatorIcon == null || !_refreshIndicatorIcon.Visible) { return; }
 
@@ -2031,10 +2341,17 @@ public class MainForm : MaterialForm {
         _refreshIndicatorIcon.Image = MaterialIcons.GetIcon(iconName, iconColor, 22, IconRenderPreset.DarkOutlined);
     }
 
+    /// <summary>
+    /// Executes attach data service handlers as part of metric aggregation snapshot processing.
+    /// </summary>
     private void AttachDataServiceHandlers() {
         _dataService.ConnectionFailed += OnDataServiceConnectionFailed;
     }
 
+    /// <summary>
+    /// Executes on data service connection failed as part of metric aggregation snapshot processing.
+    /// </summary>
+    /// <param name="details">Input value for details.</param>
     private void OnDataServiceConnectionFailed(string details) {
         if (InvokeRequired) { BeginInvoke(() => OnDataServiceConnectionFailed(details)); return; }
         _refreshTimer?.Stop();
@@ -2046,6 +2363,13 @@ public class MainForm : MaterialForm {
     }
 
 
+    /// <summary>
+    /// Ensures the storage configuration at startup for metric aggregation snapshot.
+    /// </summary>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private bool EnsureStorageConfigurationAtStartup() {
         var validation = DataStorage.DataStorage.ValidateStorageStructure(_appSettings.StoragePath, _appSettings.ValidateDatabaseStructureOnStartup);
 
@@ -2071,6 +2395,9 @@ public class MainForm : MaterialForm {
         return false;
     }
 
+    /// <summary>
+    /// Shows the about for metric aggregation snapshot.
+    /// </summary>
     private void ShowAbout() {
         var message = $"SafetyMonitor v{AppBuildInfoHelper.ProductVersionWithBuild} {AppBuildInfoHelper.BuildDateDisplay}"
             + Environment.NewLine
@@ -2081,20 +2408,37 @@ public class MainForm : MaterialForm {
         ThemedMessageBox.Show(this, message, "About SafetyMonitor", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
+    /// <summary>
+    /// Shows the axis rules editor for metric aggregation snapshot.
+    /// </summary>
     private void ShowAxisRulesEditor() {
         using var editor = new AxisRulesEditorForm(_appSettings.MetricAxisRules);
         if (editor.ShowDialog(this) == DialogResult.OK) { _appSettings.MetricAxisRules = editor.Rules; _appSettingsService.SaveSettings(_appSettings); MetricAxisRuleStore.SetRules(_appSettings.MetricAxisRules); }
     }
 
+    /// <summary>
+    /// Shows the metric settings editor for metric aggregation snapshot.
+    /// </summary>
     private void ShowMetricSettingsEditor() {
         using var editor = new MetricSettingsEditorForm(_appSettings.MetricDisplaySettings);
         if (editor.ShowDialog(this) == DialogResult.OK) { _appSettings.MetricDisplaySettings = editor.Settings; _appSettingsService.SaveSettings(_appSettings); MetricDisplaySettingsStore.SetSettings(_appSettings.MetricDisplaySettings); }
     }
 
+    /// <summary>
+    /// Shows the color scheme editor for metric aggregation snapshot.
+    /// </summary>
+    /// <param name="editor">Input value for editor.</param>
     private void ShowColorSchemeEditor() { using var editor = new ColorSchemeEditorForm(); editor.ShowDialog(this); }
 
+    /// <summary>
+    /// Shows the value scheme editor for metric aggregation snapshot.
+    /// </summary>
+    /// <param name="editor">Input value for editor.</param>
     private void ShowValueSchemeEditor() { using var editor = new ValueSchemeEditorForm(); editor.ShowDialog(this); }
 
+    /// <summary>
+    /// Shows the chart period preset editor for metric aggregation snapshot.
+    /// </summary>
     private void ShowChartPeriodPresetEditor() {
         using var editor = new ChartPeriodsEditorForm(_appSettings.ChartPeriodPresets, _appSettings.ChartStaticAggregationTargetPointCount, _appSettings.ChartRawDataPointIntervalSeconds);
         if (editor.ShowDialog(this) == DialogResult.OK) {
@@ -2106,6 +2450,10 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Shows the settings for metric aggregation snapshot.
+    /// </summary>
+    /// <param name="initialTabIndex">Input value for initial tab index.</param>
     private void ShowSettings(int initialTabIndex = 0) {
         if (_isMinimizedToTray) {
             RestoreFromTray();
@@ -2158,6 +2506,9 @@ public class MainForm : MaterialForm {
         ApplySettingsToRuntime();
     }
 
+    /// <summary>
+    /// Executes reload settings from storage as part of metric aggregation snapshot processing.
+    /// </summary>
     private void ReloadSettingsFromStorage() {
         if (_dashboardPanel != null) {
             _dashboardPanel.DashboardChanged -= OnDashboardChanged;
@@ -2194,6 +2545,11 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Executes copy settings as part of metric aggregation snapshot processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
+    /// <param name="target">Input value for target.</param>
     private static void CopySettings(AppSettings source, AppSettings target) {
         target.IsDarkTheme = source.IsDarkTheme;
         target.MaterialColorScheme = source.MaterialColorScheme;
@@ -2219,6 +2575,9 @@ public class MainForm : MaterialForm {
         target.WindowY = source.WindowY;
     }
 
+    /// <summary>
+    /// Applies the settings to runtime for metric aggregation snapshot.
+    /// </summary>
     private void ApplySettingsToRuntime() {
         if (_initialRevealCompleted) {
             ShowVisor();
@@ -2270,6 +2629,9 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Applies the header theme immediately for metric aggregation snapshot.
+    /// </summary>
     private void ApplyHeaderThemeImmediately() {
         UpdateQuickAccessPanelTheme();
         UpdateMenuTheme();
@@ -2281,6 +2643,9 @@ public class MainForm : MaterialForm {
         _quickAccessPanel?.Update();
     }
 
+    /// <summary>
+    /// Executes persist dashboard ordering as part of metric aggregation snapshot processing.
+    /// </summary>
     private void PersistDashboardOrdering() {
         var changed = false;
         int quickOrder = 0, regularOrder = 0;
@@ -2291,6 +2656,9 @@ public class MainForm : MaterialForm {
         if (changed) { SortDashboardsForDisplay(); }
     }
 
+    /// <summary>
+    /// Shows the dashboard manager for metric aggregation snapshot.
+    /// </summary>
     private void ShowDashboardManager() {
         using var manager = new DashboardManagementForm(_dashboards, _currentDashboard?.Id);
         if (manager.ShowDialog(this) != DialogResult.OK) { return; }
@@ -2320,10 +2688,16 @@ public class MainForm : MaterialForm {
         UpdateQuickDashboards();
     }
 
+    /// <summary>
+    /// Executes sort dashboards for display as part of metric aggregation snapshot processing.
+    /// </summary>
     private void SortDashboardsForDisplay() {
         _dashboards = [.. _dashboards.OrderByDescending(d => d.IsQuickAccess).ThenBy(d => d.SortOrder).ThenBy(d => d.Name)];
     }
 
+    /// <summary>
+    /// Updates the status strip theme for metric aggregation snapshot.
+    /// </summary>
     private void UpdateStatusStripTheme() {
         if (_statusBarPanel == null || _statusLabel == null || _dataPathLabel == null || _statusSeparator == null) { return; }
 
@@ -2341,10 +2715,17 @@ public class MainForm : MaterialForm {
         _statusBarPanel.Invalidate(true);
     }
 
+    /// <summary>
+    /// Updates the dashboard container theme for metric aggregation snapshot.
+    /// </summary>
     private void UpdateDashboardContainerTheme() {
         _dashboardContainer.BackColor = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT ? Color.FromArgb(250, 250, 250) : Color.FromArgb(25, 36, 40);
     }
 
+    /// <summary>
+    /// Updates the dashboard menu for metric aggregation snapshot.
+    /// </summary>
+    /// <param name="dashboardMenu">Input value for dashboard menu.</param>
     private void UpdateDashboardMenu(ToolStripMenuItem dashboardMenu) {
         dashboardMenu.DropDownItems.Clear();
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -2367,6 +2748,9 @@ public class MainForm : MaterialForm {
         InteractiveCursorStyler.Apply(dashboardMenu.DropDownItems);
     }
 
+    /// <summary>
+    /// Updates the menu theme for metric aggregation snapshot.
+    /// </summary>
     private void UpdateMenuTheme() {
         _menuRenderer.UpdateTheme();
         ToolStripManager.Renderer = _menuRenderer;
@@ -2379,6 +2763,10 @@ public class MainForm : MaterialForm {
         _mainMenu.Refresh();
     }
 
+    /// <summary>
+    /// Updates the tray menu icons for metric aggregation snapshot.
+    /// </summary>
+    /// <param name="iconColor">Input value for icon color.</param>
     private void UpdateTrayMenuIcons(Color iconColor) {
         var trayMenu = _trayIcon?.ContextMenuStrip;
         if (trayMenu == null) { return; }
@@ -2395,6 +2783,9 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Updates the quick access panel theme for metric aggregation snapshot.
+    /// </summary>
     private void UpdateQuickAccessPanelTheme() {
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var panelBg = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(25, 36, 40);
@@ -2416,6 +2807,9 @@ public class MainForm : MaterialForm {
         _themeLabelIcon.Image = MaterialIcons.GetIcon(MaterialIcons.MenuViewTheme, iconColor, 22, IconRenderPreset.DarkOutlined);
     }
 
+    /// <summary>
+    /// Updates the theme switch appearance for metric aggregation snapshot.
+    /// </summary>
     private void UpdateThemeSwitchAppearance() {
         if (_themeSegmentPanel == null || _lightThemeButton == null || _darkThemeButton == null) { return; }
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -2438,6 +2832,9 @@ public class MainForm : MaterialForm {
         _darkThemeButton.ImageAlign = ContentAlignment.MiddleCenter;
     }
 
+    /// <summary>
+    /// Updates the link switch appearance for metric aggregation snapshot.
+    /// </summary>
     private void UpdateLinkSwitchAppearance() {
         if (_linkSegmentPanel == null || _linkedChartsButton == null || _groupLinkedChartsButton == null || _unlinkedChartsButton == null) { return; }
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -2472,6 +2869,9 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Updates the refresh indicator appearance for metric aggregation snapshot.
+    /// </summary>
     private void UpdateRefreshIndicatorAppearance() {
         if (_refreshIndicatorIcon == null || _refreshIndicatorTimeLabel == null) { return; }
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -2480,6 +2880,9 @@ public class MainForm : MaterialForm {
         UpdateRefreshCountdownIcon();
     }
 
+    /// <summary>
+    /// Executes on export state changed as part of metric aggregation snapshot processing.
+    /// </summary>
     private void OnExportStateChanged() {
         var isExporting = ExcelExportStateService.IsExporting;
         _exportProgressIcon.Visible = isExporting;
@@ -2493,6 +2896,9 @@ public class MainForm : MaterialForm {
         RefreshQuickAccessLayout();
     }
 
+    /// <summary>
+    /// Updates the export progress appearance for metric aggregation snapshot.
+    /// </summary>
     private void UpdateExportProgressAppearance() {
         if (_exportProgressIcon == null || _exportProgressLabel == null) { return; }
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -2503,11 +2909,18 @@ public class MainForm : MaterialForm {
         _exportProgressIcon.Image = MaterialIcons.GetIcon(MaterialIcons.ToolbarExportProgress, iconColor, 22, IconRenderPreset.DarkOutlined);
     }
 
+    /// <summary>
+    /// Executes enable double buffer as part of metric aggregation snapshot processing.
+    /// </summary>
+    /// <param name="control">Input value for control.</param>
     private static void EnableDoubleBuffer(Control control) {
         var property = typeof(Control).GetProperty("DoubleBuffered", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         property?.SetValue(control, true, null);
     }
 
+    /// <summary>
+    /// Updates the dashboard switch appearance for metric aggregation snapshot.
+    /// </summary>
     private void UpdateDashboardSwitchAppearance() {
         if (_quickDashboardsPanel == null) { return; }
         var buttons = _quickDashboardsPanel.Controls.OfType<RadioButton>().ToList();
@@ -2536,6 +2949,9 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Refreshes the quick access layout for metric aggregation snapshot.
+    /// </summary>
     private void RefreshQuickAccessLayout() {
         if (_quickAccessPanel == null || _quickAccessPanel.IsDisposed) {
             return;
@@ -2570,8 +2986,16 @@ public class MainForm : MaterialForm {
         }));
     }
 
+    /// <summary>
+    /// Gets the quick dashboards left for metric aggregation snapshot.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private int GetQuickDashboardsLeft() { return _dashboardLabel.Right + 8; }
 
+    /// <summary>
+    /// Gets the quick dashboard panel max width for metric aggregation snapshot.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private int GetQuickDashboardPanelMaxWidth() {
         var left = GetQuickDashboardsLeft();
         const int spacingToRightGroup = 16;
@@ -2586,6 +3010,9 @@ public class MainForm : MaterialForm {
         return Math.Max(rightBound - spacingToRightGroup - left, 0);
     }
 
+    /// <summary>
+    /// Updates the theme switch layout for metric aggregation snapshot.
+    /// </summary>
     private void UpdateThemeSwitchLayout() {
         if (_themeSegmentPanel == null || _lightThemeButton == null || _darkThemeButton == null) { return; }
         const int leftMargin = 10, rightMargin = 10, top = 10, textGap = 10, sectionGap = 16, segmentGap = 0, segmentHeight = 30, segmentWidth = 36;
@@ -2656,6 +3083,12 @@ public class MainForm : MaterialForm {
         UpdateThemeSwitchAppearance(); UpdateLinkSwitchAppearance();
     }
 
+    /// <summary>
+    /// Executes measure dashboard segment preferred width as part of metric aggregation snapshot processing.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <param name="font">Input value for font.</param>
+    /// <returns>The result of the operation.</returns>
     private static int MeasureDashboardSegmentPreferredWidth(string text, Font font) {
         const int maxSegmentWidth = 220;
         var flags = TextFormatFlags.SingleLine | TextFormatFlags.NoPadding;
@@ -2663,6 +3096,12 @@ public class MainForm : MaterialForm {
         return Math.Min(Math.Max(80, textWidth + 24), maxSegmentWidth);
     }
 
+    /// <summary>
+    /// Executes scale segment widths as part of metric aggregation snapshot processing.
+    /// </summary>
+    /// <param name="preferredWidths">Collection of preferred widths items used by the operation.</param>
+    /// <param name="targetWidth">Input value for target width.</param>
+    /// <returns>The result of the operation.</returns>
     private static List<int> ScaleSegmentWidths(List<int> preferredWidths, int targetWidth) {
         if (preferredWidths.Count == 0 || targetWidth <= 0) { return []; }
         var sumPreferred = preferredWidths.Sum();
@@ -2673,6 +3112,13 @@ public class MainForm : MaterialForm {
         return scaled;
     }
 
+    /// <summary>
+    /// Executes truncate with ellipsis as part of metric aggregation snapshot processing.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <param name="font">Input value for font.</param>
+    /// <param name="maxWidth">Input value for max width.</param>
+    /// <returns>The resulting string value.</returns>
     private static string TruncateWithEllipsis(string text, Font font, int maxWidth) {
         if (string.IsNullOrEmpty(text) || maxWidth <= 0) { return string.Empty; }
         var flags = TextFormatFlags.SingleLine | TextFormatFlags.NoPadding;
@@ -2690,8 +3136,18 @@ public class MainForm : MaterialForm {
         return text[..low] + ellipsis;
     }
 
+    /// <summary>
+    /// Executes position link controls as part of metric aggregation snapshot processing.
+    /// </summary>
     private static void PositionLinkControls() { }
 
+    /// <summary>
+    /// Updates the quick dashboards for metric aggregation snapshot.
+    /// </summary>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private bool UpdateQuickDashboards() {
         _quickDashboardsPanel.SuspendLayout();
         try {
@@ -2758,6 +3214,9 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Updates the quick dashboard selection for metric aggregation snapshot.
+    /// </summary>
     private void UpdateQuickDashboardSelection() {
         if (_quickDashboardsPanel == null) { return; }
         var currentDashboardId = _currentDashboard?.Id;
@@ -2769,6 +3228,9 @@ public class MainForm : MaterialForm {
 
     // Tray icon handling.
 
+    /// <summary>
+    /// Sets the up tray icon for metric aggregation snapshot.
+    /// </summary>
     private void SetupTrayIcon() {
         _trayIcon = new NotifyIcon {
             Visible = false,
@@ -2807,6 +3269,9 @@ public class MainForm : MaterialForm {
         };
     }
 
+    /// <summary>
+    /// Executes minimize to tray as part of metric aggregation snapshot processing.
+    /// </summary>
     private void MinimizeToTray() {
         if (_trayIcon == null) { return; }
         _isMinimizedToTray = true;
@@ -2819,6 +3284,9 @@ public class MainForm : MaterialForm {
         SignalStartupReady();
     }
 
+    /// <summary>
+    /// Executes restore from tray as part of metric aggregation snapshot processing.
+    /// </summary>
     private void RestoreFromTray() {
         if (_trayIcon == null) { return; }
         StopTrayRefresh();
@@ -2864,6 +3332,9 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Starts the tray refresh for metric aggregation snapshot.
+    /// </summary>
     private void StartTrayRefresh() {
         if (_trayRefreshTimer == null) { return; }
         _trayRefreshTimer.Interval = _appSettings.RefreshInterval * 1000;
@@ -2871,11 +3342,17 @@ public class MainForm : MaterialForm {
         _ = RefreshTrayDataAsync();
     }
 
+    /// <summary>
+    /// Stops the tray refresh for metric aggregation snapshot.
+    /// </summary>
     private void StopTrayRefresh() {
         _trayRefreshTimer?.Stop();
     }
 
 
+    /// <summary>
+    /// Executes signal startup ready as part of metric aggregation snapshot processing.
+    /// </summary>
     private void SignalStartupReady() {
         if (_startupReadyRaised) {
             return;
@@ -2885,6 +3362,10 @@ public class MainForm : MaterialForm {
         StartupReady?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    /// Refreshes the tray data async for metric aggregation snapshot.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     private async Task RefreshTrayDataAsync() {
         if (_trayIcon == null || !_isMinimizedToTray) { return; }
         _isTrayRefreshing = true;
@@ -2903,6 +3384,10 @@ public class MainForm : MaterialForm {
         }
     }
 
+    /// <summary>
+    /// Updates the tray icon for metric aggregation snapshot.
+    /// </summary>
+    /// <param name="data">Input value for data.</param>
     private void UpdateTrayIcon(DataStorage.Models.ObservingData? data) {
         if (_trayIcon == null) { return; }
 
@@ -2922,6 +3407,10 @@ public class MainForm : MaterialForm {
         oldIcon?.Dispose();
     }
 
+    /// <summary>
+    /// Updates the tray tooltip for metric aggregation snapshot.
+    /// </summary>
+    /// <param name="data">Input value for data.</param>
     private void UpdateTrayTooltip(DataStorage.Models.ObservingData? data) {
         if (_trayIcon == null) { return; }
 
@@ -2960,11 +3449,17 @@ public class MainForm : MaterialForm {
 
     // Dashboard refresh pause/resume.
 
+    /// <summary>
+    /// Executes pause dashboard refresh as part of metric aggregation snapshot processing.
+    /// </summary>
     private void PauseDashboardRefresh() {
         _refreshTimer?.Stop();
         _refreshCountdownTimer?.Stop();
     }
 
+    /// <summary>
+    /// Executes resume dashboard refresh as part of metric aggregation snapshot processing.
+    /// </summary>
     private void ResumeDashboardRefresh() {
         _refreshTimer?.Start();
         _refreshCountdownTimer?.Start();
@@ -2972,6 +3467,9 @@ public class MainForm : MaterialForm {
         _ = RefreshDashboardDataAsync();
     }
 
+    /// <summary>
+    /// Updates the status bar for metric aggregation snapshot.
+    /// </summary>
     private void UpdateStatusBar() {
         if (_dataService.IsConnected) {
             _dataPathStatusText = $"Storage: {_appSettings.StoragePath}";
@@ -2985,6 +3483,9 @@ public class MainForm : MaterialForm {
         UpdateStatusBarLayout();
     }
 
+    /// <summary>
+    /// Updates the status bar layout for metric aggregation snapshot.
+    /// </summary>
     private void UpdateStatusBarLayout() {
         if (_statusBarPanel == null || _statusBarPanel.IsDisposed || _dataPathLabel == null || _dataPathLabel.IsDisposed) { return; }
 

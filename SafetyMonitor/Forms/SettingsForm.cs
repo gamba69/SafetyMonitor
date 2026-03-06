@@ -12,6 +12,9 @@ public enum SettingsMaintenanceAction {
     Reset,
 }
 
+/// <summary>
+/// Represents settings form and encapsulates its related behavior and state.
+/// </summary>
 public class SettingsForm : ThemedCaptionForm {
     #region Private Fields
 
@@ -73,6 +76,9 @@ public class SettingsForm : ThemedCaptionForm {
         MaterialIcons.RuleSettings
     };
 
+    /// <summary>
+    /// Represents material scheme combo item and encapsulates its related behavior and state.
+    /// </summary>
     private sealed record MaterialSchemeComboItem(string SchemeName, string DisplayName, Color PrimaryColor) {
         public override string ToString() => DisplayName;
     }
@@ -81,8 +87,31 @@ public class SettingsForm : ThemedCaptionForm {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Gets or sets the settings maintenance action for material scheme combo item. Stores a numeric value used by calculations, thresholds, or telemetry display.
+    /// </summary>
     public SettingsMaintenanceAction SettingsMaintenanceAction { get; private set; }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SettingsForm"/> class.
+    /// </summary>
+    /// <param name="settingsMaintenanceService">Input value for settings maintenance service.</param>
+    /// <param name="currentStoragePath">Path value for current storage path.</param>
+    /// <param name="currentRefreshInterval">Input value for current refresh interval.</param>
+    /// <param name="currentValueTileLookbackMinutes">Input value for current value tile lookback minutes.</param>
+    /// <param name="currentChartStaticTimeoutSeconds">Input value for current chart static timeout seconds.</param>
+    /// <param name="currentChartStaticAggregationPresetMatchTolerancePercent">Input value for current chart static aggregation preset match tolerance percent.</param>
+    /// <param name="currentChartStaticAggregationTargetPointCount">Input value for current chart static aggregation target point count.</param>
+    /// <param name="currentChartRawDataPointIntervalSeconds">Input value for current chart raw data point interval seconds.</param>
+    /// <param name="currentShowRefreshIndicator">Input value for current show refresh indicator.</param>
+    /// <param name="currentMinimizeToTray">Input value for current minimize to tray.</param>
+    /// <param name="currentStartMinimized">Input value for current start minimized.</param>
+    /// <param name="currentValidateDatabaseStructureOnStartup">Input value for current validate database structure on startup.</param>
+    /// <param name="currentMaterialColorScheme">Input value for current material color scheme.</param>
+    /// <param name="initialTabIndex">Input value for initial tab index.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public SettingsForm(AppSettingsMaintenanceService settingsMaintenanceService, string currentStoragePath, int currentRefreshInterval, int currentValueTileLookbackMinutes, int currentChartStaticTimeoutSeconds, double currentChartStaticAggregationPresetMatchTolerancePercent, int currentChartStaticAggregationTargetPointCount, int currentChartRawDataPointIntervalSeconds, bool currentShowRefreshIndicator, bool currentMinimizeToTray, bool currentStartMinimized, bool currentValidateDatabaseStructureOnStartup, string currentMaterialColorScheme, int initialTabIndex = 0) {
         _settingsMaintenanceService = settingsMaintenanceService;
         StoragePath = currentStoragePath;
@@ -109,23 +138,62 @@ public class SettingsForm : ThemedCaptionForm {
 
     #region Public Properties
 
+    /// <summary>
+    /// Gets or sets the refresh interval for material scheme combo item. Defines timing behavior that affects refresh cadence, scheduling, or time-window processing.
+    /// </summary>
     public int RefreshInterval { get; private set; } = 10;
+    /// <summary>
+    /// Gets or sets the value tile lookback minutes for material scheme combo item. Defines timing behavior that affects refresh cadence, scheduling, or time-window processing.
+    /// </summary>
     public int ValueTileLookbackMinutes { get; private set; } = 360;
+    /// <summary>
+    /// Gets or sets the chart static timeout seconds for material scheme combo item. Defines timing behavior that affects refresh cadence, scheduling, or time-window processing.
+    /// </summary>
     public int ChartStaticTimeoutSeconds { get; private set; } = 120;
+    /// <summary>
+    /// Gets or sets the chart static aggregation preset match tolerance percent for material scheme combo item. Stores a numeric value used by calculations, thresholds, or telemetry display.
+    /// </summary>
     public double ChartStaticAggregationPresetMatchTolerancePercent { get; private set; } = 30;
+    /// <summary>
+    /// Gets or sets the chart static aggregation target point count for material scheme combo item. Specifies sizing or boundary constraints used by runtime calculations.
+    /// </summary>
     public int ChartStaticAggregationTargetPointCount { get; private set; } = 800;
+    /// <summary>
+    /// Gets or sets the chart raw data point interval seconds for material scheme combo item. Defines timing behavior that affects refresh cadence, scheduling, or time-window processing.
+    /// </summary>
     public int ChartRawDataPointIntervalSeconds { get; private set; } = 3;
+    /// <summary>
+    /// Gets or sets the storage path for material scheme combo item. Specifies a filesystem location used to load or persist application data.
+    /// </summary>
     public string StoragePath { get; private set; } = "";
+    /// <summary>
+    /// Gets or sets the show refresh indicator for material scheme combo item. Represents a state flag that enables or disables related behavior.
+    /// </summary>
     public bool ShowRefreshIndicator { get; private set; } = true;
+    /// <summary>
+    /// Gets or sets the minimize to tray for material scheme combo item. Represents a state flag that enables or disables related behavior.
+    /// </summary>
     public bool MinimizeToTray { get; private set; } = false;
+    /// <summary>
+    /// Gets or sets the start minimized for material scheme combo item. Represents a state flag that enables or disables related behavior.
+    /// </summary>
     public bool StartMinimized { get; private set; } = false;
+    /// <summary>
+    /// Gets or sets the validate database structure on startup for material scheme combo item. Represents a state flag that enables or disables related behavior.
+    /// </summary>
     public bool ValidateDatabaseStructureOnStartup { get; private set; } = false;
+    /// <summary>
+    /// Gets or sets the material color scheme for material scheme combo item. Controls visual presentation used by themed rendering and UI styling.
+    /// </summary>
     public string MaterialColorScheme { get; private set; } = "Teal";
 
     #endregion Public Properties
 
     #region Private Methods
 
+    /// <summary>
+    /// Applies the theme for material scheme combo item.
+    /// </summary>
     private void ApplyTheme() {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -147,6 +215,10 @@ public class SettingsForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Applies the config buttons theme for material scheme combo item.
+    /// </summary>
+    /// <param name="isLight">Input value for is light.</param>
     private void ApplyConfigButtonsTheme(bool isLight) {
         if (_exportSettingsButton != null) {
             ThemedButtonStyler.Apply(_exportSettingsButton, isLight);
@@ -167,6 +239,10 @@ public class SettingsForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Applies the tab segment theme for material scheme combo item.
+    /// </summary>
+    /// <param name="isLight">Input value for is light.</param>
     private void ApplyTabSegmentTheme(bool isLight) {
         var segmentBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
         var activeBg = isLight ? Color.White : Color.FromArgb(62, 77, 84);
@@ -195,6 +271,11 @@ public class SettingsForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Applies the theme recursive for material scheme combo item.
+    /// </summary>
+    /// <param name="parent">Input value for parent.</param>
+    /// <param name="isLight">Input value for is light.</param>
     private void ApplyThemeRecursive(Control parent, bool isLight) {
         foreach (Control control in parent.Controls) {
             InteractiveCursorStyler.Apply(control);
@@ -234,6 +315,11 @@ public class SettingsForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes browse button click as part of material scheme combo item processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void BrowseButton_Click(object? sender, EventArgs e) {
         using var dialog = new FolderBrowserDialog {
             Description = "Select Data Storage root folder",
@@ -249,11 +335,19 @@ public class SettingsForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Determines whether cancel button click for material scheme combo item.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void CancelButton_Click(object? sender, EventArgs e) {
         DialogResult = DialogResult.Cancel;
         Close();
     }
 
+    /// <summary>
+    /// Initializes material scheme combo item state and required resources.
+    /// </summary>
     private void InitializeComponent() {
         Text = "Settings";
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -423,6 +517,9 @@ public class SettingsForm : ThemedCaptionForm {
         }));
     }
 
+    /// <summary>
+    /// Ensures the tabs fit client width for material scheme combo item.
+    /// </summary>
     private void EnsureTabsFitClientWidth() {
         if (_tabButtons.Count == 0 || _tabButtonsLayout is null) {
             return;
@@ -523,6 +620,11 @@ public class SettingsForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Creates the empty tab for material scheme combo item.
+    /// </summary>
+    /// <param name=")">Input value for .</param>
+    /// <returns>The result of the operation.</returns>
     private static Panel CreateEmptyTab() => new() {
         Padding = new Padding(0, 4, 0, 0),
         AutoScroll = true
@@ -530,6 +632,13 @@ public class SettingsForm : ThemedCaptionForm {
 
     // Tab pages.
 
+    /// <summary>
+    /// Creates the general tab for material scheme combo item.
+    /// </summary>
+    /// <param name="titleFont">Input value for title font.</param>
+    /// <param name="normalFont">Input value for normal font.</param>
+    /// <param name="descriptionFont">Input value for description font.</param>
+    /// <returns>The result of the operation.</returns>
     private Panel CreateGeneralTab(Font titleFont, Font normalFont, Font descriptionFont) {
         var page = new Panel {
             Padding = new Padding(0, 4, 0, 0),
@@ -574,6 +683,13 @@ public class SettingsForm : ThemedCaptionForm {
         return page;
     }
 
+    /// <summary>
+    /// Creates the tray tab for material scheme combo item.
+    /// </summary>
+    /// <param name="titleFont">Input value for title font.</param>
+    /// <param name="normalFont">Input value for normal font.</param>
+    /// <param name="descriptionFont">Input value for description font.</param>
+    /// <returns>The result of the operation.</returns>
     private Panel CreateTrayTab(Font titleFont, Font normalFont, Font descriptionFont) {
         var page = new Panel {
             Padding = new Padding(0, 4, 0, 0),
@@ -619,6 +735,13 @@ public class SettingsForm : ThemedCaptionForm {
         return page;
     }
 
+    /// <summary>
+    /// Creates the storage tab for material scheme combo item.
+    /// </summary>
+    /// <param name="titleFont">Input value for title font.</param>
+    /// <param name="normalFont">Input value for normal font.</param>
+    /// <param name="descriptionFont">Input value for description font.</param>
+    /// <returns>The result of the operation.</returns>
     private Panel CreateStorageTab(Font titleFont, Font normalFont, Font descriptionFont) {
         var page = new Panel { Padding = new Padding(0, 4, 0, 0) };
 
@@ -730,6 +853,13 @@ public class SettingsForm : ThemedCaptionForm {
         return page;
     }
 
+    /// <summary>
+    /// Creates the tiles tab for material scheme combo item.
+    /// </summary>
+    /// <param name="titleFont">Input value for title font.</param>
+    /// <param name="normalFont">Input value for normal font.</param>
+    /// <param name="descriptionFont">Input value for description font.</param>
+    /// <returns>The result of the operation.</returns>
     private Panel CreateTilesTab(Font titleFont, Font normalFont, Font descriptionFont) {
         var page = new Panel { Padding = new Padding(0, 4, 0, 0) };
 
@@ -775,6 +905,13 @@ public class SettingsForm : ThemedCaptionForm {
         return page;
     }
 
+    /// <summary>
+    /// Creates the aggregation tab for material scheme combo item.
+    /// </summary>
+    /// <param name="titleFont">Input value for title font.</param>
+    /// <param name="normalFont">Input value for normal font.</param>
+    /// <param name="descriptionFont">Input value for description font.</param>
+    /// <returns>The result of the operation.</returns>
     private Panel CreateAggregationTab(Font titleFont, Font normalFont, Font descriptionFont) {
         var page = new Panel {
             Padding = new Padding(0, 4, 0, 0),
@@ -844,6 +981,13 @@ public class SettingsForm : ThemedCaptionForm {
         return page;
     }
 
+    /// <summary>
+    /// Creates the config tab for material scheme combo item.
+    /// </summary>
+    /// <param name="titleFont">Input value for title font.</param>
+    /// <param name="normalFont">Input value for normal font.</param>
+    /// <param name="descriptionFont">Input value for description font.</param>
+    /// <returns>The result of the operation.</returns>
     private Panel CreateConfigTab(Font titleFont, Font normalFont, Font descriptionFont) {
         var page = new Panel {
             Padding = new Padding(0, 4, 0, 0),
@@ -938,6 +1082,10 @@ public class SettingsForm : ThemedCaptionForm {
 
     // Tab switching.
 
+    /// <summary>
+    /// Executes select tab as part of material scheme combo item processing.
+    /// </summary>
+    /// <param name="index">Input value for index.</param>
     private void SelectTab(int index) {
         if (_tabButtons.Count > index && !_tabButtons[index].Checked) {
             _tabButtons[index].Checked = true;
@@ -959,6 +1107,12 @@ public class SettingsForm : ThemedCaptionForm {
 
     // Helper methods.
 
+    /// <summary>
+    /// Creates the label for material scheme combo item.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <param name="font)">Input value for font.</param>
+    /// <returns>The result of the operation.</returns>
     private static Label CreateLabel(string text, Font font) => new() {
         Text = text,
         Font = font,
@@ -966,6 +1120,14 @@ public class SettingsForm : ThemedCaptionForm {
         Margin = new Padding(0, 0, 0, 5)
     };
 
+    /// <summary>
+    /// Creates the numeric for material scheme combo item.
+    /// </summary>
+    /// <param name="min">Input value for min.</param>
+    /// <param name="max">Input value for max.</param>
+    /// <param name="value">Input value for value.</param>
+    /// <param name="font)">Input value for font.</param>
+    /// <returns>The result of the operation.</returns>
     private static NumericUpDown CreateNumeric(int min, int max, int value, Font font) => new() {
         Width = SettingValueColumnWidth,
         Minimum = min,
@@ -976,6 +1138,11 @@ public class SettingsForm : ThemedCaptionForm {
         Margin = new Padding(0, 0, 0, 20)
     };
 
+    /// <summary>
+    /// Creates the theme switch for material scheme combo item.
+    /// </summary>
+    /// <param name="font">Input value for font.</param>
+    /// <returns>The result of the operation.</returns>
     private static CheckBox CreateThemeSwitch(Font font) {
         var checkBox = new CheckBox {
             Appearance = Appearance.Button,
@@ -1003,6 +1170,13 @@ public class SettingsForm : ThemedCaptionForm {
         return checkBox;
     }
 
+    /// <summary>
+    /// Creates the storage validation mode button for material scheme combo item.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <param name="isLeft">Input value for is left.</param>
+    /// <param name="font">Input value for font.</param>
+    /// <returns>The result of the operation.</returns>
     private RadioButton CreateStorageValidationModeButton(string text, bool isLeft, Font font) {
         var button = new RadioButton {
             Text = text,
@@ -1032,6 +1206,13 @@ public class SettingsForm : ThemedCaptionForm {
         return button;
     }
 
+    /// <summary>
+    /// Creates the settings action button for material scheme combo item.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <param name="iconName">Input value for icon name.</param>
+    /// <param name="font">Input value for font.</param>
+    /// <returns>The result of the operation.</returns>
     private static Button CreateSettingsActionButton(string text, string iconName, Font font) {
         var button = new Button {
             Text = text,
@@ -1048,6 +1229,10 @@ public class SettingsForm : ThemedCaptionForm {
         return button;
     }
 
+    /// <summary>
+    /// Applies the numeric right padding for material scheme combo item.
+    /// </summary>
+    /// <param name="numeric">Input value for numeric.</param>
     private static void ApplyNumericRightPadding(NumericUpDown numeric) {
         void ApplyMargin(TextBox textBox) {
             if (textBox.IsHandleCreated) {
@@ -1079,6 +1264,10 @@ public class SettingsForm : ThemedCaptionForm {
         };
     }
 
+    /// <summary>
+    /// Applies the text box left padding for material scheme combo item.
+    /// </summary>
+    /// <param name="textBox">Input value for text box.</param>
     private static void ApplyTextBoxLeftPadding(TextBox textBox) {
         void ApplyMargin() {
             if (textBox.IsHandleCreated) {
@@ -1091,6 +1280,18 @@ public class SettingsForm : ThemedCaptionForm {
     }
 
 
+    /// <summary>
+    /// Creates the setting row for material scheme combo item.
+    /// </summary>
+    /// <param name="title">Input value for title.</param>
+    /// <param name="description">Input value for description.</param>
+    /// <param name="units">Input value for units.</param>
+    /// <param name="valueControl">Input value for value control.</param>
+    /// <param name="titleFont">Input value for title font.</param>
+    /// <param name="descriptionFont">Input value for description font.</param>
+    /// <param name="valueColumnWidth">Input value for value column width.</param>
+    /// <param name="unitColumnWidth">Input value for unit column width.</param>
+    /// <returns>The result of the operation.</returns>
     private static TableLayoutPanel CreateSettingRow(string title, string description, string units, Control valueControl, Font titleFont, Font descriptionFont, int valueColumnWidth = SettingValueColumnWidth, int unitColumnWidth = SettingUnitColumnWidth) {
         var row = new TableLayoutPanel {
             AutoSize = true,
@@ -1137,6 +1338,10 @@ public class SettingsForm : ThemedCaptionForm {
         return row;
     }
 
+    /// <summary>
+    /// Applies the setting switch theme for material scheme combo item.
+    /// </summary>
+    /// <param name="isLight">Input value for is light.</param>
     private void ApplySettingSwitchTheme(bool isLight) {
         StyleSettingSwitch(_showRefreshIndicatorSwitch, isLight);
         StyleSettingSwitch(_minimizeToTraySwitch, isLight);
@@ -1144,6 +1349,10 @@ public class SettingsForm : ThemedCaptionForm {
         StyleStorageValidationModeSwitch(isLight);
     }
 
+    /// <summary>
+    /// Executes style storage validation mode switch as part of material scheme combo item processing.
+    /// </summary>
+    /// <param name="isLight">Input value for is light.</param>
     private void StyleStorageValidationModeSwitch(bool isLight) {
         if (_storageValidationModeSegmentPanel == null || _storageValidationFilesButton == null || _storageValidationTablesButton == null) {
             return;
@@ -1162,6 +1371,11 @@ public class SettingsForm : ThemedCaptionForm {
         _storageValidationTablesButton.ForeColor = _storageValidationTablesButton.Checked ? activeFg : inactiveFg;
     }
 
+    /// <summary>
+    /// Executes style setting switch as part of material scheme combo item processing.
+    /// </summary>
+    /// <param name="checkBox">Input value for check box.</param>
+    /// <param name="isLight">Input value for is light.</param>
     private static void StyleSettingSwitch(CheckBox checkBox, bool isLight) {
         if (checkBox == null) {
             return;
@@ -1184,6 +1398,9 @@ public class SettingsForm : ThemedCaptionForm {
         checkBox.Text = checkBox.Checked ? "ON" : "OFF";
     }
 
+    /// <summary>
+    /// Loads the settings for material scheme combo item.
+    /// </summary>
     private void LoadSettings() {
         _storagePathTextBox.Text = StoragePath;
         _refreshIntervalNumeric.Value = RefreshInterval;
@@ -1214,6 +1431,11 @@ public class SettingsForm : ThemedCaptionForm {
         ApplySettingSwitchTheme(isLight);
     }
 
+    /// <summary>
+    /// Saves the button click for material scheme combo item.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void SaveButton_Click(object? sender, EventArgs e) {
         SettingsMaintenanceAction = SettingsMaintenanceAction.None;
         StoragePath = _storagePathTextBox.Text;
@@ -1244,6 +1466,11 @@ public class SettingsForm : ThemedCaptionForm {
         Close();
     }
 
+    /// <summary>
+    /// Executes material color scheme combo box draw item as part of material scheme combo item processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void MaterialColorSchemeComboBox_DrawItem(object? sender, DrawItemEventArgs e) {
         if (sender is not ComboBox comboBox || e.Index < 0 || e.Index >= comboBox.Items.Count) {
             return;
@@ -1291,6 +1518,11 @@ public class SettingsForm : ThemedCaptionForm {
             TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
     }
 
+    /// <summary>
+    /// Exports the settings button click for material scheme combo item.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void ExportSettingsButton_Click(object? sender, EventArgs e) {
         using var dialog = new SaveFileDialog {
             Filter = "ZIP archive (*.zip)|*.zip",
@@ -1312,6 +1544,11 @@ public class SettingsForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Imports the settings button click for material scheme combo item.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void ImportSettingsButton_Click(object? sender, EventArgs e) {
         var backupFilePath = _settingsMaintenanceService.GetNextBackupFilePath();
         var backupFileName = Path.GetFileName(backupFilePath);
@@ -1345,6 +1582,11 @@ public class SettingsForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Resets the settings button click for material scheme combo item.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void ResetSettingsButton_Click(object? sender, EventArgs e) {
         var backupFilePath = _settingsMaintenanceService.GetNextBackupFilePath();
         var backupFileName = Path.GetFileName(backupFilePath);
@@ -1368,6 +1610,11 @@ public class SettingsForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Gets the material scheme display name for material scheme combo item.
+    /// </summary>
+    /// <param name="schemeName">Input value for scheme name.</param>
+    /// <returns>The resulting string value.</returns>
     private static string GetMaterialSchemeDisplayName(string schemeName) {
         return schemeName switch {
             "BlueGray" => "Gray",
@@ -1376,6 +1623,11 @@ public class SettingsForm : ThemedCaptionForm {
         };
     }
 
+    /// <summary>
+    /// Gets the connection status color for material scheme combo item.
+    /// </summary>
+    /// <param name="isSuccess">Input value for is success.</param>
+    /// <returns>The result of the operation.</returns>
     private static Color GetConnectionStatusColor(bool isSuccess) {
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
         if (isSuccess) {
@@ -1385,6 +1637,11 @@ public class SettingsForm : ThemedCaptionForm {
         return Color.FromArgb(220, 0, 0);
     }
 
+    /// <summary>
+    /// Executes test connection button click as part of material scheme combo item processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void TestConnectionButton_Click(object? sender, EventArgs e) {
         var path = _storagePathTextBox.Text;
 
@@ -1411,6 +1668,11 @@ public class SettingsForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Gets the firebird connection info for material scheme combo item.
+    /// </summary>
+    /// <param name="storageRootPath">Path value for storage root path.</param>
+    /// <returns>The resulting string value.</returns>
     private static string GetFirebirdConnectionInfo(string storageRootPath) {
         var sampleDatabase = Directory
             .EnumerateFiles(storageRootPath, "*.fdb", SearchOption.AllDirectories)
@@ -1454,6 +1716,9 @@ public class SettingsForm : ThemedCaptionForm {
 
     #endregion Native Methods
 
+    /// <summary>
+    /// Represents expandable description panel and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class ExpandableDescriptionPanel : Panel {
         private readonly string _fullText;
         private readonly Label _descriptionLabel;
@@ -1461,6 +1726,14 @@ public class SettingsForm : ThemedCaptionForm {
         private bool _isExpanded;
         private bool _isExpandable;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExpandableDescriptionPanel"/> class.
+        /// </summary>
+        /// <param name="text">Input value for text.</param>
+        /// <param name="font">Input value for font.</param>
+        /// <remarks>
+        /// The constructor wires required dependencies and initial state.
+        /// </remarks>
         public ExpandableDescriptionPanel(string text, Font font) {
             _fullText = text;
             Cursor = Cursors.Default;
@@ -1513,6 +1786,9 @@ public class SettingsForm : ThemedCaptionForm {
             EnsureInitialMeasure();
         }
 
+        /// <summary>
+        /// Ensures the initial measure for expandable description panel.
+        /// </summary>
         private void EnsureInitialMeasure() {
             if (IsHandleCreated) {
                 BeginInvoke(new Action(UpdateText));
@@ -1521,6 +1797,11 @@ public class SettingsForm : ThemedCaptionForm {
             }
         }
 
+        /// <summary>
+        /// Executes toggle expand as part of expandable description panel processing.
+        /// </summary>
+        /// <param name="sender">Input value for sender.</param>
+        /// <param name="e">Input value for e.</param>
         private void ToggleExpand(object? sender, EventArgs e) {
             if (!_isExpandable) {
                 return;
@@ -1530,6 +1811,9 @@ public class SettingsForm : ThemedCaptionForm {
             UpdateText();
         }
 
+        /// <summary>
+        /// Updates the text for expandable description panel.
+        /// </summary>
         private void UpdateText() {
             var width = ClientSize.Width - 22;
             if (width <= 1) {
@@ -1568,6 +1852,13 @@ public class SettingsForm : ThemedCaptionForm {
             Height = Math.Max(_descriptionLabel.Height, 22);
         }
 
+        /// <summary>
+        /// Executes truncate to two lines as part of expandable description panel processing.
+        /// </summary>
+        /// <param name="text">Input value for text.</param>
+        /// <param name="font">Input value for font.</param>
+        /// <param name="width">Input value for width.</param>
+        /// <returns>The resulting string value.</returns>
         private static string TruncateToTwoLines(string text, Font font, int width) {
             var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             if (words.Length == 0) {

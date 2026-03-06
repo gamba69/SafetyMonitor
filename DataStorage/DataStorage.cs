@@ -8,6 +8,9 @@ using System.Text;
 
 namespace DataStorage;
 
+/// <summary>
+/// Represents data storage and encapsulates its related behavior and state.
+/// </summary>
 public class DataStorage {
 
     public enum StorageValidationIssueSeverity {
@@ -15,9 +18,18 @@ public class DataStorage {
         Error
     }
 
+    /// <summary>
+    /// Represents storage validation issue and encapsulates its related behavior and state.
+    /// </summary>
     public sealed record StorageValidationIssue(StorageValidationIssueSeverity Severity, string Message);
 
+    /// <summary>
+    /// Represents storage validation result and encapsulates its related behavior and state.
+    /// </summary>
     public sealed class StorageValidationResult {
+        /// <summary>
+        /// Gets or sets the issues for storage validation result. Represents a state flag that enables or disables related behavior.
+        /// </summary>
         public List<StorageValidationIssue> Issues { get; } = [];
         public bool HasWarnings => Issues.Any(x => x.Severity == StorageValidationIssueSeverity.Warning);
         public bool HasErrors => Issues.Any(x => x.Severity == StorageValidationIssueSeverity.Error);
@@ -37,32 +49,86 @@ public class DataStorage {
     private static readonly ConcurrentDictionary<string, string> MergeAggSqlCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, string> UpsertAggSqlCache = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Represents bucket state and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class BucketState {
+        /// <summary>
+        /// Gets or sets the sum for bucket state. Stores a numeric value used by calculations, thresholds, or telemetry display.
+        /// </summary>
         public double[] Sum { get; } = new double[Metrics.Length];
+        /// <summary>
+        /// Gets or sets the count for bucket state. Specifies sizing or boundary constraints used by runtime calculations.
+        /// </summary>
         public int[] Count { get; } = new int[Metrics.Length];
+        /// <summary>
+        /// Gets or sets the min for bucket state. Specifies sizing or boundary constraints used by runtime calculations.
+        /// </summary>
         public double?[] Min { get; } = new double?[Metrics.Length];
+        /// <summary>
+        /// Gets or sets the max for bucket state. Specifies sizing or boundary constraints used by runtime calculations.
+        /// </summary>
         public double?[] Max { get; } = new double?[Metrics.Length];
+        /// <summary>
+        /// Gets or sets the first for bucket state. Stores a numeric value used by calculations, thresholds, or telemetry display.
+        /// </summary>
         public double?[] First { get; } = new double?[Metrics.Length];
+        /// <summary>
+        /// Gets or sets the last for bucket state. Stores a numeric value used by calculations, thresholds, or telemetry display.
+        /// </summary>
         public double?[] Last { get; } = new double?[Metrics.Length];
     }
 
+    /// <summary>
+    /// Represents recalc level context and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class RecalcLevelContext {
+        /// <summary>
+        /// Gets or sets the name for recalc level context. Stores textual configuration or display metadata used by application flows.
+        /// </summary>
         public required string Name { get; init; }
+        /// <summary>
+        /// Gets or sets the span for recalc level context. Stores a duration value used by scheduling and aggregation logic.
+        /// </summary>
         public required TimeSpan Span { get; init; }
+        /// <summary>
+        /// Gets or sets the monthly for recalc level context. Represents a state flag that enables or disables related behavior.
+        /// </summary>
         public required bool Monthly { get; init; }
+        /// <summary>
+        /// Gets or sets the end bucket for recalc level context. Stores a timestamp used for ordering, filtering, or range calculations.
+        /// </summary>
         public required DateTime EndBucket { get; init; }
+        /// <summary>
+        /// Gets or sets the upsert sql for recalc level context. Stores textual configuration or display metadata used by application flows.
+        /// </summary>
         public required string UpsertSql { get; init; }
+        /// <summary>
+        /// Gets or sets the current bucket for recalc level context. Stores a timestamp used for ordering, filtering, or range calculations.
+        /// </summary>
         public required DateTime CurrentBucket { get; set; }
+        /// <summary>
+        /// Gets or sets the state for recalc level context. Holds part of the component state used by higher-level application logic.
+        /// </summary>
         public required BucketState State { get; set; }
+        /// <summary>
+        /// Gets or sets the pending rows for recalc level context. Stores a timestamp used for ordering, filtering, or range calculations.
+        /// </summary>
         public List<KeyValuePair<DateTime, BucketState>> PendingRows { get; } = [];
     }
 
+    /// <summary>
+    /// Performs the aggregation recalc progress operation.
+    /// </summary>
     public readonly record struct AggregationRecalcProgress(
         int ProcessedBuckets,
         int TotalBuckets,
         string Level,
         DateTime BucketTimestamp);
 
+    /// <summary>
+    /// Represents metric def and encapsulates its related behavior and state.
+    /// </summary>
     private sealed record MetricDef(string Name, FbDbType RawType, string RawSqlType, string AggSqlType);
     private static readonly MetricDef[] Metrics = [
         new("CLOUD_COVER", FbDbType.SmallInt, "SMALLINT", "FLOAT"),
@@ -96,6 +162,15 @@ public class DataStorage {
         ("1W", TimeSpan.FromDays(7), false)
     ];
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DataStorage"/> class.
+    /// </summary>
+    /// <param name="storageRootPath">Path value for storage root path.</param>
+    /// <param name="userName">Input value for user name.</param>
+    /// <param name="password">Input value for password.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public DataStorage(string storageRootPath, string? userName = null, string? password = null) {
         if (string.IsNullOrWhiteSpace(storageRootPath)) {
             throw new ArgumentException("Storage root path cannot be null or empty", nameof(storageRootPath));
@@ -107,11 +182,19 @@ public class DataStorage {
         Directory.CreateDirectory(_root);
     }
 
+    /// <summary>
+    /// Adds the data for metric def.
+    /// </summary>
+    /// <param name="data">Input value for data.</param>
     public void AddData(ObservingData data) {
         ArgumentNullException.ThrowIfNull(data);
         AddDataBatch([data]);
     }
 
+    /// <summary>
+    /// Adds the raw data batch for metric def.
+    /// </summary>
+    /// <param name="batch">Collection of batch items used by the operation.</param>
     public void AddRawDataBatch(IReadOnlyCollection<ObservingData> batch) {
         ArgumentNullException.ThrowIfNull(batch);
         if (batch.Count == 0) {
@@ -143,6 +226,10 @@ CREATED_AT,CLOUD_COVER,IS_SAFE,DEW_POINT,HUMIDITY,PRESSURE,SKY_BRIGHTNESS,RAIN_R
         }
     }
 
+    /// <summary>
+    /// Adds the data batch for metric def.
+    /// </summary>
+    /// <param name="batch">Collection of batch items used by the operation.</param>
     public void AddDataBatch(IReadOnlyCollection<ObservingData> batch) {
         ArgumentNullException.ThrowIfNull(batch);
         if (batch.Count == 0) {
@@ -201,6 +288,14 @@ CREATED_AT,CLOUD_COVER,IS_SAFE,DEW_POINT,HUMIDITY,PRESSURE,SKY_BRIGHTNESS,RAIN_R
         }
     }
 
+    /// <summary>
+    /// Gets the data for metric def.
+    /// </summary>
+    /// <param name="startTime">Input value for start time.</param>
+    /// <param name="endTime">Input value for end time.</param>
+    /// <param name="slotDuration">Input value for slot duration.</param>
+    /// <param name="aggregationFunction">Input value for aggregation function.</param>
+    /// <returns>The result of the operation.</returns>
     public List<ObservingData> GetData(DateTime startTime, DateTime endTime, TimeSpan? slotDuration = null, AggregationFunction aggregationFunction = AggregationFunction.Average) {
         if (endTime < startTime) {
             throw new ArgumentException("End time must be greater than or equal to start time");
@@ -218,6 +313,12 @@ CREATED_AT,CLOUD_COVER,IS_SAFE,DEW_POINT,HUMIDITY,PRESSURE,SKY_BRIGHTNESS,RAIN_R
         return GetAggregatedData(startTime, endTime, level, slotDuration.Value, aggregationFunction);
     }
 
+    /// <summary>
+    /// Deletes the data for metric def.
+    /// </summary>
+    /// <param name="startTime">Input value for start time.</param>
+    /// <param name="endTime">Input value for end time.</param>
+    /// <returns>The result of the operation.</returns>
     public int DeleteData(DateTime startTime, DateTime endTime) {
         if (endTime < startTime) {
             throw new ArgumentException("End time must be greater than or equal to start time");
@@ -238,6 +339,12 @@ CREATED_AT,CLOUD_COVER,IS_SAFE,DEW_POINT,HUMIDITY,PRESSURE,SKY_BRIGHTNESS,RAIN_R
         return deleted;
     }
 
+    /// <summary>
+    /// Gets the latest data for metric def.
+    /// </summary>
+    /// <param name="endTime">Input value for end time.</param>
+    /// <param name="maxLookback">Input value for max lookback.</param>
+    /// <returns>The result of the operation.</returns>
     public ObservingData? GetLatestData(DateTime endTime, TimeSpan maxLookback) {
         if (maxLookback <= TimeSpan.Zero) {
             throw new ArgumentException("Max lookback must be positive", nameof(maxLookback));
@@ -265,6 +372,13 @@ FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CR
         return null;
     }
 
+    /// <summary>
+    /// Executes recalculate aggregations as part of metric def processing.
+    /// </summary>
+    /// <param name="startTime">Input value for start time.</param>
+    /// <param name="endTime">Input value for end time.</param>
+    /// <param name="progress">Input value for progress.</param>
+    /// <param name="upsertBatchSize">Input value for upsert batch size.</param>
     public void RecalculateAggregations(DateTime startTime, DateTime endTime, Action<AggregationRecalcProgress>? progress = null, int upsertBatchSize = 1000) {
         if (endTime < startTime) {
             throw new ArgumentException("End time must be greater than or equal to start time");
@@ -328,6 +442,14 @@ FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CR
 
     }
 
+    /// <summary>
+    /// Executes queue bucket as part of metric def processing.
+    /// </summary>
+    /// <param name="context">Input value for context.</param>
+    /// <param name="bucketTs">Input value for bucket ts.</param>
+    /// <param name="state">Input value for state.</param>
+    /// <param name="upsertBatchSize">Input value for upsert batch size.</param>
+    /// <returns>The result of the operation.</returns>
     private int QueueBucket(RecalcLevelContext context, DateTime bucketTs, BucketState state, int upsertBatchSize) {
         context.PendingRows.Add(new KeyValuePair<DateTime, BucketState>(bucketTs, state));
         if (context.PendingRows.Count >= upsertBatchSize) {
@@ -337,6 +459,10 @@ FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CR
         return 1;
     }
 
+    /// <summary>
+    /// Executes flush pending rows as part of metric def processing.
+    /// </summary>
+    /// <param name="context">Input value for context.</param>
     private void FlushPendingRows(RecalcLevelContext context) {
         if (context.PendingRows.Count == 0) {
             return;
@@ -366,6 +492,11 @@ FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CR
         context.PendingRows.Clear();
     }
 
+    /// <summary>
+    /// Executes merge states as part of metric def processing.
+    /// </summary>
+    /// <param name="target">Input value for target.</param>
+    /// <param name="source">Input value for source.</param>
     private static void MergeStates(BucketState target, BucketState source) {
         for (var i = 0; i < Metrics.Length; i++) {
             target.Sum[i] += source.Sum[i];
@@ -386,6 +517,11 @@ FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CR
         }
     }
 
+    /// <summary>
+    /// Executes aggregate row as part of metric def processing.
+    /// </summary>
+    /// <param name="state">Input value for state.</param>
+    /// <param name="row">Input value for row.</param>
     private static void AggregateRow(BucketState state, ObservingData row) {
         for (var i = 0; i < Metrics.Length; i++) {
             var value = GetMetricValue(row, i);
@@ -403,6 +539,11 @@ FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CR
         }
     }
 
+    /// <summary>
+    /// Builds the single bucket state for metric def.
+    /// </summary>
+    /// <param name="bucketRows">Collection of bucket rows items used by the operation.</param>
+    /// <returns>The result of the operation.</returns>
     private static BucketState BuildSingleBucketState(IEnumerable<ObservingData> bucketRows) {
         var state = new BucketState();
         foreach (var row in bucketRows) {
@@ -412,12 +553,25 @@ FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CR
         return state;
     }
 
+    /// <summary>
+    /// Loads the raw bucket for metric def.
+    /// </summary>
+    /// <param name="levelName">Input value for level name.</param>
+    /// <param name="bucketStart">Input value for bucket start.</param>
+    /// <returns>The result of the operation.</returns>
     private List<ObservingData> LoadRawBucket(string levelName, DateTime bucketStart) {
         var span = Levels.First(x => x.Name == levelName).Span;
         var bucketEnd = bucketStart.Add(span).AddSeconds(-1);
         return GetRawData(bucketStart, bucketEnd);
     }
 
+    /// <summary>
+    /// Executes count buckets in range as part of metric def processing.
+    /// </summary>
+    /// <param name="startTime">Input value for start time.</param>
+    /// <param name="endTime">Input value for end time.</param>
+    /// <param name="levelName">Input value for level name.</param>
+    /// <returns>The result of the operation.</returns>
     private static int CountBucketsInRange(DateTime startTime, DateTime endTime, string levelName) {
         var startBucket = AlignToBucket(startTime, levelName);
         var endBucket = AlignToBucket(endTime, levelName);
@@ -430,6 +584,12 @@ FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CR
         return (int)(((endBucket - startBucket).Ticks / ticks) + 1);
     }
 
+    /// <summary>
+    /// Gets the metric value for metric def.
+    /// </summary>
+    /// <param name="row">Input value for row.</param>
+    /// <param name="metricIndex">Input value for metric index.</param>
+    /// <returns>The result of the operation.</returns>
     private static double? GetMetricValue(ObservingData row, int metricIndex) {
         return metricIndex switch {
             0 => row.CloudCover,
@@ -450,6 +610,11 @@ FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CR
         };
     }
 
+    /// <summary>
+    /// Builds the upsert agg sql for metric def.
+    /// </summary>
+    /// <param name="level">Input value for level.</param>
+    /// <returns>The resulting string value.</returns>
     private static string BuildUpsertAggSql(string level) {
         var columns = new List<string> { "CREATED_AT" };
         foreach (var m in Metrics) {
@@ -464,6 +629,12 @@ FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CR
         return $"UPDATE OR INSERT INTO METEO_AGG_{level} ({string.Join(",", columns)}) VALUES ({string.Join(",", values)}) MATCHING (CREATED_AT)";
     }
 
+    /// <summary>
+    /// Creates the agg upsert params for metric def.
+    /// </summary>
+    /// <param name="bucketTs">Input value for bucket ts.</param>
+    /// <param name="state">Input value for state.</param>
+    /// <returns>The result of the operation.</returns>
     private static DynamicParameters CreateAggUpsertParams(DateTime bucketTs, BucketState state) {
         var p = new DynamicParameters();
         p.Add("CreatedAt", bucketTs, DbType.DateTime);
@@ -488,6 +659,12 @@ FROM METEO_RAW WHERE CREATED_AT >= @start AND CREATED_AT <= @endTime ORDER BY CR
 
     private static DateTime FloorToSecond(DateTime ts) => new(ts.Year, ts.Month, ts.Day, ts.Hour, ts.Minute, ts.Second, ts.Kind);
 
+    /// <summary>
+    /// Executes align to bucket as part of metric def processing.
+    /// </summary>
+    /// <param name="ts">Input value for ts.</param>
+    /// <param name="level">Input value for level.</param>
+    /// <returns>The result of the operation.</returns>
     private static DateTime AlignToBucket(DateTime ts, string level) {
         if (level == "3D") {
             var anchor = new DateTime(2000, 1, 1, 0, 0, 0, ts.Kind);
@@ -532,6 +709,12 @@ WHEN NOT MATCHED THEN INSERT (
     @CreatedAt,@CloudCover,@IsSafeInt,@DewPoint,@Humidity,@Pressure,@SkyBrightness,@RainRate,@SkyQuality,@SkyTemperature,@StarFwhm,@Temperature,@WindDirection,@WindGust,@WindSpeed
 )";
 
+    /// <summary>
+    /// Creates the raw merge params for metric def.
+    /// </summary>
+    /// <param name="d">Input value for d.</param>
+    /// <param name="ts">Input value for ts.</param>
+    /// <returns>The result of the operation.</returns>
     private static object CreateRawMergeParams(ObservingData d, DateTime ts) {
         return new {
             CreatedAt = ts,
@@ -552,6 +735,12 @@ WHEN NOT MATCHED THEN INSERT (
         };
     }
 
+    /// <summary>
+    /// Creates the agg merge params for metric def.
+    /// </summary>
+    /// <param name="d">Input value for d.</param>
+    /// <param name="bucketTs">Input value for bucket ts.</param>
+    /// <returns>The result of the operation.</returns>
     private static DynamicParameters CreateAggMergeParams(ObservingData d, DateTime bucketTs) {
         var p = new DynamicParameters();
         p.Add("CreatedAt", bucketTs, DbType.DateTime);
@@ -559,6 +748,11 @@ WHEN NOT MATCHED THEN INSERT (
         return p;
     }
 
+    /// <summary>
+    /// Adds the metric params for metric def.
+    /// </summary>
+    /// <param name="p">Input value for p.</param>
+    /// <param name="d">Input value for d.</param>
     private static void AddMetricParams(DynamicParameters p, ObservingData d) {
         p.Add("CLOUD_COVER", d.CloudCover, DbType.Double);
         p.Add("IS_SAFE", d.IsSafeInt is null ? null : Convert.ToDouble(d.IsSafeInt.Value, CultureInfo.InvariantCulture), DbType.Double);
@@ -576,6 +770,11 @@ WHEN NOT MATCHED THEN INSERT (
         p.Add("WIND_SPEED", d.WindSpeed, DbType.Double);
     }
 
+    /// <summary>
+    /// Builds the merge agg sql for metric def.
+    /// </summary>
+    /// <param name="level">Input value for level.</param>
+    /// <returns>The resulting string value.</returns>
     private static string BuildMergeAggSql(string level) {
         var sb = new StringBuilder();
         sb.AppendLine($"MERGE INTO METEO_AGG_{level} t");
@@ -623,6 +822,12 @@ WHEN NOT MATCHED THEN INSERT (
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Gets the raw data for metric def.
+    /// </summary>
+    /// <param name="startTime">Input value for start time.</param>
+    /// <param name="endTime">Input value for end time.</param>
+    /// <returns>The result of the operation.</returns>
     private List<ObservingData> GetRawData(DateTime startTime, DateTime endTime) {
         var bags = new ConcurrentBag<ObservingData>();
         var shards = EnumerateMonths(startTime, endTime).Select(GetRawDbPath).Where(File.Exists).ToList();
@@ -642,6 +847,13 @@ FROM METEO_RAW WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER B
         return [.. bags.OrderBy(x => x.Timestamp)];
     }
 
+    /// <summary>
+    /// Executes enumerate raw data batches as part of metric def processing.
+    /// </summary>
+    /// <param name="startTime">Input value for start time.</param>
+    /// <param name="endTime">Input value for end time.</param>
+    /// <param name="batchSize">Input value for batch size.</param>
+    /// <returns>The result of the operation.</returns>
     private IEnumerable<IReadOnlyList<ObservingData>> EnumerateRawDataBatches(DateTime startTime, DateTime endTime, int batchSize) {
         if (endTime < startTime) {
             yield break;
@@ -682,6 +894,15 @@ ORDER BY CREATED_AT ASC ROWS @rowStart TO @rowEnd";
         }
     }
 
+    /// <summary>
+    /// Gets the aggregated data for metric def.
+    /// </summary>
+    /// <param name="startTime">Input value for start time.</param>
+    /// <param name="endTime">Input value for end time.</param>
+    /// <param name="level">Input value for level.</param>
+    /// <param name="slotDuration">Input value for slot duration.</param>
+    /// <param name="func">Input value for func.</param>
+    /// <returns>The result of the operation.</returns>
     private List<ObservingData> GetAggregatedData(DateTime startTime, DateTime endTime, string level, TimeSpan slotDuration, AggregationFunction func) {
         string suffix = func switch {
             AggregationFunction.Average => "AVG",
@@ -736,6 +957,11 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
         return [.. bag.OrderBy(x => x.Timestamp)];
     }
 
+    /// <summary>
+    /// Maps the slot duration for metric def.
+    /// </summary>
+    /// <param name="slotDuration">Input value for slot duration.</param>
+    /// <returns>The resulting string value.</returns>
     private static string MapSlotDuration(TimeSpan slotDuration) {
         if (slotDuration <= TimeSpan.FromSeconds(3)) return "RAW";
         if (slotDuration <= TimeSpan.FromSeconds(10)) return "10S";
@@ -751,12 +977,24 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
         return "1W";
     }
 
+    /// <summary>
+    /// Executes enumerate months as part of metric def processing.
+    /// </summary>
+    /// <param name="start">Input value for start.</param>
+    /// <param name="end">Input value for end.</param>
+    /// <returns>The result of the operation.</returns>
     private static IEnumerable<DateTime> EnumerateMonths(DateTime start, DateTime end) {
         for (var d = new DateTime(start.Year, start.Month, 1); d <= end; d = d.AddMonths(1)) {
             yield return d;
         }
     }
 
+    /// <summary>
+    /// Executes enumerate years as part of metric def processing.
+    /// </summary>
+    /// <param name="start">Input value for start.</param>
+    /// <param name="end">Input value for end.</param>
+    /// <returns>The result of the operation.</returns>
     private static IEnumerable<int> EnumerateYears(DateTime start, DateTime end) {
         for (var y = start.Year; y <= end.Year; y++) {
             yield return y;
@@ -767,6 +1005,11 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
     private string GetMonthlyAggDbPath(DateTime date) => Path.Combine(_root, date.Year.ToString(CultureInfo.InvariantCulture), $"{date:MM}_AGG{DbExt}");
     private string GetYearAggDbPath(int year) => Path.Combine(_root, $"{year}_AGG{DbExt}");
 
+    /// <summary>
+    /// Gets the connection string for metric def.
+    /// </summary>
+    /// <param name="dbPath">Path value for db path.</param>
+    /// <returns>The resulting string value.</returns>
     private string GetConnectionString(string dbPath) {
         var csb = new FbConnectionStringBuilder {
             DataSource = "localhost",
@@ -781,6 +1024,10 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
         return csb.ToString();
     }
 
+    /// <summary>
+    /// Ensures the raw database for metric def.
+    /// </summary>
+    /// <param name="path">Path value for path.</param>
     private void EnsureRawDatabase(string path) {
         if (!_ensuredRawDbs.TryAdd(path, 0)) {
             return;
@@ -810,6 +1057,10 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
         }
     }
 
+    /// <summary>
+    /// Ensures the monthly agg database for metric def.
+    /// </summary>
+    /// <param name="path">Path value for path.</param>
     private void EnsureMonthlyAggDatabase(string path) {
         if (!_ensuredMonthlyAggDbs.TryAdd(path, 0)) {
             return;
@@ -823,6 +1074,10 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
         }
     }
 
+    /// <summary>
+    /// Ensures the year agg database for metric def.
+    /// </summary>
+    /// <param name="path">Path value for path.</param>
     private void EnsureYearAggDatabase(string path) {
         if (!_ensuredYearAggDbs.TryAdd(path, 0)) {
             return;
@@ -836,6 +1091,10 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
         }
     }
 
+    /// <summary>
+    /// Ensures the db for metric def.
+    /// </summary>
+    /// <param name="path">Path value for path.</param>
     private void EnsureDb(string path) {
         var dir = Path.GetDirectoryName(path)!;
         Directory.CreateDirectory(dir);
@@ -847,6 +1106,12 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
         FbConnection.CreateDatabase(cs, 32768, true, false);
     }
 
+    /// <summary>
+    /// Ensures the agg table for metric def.
+    /// </summary>
+    /// <param name="conn">Input value for conn.</param>
+    /// <param name="dbPath">Path value for db path.</param>
+    /// <param name="level">Input value for level.</param>
     private void EnsureAggTable(FbConnection conn, string dbPath, string level) {
         var tableName = $"METEO_AGG_{level}";
         var indexName = $"IDX_METEO_AGG_{level}_CREATED_AT";
@@ -872,16 +1137,40 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
         }
     }
 
+    /// <summary>
+    /// Determines whether table exists for metric def.
+    /// </summary>
+    /// <param name="conn">Input value for conn.</param>
+    /// <param name="tableName">Input value for table name.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool TableExists(FbConnection conn, string tableName) {
         const string sql = @"SELECT 1 FROM RDB$RELATIONS WHERE RDB$RELATION_NAME = @TableName AND COALESCE(RDB$SYSTEM_FLAG, 0) = 0";
         return conn.ExecuteScalar<int?>(sql, new { TableName = tableName.ToUpperInvariant() }).HasValue;
     }
 
+    /// <summary>
+    /// Determines whether index exists for metric def.
+    /// </summary>
+    /// <param name="conn">Input value for conn.</param>
+    /// <param name="indexName">Input value for index name.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool IndexExists(FbConnection conn, string indexName) {
         const string sql = @"SELECT 1 FROM RDB$INDICES WHERE RDB$INDEX_NAME = @IndexName";
         return conn.ExecuteScalar<int?>(sql, new { IndexName = indexName.ToUpperInvariant() }).HasValue;
     }
 
+    /// <summary>
+    /// Validates the storage structure for metric def.
+    /// </summary>
+    /// <param name="storageRootPath">Path value for storage root path.</param>
+    /// <param name="validateDatabaseSchema">Input value for validate database schema.</param>
+    /// <returns>The result of the operation.</returns>
     public static StorageValidationResult ValidateStorageStructure(string? storageRootPath, bool validateDatabaseSchema) {
         var result = new StorageValidationResult();
         if (string.IsNullOrWhiteSpace(storageRootPath)) {
@@ -975,8 +1264,17 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
         return result;
     }
 
+    /// <summary>
+    /// Represents table schema expectation and encapsulates its related behavior and state.
+    /// </summary>
     private sealed record TableSchemaExpectation(string TableName, string IndexName, Dictionary<string, string> RequiredColumns);
 
+    /// <summary>
+    /// Gets the required table schemas for file for table schema expectation.
+    /// </summary>
+    /// <param name="filePath">Path value for file path.</param>
+    /// <param name="storageRootPath">Path value for storage root path.</param>
+    /// <returns>The result of the operation.</returns>
     private static List<TableSchemaExpectation> GetRequiredTableSchemasForFile(string filePath, string storageRootPath) {
         var fileName = Path.GetFileName(filePath);
         if (System.Text.RegularExpressions.Regex.IsMatch(fileName, @"^\d{2}_RAW\.fdb$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)) {
@@ -1000,6 +1298,11 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
         return [];
     }
 
+    /// <summary>
+    /// Builds the agg table schemas for table schema expectation.
+    /// </summary>
+    /// <param name="levels">Collection of levels items used by the operation.</param>
+    /// <returns>The result of the operation.</returns>
     private static List<TableSchemaExpectation> BuildAggTableSchemas(IEnumerable<string> levels) {
         var requiredColumns = BuildAggTableRequiredColumns();
 
@@ -1009,6 +1312,10 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
             new Dictionary<string, string>(requiredColumns, StringComparer.OrdinalIgnoreCase)))];
     }
 
+    /// <summary>
+    /// Builds the agg table required columns for table schema expectation.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static Dictionary<string, string> BuildAggTableRequiredColumns() {
         var requiredColumns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
             ["CREATED_AT"] = "TIMESTAMP"
@@ -1027,6 +1334,10 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
         return requiredColumns;
     }
 
+    /// <summary>
+    /// Builds the raw table required columns for table schema expectation.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static Dictionary<string, string> BuildRawTableRequiredColumns() {
         var requiredColumns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
             ["CREATED_AT"] = "TIMESTAMP"
@@ -1039,6 +1350,12 @@ WHERE CREATED_AT >= @startTime AND CREATED_AT <= @endTime ORDER BY CREATED_AT";
         return requiredColumns;
     }
 
+    /// <summary>
+    /// Gets the table columns for table schema expectation.
+    /// </summary>
+    /// <param name="conn">Input value for conn.</param>
+    /// <param name="tableName">Input value for table name.</param>
+    /// <returns>The result of the operation.</returns>
     private static Dictionary<string, string> GetTableColumns(FbConnection conn, string tableName) {
         const string sql = @"
 SELECT

@@ -1,13 +1,17 @@
 namespace SafetyMonitor.Services;
 
 /// <summary>
-/// Process-wide cache for expensive render artifacts.
-/// Stores canonical bitmap instances and returns clones for safe callers usage.
+/// Represents heavy render cache and encapsulates its related behavior and state.
 /// </summary>
 internal static class HeavyRenderCache {
     private static readonly Dictionary<string, Bitmap> _bitmapCache = [];
     private static readonly Lock _sync = new();
 
+    /// <summary>
+    /// Gets the bitmap for heavy render cache.
+    /// </summary>
+    /// <param name="key">Input value for key.</param>
+    /// <returns>The result of the operation.</returns>
     public static Bitmap? GetBitmap(string key) {
         lock (_sync) {
             return _bitmapCache.TryGetValue(key, out var value)
@@ -16,6 +20,11 @@ internal static class HeavyRenderCache {
         }
     }
 
+    /// <summary>
+    /// Executes put bitmap as part of heavy render cache processing.
+    /// </summary>
+    /// <param name="key">Input value for key.</param>
+    /// <param name="bitmap">Input value for bitmap.</param>
     public static void PutBitmap(string key, Bitmap bitmap) {
         lock (_sync) {
             if (_bitmapCache.Remove(key, out var existing)) {
@@ -26,6 +35,9 @@ internal static class HeavyRenderCache {
         }
     }
 
+    /// <summary>
+    /// Executes clear as part of heavy render cache processing.
+    /// </summary>
     public static void Clear() {
         lock (_sync) {
             foreach (var item in _bitmapCache.Values) {

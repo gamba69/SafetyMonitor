@@ -3,29 +3,32 @@ using DataStorage.Models;
 namespace SafetyMonitorData.Utilities;
 
 /// <summary>
-/// Console output formatting utilities.
+/// Represents console output and encapsulates its related behavior and state.
 /// </summary>
 public static class ConsoleOutput {
 
     #region Public Methods
 
     /// <summary>
-    /// Print error message - unified format without color, output to stderr.
+    /// Executes error as part of console output processing.
     /// </summary>
+    /// <param name="message">Input value for message.</param>
     public static void Error(string message) {
         Console.Error.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [ERROR] {message}");
     }
 
     /// <summary>
-    /// Print info message - unified format without color.
+    /// Executes info as part of console output processing.
     /// </summary>
+    /// <param name="message">Input value for message.</param>
     public static void Info(string message) {
         Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [INFO] {message}");
     }
 
     /// <summary>
-    /// Print observing data to console.
+    /// Executes print data as part of console output processing.
     /// </summary>
+    /// <param name="data">Input value for data.</param>
     public static void PrintData(ObservingData data) {
         Console.WriteLine($"[{data.Timestamp:yyyy-MM-dd HH:mm:ss} UTC] DATA:");
 
@@ -97,8 +100,9 @@ public static class ConsoleOutput {
     }
 
     /// <summary>
-    /// Print warning message - unified format without color.
+    /// Executes warning as part of console output processing.
     /// </summary>
+    /// <param name="message">Input value for message.</param>
     public static void Warning(string message) {
         Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [WARN] {message}");
     }
@@ -108,8 +112,10 @@ public static class ConsoleOutput {
     #region Private Methods
 
     /// <summary>
-    /// Get cardinal direction name from degrees.
+    /// Gets the wind direction name for console output.
     /// </summary>
+    /// <param name="degrees">Input value for degrees.</param>
+    /// <returns>The resulting string value.</returns>
     private static string GetWindDirectionName(double degrees) {
         // Normalize to 0-360
         degrees %= 360;

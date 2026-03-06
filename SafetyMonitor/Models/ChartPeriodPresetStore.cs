@@ -2,6 +2,9 @@ using SafetyMonitor.Services;
 
 namespace SafetyMonitor.Models;
 
+/// <summary>
+/// Performs the chart period preset operation.
+/// </summary>
 public readonly record struct ChartPeriodPreset(
     string Uid,
     string Label,
@@ -10,6 +13,9 @@ public readonly record struct ChartPeriodPreset(
     ChartPeriod Period,
     TimeSpan AggregationInterval);
 
+/// <summary>
+/// Represents chart period preset store and encapsulates its related behavior and state.
+/// </summary>
 public static class ChartPeriodPresetStore {
 
     private const int DefaultTargetPointCount = 300;
@@ -92,11 +98,19 @@ public static class ChartPeriodPresetStore {
         })];
     }
 
+    /// <summary>
+    /// Sets the presets for chart period preset store.
+    /// </summary>
+    /// <param name="presets">Collection of presets items used by the operation.</param>
     public static void SetPresets(IEnumerable<ChartPeriodPresetDefinition>? presets) {
         _presets = NormalizePresets(presets);
         PresetsChanged?.Invoke();
     }
 
+    /// <summary>
+    /// Gets the preset items for chart period preset store.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     public static IReadOnlyList<ChartPeriodPreset> GetPresetItems() {
         return _presets
             .Select(def => {
@@ -112,6 +126,12 @@ public static class ChartPeriodPresetStore {
             .ToList();
     }
 
+    /// <summary>
+    /// Finds the matching preset index for chart period preset store.
+    /// </summary>
+    /// <param name="uid">Identifier of uid.</param>
+    /// <param name="presets">Input value for presets.</param>
+    /// <returns>The result of the operation.</returns>
     public static int FindMatchingPresetIndex(string? uid, IReadOnlyList<ChartPeriodPreset> presets) {
         if (string.IsNullOrWhiteSpace(uid)) {
             return -1;
@@ -131,6 +151,11 @@ public static class ChartPeriodPresetStore {
         return -1;
     }
 
+    /// <summary>
+    /// Gets the fallback preset for chart period preset store.
+    /// </summary>
+    /// <param name="presets">Input value for presets.</param>
+    /// <returns>The result of the operation.</returns>
     public static ChartPeriodPreset GetFallbackPreset(IReadOnlyList<ChartPeriodPreset> presets) {
         if (presets.Count > 0) {
             return presets[0];
@@ -139,6 +164,11 @@ public static class ChartPeriodPresetStore {
         return new ChartPeriodPreset("24h", "24 hours", "24h", TimeSpan.FromDays(1), ChartPeriod.Last24Hours, TimeSpan.FromMinutes(15));
     }
 
+    /// <summary>
+    /// Formats the duration for chart period preset store.
+    /// </summary>
+    /// <param name="duration">Input value for duration.</param>
+    /// <returns>The resulting string value.</returns>
     public static string FormatDuration(TimeSpan duration) {
         if (duration.TotalDays >= 1 && IsWholeNumber(duration.TotalDays)) {
             var days = (int)Math.Round(duration.TotalDays);
@@ -157,6 +187,11 @@ public static class ChartPeriodPresetStore {
         return seconds == 1 ? "1 Second" : $"{seconds} Seconds";
     }
 
+    /// <summary>
+    /// Maps the duration to period for chart period preset store.
+    /// </summary>
+    /// <param name="duration">Input value for duration.</param>
+    /// <returns>The result of the operation.</returns>
     private static ChartPeriod MapDurationToPeriod(TimeSpan duration) {
         if (AreDurationsClose(duration, TimeSpan.FromMinutes(15))) {
             return ChartPeriod.Last15Minutes;
@@ -180,14 +215,36 @@ public static class ChartPeriodPresetStore {
         return ChartPeriod.Custom;
     }
 
+    /// <summary>
+    /// Determines whether are durations close for chart period preset store.
+    /// </summary>
+    /// <param name="a">Input value for a.</param>
+    /// <param name="b">Input value for b.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool AreDurationsClose(TimeSpan a, TimeSpan b) {
         return Math.Abs((a - b).TotalSeconds) < 0.5;
     }
 
+    /// <summary>
+    /// Determines whether is whole number for chart period preset store.
+    /// </summary>
+    /// <param name="value">Input value for value.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool IsWholeNumber(double value) {
         return Math.Abs(value - Math.Round(value)) < 0.0001;
     }
 
+    /// <summary>
+    /// Normalizes the presets for chart period preset store.
+    /// </summary>
+    /// <param name="presets">Collection of presets items used by the operation.</param>
+    /// <returns>The result of the operation.</returns>
     private static List<ChartPeriodPresetDefinition> NormalizePresets(IEnumerable<ChartPeriodPresetDefinition>? presets) {
         var list = new List<ChartPeriodPresetDefinition>();
         var usedUids = new HashSet<string>(StringComparer.Ordinal);
@@ -231,6 +288,11 @@ public static class ChartPeriodPresetStore {
         return list;
     }
 
+    /// <summary>
+    /// Gets the recommended aggregation interval for chart period preset store.
+    /// </summary>
+    /// <param name="duration">Input value for duration.</param>
+    /// <returns>The result of the operation.</returns>
     private static TimeSpan GetRecommendedAggregationInterval(TimeSpan duration) {
         if (duration <= TimeSpan.FromMinutes(15)) {
             return TimeSpan.FromSeconds(30);
@@ -251,6 +313,13 @@ public static class ChartPeriodPresetStore {
         return TimeSpan.FromHours(6);
     }
 
+    /// <summary>
+    /// Calculates the default aggregation interval for chart period preset store.
+    /// </summary>
+    /// <param name="duration">Input value for duration.</param>
+    /// <param name="targetPointCount">Input value for target point count.</param>
+    /// <param name="rawDataPointIntervalSeconds">Input value for raw data point interval seconds.</param>
+    /// <returns>The result of the operation.</returns>
     private static TimeSpan CalculateDefaultAggregationInterval(TimeSpan duration, int targetPointCount, int rawDataPointIntervalSeconds) {
         var intervalSeconds = Math.Max(1, (int)Math.Ceiling(duration.TotalSeconds / targetPointCount));
         var rawInterval = TimeSpan.FromSeconds(rawDataPointIntervalSeconds);

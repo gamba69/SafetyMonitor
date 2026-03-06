@@ -1,6 +1,6 @@
 namespace DataStorage.Models {
     /// <summary>
-    /// Aggregation functions for time-slot integration
+    /// Defines the available aggregation function values used by the application.
     /// </summary>
     public enum AggregationFunction {
         /// <summary>

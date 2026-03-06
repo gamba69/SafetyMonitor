@@ -3,6 +3,9 @@ using SafetyMonitor.Versioning;
 
 namespace SafetyMonitor.Services;
 
+/// <summary>
+/// Represents app build info helper and encapsulates its related behavior and state.
+/// </summary>
 internal static class AppBuildInfoHelper {
 
     #region Public Properties

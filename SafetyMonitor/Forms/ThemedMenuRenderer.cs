@@ -3,7 +3,7 @@ using MaterialSkin;
 namespace SafetyMonitor.Forms;
 
 /// <summary>
-/// Custom MenuStrip renderer with theme support (light/dark).
+/// Represents themed menu renderer and encapsulates its related behavior and state.
 /// </summary>
 public class ThemedMenuRenderer : ToolStripProfessionalRenderer {
     #region Private Fields
@@ -15,6 +15,13 @@ public class ThemedMenuRenderer : ToolStripProfessionalRenderer {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ThemedMenuRenderer"/> class.
+    /// </summary>
+    /// <param name="base(_colorTable">Input value for base color table.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public ThemedMenuRenderer() : base(_colorTable) {
         _isLight = true;
     }
@@ -23,6 +30,9 @@ public class ThemedMenuRenderer : ToolStripProfessionalRenderer {
 
     #region Public Methods
 
+    /// <summary>
+    /// Updates the theme for themed menu renderer.
+    /// </summary>
     public void UpdateTheme() {
         var skinManager = MaterialSkinManager.Instance;
         _isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -33,11 +43,19 @@ public class ThemedMenuRenderer : ToolStripProfessionalRenderer {
 
     #region Protected Methods
 
+    /// <summary>
+    /// Executes on render arrow as part of themed menu renderer processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e) {
         e.ArrowColor = _isLight ? Color.FromArgb(100, 100, 100) : Color.FromArgb(180, 180, 180);
         base.OnRenderArrow(e);
     }
 
+    /// <summary>
+    /// Executes on render item text as part of themed menu renderer processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e) {
         e.TextColor = _isLight ? Color.FromArgb(33, 33, 33) : Color.FromArgb(240, 240, 240);
         base.OnRenderItemText(e);
@@ -49,6 +67,9 @@ public class ThemedMenuRenderer : ToolStripProfessionalRenderer {
 
     #region Private Classes
 
+    /// <summary>
+    /// Represents themed color table and encapsulates its related behavior and state.
+    /// </summary>
     private class ThemedColorTable : ProfessionalColorTable {
         #region Private Fields
 
@@ -58,6 +79,13 @@ public class ThemedMenuRenderer : ToolStripProfessionalRenderer {
 
         #region Public Constructors
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ThemedColorTable"/> class.
+        /// </summary>
+        /// <param name="isLight">Input value for is light.</param>
+        /// <remarks>
+        /// The constructor wires required dependencies and initial state.
+        /// </remarks>
         public ThemedColorTable(bool isLight) {
             _isLight = isLight;
             UseSystemColors = false;
@@ -145,10 +173,21 @@ public class ThemedMenuRenderer : ToolStripProfessionalRenderer {
 
         #region Public Methods
 
+        /// <summary>
+        /// Updates the theme for themed color table.
+        /// </summary>
+        /// <param name="isLight">Input value for is light.</param>
         public void UpdateTheme(bool isLight) {
             _isLight = isLight;
         }
 
+        /// <summary>
+        /// Executes blend as part of themed color table processing.
+        /// </summary>
+        /// <param name="source">Input value for source.</param>
+        /// <param name="target">Input value for target.</param>
+        /// <param name="ratioToTarget">Input value for ratio to target.</param>
+        /// <returns>The result of the operation.</returns>
         private static Color Blend(Color source, Color target, float ratioToTarget) {
             var clamped = Math.Clamp(ratioToTarget, 0f, 1f);
             var ratioToSource = 1f - clamped;

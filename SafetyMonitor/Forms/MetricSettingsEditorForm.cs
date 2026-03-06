@@ -5,6 +5,9 @@ using System.Linq;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents metric settings editor form and encapsulates its related behavior and state.
+/// </summary>
 public class MetricSettingsEditorForm : ThemedCaptionForm {
 
     private Button _cancelButton = null!;
@@ -14,6 +17,13 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
     private readonly List<string> _trayValueSchemeNames;
     private bool _isReorderingGrid;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MetricSettingsEditorForm"/> class.
+    /// </summary>
+    /// <param name="settings">Collection of settings items used by the operation.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public MetricSettingsEditorForm(IEnumerable<MetricDisplaySetting> settings) {
         _settings = [.. settings.Select(s => new MetricDisplaySetting {
             Metric = s.Metric,
@@ -32,8 +42,14 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         LoadSettings();
     }
 
+    /// <summary>
+    /// Gets or sets the settings for metric settings editor form. Contains a collection of values that drive configuration, rendering, or data processing.
+    /// </summary>
     public List<MetricDisplaySetting> Settings { get; private set; } = [];
 
+    /// <summary>
+    /// Initializes metric settings editor form state and required resources.
+    /// </summary>
     private void InitializeComponent() {
         Text = "Metric Settings";
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -222,6 +238,9 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         Controls.Add(root);
     }
 
+    /// <summary>
+    /// Loads the settings for metric settings editor form.
+    /// </summary>
     private void LoadSettings() {
             _metricsGrid.Rows.Clear();
         var map = _settings.ToDictionary(s => s.Metric, s => s);
@@ -231,6 +250,11 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Gets the ordered metrics for grid for metric settings editor form.
+    /// </summary>
+    /// <param name="settingsByMetric">Input value for settings by metric.</param>
+    /// <returns>The result of the operation.</returns>
     private static IEnumerable<MetricType> GetOrderedMetricsForGrid(Dictionary<MetricType, MetricDisplaySetting> settingsByMetric) {
         return Enum
             .GetValues<MetricType>()
@@ -243,6 +267,11 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
             .ThenBy(metric => (int)metric);
     }
 
+    /// <summary>
+    /// Executes metrics grid cell validating as part of metric settings editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void MetricsGrid_CellValidating(object? sender, DataGridViewCellValidatingEventArgs e) {
         if (_metricsGrid.Columns[e.ColumnIndex].Name != "Decimals") {
             return;
@@ -258,6 +287,11 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
     }
 
 
+    /// <summary>
+    /// Executes metrics grid cell end edit as part of metric settings editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void MetricsGrid_CellEndEdit(object? sender, DataGridViewCellEventArgs e) {
         if (e.RowIndex < 0 || _metricsGrid.Columns[e.ColumnIndex].Name != "TrayName") {
             return;
@@ -271,6 +305,10 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         BeginInvoke(new Action(() => ReorderGridRowsByTrayName(selectedMetric)));
     }
 
+    /// <summary>
+    /// Executes reorder grid rows by tray name as part of metric settings editor form processing.
+    /// </summary>
+    /// <param name="selectedMetric">Input value for selected metric.</param>
     private void ReorderGridRowsByTrayName(string? selectedMetric = null) {
         if (_isReorderingGrid || IsDisposed) {
             return;
@@ -342,6 +380,11 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes metrics grid editing control showing as part of metric settings editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void MetricsGrid_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e) {
         if (_metricsGrid.CurrentCell?.OwningColumn?.Name != "TrayValueScheme" || e.Control is not ComboBox comboBox) {
             return;
@@ -353,6 +396,11 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         ThemedComboBoxStyler.Apply(comboBox, isLight);
     }
 
+    /// <summary>
+    /// Saves the button click for metric settings editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void SaveButton_Click(object? sender, EventArgs e) {
         var metricNames = Enum.GetValues<MetricType>().ToDictionary(m => m.GetDisplayName(), m => m);
         var newSettings = new List<MetricDisplaySetting>();
@@ -384,6 +432,11 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         Close();
     }
 
+    /// <summary>
+    /// Normalizes the tray value scheme for metric settings editor form.
+    /// </summary>
+    /// <param name="schemeName">Input value for scheme name.</param>
+    /// <returns>The resulting string value.</returns>
     private string NormalizeTrayValueScheme(string? schemeName) {
         if (string.IsNullOrWhiteSpace(schemeName) || schemeName == "(None)") {
             return string.Empty;
@@ -392,6 +445,9 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         return _trayValueSchemeNames.Contains(schemeName) ? schemeName : string.Empty;
     }
 
+    /// <summary>
+    /// Applies the theme for metric settings editor form.
+    /// </summary>
     private void ApplyTheme() {
         var isLight = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
 
@@ -421,6 +477,11 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         ApplyThemeRecursive(this, isLight);
     }
 
+    /// <summary>
+    /// Applies the theme recursive for metric settings editor form.
+    /// </summary>
+    /// <param name="parent">Input value for parent.</param>
+    /// <param name="isLight">Input value for is light.</param>
     private static void ApplyThemeRecursive(Control parent, bool isLight) {
         foreach (Control control in parent.Controls) {
             InteractiveCursorStyler.Apply(control);
@@ -437,6 +498,13 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Creates the safe font for metric settings editor form.
+    /// </summary>
+    /// <param name="familyName">Input value for family name.</param>
+    /// <param name="emSize">Input value for em size.</param>
+    /// <param name="style">Input value for style.</param>
+    /// <returns>The result of the operation.</returns>
     private static Font CreateSafeFont(string familyName, float emSize, FontStyle style = FontStyle.Regular) {
         try {
             var font = new Font(familyName, emSize, style);

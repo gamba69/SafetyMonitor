@@ -4,6 +4,9 @@ using SafetyMonitor.Models;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents dashboard editor form and encapsulates its related behavior and state.
+/// </summary>
 public class DashboardEditorForm : ThemedCaptionForm {
     #region Private Fields
 
@@ -31,6 +34,13 @@ public class DashboardEditorForm : ThemedCaptionForm {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DashboardEditorForm"/> class.
+    /// </summary>
+    /// <param name="dashboard">Input value for dashboard.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public DashboardEditorForm(Dashboard dashboard) {
         _dashboard = dashboard;
         _materialColorScheme = AppColorizationService.Instance.NormalizeMaterialSchemeName(new AppSettingsService().LoadSettings().MaterialColorScheme);
@@ -47,12 +57,19 @@ public class DashboardEditorForm : ThemedCaptionForm {
 
     #region Public Properties
 
+    /// <summary>
+    /// Gets or sets the modified for dashboard editor form. Represents a state flag that enables or disables related behavior.
+    /// </summary>
     public bool Modified { get; private set; }
 
     #endregion Public Properties
 
     #region Private Methods
 
+    /// <summary>
+    /// Adds the editable tile for dashboard editor form.
+    /// </summary>
+    /// <param name="config">Input value for config.</param>
     private void AddEditableTile(TileConfig config) {
         var control = new EditableTileControl(config, _dashboard, _materialColorScheme);
         control.TileDeleted += OnTileDeleted;
@@ -65,6 +82,10 @@ public class DashboardEditorForm : ThemedCaptionForm {
         control.Visible = true;
     }
 
+    /// <summary>
+    /// Adds the tile for dashboard editor form.
+    /// </summary>
+    /// <param name="type">Input value for type.</param>
     private void AddTile(TileType type) {
         TileConfig config = type == TileType.Value
             ? new ValueTileConfig {
@@ -99,6 +120,9 @@ public class DashboardEditorForm : ThemedCaptionForm {
         Modified = true;
     }
 
+    /// <summary>
+    /// Applies the theme for dashboard editor form.
+    /// </summary>
     private void ApplyTheme() {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -112,6 +136,11 @@ public class DashboardEditorForm : ThemedCaptionForm {
         ApplyThemeRecursive(this, isLight);
     }
 
+    /// <summary>
+    /// Applies the theme recursive for dashboard editor form.
+    /// </summary>
+    /// <param name="parent">Input value for parent.</param>
+    /// <param name="isLight">Input value for is light.</param>
     private void ApplyThemeRecursive(Control parent, bool isLight) {
         foreach (Control control in parent.Controls) {
             InteractiveCursorStyler.Apply(control);
@@ -153,6 +182,14 @@ public class DashboardEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Finds the free position for dashboard editor form.
+    /// </summary>
+    /// <param name="config">Input value for config.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private bool FindFreePosition(TileConfig config) {
         // Try to find a free position for the tile
         for (int row = 0; row <= _dashboard.Rows - config.RowSpan; row++) {
@@ -167,6 +204,9 @@ public class DashboardEditorForm : ThemedCaptionForm {
         return false;
     }
 
+    /// <summary>
+    /// Initializes dashboard editor form state and required resources.
+    /// </summary>
     private void InitializeComponent() {
         Text = "Dashboard Editor";
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -485,6 +525,9 @@ public class DashboardEditorForm : ThemedCaptionForm {
         // Set form size
         ClientSize = new Size(1150, 800);
     }
+    /// <summary>
+    /// Loads the dashboard for dashboard editor form.
+    /// </summary>
     private void LoadDashboard() {
         _nameTextBox.Text = _dashboard.Name;
         _rowsNumeric.Value = _dashboard.Rows;
@@ -517,6 +560,11 @@ public class DashboardEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes on grid drag drop as part of dashboard editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnGridDragDrop(object? sender, DragEventArgs e) {
         if (e.Data?.GetData(typeof(EditableTileControl)) is EditableTileControl tile) {
             GetCellSize(out var cellW, out var cellH);
@@ -540,23 +588,43 @@ public class DashboardEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes on grid drag enter as part of dashboard editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnGridDragEnter(object? sender, DragEventArgs e) {
         if (e.Data != null && e.Data.GetDataPresent(typeof(EditableTileControl))) {
             e.Effect = DragDropEffects.Move;
         }
     }
 
+    /// <summary>
+    /// Executes on grid drag over as part of dashboard editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnGridDragOver(object? sender, DragEventArgs e) {
         if (e.Data != null && e.Data.GetDataPresent(typeof(EditableTileControl))) {
             e.Effect = DragDropEffects.Move;
         }
     }
 
+    /// <summary>
+    /// Executes on initial layout shown as part of dashboard editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnInitialLayoutShown(object? sender, EventArgs e) {
         Shown -= OnInitialLayoutShown;
         RefreshAllTilePositions();
     }
 
+    /// <summary>
+    /// Executes on grid paint as part of dashboard editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnGridPaint(object? sender, PaintEventArgs e) {
         GetCellSize(out var cellW, out var cellH);
         var gridWidth = _gridPanel.ClientSize.Width;
@@ -577,6 +645,11 @@ public class DashboardEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes on resize as part of dashboard editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnResize(object? sender, EventArgs e) {
         _dashboard.Rows = (int)_rowsNumeric.Value;
         _dashboard.Columns = (int)_columnsNumeric.Value;
@@ -585,6 +658,11 @@ public class DashboardEditorForm : ThemedCaptionForm {
         Modified = true;
     }
 
+    /// <summary>
+    /// Executes on tile deleted as part of dashboard editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="config">Input value for config.</param>
     private void OnTileDeleted(object? sender, TileConfig config) {
         var control = _tileControls.FirstOrDefault(c => c.Config.Id == config.Id);
         if (control != null) {
@@ -596,6 +674,11 @@ public class DashboardEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes on tile edited as part of dashboard editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="config">Input value for config.</param>
     private void OnTileEdited(object? sender, TileConfig config) {
         if (sender is EditableTileControl control) {
             UpdateTilePosition(control);
@@ -606,6 +689,11 @@ public class DashboardEditorForm : ThemedCaptionForm {
         Modified = true;
     }
 
+    /// <summary>
+    /// Executes on group period preset changed as part of dashboard editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnGroupPeriodPresetChanged(object? sender, EventArgs e) {
         if (sender is not ComboBox combo || combo.Tag is not ChartLinkGroup group) {
             return;
@@ -625,6 +713,11 @@ public class DashboardEditorForm : ThemedCaptionForm {
         Modified = true;
     }
 
+    /// <summary>
+    /// Saves the button click for dashboard editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void SaveButton_Click(object? sender, EventArgs e) {
         // CRITICAL: Save name and quick access flag
         _dashboard.Name = _nameTextBox.Text;
@@ -646,6 +739,10 @@ public class DashboardEditorForm : ThemedCaptionForm {
         DialogResult = DialogResult.OK;
         Close();
     }
+    /// <summary>
+    /// Applies the used groups to editor for dashboard editor form.
+    /// </summary>
+    /// <param name="usedGroups">Input value for used groups.</param>
     private void ApplyUsedGroupsToEditor(int usedGroups) {
         _dashboard.UsedLinkGroups = ChartLinkGroupInfo.NormalizeUsedGroups(usedGroups);
         _dashboard.EnsureLinkGroupConfiguration();
@@ -674,6 +771,9 @@ public class DashboardEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Refreshes the all tile positions for dashboard editor form.
+    /// </summary>
     private void RefreshAllTilePositions() {
         if (_gridPanel.ClientSize.Width <= 0 || _gridPanel.ClientSize.Height <= 0) {
             return;
@@ -686,6 +786,10 @@ public class DashboardEditorForm : ThemedCaptionForm {
         _gridPanel.Invalidate();
     }
 
+    /// <summary>
+    /// Updates the tile position for dashboard editor form.
+    /// </summary>
+    /// <param name="control">Input value for control.</param>
     private void UpdateTilePosition(EditableTileControl control) {
         GetCellSize(out var cellW, out var cellH);
 
@@ -708,6 +812,11 @@ public class DashboardEditorForm : ThemedCaptionForm {
         control.Size = new Size(width, height);
     }
 
+    /// <summary>
+    /// Gets the cell size for dashboard editor form.
+    /// </summary>
+    /// <param name="cellW">Input value for cell w.</param>
+    /// <param name="cellH">Input value for cell h.</param>
     private void GetCellSize(out double cellW, out double cellH) {
         cellW = _dashboard.Columns > 0 ? _gridPanel.ClientSize.Width / (double)_dashboard.Columns : 0d;
         cellH = _dashboard.Rows > 0 ? _gridPanel.ClientSize.Height / (double)_dashboard.Rows : 0d;

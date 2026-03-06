@@ -73,6 +73,11 @@ finally
 
 return;
 
+/// <summary>
+/// Executes wait for lock as part of this component processing.
+/// </summary>
+/// <param name="lockPath">Path value for lock path.</param>
+/// <returns>A task that represents the asynchronous operation.</returns>
 static async Task WaitForLock(string lockPath)
 {
     const int retries = 120;
@@ -96,6 +101,11 @@ static async Task WaitForLock(string lockPath)
     throw new InvalidOperationException("Unable to acquire version state lock.");
 }
 
+/// <summary>
+/// Executes read base version as part of this component processing.
+/// </summary>
+/// <param name="path">Path value for path.</param>
+/// <returns>The result of the operation.</returns>
 static VersionBase ReadBaseVersion(string path)
 {
     if (!File.Exists(path))
@@ -114,6 +124,11 @@ static VersionBase ReadBaseVersion(string path)
     return result;
 }
 
+/// <summary>
+/// Executes read state as part of this component processing.
+/// </summary>
+/// <param name="path">Path value for path.</param>
+/// <returns>The result of the operation.</returns>
 static VersionState ReadState(string path)
 {
     if (!File.Exists(path))
@@ -124,6 +139,11 @@ static VersionState ReadState(string path)
     return JsonSerializer.Deserialize<VersionState>(File.ReadAllText(path), JsonOptions()) ?? new VersionState();
 }
 
+/// <summary>
+/// Executes write state as part of this component processing.
+/// </summary>
+/// <param name="path">Path value for path.</param>
+/// <param name="state">Input value for state.</param>
 static void WriteState(string path, VersionState state)
 {
     if (state.CurrentPatch < 0 || state.BuildCounter < 0)
@@ -135,6 +155,11 @@ static void WriteState(string path, VersionState state)
     File.WriteAllText(path, json + Environment.NewLine);
 }
 
+/// <summary>
+/// Executes compute source hash as part of this component processing.
+/// </summary>
+/// <param name="repoRoot">Input value for repo root.</param>
+/// <returns>The resulting string value.</returns>
 static string ComputeSourceHash(string repoRoot)
 {
     var extensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -197,6 +222,11 @@ static string ComputeSourceHash(string repoRoot)
     return Convert.ToHexString(hash);
 }
 
+/// <summary>
+/// Executes write generated version file as part of this component processing.
+/// </summary>
+/// <param name="path">Path value for path.</param>
+/// <param name="version">Input value for version.</param>
 static void WriteGeneratedVersionFile(string path, GeneratedVersion version)
 {
     var source = $$"""
@@ -214,6 +244,9 @@ using System.Reflection;
 
 namespace SafetyMonitor.Versioning;
 
+/// <summary>
+/// Represents build version and encapsulates its related behavior and state.
+/// </summary>
 internal static class BuildVersion
 {
     public const int Major = {{version.Major}};
@@ -231,34 +264,77 @@ internal static class BuildVersion
     File.WriteAllText(path, source);
 }
 
+/// <summary>
+/// Executes json options as part of build version processing.
+/// </summary>
+/// <param name=")">Input value for .</param>
+/// <returns>The result of the operation.</returns>
 static JsonSerializerOptions JsonOptions() => new()
 {
     PropertyNameCaseInsensitive = true,
     NumberHandling = JsonNumberHandling.Strict
 };
 
+/// <summary>
+/// Executes json options indented as part of build version processing.
+/// </summary>
+/// <param name=")">Input value for .</param>
+/// <returns>The result of the operation.</returns>
 static JsonSerializerOptions JsonOptionsIndented() => new()
 {
     WriteIndented = true,
     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
 };
 
+/// <summary>
+/// Represents version base and encapsulates its related behavior and state.
+/// </summary>
 internal sealed class VersionBase
 {
+    /// <summary>
+    /// Gets or sets the major for version base. Stores a numeric value used by calculations, thresholds, or telemetry display.
+    /// </summary>
     public int Major { get; set; }
+    /// <summary>
+    /// Gets or sets the minor for version base. Stores a numeric value used by calculations, thresholds, or telemetry display.
+    /// </summary>
     public int Minor { get; set; }
+    /// <summary>
+    /// Gets or sets the patch for version base. Stores a numeric value used by calculations, thresholds, or telemetry display.
+    /// </summary>
     public int Patch { get; set; }
 }
 
+/// <summary>
+/// Represents version state and encapsulates its related behavior and state.
+/// </summary>
 internal sealed class VersionState
 {
+    /// <summary>
+    /// Gets or sets the current patch for version state. Stores a numeric value used by calculations, thresholds, or telemetry display.
+    /// </summary>
     public int CurrentPatch { get; set; }
+    /// <summary>
+    /// Gets or sets the build counter for version state. Stores a numeric value used by calculations, thresholds, or telemetry display.
+    /// </summary>
     public int BuildCounter { get; set; }
+    /// <summary>
+    /// Gets or sets the last source hash for version state. Stores textual configuration or display metadata used by application flows.
+    /// </summary>
     public string LastSourceHash { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the last base version for version state. Stores textual configuration or display metadata used by application flows.
+    /// </summary>
     public string LastBaseVersion { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the last build date utc for version state. Stores a timestamp used for ordering, filtering, or range calculations.
+    /// </summary>
     public DateTime? LastBuildDateUtc { get; set; }
 }
 
+/// <summary>
+/// Represents generated version and encapsulates its related behavior and state.
+/// </summary>
 internal sealed record GeneratedVersion(
     int Major,
     int Minor,

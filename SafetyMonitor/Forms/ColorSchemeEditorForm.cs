@@ -5,6 +5,9 @@ using ColorScheme = SafetyMonitor.Models.ColorScheme;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents color scheme editor form and encapsulates its related behavior and state.
+/// </summary>
 public class ColorSchemeEditorForm : ThemedCaptionForm {
     #region Private Fields
 
@@ -34,6 +37,9 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ColorSchemeEditorForm"/> class.
+    /// </summary>
     public ColorSchemeEditorForm() {
         _colorSchemeService = new ColorSchemeService();
         _schemes = _colorSchemeService.LoadSchemes();
@@ -54,6 +60,10 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
 
     #region Protected Methods
 
+    /// <summary>
+    /// Executes on form closing as part of color scheme editor form processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnFormClosing(FormClosingEventArgs e) {
         if (_isDirty && _currentScheme != null) {
             var result = ThemedMessageBox.Show(this, $"Save changes to \"{_currentScheme.Name}\"?",
@@ -68,6 +78,10 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         base.OnFormClosing(e);
     }
 
+    /// <summary>
+    /// Executes on form closed as part of color scheme editor form processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnFormClosed(FormClosedEventArgs e) {
         _previewUpdateTimer.Stop();
         _previewUpdateTimer.Dispose();
@@ -78,6 +92,11 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
 
     #region Private Methods
 
+    /// <summary>
+    /// Adds the stop click for color scheme editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void AddStop_Click(object? sender, EventArgs e) {
         var rowIdx = _stopsGrid.Rows.Add("0", "", "");
         _stopsGrid.Rows[rowIdx].Tag = Color.Gray;
@@ -86,6 +105,9 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         UpdatePreview();
     }
 
+    /// <summary>
+    /// Applies the theme for color scheme editor form.
+    /// </summary>
     private void ApplyTheme() {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -98,6 +120,11 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
     }
 
     // Theme.
+    /// <summary>
+    /// Applies the theme recursive for color scheme editor form.
+    /// </summary>
+    /// <param name="parent">Input value for parent.</param>
+    /// <param name="isLight">Input value for is light.</param>
     private static void ApplyThemeRecursive(Control parent, bool isLight) {
         foreach (Control control in parent.Controls) {
             InteractiveCursorStyler.Apply(control);
@@ -137,6 +164,11 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Deletes the button click for color scheme editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void DeleteButton_Click(object? sender, EventArgs e) {
         if (_currentScheme == null) {
             return;
@@ -157,6 +189,11 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes duplicate button click as part of color scheme editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void DuplicateButton_Click(object? sender, EventArgs e) {
         if (_currentScheme == null) {
             return;
@@ -178,6 +215,9 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         _isDirty = false;
     }
 
+    /// <summary>
+    /// Initializes color scheme editor form state and required resources.
+    /// </summary>
     private void InitializeComponent() {
         Text = "Color Schemes";
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -497,11 +537,20 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         root.Controls.Add(rightPanel, 1, 0);
     }
 
+    /// <summary>
+    /// Executes color scheme editor form shown as part of color scheme editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void ColorSchemeEditorForm_Shown(object? sender, EventArgs e) {
         _isPreviewPrimed = true;
         UpdatePreview(forceDelay: true);
     }
 
+    /// <summary>
+    /// Loads the scheme to editor for color scheme editor form.
+    /// </summary>
+    /// <param name="scheme">Input value for scheme.</param>
     private void LoadSchemeToEditor(ColorScheme scheme) {
         _isLoading = true;
         _nameTextBox.Text = scheme.Name;
@@ -522,6 +571,11 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         _isLoading = false;
     }
 
+    /// <summary>
+    /// Executes new button click as part of color scheme editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void NewButton_Click(object? sender, EventArgs e) {
         var name = "New Scheme";
         var counter = 1;
@@ -545,6 +599,9 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         _isDirty = false;
     }
 
+    /// <summary>
+    /// Executes populate scheme list as part of color scheme editor form processing.
+    /// </summary>
     private void PopulateSchemeList() {
         _schemeList.Items.Clear();
         foreach (var s in _schemes) {
@@ -552,6 +609,11 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes preview panel paint as part of color scheme editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void PreviewPanel_Paint(object? sender, PaintEventArgs e) {
         var g = e.Graphics;
         g.Clear(_previewPanel.BackColor);
@@ -607,6 +669,10 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         g.DrawRectangle(borderPen, rect);
     }
 
+    /// <summary>
+    /// Executes read scheme from editor as part of color scheme editor form processing.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private ColorScheme ReadSchemeFromEditor() {
         var scheme = new ColorScheme {
             Name = _nameTextBox.Text.Trim(),
@@ -633,6 +699,11 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
     }
 
     // Stop row operations.
+    /// <summary>
+    /// Removes the stop click for color scheme editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void RemoveStop_Click(object? sender, EventArgs e) {
         if (_stopsGrid.CurrentRow == null) {
             return;
@@ -644,6 +715,11 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
     }
 
     // CRUD operations.
+    /// <summary>
+    /// Saves the button click for color scheme editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void SaveButton_Click(object? sender, EventArgs e) {
         if (!SaveCurrentScheme()) {
             return;
@@ -653,6 +729,13 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         Close();
     }
 
+    /// <summary>
+    /// Saves the current scheme for color scheme editor form.
+    /// </summary>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private bool SaveCurrentScheme() {
         if (_currentScheme == null) {
             return false;
@@ -690,6 +773,11 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
     }
 
     // List management.
+    /// <summary>
+    /// Executes scheme list selected index changed as part of color scheme editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void SchemeList_SelectedIndexChanged(object? sender, EventArgs e) {
         if (_isDirty && _currentScheme != null) {
             var result = ThemedMessageBox.Show(this, $"Save changes to \"{_currentScheme.Name}\"?",
@@ -713,6 +801,9 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Sets the up grid columns for color scheme editor form.
+    /// </summary>
     private void SetupGridColumns() {
         _stopsGrid.Columns.Add(new DataGridViewTextBoxColumn {
             Name = "Value",
@@ -746,6 +837,11 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         _stopsGrid.CellFormatting += StopsGrid_CellFormatting;
     }
 
+    /// <summary>
+    /// Stops the s grid cell click for color scheme editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void StopsGrid_CellClick(object? sender, DataGridViewCellEventArgs e) {
         if (e.ColumnIndex == 1 && e.RowIndex >= 0) // Color column
         {
@@ -760,6 +856,11 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Stops the s grid cell formatting for color scheme editor form.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void StopsGrid_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e) {
         if (e.ColumnIndex == 1 && e.RowIndex >= 0) // Color column
         {
@@ -772,6 +873,9 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes sort grid by value as part of color scheme editor form processing.
+    /// </summary>
     private void SortGridByValue() {
         if (_isLoading || _stopsGrid.Rows.Count <= 1) {
             return;
@@ -814,6 +918,11 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
 
     // Preview.
 
+    /// <summary>
+    /// Executes preview update timer tick as part of color scheme editor form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void PreviewUpdateTimer_Tick(object? sender, EventArgs e) {
         _previewUpdateTimer.Stop();
         if (!_previewPanel.IsDisposed) {
@@ -821,6 +930,10 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Updates the preview for color scheme editor form.
+    /// </summary>
+    /// <param name="forceDelay">Input value for force delay.</param>
     private void UpdatePreview(bool forceDelay = false) {
         if (!_isPreviewPrimed && !forceDelay) {
             return;
@@ -846,6 +959,9 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         _previewUpdateTimer.Start();
     }
 
+    /// <summary>
+    /// Updates the color mode toggle appearance for color scheme editor form.
+    /// </summary>
     private void UpdateColorModeToggleAppearance() {
         if (_colorModeSegmentPanel == null || _solidButton == null || _gradientButton == null) {
             return;
@@ -873,6 +989,9 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         _gradientButton.TextAlign = ContentAlignment.MiddleLeft;
     }
 
+    /// <summary>
+    /// Updates the dirty state for color scheme editor form.
+    /// </summary>
     private void UpdateDirtyState() {
         if (_isLoading) {
             return;
@@ -886,6 +1005,15 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         _isDirty = !AreSchemesEqual(_currentScheme, ReadSchemeFromEditor());
     }
 
+    /// <summary>
+    /// Determines whether are schemes equal for color scheme editor form.
+    /// </summary>
+    /// <param name="original">Input value for original.</param>
+    /// <param name="updated">Input value for updated.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool AreSchemesEqual(ColorScheme original, ColorScheme updated) {
         if (!string.Equals(original.Name?.Trim() ?? "", updated.Name?.Trim() ?? "", StringComparison.Ordinal)) {
             return false;
@@ -922,7 +1050,13 @@ public class ColorSchemeEditorForm : ThemedCaptionForm {
         return true;
     }
 
+    /// <summary>
+    /// Represents preview panel and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class PreviewPanel : Panel {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PreviewPanel"/> class.
+        /// </summary>
         public PreviewPanel() {
             DoubleBuffered = true;
             ResizeRedraw = true;

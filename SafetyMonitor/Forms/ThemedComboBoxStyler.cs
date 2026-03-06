@@ -3,11 +3,19 @@ using MaterialSkin;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents themed combo box styler and encapsulates its related behavior and state.
+/// </summary>
 internal static class ThemedComboBoxStyler {
 
     [DllImport("uxtheme.dll", CharSet = CharSet.Unicode)]
     private static extern int SetWindowTheme(IntPtr hWnd, string? pszSubAppName, string? pszSubIdList);
 
+    /// <summary>
+    /// Applies the state for themed combo box styler.
+    /// </summary>
+    /// <param name="comboBox">Input value for combo box.</param>
+    /// <param name="isLight">Input value for is light.</param>
     internal static void Apply(ComboBox comboBox, bool isLight) {
         comboBox.BackColor = isLight ? Color.White : Color.FromArgb(46, 61, 66);
         comboBox.ForeColor = isLight ? Color.Black : Color.White;
@@ -19,6 +27,10 @@ internal static class ThemedComboBoxStyler {
     }
 
 
+    /// <summary>
+    /// Applies the native theme for themed combo box styler.
+    /// </summary>
+    /// <param name="comboBox">Input value for combo box.</param>
     internal static void ApplyNativeTheme(ComboBox comboBox) {
         comboBox.HandleCreated -= ComboBox_HandleCreated;
         comboBox.HandleCreated += ComboBox_HandleCreated;
@@ -28,12 +40,22 @@ internal static class ThemedComboBoxStyler {
         }
     }
 
+    /// <summary>
+    /// Executes combo box handle created as part of themed combo box styler processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private static void ComboBox_HandleCreated(object? sender, EventArgs e) {
         if (sender is ComboBox comboBox) {
             _ = SetWindowTheme(comboBox.Handle, "", "");
         }
     }
 
+    /// <summary>
+    /// Executes combo box draw item as part of themed combo box styler processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private static void ComboBox_DrawItem(object? sender, DrawItemEventArgs e) {
         if (sender is not ComboBox comboBox || e.Index < 0) {
             return;

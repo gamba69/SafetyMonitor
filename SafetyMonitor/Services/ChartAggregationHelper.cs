@@ -2,6 +2,9 @@ using SafetyMonitor.Models;
 
 namespace SafetyMonitor.Services;
 
+/// <summary>
+/// Represents chart aggregation helper and encapsulates its related behavior and state.
+/// </summary>
 public static class ChartAggregationHelper {
 
     private static readonly TimeSpan[] DefaultFixedAggregationIntervals = [
@@ -86,6 +89,11 @@ public static class ChartAggregationHelper {
             .First();
     }
 
+    /// <summary>
+    /// Formats the aggregation label for chart aggregation helper.
+    /// </summary>
+    /// <param name="interval">Input value for interval.</param>
+    /// <returns>The resulting string value.</returns>
     public static string FormatAggregationLabel(TimeSpan? interval) {
         if (!interval.HasValue || interval.Value <= TimeSpan.Zero) {
             return "raw";
@@ -95,6 +103,15 @@ public static class ChartAggregationHelper {
         return AggregationLabels.First(x => x.Interval == normalizedInterval).Label;
     }
 
+    /// <summary>
+    /// Attempts to parse aggregation label for chart aggregation helper.
+    /// </summary>
+    /// <param name="label">Input value for label.</param>
+    /// <param name="interval">Input value for interval.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     public static bool TryParseAggregationLabel(string? label, out TimeSpan interval) {
         interval = TimeSpan.Zero;
         if (string.IsNullOrWhiteSpace(label)) {
@@ -116,6 +133,11 @@ public static class ChartAggregationHelper {
         return false;
     }
 
+    /// <summary>
+    /// Normalizes the aggregation interval for chart aggregation helper.
+    /// </summary>
+    /// <param name="interval">Input value for interval.</param>
+    /// <returns>The result of the operation.</returns>
     public static TimeSpan NormalizeAggregationInterval(TimeSpan interval) {
         if (interval <= TimeSpan.Zero) {
             return TimeSpan.Zero;
@@ -127,6 +149,12 @@ public static class ChartAggregationHelper {
             .First();
     }
 
+    /// <summary>
+    /// Builds the period duration for chart aggregation helper.
+    /// </summary>
+    /// <param name="value">Input value for value.</param>
+    /// <param name="unit">Input value for unit.</param>
+    /// <returns>The result of the operation.</returns>
     public static TimeSpan BuildPeriodDuration(double value, ChartPeriodUnit unit) {
         if (value <= 0) {
             return TimeSpan.Zero;

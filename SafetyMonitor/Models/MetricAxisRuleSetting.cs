@@ -1,44 +1,39 @@
 namespace SafetyMonitor.Models;
 
 /// <summary>
-/// Stores ScottPlot Y-axis rule settings for a specific metric type.
-/// Rules: MaximumBoundary, MinimumBoundary, MaximumSpan, MinimumSpan.
+/// Represents metric axis rule setting and encapsulates its related behavior and state.
 /// </summary>
 public class MetricAxisRuleSetting {
 
     #region Public Properties
 
     /// <summary>
-    /// Whether this rule is enabled and should be applied to charts.
+    /// Gets or sets the enabled for metric axis rule setting. Represents a state flag that enables or disables related behavior.
     /// </summary>
     public bool Enabled { get; set; } = true;
 
     /// <summary>
-    /// Maximum upper boundary for the Y axis (MaximumBoundary).
-    /// Null means no constraint.
+    /// Gets or sets the max boundary for metric axis rule setting. Specifies sizing or boundary constraints used by runtime calculations.
     /// </summary>
     public double? MaxBoundary { get; set; }
 
     /// <summary>
-    /// Maximum span (range) of the Y axis (MaximumSpan).
-    /// Null means no constraint.
+    /// Gets or sets the max span for metric axis rule setting. Specifies sizing or boundary constraints used by runtime calculations.
     /// </summary>
     public double? MaxSpan { get; set; }
 
     /// <summary>
-    /// The metric type this rule applies to.
+    /// Gets or sets the metric for metric axis rule setting. Holds part of the component state used by higher-level application logic.
     /// </summary>
     public MetricType Metric { get; set; }
 
     /// <summary>
-    /// Minimum lower boundary for the Y axis (MinimumBoundary).
-    /// Null means no constraint.
+    /// Gets or sets the min boundary for metric axis rule setting. Specifies sizing or boundary constraints used by runtime calculations.
     /// </summary>
     public double? MinBoundary { get; set; }
 
     /// <summary>
-    /// Minimum span (range) of the Y axis (MinimumSpan).
-    /// Null means no constraint.
+    /// Gets or sets the min span for metric axis rule setting. Specifies sizing or boundary constraints used by runtime calculations.
     /// </summary>
     public double? MinSpan { get; set; }
 

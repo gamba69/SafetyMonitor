@@ -1,8 +1,7 @@
 namespace SafetyMonitor.Models;
 
 /// <summary>
-/// Global in-memory store for metric axis rule settings.
-/// Notifies subscribers when rules change so charts can re-apply them.
+/// Represents metric axis rule store and encapsulates its related behavior and state.
 /// </summary>
 public static class MetricAxisRuleStore {
 
@@ -27,15 +26,18 @@ public static class MetricAxisRuleStore {
     #region Public Methods
 
     /// <summary>
-    /// Returns the enabled rule for a given metric, or null if none exists.
+    /// Gets the rule for metric axis rule store.
     /// </summary>
+    /// <param name="metric">Input value for metric.</param>
+    /// <returns>The result of the operation.</returns>
     public static MetricAxisRuleSetting? GetRule(MetricType metric) {
         return _rules.FirstOrDefault(r => r.Enabled && r.Metric == metric);
     }
 
     /// <summary>
-    /// Replaces the entire rule set and fires the change event.
+    /// Sets the rules for metric axis rule store.
     /// </summary>
+    /// <param name="rules">Collection of rules items used by the operation.</param>
     public static void SetRules(IEnumerable<MetricAxisRuleSetting>? rules) {
         _rules = rules != null
             ? [.. rules.Select(r => new MetricAxisRuleSetting {

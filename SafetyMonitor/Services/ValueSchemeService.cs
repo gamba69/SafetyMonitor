@@ -3,6 +3,9 @@ using System.Text.Json;
 
 namespace SafetyMonitor.Services;
 
+/// <summary>
+/// Represents value scheme service and encapsulates its related behavior and state.
+/// </summary>
 public class ValueSchemeService {
     #region Private Fields
 
@@ -13,6 +16,9 @@ public class ValueSchemeService {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ValueSchemeService"/> class.
+    /// </summary>
     public ValueSchemeService() {
         _schemesPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -30,6 +36,11 @@ public class ValueSchemeService {
 
     #region Public Methods
 
+    /// <summary>
+    /// Gets the default scheme name for value scheme service.
+    /// </summary>
+    /// <param name="metric">Input value for metric.</param>
+    /// <returns>The resulting string value.</returns>
     public static string GetDefaultSchemeName(MetricType metric) => metric switch {
         MetricType.Temperature => "Temperature",
         MetricType.Humidity => "Humidity",
@@ -45,6 +56,10 @@ public class ValueSchemeService {
         _ => string.Empty
     };
 
+    /// <summary>
+    /// Deletes the scheme for value scheme service.
+    /// </summary>
+    /// <param name="name">Input value for name.</param>
     public void DeleteScheme(string name) {
         var safeName = string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
         var path = Path.Combine(_schemesPath, $"{safeName}.json");
@@ -53,6 +68,10 @@ public class ValueSchemeService {
         }
     }
 
+    /// <summary>
+    /// Loads the schemes for value scheme service.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     public List<ValueScheme> LoadSchemes() {
         var schemes = new List<ValueScheme>();
 
@@ -69,6 +88,10 @@ public class ValueSchemeService {
         return schemes;
     }
 
+    /// <summary>
+    /// Saves the scheme for value scheme service.
+    /// </summary>
+    /// <param name="scheme">Input value for scheme.</param>
     public void SaveScheme(ValueScheme scheme) {
         var safeName = string.Join("_", scheme.Name.Split(Path.GetInvalidFileNameChars()));
         var path = Path.Combine(_schemesPath, $"{safeName}.json");
@@ -80,6 +103,9 @@ public class ValueSchemeService {
 
     #region Private Methods
 
+    /// <summary>
+    /// Ensures the default schemes exist for value scheme service.
+    /// </summary>
     private void EnsureDefaultSchemesExist() {
         foreach (var scheme in GetDefaultSchemes()) {
             var safeName = string.Join("_", scheme.Name.Split(Path.GetInvalidFileNameChars()));
@@ -93,6 +119,10 @@ public class ValueSchemeService {
         }
     }
 
+    /// <summary>
+    /// Gets the default schemes for value scheme service.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static IEnumerable<ValueScheme> GetDefaultSchemes() {
         yield return CreateSafetyStatusScheme();
         yield return CreateTemperatureScheme();
@@ -107,6 +137,11 @@ public class ValueSchemeService {
         yield return CreateWindDirectionScheme();
     }
 
+    /// <summary>
+    /// Creates the safety status scheme for value scheme service.
+    /// </summary>
+    /// <param name=")">Input value for .</param>
+    /// <returns>The result of the operation.</returns>
     private static ValueScheme CreateSafetyStatusScheme() => new() {
         Name = "Safety",
         Descending = true,
@@ -117,6 +152,11 @@ public class ValueSchemeService {
         ]
     };
 
+    /// <summary>
+    /// Creates the temperature scheme for value scheme service.
+    /// </summary>
+    /// <param name=")">Input value for .</param>
+    /// <returns>The result of the operation.</returns>
     private static ValueScheme CreateTemperatureScheme() => new() {
         Name = "Temperature",
         Descending = true,
@@ -133,6 +173,11 @@ public class ValueSchemeService {
         ]
     };
 
+    /// <summary>
+    /// Creates the humidity scheme for value scheme service.
+    /// </summary>
+    /// <param name=")">Input value for .</param>
+    /// <returns>The result of the operation.</returns>
     private static ValueScheme CreateHumidityScheme() => new() {
         Name = "Humidity",
         Descending = true,
@@ -146,6 +191,11 @@ public class ValueSchemeService {
         ]
     };
 
+    /// <summary>
+    /// Creates the pressure scheme for value scheme service.
+    /// </summary>
+    /// <param name=")">Input value for .</param>
+    /// <returns>The result of the operation.</returns>
     private static ValueScheme CreatePressureScheme() => new() {
         Name = "Pressure",
         Descending = true,
@@ -159,6 +209,11 @@ public class ValueSchemeService {
         ]
     };
 
+    /// <summary>
+    /// Creates the cloud cover scheme for value scheme service.
+    /// </summary>
+    /// <param name=")">Input value for .</param>
+    /// <returns>The result of the operation.</returns>
     private static ValueScheme CreateCloudCoverScheme() => new() {
         Name = "Cloud Cover",
         Descending = true,
@@ -172,6 +227,11 @@ public class ValueSchemeService {
         ]
     };
 
+    /// <summary>
+    /// Creates the sky brightness scheme for value scheme service.
+    /// </summary>
+    /// <param name=")">Input value for .</param>
+    /// <returns>The result of the operation.</returns>
     private static ValueScheme CreateSkyBrightnessScheme() => new() {
         Name = "Sky Brightness",
         Descending = true,
@@ -185,6 +245,11 @@ public class ValueSchemeService {
         ]
     };
 
+    /// <summary>
+    /// Creates the sky quality scheme for value scheme service.
+    /// </summary>
+    /// <param name=")">Input value for .</param>
+    /// <returns>The result of the operation.</returns>
     private static ValueScheme CreateSkyQualityScheme() => new() {
         Name = "Sky Quality",
         Descending = true,
@@ -198,6 +263,11 @@ public class ValueSchemeService {
         ]
     };
 
+    /// <summary>
+    /// Creates the rain rate scheme for value scheme service.
+    /// </summary>
+    /// <param name=")">Input value for .</param>
+    /// <returns>The result of the operation.</returns>
     private static ValueScheme CreateRainRateScheme() => new() {
         Name = "Rain Rate",
         Descending = true,
@@ -211,6 +281,11 @@ public class ValueSchemeService {
         ]
     };
 
+    /// <summary>
+    /// Creates the wind speed scheme for value scheme service.
+    /// </summary>
+    /// <param name=")">Input value for .</param>
+    /// <returns>The result of the operation.</returns>
     private static ValueScheme CreateWindSpeedScheme() => new() {
         Name = "Wind Speed",
         Descending = true,
@@ -227,6 +302,11 @@ public class ValueSchemeService {
         ]
     };
 
+    /// <summary>
+    /// Creates the wind gust scheme for value scheme service.
+    /// </summary>
+    /// <param name=")">Input value for .</param>
+    /// <returns>The result of the operation.</returns>
     private static ValueScheme CreateWindGustScheme() => new() {
         Name = "Wind Gust",
         Descending = true,
@@ -240,6 +320,11 @@ public class ValueSchemeService {
             new() { Value = 0, Text = "BREATH", Description = "Breath (from 0 m/s)" }
         ]
     };
+    /// <summary>
+    /// Creates the wind direction scheme for value scheme service.
+    /// </summary>
+    /// <param name=")">Input value for .</param>
+    /// <returns>The result of the operation.</returns>
     private static ValueScheme CreateWindDirectionScheme() => new() {
         Name = "Wind Direction",
         Descending = false,

@@ -8,13 +8,18 @@ using System.CommandLine;
 
 namespace SafetyMonitorData;
 
+/// <summary>
+/// Represents program and encapsulates its related behavior and state.
+/// </summary>
 class Program {
 
     #region Private Methods
 
     /// <summary>
-    /// Configure dependency injection services.
+    /// Configures the services for program.
     /// </summary>
+    /// <param name="services">Input value for services.</param>
+    /// <param name="options">Input value for options.</param>
     static void ConfigureServices(IServiceCollection services, CommandLineOptions options) {
         // Add options as singleton
         services.AddSingleton(options);
@@ -25,8 +30,10 @@ class Program {
     }
 
     /// <summary>
-    /// Disconnect from device safely.
+    /// Disconnects the device for program.
     /// </summary>
+    /// <param name="device">Input value for device.</param>
+    /// <param name="deviceName">Input value for device name.</param>
     static void DisconnectDevice(IAscomDevice? device, string deviceName) {
         if (device != null) {
             try {
@@ -40,6 +47,11 @@ class Program {
         }
     }
 
+    /// <summary>
+    /// Defines the application entry point and startup workflow.
+    /// </summary>
+    /// <param name="args">Input value for args.</param>
+    /// <returns>A task that returns the operation result.</returns>
     static async Task<int> Main(string[] args) {
         if (args.Any(arg => arg is "--version" or "-v")) {
             Console.WriteLine(GetVersionString());
@@ -133,11 +145,10 @@ class Program {
         }
     }
     /// <summary>
-    /// Run continuous data collection.
+    /// Parses the command line for program.
     /// </summary>
-    /// <summary>
-    /// Parse command line arguments.
-    /// </summary>
+    /// <param name="args">Input value for args.</param>
+    /// <returns>The result of the operation.</returns>
     static CommandLineOptions? ParseCommandLine(string[] args) {
         var options = new CommandLineOptions();
 
@@ -255,8 +266,13 @@ class Program {
     }
 
     /// <summary>
-    /// Run continuous mode with automatic retry on any error.
+    /// Executes run continuous mode with retry async as part of program processing.
     /// </summary>
+    /// <param name="serviceProvider">Input value for service provider.</param>
+    /// <param name="storage">Input value for storage.</param>
+    /// <param name="options">Input value for options.</param>
+    /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     static async Task RunContinuousModeWithRetryAsync(
         IServiceProvider serviceProvider,
         DataStorage.DataStorage? storage,
@@ -369,8 +385,13 @@ class Program {
     }
 
     /// <summary>
-    /// Run single data collection.
+    /// Executes run once mode async as part of program processing.
     /// </summary>
+    /// <param name="collectionService">Input value for collection service.</param>
+    /// <param name="storage">Input value for storage.</param>
+    /// <param name="options">Input value for options.</param>
+    /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     static async Task RunOnceModeAsync(
         DataCollectionService collectionService,
         DataStorage.DataStorage? storage,
@@ -392,8 +413,14 @@ class Program {
         }
     }
     /// <summary>
-    /// Validate command line options.
+    /// Validates the options for program.
     /// </summary>
+    /// <param name="options">Input value for options.</param>
+    /// <param name="errors">Collection of errors items used by the operation.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     static bool ValidateOptions(CommandLineOptions options, out List<string> errors) {
         errors = [];
 
@@ -428,6 +455,10 @@ class Program {
         return errors.Count == 0;
     }
 
+    /// <summary>
+    /// Gets the version string for program.
+    /// </summary>
+    /// <returns>The resulting string value.</returns>
     static string GetVersionString() {
         return $"v{SafetyMonitor.Versioning.BuildVersion.Major}.{SafetyMonitor.Versioning.BuildVersion.Minor}.{SafetyMonitor.Versioning.BuildVersion.Patch} build {SafetyMonitor.Versioning.BuildVersion.Build} {SafetyMonitor.Versioning.BuildVersion.BuildDateUtc:dd.MM.yyyy}";
     }

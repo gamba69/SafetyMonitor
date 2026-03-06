@@ -2,6 +2,9 @@ using SafetyMonitor.Services;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents themed button styler and encapsulates its related behavior and state.
+/// </summary>
 internal static class ThemedButtonStyler {
 
     #region Private Fields
@@ -19,6 +22,11 @@ internal static class ThemedButtonStyler {
 
     #region Public Methods
 
+    /// <summary>
+    /// Applies the state for themed button styler.
+    /// </summary>
+    /// <param name="button">Input value for button.</param>
+    /// <param name="isLight">Input value for is light.</param>
     public static void Apply(Button button, bool isLight) {
         var role = ResolveRole(button.Text);
         var colors = ResolveColors(role, isLight);
@@ -55,6 +63,11 @@ internal static class ThemedButtonStyler {
 
     #region Private Methods
 
+    /// <summary>
+    /// Ensures the button has enough space for themed button styler.
+    /// </summary>
+    /// <param name="button">Input value for button.</param>
+    /// <param name="iconSize">Input value for icon size.</param>
     private static void EnsureButtonHasEnoughSpace(Button button, int iconSize) {
         var text = button.Text ?? string.Empty;
         var textSize = TextRenderer.MeasureText(text, button.Font ?? SystemFonts.DefaultFont);
@@ -71,17 +84,36 @@ internal static class ThemedButtonStyler {
         }
     }
 
+    /// <summary>
+    /// Resolves the icon size for themed button styler.
+    /// </summary>
+    /// <param name="button">Input value for button.</param>
+    /// <returns>The result of the operation.</returns>
     private static int ResolveIconSize(Button button) {
         var scaled = ScaleLogicalPixels(button, 24);
         var maxAllowedByHeight = Math.Max(16, button.Height - ScaleLogicalPixels(button, 10));
         return Math.Clamp(scaled, 16, maxAllowedByHeight);
     }
 
+    /// <summary>
+    /// Executes scale logical pixels as part of themed button styler processing.
+    /// </summary>
+    /// <param name="control">Input value for control.</param>
+    /// <param name="logicalPixels">Input value for logical pixels.</param>
+    /// <returns>The result of the operation.</returns>
     private static int ScaleLogicalPixels(Control control, int logicalPixels) {
         var scale = control.DeviceDpi > 0 ? control.DeviceDpi / 96f : 1f;
         return Math.Max(1, (int)Math.Round(logicalPixels * scale));
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="static"/> class.
+    /// </summary>
+    /// <param name="BackColor">Input value for back color.</param>
+    /// <param name="isLight">Input value for is light.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     private static (Color BackColor, Color ForeColor) ResolveColors(ButtonRole role, bool isLight) => role switch {
         ButtonRole.Save => (MaterialSkin.MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.White),
         ButtonRole.Confirm => (MaterialSkin.MaterialSkinManager.Instance.ColorScheme.PrimaryColor, Color.White),
@@ -93,6 +125,11 @@ internal static class ThemedButtonStyler {
         _ => (isLight ? SecondaryButtonColorLight : SecondaryButtonColorDark, isLight ? Color.Black : Color.White),
     };
 
+    /// <summary>
+    /// Resolves the icon for themed button styler.
+    /// </summary>
+    /// <param name="role">Input value for role.</param>
+    /// <returns>The resulting string value.</returns>
     private static string ResolveIcon(ButtonRole role) => role switch {
         ButtonRole.Save => MaterialIcons.CommonCheck,
         ButtonRole.Confirm => MaterialIcons.CommonCheck,
@@ -110,6 +147,11 @@ internal static class ThemedButtonStyler {
         _ => MaterialIcons.CommonCheck,
     };
 
+    /// <summary>
+    /// Resolves the role for themed button styler.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <returns>The result of the operation.</returns>
     private static ButtonRole ResolveRole(string? text) {
         var normalized = (text ?? string.Empty).Trim().ToLowerInvariant();
         if (normalized.StartsWith("save")) {

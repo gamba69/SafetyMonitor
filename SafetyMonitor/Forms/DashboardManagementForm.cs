@@ -4,6 +4,9 @@ using SafetyMonitor.Models;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents dashboard management form and encapsulates its related behavior and state.
+/// </summary>
 public class DashboardManagementForm : ThemedCaptionForm {
 
     #region Private Fields
@@ -23,6 +26,14 @@ public class DashboardManagementForm : ThemedCaptionForm {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DashboardManagementForm"/> class.
+    /// </summary>
+    /// <param name="dashboards">Collection of dashboards items used by the operation.</param>
+    /// <param name="currentDashboardId">Identifier of current dashboard.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public DashboardManagementForm(IEnumerable<Dashboard> dashboards, Guid? currentDashboardId) {
         _currentDashboardId = currentDashboardId;
         _items = dashboards
@@ -46,6 +57,9 @@ public class DashboardManagementForm : ThemedCaptionForm {
 
     #region Public Properties
 
+    /// <summary>
+    /// Gets or sets the deleted dashboard ids for dashboard management form. Stores a unique identifier value for stable cross-reference.
+    /// </summary>
     public IReadOnlyList<Guid> DeletedDashboardIds { get; private set; } = [];
 
     public IReadOnlyList<DashboardOrderUpdate> Updates {
@@ -69,6 +83,9 @@ public class DashboardManagementForm : ThemedCaptionForm {
 
     #region Private Methods
 
+    /// <summary>
+    /// Applies the theme for dashboard management form.
+    /// </summary>
     private void ApplyTheme() {
         var skinManager = MaterialSkinManager.Instance;
         bool isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -93,6 +110,9 @@ public class DashboardManagementForm : ThemedCaptionForm {
         NormalizeActionButtonWidths();
     }
 
+    /// <summary>
+    /// Executes bind grid as part of dashboard management form processing.
+    /// </summary>
     private void BindGrid() {
         _isBindingGrid = true;
         try {
@@ -114,6 +134,10 @@ public class DashboardManagementForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes rebind grid and select as part of dashboard management form processing.
+    /// </summary>
+    /// <param name="itemId">Identifier of item.</param>
     private void RebindGridAndSelect(Guid itemId) {
         BeginInvoke(() => {
             BindGrid();
@@ -124,6 +148,16 @@ public class DashboardManagementForm : ThemedCaptionForm {
         });
     }
 
+    /// <summary>
+    /// Determines whether can move item for dashboard management form.
+    /// </summary>
+    /// <param name="items">Input value for items.</param>
+    /// <param name="index">Input value for index.</param>
+    /// <param name="direction">Input value for direction.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool CanMoveItem(IReadOnlyList<DashboardListItem> items, int index, int direction) {
         int newIndex = index + direction;
         if (index < 0 || index >= items.Count || newIndex < 0 || newIndex >= items.Count) {
@@ -133,6 +167,9 @@ public class DashboardManagementForm : ThemedCaptionForm {
         return items[index].IsQuickAccess == items[newIndex].IsQuickAccess;
     }
 
+    /// <summary>
+    /// Initializes dashboard management form state and required resources.
+    /// </summary>
     private void InitializeComponent() {
         var normalFont = new Font("Segoe UI", 10f, FontStyle.Regular);
         var emphasizedFont = new Font("Segoe UI", 10f, FontStyle.Bold);
@@ -256,6 +293,10 @@ public class DashboardManagementForm : ThemedCaptionForm {
         Controls.Add(root);
     }
 
+    /// <summary>
+    /// Executes move selected item as part of dashboard management form processing.
+    /// </summary>
+    /// <param name="direction">Input value for direction.</param>
     private void MoveSelectedItem(int direction) {
         if (_grid.CurrentCell == null) {
             return;
@@ -273,6 +314,9 @@ public class DashboardManagementForm : ThemedCaptionForm {
         _grid.CurrentCell = _grid.Rows[index + direction].Cells[0];
     }
 
+    /// <summary>
+    /// Normalizes the action button widths for dashboard management form.
+    /// </summary>
     private void NormalizeActionButtonWidths() {
         var actionButtons = new[] { _moveUpButton, _moveDownButton, _deleteButton };
         var maxWidth = actionButtons.Max(button => button.Width);
@@ -283,6 +327,9 @@ public class DashboardManagementForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Deletes the selected item for dashboard management form.
+    /// </summary>
     private void DeleteSelectedItem() {
         if (_grid.CurrentCell == null) {
             return;
@@ -305,6 +352,11 @@ public class DashboardManagementForm : ThemedCaptionForm {
         BindGrid();
     }
 
+    /// <summary>
+    /// Executes on grid cell value changed as part of dashboard management form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnGridCellValueChanged(object? sender, DataGridViewCellEventArgs e) {
         if (_isBindingGrid || e.RowIndex < 0 || e.ColumnIndex < 0) {
             return;
@@ -344,6 +396,11 @@ public class DashboardManagementForm : ThemedCaptionForm {
         RebindGridAndSelect(target.Id);
     }
 
+    /// <summary>
+    /// Executes on grid cell validating as part of dashboard management form processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnGridCellValidating(object? sender, DataGridViewCellValidatingEventArgs e) {
         if (e.RowIndex < 0 || e.ColumnIndex < 0 || _grid.Columns[e.ColumnIndex].Name != "Name") {
             return;
@@ -362,13 +419,28 @@ public class DashboardManagementForm : ThemedCaptionForm {
 
     #region Private Classes
 
+    /// <summary>
+    /// Represents dashboard list item and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class DashboardListItem {
+        /// <summary>
+        /// Gets or sets the id for dashboard list item. Identifies the related entity and is used for lookups, linking, or persistence.
+        /// </summary>
         public required Guid Id { get; init; }
+        /// <summary>
+        /// Gets or sets the name for dashboard list item. Stores textual configuration or display metadata used by application flows.
+        /// </summary>
         public required string Name { get; set; }
+        /// <summary>
+        /// Gets or sets the is quick access for dashboard list item. Represents a state flag that enables or disables related behavior.
+        /// </summary>
         public required bool IsQuickAccess { get; set; }
     }
 
     #endregion Private Classes
 }
 
+/// <summary>
+/// Performs the dashboard order update operation.
+/// </summary>
 public readonly record struct DashboardOrderUpdate(Guid DashboardId, string Name, bool IsQuickAccess, int SortOrder);

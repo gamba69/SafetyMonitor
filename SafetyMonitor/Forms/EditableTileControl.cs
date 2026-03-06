@@ -3,6 +3,9 @@ using SafetyMonitor.Services;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents editable tile control and encapsulates its related behavior and state.
+/// </summary>
 public class EditableTileControl : Panel {
     #region Private Fields
 
@@ -35,6 +38,15 @@ public class EditableTileControl : Panel {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EditableTileControl"/> class.
+    /// </summary>
+    /// <param name="config">Input value for config.</param>
+    /// <param name="dashboard">Input value for dashboard.</param>
+    /// <param name="materialColorScheme">Input value for material color scheme.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public EditableTileControl(TileConfig config, Dashboard dashboard, string materialColorScheme) {
         Config = config;
         _dashboard = dashboard;
@@ -57,18 +69,27 @@ public class EditableTileControl : Panel {
 
     #region Public Properties
 
+    /// <summary>
+    /// Gets or sets the config for editable tile control. Holds part of the component state used by higher-level application logic.
+    /// </summary>
     public TileConfig Config { get; }
 
     #endregion Public Properties
 
     #region Public Methods
 
+    /// <summary>
+    /// Updates the display for editable tile control.
+    /// </summary>
     public void UpdateDisplay() {
         _titleLabel.Text = Config.Title;
         _infoLabel.Text = GetInfoText();
         RefreshLinkGroupUI();
     }
 
+    /// <summary>
+    /// Refreshes the link group ui for editable tile control.
+    /// </summary>
     public void RefreshLinkGroupUI() {
         if (_linkGroupButton == null || Config is not ChartTileConfig ctc) {
             return;
@@ -90,6 +111,10 @@ public class EditableTileControl : Panel {
 
     #region Protected Methods
 
+    /// <summary>
+    /// Executes dispose as part of editable tile control processing.
+    /// </summary>
+    /// <param name="disposing">Input value for disposing.</param>
     protected override void Dispose(bool disposing) {
         if (disposing) {
             _titleFont?.Dispose();
@@ -99,6 +124,10 @@ public class EditableTileControl : Panel {
         base.Dispose(disposing);
     }
 
+    /// <summary>
+    /// Executes on font changed as part of editable tile control processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnFontChanged(EventArgs e) {
         base.OnFontChanged(e);
         _titleLabel?.Font = _titleFont;
@@ -108,6 +137,10 @@ public class EditableTileControl : Panel {
 
     #region Private Methods
 
+    /// <summary>
+    /// Gets the info text for editable tile control.
+    /// </summary>
+    /// <returns>The resulting string value.</returns>
     private string GetInfoText() {
         if (Config is ValueTileConfig vtc) {
             return $"{vtc.Metric.GetDisplayName()}\n{GetValueDisplayModeName(vtc.DisplayMode)}";
@@ -124,6 +157,11 @@ public class EditableTileControl : Panel {
         return Config.Type.ToString();
     }
 
+    /// <summary>
+    /// Gets the link group period display name for editable tile control.
+    /// </summary>
+    /// <param name="group">Input value for group.</param>
+    /// <returns>The resulting string value.</returns>
     private string GetLinkGroupPeriodDisplayName(ChartLinkGroup group) {
         var periodPresetUid = _dashboard.GetLinkGroupPeriodPresetUid(group);
         var preset = ChartPeriodPresetStore
@@ -133,6 +171,11 @@ public class EditableTileControl : Panel {
         return string.IsNullOrWhiteSpace(preset.Label) ? "Default period" : preset.Label;
     }
 
+    /// <summary>
+    /// Gets the value display mode name for editable tile control.
+    /// </summary>
+    /// <param name="mode">Input value for mode.</param>
+    /// <returns>The resulting string value.</returns>
     private static string GetValueDisplayModeName(ValueTileDisplayMode mode) => mode switch {
         ValueTileDisplayMode.ValueOnly => "Value Only",
         ValueTileDisplayMode.TextOnly => "Text Only",
@@ -140,6 +183,11 @@ public class EditableTileControl : Panel {
         _ => mode.ToString()
     };
 
+    /// <summary>
+    /// Gets the aggregation abbreviation for editable tile control.
+    /// </summary>
+    /// <param name="function">Input value for function.</param>
+    /// <returns>The resulting string value.</returns>
     private static string GetAggregationAbbreviation(DataStorage.Models.AggregationFunction function) => function switch {
         DataStorage.Models.AggregationFunction.Average => "Avg",
         DataStorage.Models.AggregationFunction.Minimum => "Min",
@@ -151,6 +199,9 @@ public class EditableTileControl : Panel {
         _ => function.ToString()
     };
 
+    /// <summary>
+    /// Initializes editable tile control state and required resources.
+    /// </summary>
     private void InitializeUI() {
         BorderStyle = BorderStyle.FixedSingle;
         var isLight = MaterialSkin.MaterialSkinManager.Instance.Theme == MaterialSkin.MaterialSkinManager.Themes.LIGHT;
@@ -266,6 +317,10 @@ public class EditableTileControl : Panel {
         _infoLabel.MouseUp += OnMouseUp;
     }
 
+    /// <summary>
+    /// Creates the link group menu for editable tile control.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private ContextMenuStrip CreateLinkGroupMenu() {
         var menu = new ContextMenuStrip {
             ImageScalingSize = new Size(UnifiedTileEditorIconSize, UnifiedTileEditorIconSize)
@@ -296,6 +351,10 @@ public class EditableTileControl : Panel {
         return menu;
     }
 
+    /// <summary>
+    /// Updates the link group menu selection for editable tile control.
+    /// </summary>
+    /// <param name="menu">Input value for menu.</param>
     private void UpdateLinkGroupMenuSelection(ContextMenuStrip menu) {
         if (Config is not ChartTileConfig ctc) {
             return;
@@ -311,18 +370,41 @@ public class EditableTileControl : Panel {
     }
 
 
+    /// <summary>
+    /// Creates the link group icon for editable tile control.
+    /// </summary>
+    /// <param name="group">Input value for group.</param>
+    /// <param name="color">Input value for color.</param>
+    /// <returns>The result of the operation.</returns>
     private static Bitmap? CreateLinkGroupIcon(ChartLinkGroup group, Color color) {
         return MaterialIcons.GetIcon(GetLinkGroupIcon(group), color, UnifiedTileEditorIconSize, new IconRenderOptions { GlyphScale = LinkGroupGlyphScale, Axes = IconRenderPresetService.Get(IconRenderPreset.DarkOutlined).Axes });
     }
 
+    /// <summary>
+    /// Creates the tile type icon for editable tile control.
+    /// </summary>
+    /// <param name="iconName">Input value for icon name.</param>
+    /// <param name="color">Input value for color.</param>
+    /// <returns>The result of the operation.</returns>
     private static Bitmap? CreateTileTypeIcon(string iconName, Color color) {
         return MaterialIcons.GetIcon(iconName, color, UnifiedTileEditorIconSize, new IconRenderOptions { GlyphScale = TileTypeGlyphScale, Axes = IconRenderPresetService.Get(IconRenderPreset.DarkOutlined).Axes });
     }
 
+    /// <summary>
+    /// Creates the header action icon for editable tile control.
+    /// </summary>
+    /// <param name="iconName">Input value for icon name.</param>
+    /// <param name="color">Input value for color.</param>
+    /// <returns>The result of the operation.</returns>
     private static Bitmap? CreateHeaderActionIcon(string iconName, Color color) {
         return MaterialIcons.GetIcon(iconName, color, UnifiedTileEditorIconSize, new IconRenderOptions { GlyphScale = HeaderActionGlyphScale, Axes = IconRenderPresetService.Get(IconRenderPreset.DarkOutlined).Axes });
     }
 
+    /// <summary>
+    /// Gets the link group icon for editable tile control.
+    /// </summary>
+    /// <param name="group">Input value for group.</param>
+    /// <returns>The resulting string value.</returns>
     private static string GetLinkGroupIcon(ChartLinkGroup group) => group switch {
         ChartLinkGroup.Alpha => MaterialIcons.LinkGroupAlpha,
         ChartLinkGroup.Bravo => MaterialIcons.LinkGroupBravo,
@@ -333,14 +415,37 @@ public class EditableTileControl : Panel {
         _ => MaterialIcons.LinkGroupAlpha
     };
 
+    /// <summary>
+    /// Determines whether is near bottom border for editable tile control.
+    /// </summary>
+    /// <param name="point">Input value for point.</param>
+    /// <param name="controlSize">Input value for control size.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool IsNearBottomBorder(Point point, Size controlSize) {
         return controlSize.Height - point.Y <= ResizeBorderThreshold;
     }
 
+    /// <summary>
+    /// Determines whether is near right border for editable tile control.
+    /// </summary>
+    /// <param name="point">Input value for point.</param>
+    /// <param name="controlSize">Input value for control size.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool IsNearRightBorder(Point point, Size controlSize) {
         return controlSize.Width - point.X <= ResizeBorderThreshold;
     }
 
+    /// <summary>
+    /// Executes on delete as part of editable tile control processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnDelete(object? sender, EventArgs e) {
         if (ThemedMessageBox.Show(this, $"Delete tile '{Config.Title}'?", "Confirm",
             MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes) {
@@ -348,6 +453,11 @@ public class EditableTileControl : Panel {
         }
     }
 
+    /// <summary>
+    /// Executes on edit as part of editable tile control processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnEdit(object? sender, EventArgs e) {
         if (Config is ValueTileConfig vtc) {
             using var editor = new ValueTileEditorForm(vtc);
@@ -365,6 +475,11 @@ public class EditableTileControl : Panel {
         }
     }
 
+    /// <summary>
+    /// Executes on mouse down as part of editable tile control processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnMouseDown(object? sender, MouseEventArgs e) {
         if (e.Button != MouseButtons.Left) {
             return;
@@ -393,6 +508,11 @@ public class EditableTileControl : Panel {
         _isDragging = false;
     }
 
+    /// <summary>
+    /// Executes on mouse move as part of editable tile control processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnMouseMove(object? sender, MouseEventArgs e) {
         var localPoint = PointToClient(MousePosition);
         var nearRight = IsNearRightBorder(localPoint, Size);
@@ -461,6 +581,11 @@ public class EditableTileControl : Panel {
         }
     }
 
+    /// <summary>
+    /// Executes on mouse up as part of editable tile control processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnMouseUp(object? sender, MouseEventArgs e) {
         _isDragging = false;
         _isResizing = false;

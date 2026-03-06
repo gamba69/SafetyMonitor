@@ -4,6 +4,9 @@ using SafetyMonitor.Services;
 
 namespace SafetyMonitor.Controls;
 
+/// <summary>
+/// Represents dashboard panel and encapsulates its related behavior and state.
+/// </summary>
 public class DashboardPanel : TableLayoutPanel {
 
     #region Private Fields
@@ -31,6 +34,17 @@ public class DashboardPanel : TableLayoutPanel {
     public event Action<TileConfig>? TileEditRequested;
     public event Action? DashboardEditRequested;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DashboardPanel"/> class.
+    /// </summary>
+    /// <param name="dashboard">Input value for dashboard.</param>
+    /// <param name="dataService">Input value for data service.</param>
+    /// <param name="chartStaticModeTimeoutSeconds">Input value for chart static mode timeout seconds.</param>
+    /// <param name="chartStaticAggregationPresetMatchTolerancePercent">Input value for chart static aggregation preset match tolerance percent.</param>
+    /// <param name="chartStaticAggregationTargetPointCount">Input value for chart static aggregation target point count.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public DashboardPanel(
         Dashboard dashboard,
         DataService dataService,
@@ -51,6 +65,9 @@ public class DashboardPanel : TableLayoutPanel {
 
     #region Public Methods
 
+    /// <summary>
+    /// Refreshes the data for dashboard panel.
+    /// </summary>
     public void RefreshData() {
         SuspendLayout();
         try {
@@ -76,11 +93,10 @@ public class DashboardPanel : TableLayoutPanel {
     }
 
     /// <summary>
-    /// Asynchronous version of <see cref="RefreshData"/>.
-    /// Heavy database queries run on a background thread to keep the UI responsive.
-    /// Results are applied on the UI thread via synchronous <c>RefreshData</c> calls.
-    /// Snapshot caches in <see cref="DataService"/> make that UI-thread apply step fast.
+    /// Refreshes the data async for dashboard panel.
     /// </summary>
+    /// <param name="cancellationToken">Cancellation token used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task RefreshDataAsync(CancellationToken cancellationToken = default) {
         // Start snapshot scopes — they enable cross-tile caching in DataService.
         using var valueTileSnapshot = _dataService.BeginValueTileSnapshot();
@@ -128,6 +144,10 @@ public class DashboardPanel : TableLayoutPanel {
         }
     }
 
+    /// <summary>
+    /// Sets the chart link mode for dashboard panel.
+    /// </summary>
+    /// <param name="linkMode">Input value for link mode.</param>
     public void SetChartLinkMode(DashboardChartLinkMode linkMode) {
         _chartLinkMode = linkMode;
         _hoveredChartTiles.Clear();
@@ -139,6 +159,9 @@ public class DashboardPanel : TableLayoutPanel {
         }
     }
 
+    /// <summary>
+    /// Resets the link state to dashboard defaults for dashboard panel.
+    /// </summary>
     public void ResetLinkStateToDashboardDefaults() {
         _dashboard.EnsureLinkGroupPeriodDefaults();
         SetChartLinkMode(_dashboard.InitialChartLinkMode);
@@ -151,6 +174,10 @@ public class DashboardPanel : TableLayoutPanel {
         ApplyChartRuntimeDefaults(refreshData: true);
     }
 
+    /// <summary>
+    /// Sets the chart static mode timeout seconds for dashboard panel.
+    /// </summary>
+    /// <param name="seconds">Input value for seconds.</param>
     public void SetChartStaticModeTimeoutSeconds(int seconds) {
         _chartStaticModeTimeoutSeconds = Math.Max(10, seconds);
         foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
@@ -158,6 +185,11 @@ public class DashboardPanel : TableLayoutPanel {
         }
     }
 
+    /// <summary>
+    /// Sets the chart static aggregation options for dashboard panel.
+    /// </summary>
+    /// <param name="presetMatchTolerancePercent">Input value for preset match tolerance percent.</param>
+    /// <param name="targetPointCount">Input value for target point count.</param>
     public void SetChartStaticAggregationOptions(double presetMatchTolerancePercent, int targetPointCount) {
         _chartStaticAggregationPresetMatchTolerancePercent = Math.Clamp(presetMatchTolerancePercent, 0, 100);
         _chartStaticAggregationTargetPointCount = Math.Max(2, targetPointCount);
@@ -170,6 +202,9 @@ public class DashboardPanel : TableLayoutPanel {
     }
 
 
+    /// <summary>
+    /// Updates the theme for dashboard panel.
+    /// </summary>
     public void UpdateTheme() {
         var skinManager = MaterialSkin.MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkin.MaterialSkinManager.Themes.LIGHT;
@@ -189,6 +224,10 @@ public class DashboardPanel : TableLayoutPanel {
     #region Protected Methods
 
     // Reapply tile theme so MaterialSkin font changes do not leak into tile styling.
+    /// <summary>
+    /// Executes on font changed as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnFontChanged(EventArgs e) {
         base.OnFontChanged(e);
         // Force tile fonts back to their configured values.
@@ -201,6 +240,10 @@ public class DashboardPanel : TableLayoutPanel {
         }
     }
 
+    /// <summary>
+    /// Executes on handle created as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnHandleCreated(EventArgs e) {
         base.OnHandleCreated(e);
         // Create tiles only after handle is created (GDI+ is ready)
@@ -214,6 +257,10 @@ public class DashboardPanel : TableLayoutPanel {
 
     #region Private Methods
 
+    /// <summary>
+    /// Applies the chart runtime defaults for dashboard panel.
+    /// </summary>
+    /// <param name="refreshData">Input value for refresh data.</param>
     private void ApplyChartRuntimeDefaults(bool refreshData) {
         foreach (var chartTile in _tileControls.Values.OfType<ChartTile>()) {
             if (!chartTile.IsHandleCreated) {
@@ -233,6 +280,9 @@ public class DashboardPanel : TableLayoutPanel {
         }
     }
 
+    /// <summary>
+    /// Creates the tiles for dashboard panel.
+    /// </summary>
     private void CreateTiles() {
         foreach (var tileConfig in _dashboard.Tiles) {
             Control? tileControl = tileConfig switch {
@@ -281,6 +331,10 @@ public class DashboardPanel : TableLayoutPanel {
         }
     }
 
+    /// <summary>
+    /// Gets the link group period short names for dashboard panel.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private Dictionary<ChartLinkGroup, string> GetLinkGroupPeriodShortNames() {
         var result = new Dictionary<ChartLinkGroup, string>();
         foreach (var group in ChartLinkGroupInfo.All) {
@@ -290,6 +344,11 @@ public class DashboardPanel : TableLayoutPanel {
         return result;
     }
 
+    /// <summary>
+    /// Executes on chart period changed as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
+    /// <param name="periodPresetUid">Identifier of period preset.</param>
     private void OnChartPeriodChanged(ChartTile source, string periodPresetUid) {
         if (_chartLinkMode == DashboardChartLinkMode.Disabled) {
             DashboardChanged?.Invoke();
@@ -320,6 +379,12 @@ public class DashboardPanel : TableLayoutPanel {
 
 
 
+    /// <summary>
+    /// Executes on chart static range changed as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
+    /// <param name="start">Input value for start.</param>
+    /// <param name="end">Input value for end.</param>
     private void OnChartStaticRangeChanged(ChartTile source, DateTime start, DateTime end) {
         if (_chartLinkMode == DashboardChartLinkMode.Disabled) {
             return;
@@ -335,6 +400,10 @@ public class DashboardPanel : TableLayoutPanel {
 
     }
 
+    /// <summary>
+    /// Executes on chart auto mode restored as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
     private void OnChartAutoModeRestored(ChartTile source) {
         if (_chartLinkMode == DashboardChartLinkMode.Disabled) {
             return;
@@ -350,6 +419,11 @@ public class DashboardPanel : TableLayoutPanel {
 
     }
 
+    /// <summary>
+    /// Executes on chart static pause changed as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
+    /// <param name="paused">Input value for paused.</param>
     private void OnChartStaticPauseChanged(ChartTile source, bool paused) {
         if (_chartLinkMode == DashboardChartLinkMode.Disabled) {
             return;
@@ -365,16 +439,29 @@ public class DashboardPanel : TableLayoutPanel {
 
     }
 
+    /// <summary>
+    /// Executes on chart view settings changed as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
     private void OnChartViewSettingsChanged(ChartTile source) {
         DashboardChanged?.Invoke();
     }
 
+    /// <summary>
+    /// Executes on chart link group changed as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
     private void OnChartLinkGroupChanged(ChartTile source) {
         DashboardChanged?.Invoke();
         DashboardResetToDefaultRequested?.Invoke();
     }
 
 
+    /// <summary>
+    /// Executes on chart inspector toggled as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
+    /// <param name="enabled">Input value for enabled.</param>
     private void OnChartInspectorToggled(ChartTile source, bool enabled) {
         if (_chartLinkMode == DashboardChartLinkMode.Disabled) {
             return;
@@ -397,6 +484,11 @@ public class DashboardPanel : TableLayoutPanel {
 
     }
 
+    /// <summary>
+    /// Executes on plot hover presence changed as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
+    /// <param name="isHovered">Input value for is hovered.</param>
     private void OnPlotHoverPresenceChanged(ChartTile source, bool isHovered) {
         if (_chartLinkMode == DashboardChartLinkMode.Disabled || !source.IsInspectorEnabled) {
             if (!isHovered) {
@@ -420,6 +512,11 @@ public class DashboardPanel : TableLayoutPanel {
         }
     }
 
+    /// <summary>
+    /// Executes on chart hover anchor changed as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
+    /// <param name="x">Input value for x.</param>
     private void OnChartHoverAnchorChanged(ChartTile source, double x) {
         if (_chartLinkMode == DashboardChartLinkMode.Disabled || !source.IsInspectorEnabled) {
             return;
@@ -438,6 +535,11 @@ public class DashboardPanel : TableLayoutPanel {
         }
     }
 
+    /// <summary>
+    /// Gets the linked chart tiles for dashboard panel.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
+    /// <returns>The result of the operation.</returns>
     private IEnumerable<ChartTile> GetLinkedChartTiles(ChartTile source) {
         var allCharts = _tileControls.Values.OfType<ChartTile>();
         return _chartLinkMode switch {
@@ -448,6 +550,10 @@ public class DashboardPanel : TableLayoutPanel {
         };
     }
 
+    /// <summary>
+    /// Executes on chart tile edit requested as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
     private void OnChartTileEditRequested(ChartTile source) {
         var config = _dashboard.Tiles.OfType<ChartTileConfig>().FirstOrDefault(c =>
             _tileControls.TryGetValue(c.Id, out var ctrl) && ReferenceEquals(ctrl, source));
@@ -456,14 +562,26 @@ public class DashboardPanel : TableLayoutPanel {
         }
     }
 
+    /// <summary>
+    /// Executes on tile dashboard edit requested as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
     private void OnTileDashboardEditRequested(ValueTile source) {
         DashboardEditRequested?.Invoke();
     }
 
+    /// <summary>
+    /// Executes on tile dashboard edit requested as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
     private void OnTileDashboardEditRequested(ChartTile source) {
         DashboardEditRequested?.Invoke();
     }
 
+    /// <summary>
+    /// Executes on value tile edit requested as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
     private void OnValueTileEditRequested(ValueTile source) {
         var config = _dashboard.Tiles.OfType<ValueTileConfig>().FirstOrDefault(c =>
             _tileControls.TryGetValue(c.Id, out var ctrl) && ReferenceEquals(ctrl, source));
@@ -472,10 +590,17 @@ public class DashboardPanel : TableLayoutPanel {
         }
     }
 
+    /// <summary>
+    /// Executes on value tile view settings changed as part of dashboard panel processing.
+    /// </summary>
+    /// <param name="source">Input value for source.</param>
     private void OnValueTileViewSettingsChanged(ValueTile source) {
         DashboardChanged?.Invoke();
     }
 
+    /// <summary>
+    /// Initializes dashboard panel state and required resources.
+    /// </summary>
     private void InitializeUI() {
         Dock = DockStyle.Fill;
         ColumnCount = _dashboard.Columns;
@@ -494,6 +619,10 @@ public class DashboardPanel : TableLayoutPanel {
         ContextMenuStrip = _contextMenu;
     }
 
+    /// <summary>
+    /// Creates the context menu for dashboard panel.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private ContextMenuStrip CreateContextMenu() {
         var contextMenu = new ContextMenuStrip {
             ShowImageMargin = true,

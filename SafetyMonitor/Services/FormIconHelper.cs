@@ -3,6 +3,9 @@ using System.Runtime.InteropServices;
 
 namespace SafetyMonitor.Services;
 
+/// <summary>
+/// Represents form icon helper and encapsulates its related behavior and state.
+/// </summary>
 internal static class FormIconHelper {
 
     #region Private Constants
@@ -20,6 +23,12 @@ internal static class FormIconHelper {
 
     #region Public Methods
 
+    /// <summary>
+    /// Applies the state for form icon helper.
+    /// </summary>
+    /// <param name="form">Input value for form.</param>
+    /// <param name="iconName">Input value for icon name.</param>
+    /// <param name="color">Input value for color.</param>
     public static void Apply(Form form, string iconName, Color? color = null) {
         var resolvedColor = color ?? ResolveThemeIconColor();
 
@@ -34,6 +43,12 @@ internal static class FormIconHelper {
 
     #region Private Methods
 
+    /// <summary>
+    /// Applies the for current dpi for form icon helper.
+    /// </summary>
+    /// <param name="form">Input value for form.</param>
+    /// <param name="iconName">Input value for icon name.</param>
+    /// <param name="color">Input value for color.</param>
     private static void ApplyForCurrentDpi(Form form, string iconName, Color color) {
         var dpi = (uint)(form.DeviceDpi > 0 ? form.DeviceDpi : 96);
         var smallSize = GetIconSizeForDpi(SmCxSmIcon, SmCySmIcon, dpi, 16);
@@ -60,6 +75,14 @@ internal static class FormIconHelper {
         }
     }
 
+    /// <summary>
+    /// Gets the icon size for dpi for form icon helper.
+    /// </summary>
+    /// <param name="metricX">Input value for metric x.</param>
+    /// <param name="metricY">Input value for metric y.</param>
+    /// <param name="dpi">Input value for dpi.</param>
+    /// <param name="fallback">Input value for fallback.</param>
+    /// <returns>The result of the operation.</returns>
     private static int GetIconSizeForDpi(int metricX, int metricY, uint dpi, int fallback) {
         var width = GetSystemMetricsForDpi(metricX, dpi);
         var height = GetSystemMetricsForDpi(metricY, dpi);
@@ -67,6 +90,10 @@ internal static class FormIconHelper {
         return size > 0 ? size : fallback;
     }
 
+    /// <summary>
+    /// Resolves the theme icon color for form icon helper.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static Color ResolveThemeIconColor() {
         return Color.White;
     }

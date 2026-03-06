@@ -3,6 +3,9 @@ using SafetyMonitor.Services;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents themed caption form and encapsulates its related behavior and state.
+/// </summary>
 public class ThemedCaptionForm : Form {
     private const int CsDropshadow = 0x20000;
     private readonly ThemeWindowControlPalette _windowControlPalette = AppColorizationService.Instance.GetWindowControlPalette();
@@ -27,21 +30,37 @@ public class ThemedCaptionForm : Form {
         }
     }
 
+    /// <summary>
+    /// Executes on handle created as part of themed caption form processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnHandleCreated(EventArgs e) {
         base.OnHandleCreated(e);
         ApplyWindowCaptionTheme();
     }
 
+    /// <summary>
+    /// Executes on shown as part of themed caption form processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnShown(EventArgs e) {
         base.OnShown(e);
         ApplyWindowCaptionTheme();
     }
 
+    /// <summary>
+    /// Executes on back color changed as part of themed caption form processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnBackColorChanged(EventArgs e) {
         base.OnBackColorChanged(e);
         ApplyWindowCaptionTheme();
     }
 
+    /// <summary>
+    /// Executes on text changed as part of themed caption form processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnTextChanged(EventArgs e) {
         base.OnTextChanged(e);
         if (_titleBarLabel != null) {
@@ -49,12 +68,19 @@ public class ThemedCaptionForm : Form {
         }
     }
 
+    /// <summary>
+    /// Executes on dpi changed as part of themed caption form processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnDpiChanged(DpiChangedEventArgs e) {
         base.OnDpiChanged(e);
         UpdateCustomTitleBarScaling();
         UpdateContentHostPadding();
     }
 
+    /// <summary>
+    /// Applies the window caption theme for themed caption form.
+    /// </summary>
     protected void ApplyWindowCaptionTheme() {
         if (!IsHandleCreated || IsDisposed) {
             return;
@@ -73,6 +99,9 @@ public class ThemedCaptionForm : Form {
         UpdateCustomTitleBarTheme(captionColor);
     }
 
+    /// <summary>
+    /// Ensures the custom title bar for themed caption form.
+    /// </summary>
     private void EnsureCustomTitleBar() {
         if (_useCustomTitleBar) {
             return;
@@ -215,6 +244,9 @@ public class ThemedCaptionForm : Form {
         UpdateCustomTitleBarTheme(GetPrimaryCaptionColor());
     }
 
+    /// <summary>
+    /// Updates the fallback background colors for themed caption form.
+    /// </summary>
     private void UpdateFallbackBackgroundColors() {
         if (!_useCustomTitleBar) {
             return;
@@ -233,6 +265,10 @@ public class ThemedCaptionForm : Form {
         }
     }
 
+    /// <summary>
+    /// Updates the custom title bar theme for themed caption form.
+    /// </summary>
+    /// <param name="panelBackColor">Input value for panel back color.</param>
     private void UpdateCustomTitleBarTheme(Color panelBackColor) {
         if (_titleBarPanel == null || _titleBarLabel == null || _titleBarCloseButton == null) {
             return;
@@ -249,6 +285,9 @@ public class ThemedCaptionForm : Form {
         _framePanel?.Invalidate();
     }
 
+    /// <summary>
+    /// Updates the close button visual state for themed caption form.
+    /// </summary>
     private void UpdateCloseButtonVisualState() {
         if (_titleBarCloseButton == null || _titleBarPanel == null) {
             return;
@@ -270,6 +309,9 @@ public class ThemedCaptionForm : Form {
         _titleBarCloseButton.ForeColor = GetPrimaryCaptionTextColor();
     }
 
+    /// <summary>
+    /// Updates the custom title bar scaling for themed caption form.
+    /// </summary>
     private void UpdateCustomTitleBarScaling() {
         if (!_useCustomTitleBar || _titleBarPanel == null || _titleBarIcon == null || _titleBarCloseButton == null || _titleBarLabel == null) {
             return;
@@ -297,6 +339,9 @@ public class ThemedCaptionForm : Form {
         _titleBarLabel.Padding = Padding.Empty;
     }
 
+    /// <summary>
+    /// Updates the content host padding for themed caption form.
+    /// </summary>
     private void UpdateContentHostPadding() {
         if (!_useCustomTitleBar || _contentHostPanel == null) {
             return;
@@ -305,6 +350,10 @@ public class ThemedCaptionForm : Form {
         _contentHostPanel.Padding = _originalFormPadding;
     }
 
+    /// <summary>
+    /// Executes attach drag handlers as part of themed caption form processing.
+    /// </summary>
+    /// <param name="control">Input value for control.</param>
     private void AttachDragHandlers(Control? control) {
         if (control == null) {
             return;
@@ -320,23 +369,43 @@ public class ThemedCaptionForm : Form {
         };
     }
 
+    /// <summary>
+    /// Determines whether is dark color for themed caption form.
+    /// </summary>
+    /// <param name="color">Input value for color.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool IsDarkColor(Color color) {
         var luminance = (0.2126 * color.R) + (0.7152 * color.G) + (0.0722 * color.B);
         return luminance < 140;
     }
 
+    /// <summary>
+    /// Gets the primary caption color for themed caption form.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static Color GetPrimaryCaptionColor() {
         var appSettings = new AppSettingsService().LoadSettings();
         var schemeName = AppColorizationService.Instance.NormalizeMaterialSchemeName(appSettings.MaterialColorScheme);
         return AppColorizationService.Instance.GetPrimaryActionColor(schemeName);
     }
 
+    /// <summary>
+    /// Gets the primary caption text color for themed caption form.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static Color GetPrimaryCaptionTextColor() {
         // Primary action buttons use white text for Confirm/Save in ThemedButtonStyler.
         // Keep caption text/close glyph aligned with that visual contract.
         return Color.White;
     }
 
+    /// <summary>
+    /// Gets the frame border color for themed caption form.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static Color GetFrameBorderColor() {
         var appSettings = new AppSettingsService().LoadSettings();
         var neutral = AppColorizationService.Instance.GetNeutralPalette(!appSettings.IsDarkTheme);

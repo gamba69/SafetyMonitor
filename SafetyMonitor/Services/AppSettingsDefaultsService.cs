@@ -2,7 +2,14 @@ using SafetyMonitor.Models;
 
 namespace SafetyMonitor.Services;
 
+/// <summary>
+/// Represents app settings defaults service and encapsulates its related behavior and state.
+/// </summary>
 public static class AppSettingsDefaultsService {
+    /// <summary>
+    /// Creates the defaults for app settings defaults service.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     public static AppSettings CreateDefaults() {
         return new AppSettings {
             IsDarkTheme = true,
@@ -44,6 +51,11 @@ public static class AppSettingsDefaultsService {
         };
     }
 
+    /// <summary>
+    /// Normalizes the state for app settings defaults service.
+    /// </summary>
+    /// <param name="loaded">Input value for loaded.</param>
+    /// <returns>The result of the operation.</returns>
     public static AppSettings Normalize(AppSettings? loaded) {
         var defaults = CreateDefaults();
         if (loaded is null) {

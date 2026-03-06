@@ -1,5 +1,8 @@
 namespace SafetyMonitor.Services;
 
+/// <summary>
+/// Represents excel export state service and encapsulates its related behavior and state.
+/// </summary>
 public static class ExcelExportStateService {
 
     #region Private Fields
@@ -25,6 +28,13 @@ public static class ExcelExportStateService {
 
     #region Public Methods
 
+    /// <summary>
+    /// Attempts to begin export for excel export state service.
+    /// </summary>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     public static bool TryBeginExport() {
         lock (_lock) {
             if (_isExporting) {
@@ -39,11 +49,18 @@ public static class ExcelExportStateService {
         return true;
     }
 
+    /// <summary>
+    /// Executes report progress as part of excel export state service processing.
+    /// </summary>
+    /// <param name="percent">Input value for percent.</param>
     public static void ReportProgress(int percent) {
         _progressPercent = Math.Clamp(percent, 0, 100);
         StateChanged?.Invoke();
     }
 
+    /// <summary>
+    /// Executes end export as part of excel export state service processing.
+    /// </summary>
     public static void EndExport() {
         lock (_lock) {
             _isExporting = false;

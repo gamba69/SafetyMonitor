@@ -4,6 +4,9 @@ using SafetyMonitor.Services;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents splash form and encapsulates its related behavior and state.
+/// </summary>
 internal sealed class SplashForm : Form {
 
     #region Private Fields
@@ -30,6 +33,13 @@ internal sealed class SplashForm : Form {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SplashForm"/> class.
+    /// </summary>
+    /// <param name="isDarkTheme">Input value for is dark theme.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public SplashForm(bool isDarkTheme) {
         var theme = isDarkTheme ? MaterialSkinManager.Themes.DARK : MaterialSkinManager.Themes.LIGHT;
         var sourceIcon = theme == MaterialSkinManager.Themes.DARK
@@ -72,6 +82,10 @@ internal sealed class SplashForm : Form {
         }
     }
 
+    /// <summary>
+    /// Executes dispose as part of splash form processing.
+    /// </summary>
+    /// <param name="disposing">Input value for disposing.</param>
     protected override void Dispose(bool disposing) {
         if (disposing) {
             _appIcon.Dispose();
@@ -80,6 +94,10 @@ internal sealed class SplashForm : Form {
         base.Dispose(disposing);
     }
 
+    /// <summary>
+    /// Executes on paint as part of splash form processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnPaint(PaintEventArgs e) {
         base.OnPaint(e);
 
@@ -100,6 +118,10 @@ internal sealed class SplashForm : Form {
 
     #region Private Methods
 
+    /// <summary>
+    /// Builds the layout for splash form.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private TableLayoutPanel BuildLayout() {
         var root = new TableLayoutPanel {
             Dock = DockStyle.Fill,
@@ -237,6 +259,9 @@ internal sealed class SplashForm : Form {
         return root;
     }
 
+    /// <summary>
+    /// Ensures the content fits for splash form.
+    /// </summary>
     private void EnsureContentFits() {
         SuspendLayout();
         _rootLayout.SuspendLayout();
@@ -264,6 +289,11 @@ internal sealed class SplashForm : Form {
         ResumeLayout(true);
     }
 
+    /// <summary>
+    /// Executes scale for dpi as part of splash form processing.
+    /// </summary>
+    /// <param name="valuePx">Input value for value px.</param>
+    /// <returns>The result of the operation.</returns>
     private int ScaleForDpi(int valuePx) {
         var dpi = DeviceDpi > 0 ? DeviceDpi : ReferenceDpi;
         return (int)Math.Ceiling(valuePx * dpi / (double)ReferenceDpi);

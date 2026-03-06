@@ -7,10 +7,7 @@ using SafetyMonitor.Services;
 namespace SafetyMonitor.Controls;
 
 /// <summary>
-/// Fully custom ComboBox (pull-down) with complete dark/light theme support.
-/// Replaces standard ComboBox which cannot be fully themed.
-/// Owner-draws the text area, dropdown button, and items popup.
-/// Visual style matches ThemedDateTimePicker.
+/// Represents themed combo box and encapsulates its related behavior and state.
 /// </summary>
 public class ThemedComboBox : UserControl {
 
@@ -44,6 +41,9 @@ public class ThemedComboBox : UserControl {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ThemedComboBox"/> class.
+    /// </summary>
     public ThemedComboBox() {
         SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
                  ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
@@ -157,8 +157,7 @@ public class ThemedComboBox : UserControl {
     #region Public Methods
 
     /// <summary>
-    /// Re-reads theme from MaterialSkinManager and repaints.
-    /// Call after theme switch or from ApplyThemeRecursive.
+    /// Applies the theme for themed combo box.
     /// </summary>
     public void ApplyTheme() {
         var sm = MaterialSkinManager.Instance;
@@ -176,8 +175,10 @@ public class ThemedComboBox : UserControl {
     }
 
     /// <summary>
-    /// Gets the display text for an item, using DisplayMember if set.
+    /// Gets the item text for themed combo box.
     /// </summary>
+    /// <param name="item">Input value for item.</param>
+    /// <returns>The resulting string value.</returns>
     public string GetItemText(object? item) {
         if (item == null) {
             return "";
@@ -197,6 +198,10 @@ public class ThemedComboBox : UserControl {
 
     #region Protected Methods
 
+    /// <summary>
+    /// Executes on paint as part of themed combo box processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnPaint(PaintEventArgs e) {
         var g = e.Graphics;
         var bg = Enabled ? _backColor : _disabledBackColor;
@@ -208,6 +213,10 @@ public class ThemedComboBox : UserControl {
         g.DrawRectangle(borderPen, 0, 0, Width - 1, Height - 1);
     }
 
+    /// <summary>
+    /// Executes on enabled changed as part of themed combo box processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnEnabledChanged(EventArgs e) {
         base.OnEnabledChanged(e);
         _textPanel.Cursor = Enabled ? Cursors.Hand : Cursors.Default;
@@ -215,16 +224,28 @@ public class ThemedComboBox : UserControl {
         Invalidate(true);
     }
 
+    /// <summary>
+    /// Executes on got focus as part of themed combo box processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnGotFocus(EventArgs e) {
         base.OnGotFocus(e);
         Invalidate(true);
     }
 
+    /// <summary>
+    /// Executes on lost focus as part of themed combo box processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnLostFocus(EventArgs e) {
         base.OnLostFocus(e);
         Invalidate(true);
     }
 
+    /// <summary>
+    /// Executes on font changed as part of themed combo box processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnFontChanged(EventArgs e) {
         base.OnFontChanged(e);
 
@@ -246,10 +267,22 @@ public class ThemedComboBox : UserControl {
 
     #region Private Methods
 
+    /// <summary>
+    /// Creates the safe font for themed combo box.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private static Font CreateSafeFont() {
         return new Font("Segoe UI", 9f, FontStyle.Regular);
     }
 
+    /// <summary>
+    /// Determines whether is installed font for themed combo box.
+    /// </summary>
+    /// <param name="familyName">Input value for family name.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private static bool IsInstalledFont(string? familyName) {
         if (string.IsNullOrWhiteSpace(familyName)) {
             return false;
@@ -260,6 +293,10 @@ public class ThemedComboBox : UserControl {
             string.Equals(f.Name, familyName, StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>
+    /// Gets the display text for themed combo box.
+    /// </summary>
+    /// <returns>The resulting string value.</returns>
     private string GetDisplayText() {
         if (_selectedIndex < 0 || _selectedIndex >= _items.Count) {
             return "";
@@ -268,6 +305,11 @@ public class ThemedComboBox : UserControl {
         return GetItemText(_items[_selectedIndex]);
     }
 
+    /// <summary>
+    /// Executes text panel paint as part of themed combo box processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void TextPanel_Paint(object? sender, PaintEventArgs e) {
         var g = e.Graphics;
         g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
@@ -288,6 +330,11 @@ public class ThemedComboBox : UserControl {
         g.DrawLine(borderPen, 0, 0, 0, _textPanel.Height - 1);
     }
 
+    /// <summary>
+    /// Executes button panel paint as part of themed combo box processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void ButtonPanel_Paint(object? sender, PaintEventArgs e) {
         var g = e.Graphics;
         g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -311,12 +358,19 @@ public class ThemedComboBox : UserControl {
         g.DrawLine(borderPen, 0, _buttonPanel.Height - 1, _buttonPanel.Width - 1, _buttonPanel.Height - 1);
     }
 
+    /// <summary>
+    /// Gets the border color for themed combo box.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private Color GetBorderColor() {
         return _isHovering && Enabled
             ? MaterialSkinManager.Instance.ColorScheme.PrimaryColor
             : _borderColorOverride ?? _borderColor;
     }
 
+    /// <summary>
+    /// Executes toggle popup as part of themed combo box processing.
+    /// </summary>
     private void TogglePopup() {
         if (!Enabled) {
             return;
@@ -330,6 +384,9 @@ public class ThemedComboBox : UserControl {
         ShowPopup();
     }
 
+    /// <summary>
+    /// Shows the popup for themed combo box.
+    /// </summary>
     private void ShowPopup() {
         if (_items.Count == 0) {
             return;
@@ -359,7 +416,7 @@ public class ThemedComboBox : UserControl {
     }
 
     /// <summary>
-    /// Called by ItemCollection when items change.
+    /// Executes on items changed as part of themed combo box processing.
     /// </summary>
     internal void OnItemsChanged() {
         if (_selectedIndex >= _items.Count) {
@@ -373,13 +430,19 @@ public class ThemedComboBox : UserControl {
     #region ItemCollection
 
     /// <summary>
-    /// Collection of items with API compatible with ComboBox.ObjectCollection.
-    /// Supports Add, AddRange, Clear, Remove, Insert, IndexOf, Contains, Count, indexer.
+    /// Represents item collection and encapsulates its related behavior and state.
     /// </summary>
     public sealed class ItemCollection : IEnumerable<object> {
         private readonly List<object> _list = [];
         private readonly ThemedComboBox _owner;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ItemCollection"/> class.
+        /// </summary>
+        /// <param name="owner">Input value for owner.</param>
+        /// <remarks>
+        /// The constructor wires required dependencies and initial state.
+        /// </remarks>
         internal ItemCollection(ThemedComboBox owner) {
             _owner = owner;
         }
@@ -391,32 +454,57 @@ public class ThemedComboBox : UserControl {
             set { _list[index] = value; _owner.OnItemsChanged(); }
         }
 
+        /// <summary>
+        /// Adds the state for item collection.
+        /// </summary>
+        /// <param name="item">Input value for item.</param>
+        /// <returns>The result of the operation.</returns>
         public int Add(object item) {
             _list.Add(item);
             _owner.OnItemsChanged();
             return _list.Count - 1;
         }
 
+        /// <summary>
+        /// Adds the range for item collection.
+        /// </summary>
+        /// <param name="items">Input value for items.</param>
         public void AddRange(object[] items) {
             _list.AddRange(items);
             _owner.OnItemsChanged();
         }
 
+        /// <summary>
+        /// Executes insert as part of item collection processing.
+        /// </summary>
+        /// <param name="index">Input value for index.</param>
+        /// <param name="item">Input value for item.</param>
         public void Insert(int index, object item) {
             _list.Insert(index, item);
             _owner.OnItemsChanged();
         }
 
+        /// <summary>
+        /// Removes the state for item collection.
+        /// </summary>
+        /// <param name="item">Input value for item.</param>
         public void Remove(object item) {
             _list.Remove(item);
             _owner.OnItemsChanged();
         }
 
+        /// <summary>
+        /// Removes the at for item collection.
+        /// </summary>
+        /// <param name="index">Input value for index.</param>
         public void RemoveAt(int index) {
             _list.RemoveAt(index);
             _owner.OnItemsChanged();
         }
 
+        /// <summary>
+        /// Executes clear as part of item collection processing.
+        /// </summary>
         public void Clear() {
             _list.Clear();
             _owner.OnItemsChanged();
@@ -436,9 +524,12 @@ public class ThemedComboBox : UserControl {
     #region Helpers
 
     /// <summary>
-    /// Panel with DoubleBuffered enabled to prevent flicker on repaint.
+    /// Represents buffered panel and encapsulates its related behavior and state.
     /// </summary>
     private sealed class BufferedPanel : Panel {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BufferedPanel"/> class.
+        /// </summary>
         public BufferedPanel() {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
                      ControlStyles.OptimizedDoubleBuffer, true);
@@ -450,9 +541,7 @@ public class ThemedComboBox : UserControl {
     #region DropdownPopup
 
     /// <summary>
-    /// Themed dropdown list popup. Owner-drawn, double-buffered,
-    /// with hover highlight and scroll support.
-    /// Visual style matches ThemedDateTimePicker's CalendarPopup.
+    /// Represents dropdown popup and encapsulates its related behavior and state.
     /// </summary>
     private sealed class DropdownPopup : Form {
 
@@ -488,6 +577,13 @@ public class ThemedComboBox : UserControl {
 
         public event EventHandler<int>? ItemSelected;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DropdownPopup"/> class.
+        /// </summary>
+        /// <param name="owner">Input value for owner.</param>
+        /// <remarks>
+        /// The constructor wires required dependencies and initial state.
+        /// </remarks>
         public DropdownPopup(ThemedComboBox owner) {
             _owner = owner;
 
@@ -545,12 +641,20 @@ public class ThemedComboBox : UserControl {
             Deactivate += (_, _) => AnimateClose();
         }
 
+        /// <summary>
+        /// Executes on paint as part of dropdown popup processing.
+        /// </summary>
+        /// <param name="e">Input value for e.</param>
         protected override void OnPaint(PaintEventArgs e) {
             base.OnPaint(e);
             using var borderPen = new Pen(_borderColor);
             e.Graphics.DrawRectangle(borderPen, 0, 0, Width - 1, Height - 1);
         }
 
+        /// <summary>
+        /// Executes on form closed as part of dropdown popup processing.
+        /// </summary>
+        /// <param name="e">Input value for e.</param>
         protected override void OnFormClosed(FormClosedEventArgs e) {
             _fadeTimer?.Stop();
             _fadeTimer?.Dispose();
@@ -560,6 +664,10 @@ public class ThemedComboBox : UserControl {
 
         protected override bool ShowWithoutActivation => false;
 
+        /// <summary>
+        /// Executes on shown as part of dropdown popup processing.
+        /// </summary>
+        /// <param name="e">Input value for e.</param>
         protected override void OnShown(EventArgs e) {
             base.OnShown(e);
             StartFadeIn();
@@ -567,6 +675,9 @@ public class ThemedComboBox : UserControl {
 
         #region Animation
 
+        /// <summary>
+        /// Starts the fade in for dropdown popup.
+        /// </summary>
         private void StartFadeIn() {
             _fadeTimer?.Dispose();
             _fadeTimer = new System.Windows.Forms.Timer { Interval = FadeIntervalMs };
@@ -584,6 +695,9 @@ public class ThemedComboBox : UserControl {
             _fadeTimer.Start();
         }
 
+        /// <summary>
+        /// Executes animate close as part of dropdown popup processing.
+        /// </summary>
         private void AnimateClose() {
             if (_isClosing) {
                 return;
@@ -611,6 +725,11 @@ public class ThemedComboBox : UserControl {
 
         #region List painting
 
+        /// <summary>
+        /// Executes list panel paint as part of dropdown popup processing.
+        /// </summary>
+        /// <param name="sender">Input value for sender.</param>
+        /// <param name="e">Input value for e.</param>
         private void ListPanel_Paint(object? sender, PaintEventArgs e) {
             var g = e.Graphics;
             g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
@@ -653,6 +772,10 @@ public class ThemedComboBox : UserControl {
             }
         }
 
+        /// <summary>
+        /// Executes paint scroll bar as part of dropdown popup processing.
+        /// </summary>
+        /// <param name="g">Input value for g.</param>
         private void PaintScrollBar(Graphics g) {
             var totalItems = _owner._items.Count;
             var sbX = _listPanel.Width - ScrollBarWidth;
@@ -677,6 +800,11 @@ public class ThemedComboBox : UserControl {
 
         #region Mouse handling
 
+        /// <summary>
+        /// Executes hit test item as part of dropdown popup processing.
+        /// </summary>
+        /// <param name="location">Input value for location.</param>
+        /// <returns>The result of the operation.</returns>
         private int HitTestItem(Point location) {
             if (location.Y < 1 || location.Y >= _listPanel.Height - 1) {
                 return -1;
@@ -692,6 +820,11 @@ public class ThemedComboBox : UserControl {
             return itemIndex >= 0 && itemIndex < _owner._items.Count ? itemIndex : -1;
         }
 
+        /// <summary>
+        /// Executes list panel mouse move as part of dropdown popup processing.
+        /// </summary>
+        /// <param name="sender">Input value for sender.</param>
+        /// <param name="e">Input value for e.</param>
         private void ListPanel_MouseMove(object? sender, MouseEventArgs e) {
             var newHover = HitTestItem(e.Location);
             if (newHover != _hoverIndex) {
@@ -702,6 +835,11 @@ public class ThemedComboBox : UserControl {
             }
         }
 
+        /// <summary>
+        /// Executes list panel mouse leave as part of dropdown popup processing.
+        /// </summary>
+        /// <param name="sender">Input value for sender.</param>
+        /// <param name="e">Input value for e.</param>
         private void ListPanel_MouseLeave(object? sender, EventArgs e) {
             if (_hoverIndex < 0) {
                 return;
@@ -712,6 +850,11 @@ public class ThemedComboBox : UserControl {
             InvalidateItem(prev);
         }
 
+        /// <summary>
+        /// Executes list panel mouse click as part of dropdown popup processing.
+        /// </summary>
+        /// <param name="sender">Input value for sender.</param>
+        /// <param name="e">Input value for e.</param>
         private void ListPanel_MouseClick(object? sender, MouseEventArgs e) {
             var idx = HitTestItem(e.Location);
             if (idx >= 0) {
@@ -720,6 +863,11 @@ public class ThemedComboBox : UserControl {
             }
         }
 
+        /// <summary>
+        /// Executes list panel mouse wheel as part of dropdown popup processing.
+        /// </summary>
+        /// <param name="sender">Input value for sender.</param>
+        /// <param name="e">Input value for e.</param>
         private void ListPanel_MouseWheel(object? sender, MouseEventArgs e) {
             if (!_needsScrollBar) {
                 return;
@@ -735,6 +883,10 @@ public class ThemedComboBox : UserControl {
             }
         }
 
+        /// <summary>
+        /// Executes invalidate item as part of dropdown popup processing.
+        /// </summary>
+        /// <param name="itemIndex">Input value for item index.</param>
         private void InvalidateItem(int itemIndex) {
             if (itemIndex < _scrollOffset || itemIndex >= _scrollOffset + _visibleCount) {
                 return;

@@ -3,6 +3,9 @@ using ColorScheme = MaterialSkin.ColorScheme;
 
 namespace SafetyMonitor.Services;
 
+/// <summary>
+/// Represents app colorization service and encapsulates its related behavior and state.
+/// </summary>
 public sealed class AppColorizationService {
     #region Private Fields
 
@@ -32,6 +35,9 @@ public sealed class AppColorizationService {
 
     #region Public Properties
 
+    /// <summary>
+    /// Gets or sets the instance for app colorization service. Holds part of the component state used by higher-level application logic.
+    /// </summary>
     public static AppColorizationService Instance { get; } = new();
 
     public IReadOnlyList<string> AvailableMaterialSchemes => MaterialPalettes.Keys.OrderBy(static n => n).ToList();
@@ -40,6 +46,11 @@ public sealed class AppColorizationService {
 
     #region Public Methods
 
+    /// <summary>
+    /// Normalizes the material scheme name for app colorization service.
+    /// </summary>
+    /// <param name="schemeName">Input value for scheme name.</param>
+    /// <returns>The resulting string value.</returns>
     public string NormalizeMaterialSchemeName(string? schemeName) {
         if (string.IsNullOrWhiteSpace(schemeName)) {
             return "Teal";
@@ -50,27 +61,52 @@ public sealed class AppColorizationService {
             : "Teal";
     }
 
+    /// <summary>
+    /// Gets the material color scheme for app colorization service.
+    /// </summary>
+    /// <param name="schemeName">Input value for scheme name.</param>
+    /// <returns>The result of the operation.</returns>
     public ColorScheme GetMaterialColorScheme(string? schemeName) {
         var normalizedName = NormalizeMaterialSchemeName(schemeName);
         var palette = MaterialPalettes[normalizedName];
         return new ColorScheme(palette.Primary, palette.DarkPrimary, palette.LightPrimary, palette.Accent, TextShade.WHITE);
     }
 
+    /// <summary>
+    /// Gets the primary action color for app colorization service.
+    /// </summary>
+    /// <param name="schemeName">Input value for scheme name.</param>
+    /// <returns>The result of the operation.</returns>
     public Color GetPrimaryActionColor(string? schemeName) {
         return GetMaterialColorScheme(schemeName).PrimaryColor;
     }
 
 
+    /// <summary>
+    /// Gets the primary action text color for app colorization service.
+    /// </summary>
+    /// <param name="schemeName">Input value for scheme name.</param>
+    /// <returns>The result of the operation.</returns>
     public Color GetPrimaryActionTextColor(string? schemeName) {
         var background = GetPrimaryActionColor(schemeName);
         return GetReadableTextColor(background);
     }
 
+    /// <summary>
+    /// Gets the readable text color for app colorization service.
+    /// </summary>
+    /// <param name="background">Input value for background.</param>
+    /// <returns>The result of the operation.</returns>
     public Color GetReadableTextColor(Color background) {
         var luminance = (0.299 * background.R) + (0.587 * background.G) + (0.114 * background.B);
         return luminance >= 160 ? Color.Black : Color.White;
     }
 
+    /// <summary>
+    /// Gets the neutral palette for app colorization service.
+    /// </summary>
+    /// <param name="isLightTheme">Input value for is light theme.</param>
+    /// <returns>The result of the operation.</returns>
     public ThemeNeutralPalette GetNeutralPalette(bool isLightTheme) {
         return isLightTheme
             ? new ThemeNeutralPalette(
@@ -91,6 +127,10 @@ public sealed class AppColorizationService {
                 Color.White);
     }
 
+    /// <summary>
+    /// Gets the window control palette for app colorization service.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     public ThemeWindowControlPalette GetWindowControlPalette() {
         return new ThemeWindowControlPalette(
             CloseButtonHoverBackground: Color.FromArgb(232, 17, 35),
@@ -102,14 +142,23 @@ public sealed class AppColorizationService {
 
     #region Private Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AppColorizationService"/> class.
+    /// </summary>
     private AppColorizationService() {
     }
 
     #endregion Private Constructors
 }
 
+/// <summary>
+/// Represents material palette definition and encapsulates its related behavior and state.
+/// </summary>
 public sealed record MaterialPaletteDefinition(string Name, Primary Primary, Primary DarkPrimary, Primary LightPrimary, Accent Accent);
 
+/// <summary>
+/// Represents theme neutral palette and encapsulates its related behavior and state.
+/// </summary>
 public sealed record ThemeNeutralPalette(
     Color FormBackground,
     Color SurfaceBackground,
@@ -119,6 +168,9 @@ public sealed record ThemeNeutralPalette(
     Color Text,
     Color StrongText);
 
+/// <summary>
+/// Represents theme window control palette and encapsulates its related behavior and state.
+/// </summary>
 public sealed record ThemeWindowControlPalette(
     Color CloseButtonHoverBackground,
     Color CloseButtonPressedBackground,

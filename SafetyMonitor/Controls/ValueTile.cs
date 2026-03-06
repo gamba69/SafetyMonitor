@@ -7,6 +7,9 @@ using ColorScheme = SafetyMonitor.Models.ColorScheme;
 
 namespace SafetyMonitor.Controls;
 
+/// <summary>
+/// Represents value tile and encapsulates its related behavior and state.
+/// </summary>
 public class ValueTile : Panel {
 
     #region Private Fields
@@ -57,6 +60,14 @@ public class ValueTile : Panel {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ValueTile"/> class.
+    /// </summary>
+    /// <param name="config">Input value for config.</param>
+    /// <param name="dataService">Input value for data service.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public ValueTile(ValueTileConfig config, DataService dataService) {
         _config = config;
         _dataService = dataService;
@@ -77,6 +88,9 @@ public class ValueTile : Panel {
 
     #region Public Methods
 
+    /// <summary>
+    /// Refreshes the data for value tile.
+    /// </summary>
     public void RefreshData() {
         if (_valueLabel == null || _textLabel == null) {
             return;
@@ -105,6 +119,9 @@ public class ValueTile : Panel {
         UpdateLayout();
     }
 
+    /// <summary>
+    /// Updates the theme for value tile.
+    /// </summary>
     public void UpdateTheme() {
         UpdateLayout();
         ApplyContextMenuTheme();
@@ -121,8 +138,9 @@ public class ValueTile : Panel {
     #region Protected Methods
 
     /// <summary>
-    /// Prevents MaterialSkinManager font propagation from overwriting tile fonts.
+    /// Executes on font changed as part of value tile processing.
     /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnFontChanged(EventArgs e) {
         base.OnFontChanged(e);
         if (_initialized) {
@@ -130,6 +148,10 @@ public class ValueTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Executes on handle created as part of value tile processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnHandleCreated(EventArgs e) {
         base.OnHandleCreated(e);
 
@@ -144,6 +166,10 @@ public class ValueTile : Panel {
 
     #endregion Protected Methods
 
+    /// <summary>
+    /// Executes on paint as part of value tile processing.
+    /// </summary>
+    /// <param name="e">Input value for e.</param>
     protected override void OnPaint(PaintEventArgs e) {
         base.OnPaint(e);
 
@@ -158,6 +184,10 @@ public class ValueTile : Panel {
         DrawTileBorder(e.Graphics);
     }
 
+    /// <summary>
+    /// Executes dispose as part of value tile processing.
+    /// </summary>
+    /// <param name="disposing">Input value for disposing.</param>
     protected override void Dispose(bool disposing) {
         if (disposing) {
             _iconImage?.Dispose();
@@ -175,8 +205,12 @@ public class ValueTile : Panel {
     #region Private Methods
 
     /// <summary>
-    /// Safely creates a font with fallback to system default if the requested font is not available.
+    /// Creates the safe font for value tile.
     /// </summary>
+    /// <param name="familyName">Input value for family name.</param>
+    /// <param name="emSize">Input value for em size.</param>
+    /// <param name="style">Input value for style.</param>
+    /// <returns>The result of the operation.</returns>
     private static Font CreateSafeFont(string familyName, float emSize, FontStyle style = FontStyle.Regular) {
         try {
             var font = new Font(familyName, emSize, style);
@@ -187,6 +221,13 @@ public class ValueTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Gets the cached font for value tile.
+    /// </summary>
+    /// <param name="fontFamily">Input value for font family.</param>
+    /// <param name="size">Input value for size.</param>
+    /// <param name="style">Input value for style.</param>
+    /// <returns>The result of the operation.</returns>
     private Font GetCachedFont(string fontFamily, float size, FontStyle style) {
         var normalizedSize = MathF.Round(size, 1);
         var key = (fontFamily, normalizedSize, style);
@@ -199,13 +240,19 @@ public class ValueTile : Panel {
         return createdFont;
     }
 
+    /// <summary>
+    /// Updates the font for value tile.
+    /// </summary>
+    /// <param name="label">Input value for label.</param>
+    /// <param name="fontFamily">Input value for font family.</param>
+    /// <param name="size">Input value for size.</param>
+    /// <param name="style">Input value for style.</param>
     private void UpdateFont(Label label, string fontFamily, float size, FontStyle style) {
         label.Font = GetCachedFont(fontFamily, size, style);
     }
 
     /// <summary>
-    /// Applies theme-based background and secondary element colors (title, unit, icon).
-    /// These colors are always the same regardless of whether data is present.
+    /// Applies the theme colors for value tile.
     /// </summary>
     private void ApplyThemeColors() {
         if (_titleLabel == null || _textLabel == null || _valueLabel == null || _unitLabel == null) {
@@ -230,12 +277,18 @@ public class ValueTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Applies the transparent child backgrounds for value tile.
+    /// </summary>
     private void ApplyTransparentChildBackgrounds() {
         foreach (Control child in Controls) {
             child.BackColor = Color.Transparent;
         }
     }
 
+    /// <summary>
+    /// Applies the color scheme for value tile.
+    /// </summary>
     private void ApplyColorScheme() {
         if (_titleLabel == null || _textLabel == null || _valueLabel == null || _unitLabel == null) {
             return;
@@ -266,11 +319,20 @@ public class ValueTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Gets the contrast color for value tile.
+    /// </summary>
+    /// <param name="bg">Input value for bg.</param>
+    /// <returns>The result of the operation.</returns>
     private static Color GetContrastColor(Color bg) {
         var brightness = (bg.R * 299 + bg.G * 587 + bg.B * 114) / 1000;
         return brightness > 128 ? Color.Black : Color.White;
     }
 
+    /// <summary>
+    /// Executes draw top value gradient as part of value tile processing.
+    /// </summary>
+    /// <param name="graphics">Input value for graphics.</param>
     private void DrawTopValueGradient(Graphics graphics) {
         if (!_config.ShowTopValueGradient || !_currentValue.HasValue || ClientSize.Width <= 0 || ClientSize.Height <= 0) {
             return;
@@ -291,6 +353,9 @@ public class ValueTile : Panel {
         graphics.FillRectangle(brush, gradientRect);
     }
 
+    /// <summary>
+    /// Initializes value tile state and required resources.
+    /// </summary>
     private void InitializeUI() {
         // Title: small, top-left
         _titleLabel = new Label {
@@ -339,6 +404,9 @@ public class ValueTile : Panel {
         Resize += OnTileResize;
     }
 
+    /// <summary>
+    /// Loads the color scheme for value tile.
+    /// </summary>
     private void LoadColorScheme() {
         var schemes = _colorSchemeService.LoadSchemes();
         _colorScheme = string.IsNullOrEmpty(_config.ColorSchemeName)
@@ -356,6 +424,11 @@ public class ValueTile : Panel {
             : valueSchemes.FirstOrDefault(s => s.Name == _config.ValueSchemeName);
     }
 
+    /// <summary>
+    /// Updates the displayed texts for value tile.
+    /// </summary>
+    /// <param name="formattedValue">Input value for formatted value.</param>
+    /// <param name="transformedText">Input value for transformed text.</param>
     private void UpdateDisplayedTexts(string formattedValue, string? transformedText) {
         if (_textLabel == null || _valueLabel == null) {
             return;
@@ -383,6 +456,13 @@ public class ValueTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Determines whether has transformed text for current value for value tile.
+    /// </summary>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     private bool HasTransformedTextForCurrentValue() {
         if (!_currentValue.HasValue || _valueScheme == null) {
             return false;
@@ -392,11 +472,19 @@ public class ValueTile : Panel {
         return !string.IsNullOrWhiteSpace(transformedText);
     }
 
+    /// <summary>
+    /// Executes on tile resize as part of value tile processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void OnTileResize(object? sender, EventArgs e) {
         UpdateLayout();
         Invalidate();
     }
 
+    /// <summary>
+    /// Resets the colors for value tile.
+    /// </summary>
     private void ResetColors() {
         if (_titleLabel == null || _textLabel == null || _valueLabel == null || _unitLabel == null) {
             return;
@@ -411,6 +499,10 @@ public class ValueTile : Panel {
         _valueLabel.ForeColor = isLight ? LightThemePrimaryColor : Color.White;
     }
 
+    /// <summary>
+    /// Executes draw tile border as part of value tile processing.
+    /// </summary>
+    /// <param name="graphics">Input value for graphics.</param>
     private void DrawTileBorder(Graphics graphics) {
         if (ClientSize.Width <= 1 || ClientSize.Height <= 1) {
             return;
@@ -421,6 +513,10 @@ public class ValueTile : Panel {
         ControlPaint.DrawBorder(graphics, ClientRectangle, borderColor, ButtonBorderStyle.Solid);
     }
 
+    /// <summary>
+    /// Sets the icon color for value tile.
+    /// </summary>
+    /// <param name="color">Input value for color.</param>
     private void SetIconColor(Color color) {
         if (color == _currentIconColor) {
             return;
@@ -432,6 +528,10 @@ public class ValueTile : Panel {
         Invalidate();
     }
 
+    /// <summary>
+    /// Updates the icon for value tile.
+    /// </summary>
+    /// <param name="logicalSize">Input value for logical size.</param>
     private void UpdateIcon(int logicalSize) {
         // Render at physical pixel size for crisp display at any DPI scaling.
         // DeviceDpi is the actual monitor DPI (96 = 100%, 120 = 125%, 144 = 150%).
@@ -444,10 +544,21 @@ public class ValueTile : Panel {
         oldImage?.Dispose();
     }
 
+    /// <summary>
+    /// Executes measure text width as part of value tile processing.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <param name="font">Input value for font.</param>
+    /// <returns>The result of the operation.</returns>
     private static int MeasureTextWidth(string text, Font font) {
         return TextRenderer.MeasureText(text, font).Width;
     }
 
+    /// <summary>
+    /// Gets the rendered text bounds for value tile.
+    /// </summary>
+    /// <param name="label">Input value for label.</param>
+    /// <returns>The result of the operation.</returns>
     private static Rectangle GetRenderedTextBounds(Label label) {
         if (label.Width <= 0 || label.Height <= 0 || string.IsNullOrWhiteSpace(label.Text)) {
             return Rectangle.Empty;
@@ -508,6 +619,10 @@ public class ValueTile : Panel {
         return new Rectangle(x, y, textWidth, textHeight);
     }
 
+    /// <summary>
+    /// Executes fit title font and truncate with ellipsis as part of value tile processing.
+    /// </summary>
+    /// <param name="maxFontSize">Input value for max font size.</param>
     private void FitTitleFontAndTruncateWithEllipsis(float maxFontSize) {
         if (_titleLabel == null) {
             return;
@@ -539,6 +654,10 @@ public class ValueTile : Panel {
         _titleLabel.Text = "…";
     }
 
+    /// <summary>
+    /// Gets the value texts for sizing for value tile.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private List<string> GetValueTextsForSizing() {
         if (_valueLabel == null) {
             return [" ?"];
@@ -560,6 +679,11 @@ public class ValueTile : Panel {
         return texts;
     }
 
+    /// <summary>
+    /// Executes fit value font to width as part of value tile processing.
+    /// </summary>
+    /// <param name="availableWidth">Input value for available width.</param>
+    /// <param name="maxFontSize">Input value for max font size.</param>
     private void FitValueFontToWidth(int availableWidth, float maxFontSize) {
         if (_valueLabel == null) {
             return;
@@ -586,12 +710,20 @@ public class ValueTile : Panel {
     }
 
 
+    /// <summary>
+    /// Gets the logical font height for value tile.
+    /// </summary>
+    /// <param name="font">Input value for font.</param>
+    /// <returns>The result of the operation.</returns>
     private int GetLogicalFontHeight(Font font) {
         var points = font?.SizeInPoints > 0 ? font.SizeInPoints : SystemFonts.DefaultFont.SizeInPoints;
         var pixels = points * DeviceDpi / 72f;
         return Math.Max(1, (int)Math.Ceiling(pixels));
     }
 
+    /// <summary>
+    /// Updates the layout for value tile.
+    /// </summary>
     private void UpdateLayout() {
         if (!_initialized || Width <= 0 || Height <= 0) {
             return;
@@ -695,6 +827,10 @@ public class ValueTile : Panel {
         Invalidate();
     }
 
+    /// <summary>
+    /// Creates the context menu for value tile.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private ContextMenuStrip CreateContextMenu() {
         var contextMenu = new ContextMenuStrip {
             ShowImageMargin = true,
@@ -712,6 +848,10 @@ public class ValueTile : Panel {
         return contextMenu;
     }
 
+    /// <summary>
+    /// Rebuilds the context menu for value tile.
+    /// </summary>
+    /// <param name="contextMenu">Input value for context menu.</param>
     private void RebuildContextMenu(ContextMenuStrip contextMenu) {
         contextMenu.Items.Clear();
 
@@ -758,6 +898,9 @@ public class ValueTile : Panel {
         InteractiveCursorStyler.Apply(contextMenu.Items);
     }
 
+    /// <summary>
+    /// Applies the context menu theme for value tile.
+    /// </summary>
     private void ApplyContextMenuTheme() {
         if (_contextMenu == null) {
             return;
@@ -766,6 +909,10 @@ public class ValueTile : Panel {
         ApplyContextMenuTheme(_contextMenu);
     }
 
+    /// <summary>
+    /// Applies the context menu theme for value tile.
+    /// </summary>
+    /// <param name="contextMenu">Input value for context menu.</param>
     private void ApplyContextMenuTheme(ContextMenuStrip contextMenu) {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -787,6 +934,12 @@ public class ValueTile : Panel {
         UpdateContextMenuIcons(contextMenu.Items, menuIconColor);
     }
 
+    /// <summary>
+    /// Applies the context menu item colors for value tile.
+    /// </summary>
+    /// <param name="items">Input value for items.</param>
+    /// <param name="backColor">Input value for back color.</param>
+    /// <param name="foreColor">Input value for fore color.</param>
     private static void ApplyContextMenuItemColors(ToolStripItemCollection items, Color backColor, Color foreColor) {
         foreach (ToolStripItem item in items) {
             item.BackColor = backColor;
@@ -797,6 +950,11 @@ public class ValueTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Updates the context menu icons for value tile.
+    /// </summary>
+    /// <param name="items">Input value for items.</param>
+    /// <param name="iconColor">Input value for icon color.</param>
     private static void UpdateContextMenuIcons(ToolStripItemCollection items, Color iconColor) {
         foreach (ToolStripItem item in items) {
             if (item is not ToolStripMenuItem menuItem) {
@@ -811,6 +969,13 @@ public class ValueTile : Panel {
         }
     }
 
+    /// <summary>
+    /// Creates the menu item for value tile.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <param name="iconName">Input value for icon name.</param>
+    /// <param name="onClick">Input value for on click.</param>
+    /// <returns>The result of the operation.</returns>
     private static ToolStripMenuItem CreateMenuItem(string text, string iconName, EventHandler onClick) {
         var iconColor = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT
             ? Color.FromArgb(66, 66, 66)
@@ -829,6 +994,14 @@ public class ValueTile : Panel {
         return item;
     }
 
+    /// <summary>
+    /// Creates the toggle menu item for value tile.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <param name="iconName">Input value for icon name.</param>
+    /// <param name="isChecked">Input value for is checked.</param>
+    /// <param name="onClick">Input value for on click.</param>
+    /// <returns>The result of the operation.</returns>
     private static ToolStripMenuItem CreateToggleMenuItem(string text, string iconName, bool isChecked, EventHandler onClick) {
         var item = CreateMenuItem(text, iconName, onClick);
         item.Checked = isChecked;

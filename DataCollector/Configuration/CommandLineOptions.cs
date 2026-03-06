@@ -1,7 +1,7 @@
 namespace DataCollector.Configuration;
 
 /// <summary>
-/// Command line options for ASCOM Alpaca Data Collector.
+/// Represents command line options and encapsulates its related behavior and state.
 /// </summary>
 public class CommandLineOptions {
     // ObservingConditions device options.
@@ -9,57 +9,57 @@ public class CommandLineOptions {
     #region Public Properties
 
     /// <summary>
-    /// Enable continuous data collection mode.
+    /// Gets or sets the continuous for command line options. Represents a state flag that enables or disables related behavior.
     /// </summary>
     public bool Continuous { get; set; }
 
     /// <summary>
-    /// Number of data retrieval retry attempts (default: 3).
+    /// Gets or sets the data retries for command line options. Stores a numeric value used by calculations, thresholds, or telemetry display.
     /// </summary>
     public int DataRetries { get; set; } = 3;
 
     /// <summary>
-    /// Database password (default: masterkey).
+    /// Gets or sets the db password for command line options. Stores textual configuration or display metadata used by application flows.
     /// </summary>
     public string? DbPassword { get; set; } = "masterkey";
 
     /// <summary>
-    /// Database user name (default: SYSDBA).
+    /// Gets or sets the db user for command line options. Stores textual configuration or display metadata used by application flows.
     /// </summary>
     public string? DbUser { get; set; } = "SYSDBA";
 
     /// <summary>
-    /// Number of discovery retry attempts (default: 3).
+    /// Gets or sets the discovery retries for command line options. Stores a numeric value used by calculations, thresholds, or telemetry display.
     /// </summary>
     public int DiscoveryRetries { get; set; } = 3;
 
     /// <summary>
-    /// Delay in seconds after fatal error in continuous mode (default: 30).
+    /// Gets or sets the error retry delay for command line options. Defines timing behavior that affects refresh cadence, scheduling, or time-window processing.
     /// </summary>
     public int ErrorRetryDelay { get; set; } = 30;
 
     // Continuous mode options.
     /// <summary>
-    /// Interval between data collections in seconds (default: 3).
+    /// Gets or sets the interval for command line options. Defines timing behavior that affects refresh cadence, scheduling, or time-window processing.
     /// </summary>
     public int Interval { get; set; } = 3;
 
     /// <summary>
-    /// ObservingConditions device IP address.
+    /// Gets or sets the oc address for command line options. Stores textual configuration or display metadata used by application flows.
     /// </summary>
     public string? OcAddress { get; set; }
 
     /// <summary>
-    /// ObservingConditions device number (default: 0).
+    /// Gets or sets the oc device number for command line options. Stores a numeric value used by calculations, thresholds, or telemetry display.
     /// </summary>
     public int OcDeviceNumber { get; set; } = 0;
 
     /// <summary>
-    /// ObservingConditions device name for discovery.
+    /// Gets or sets the oc name for command line options. Stores textual configuration or display metadata used by application flows.
     /// </summary>
     public string? OcName { get; set; }
     /// <summary>
-    /// ObservingConditions device port.
+    /// Gets or sets the oc port for command line options. Stores a numeric value used by calculations, thresholds, or telemetry display.
     /// </summary>
     public int? OcPort { get; set; }
     // SafetyMonitor device options.
@@ -70,32 +70,32 @@ public class CommandLineOptions {
     public bool OcUsesDiscovery => !string.IsNullOrWhiteSpace(OcName);
 
     /// <summary>
-    /// Suppress data output to console.
+    /// Gets or sets the quiet for command line options. Represents a state flag that enables or disables related behavior.
     /// </summary>
     public bool Quiet { get; set; }
 
     // Retry options.
     /// <summary>
-    /// Delay between retry attempts in milliseconds (default: 1000).
+    /// Gets or sets the retry delay for command line options. Defines timing behavior that affects refresh cadence, scheduling, or time-window processing.
     /// </summary>
     public int RetryDelay { get; set; } = 1000;
 
     /// <summary>
-    /// SafetyMonitor device IP address.
+    /// Gets or sets the sm address for command line options. Stores textual configuration or display metadata used by application flows.
     /// </summary>
     public string? SmAddress { get; set; }
 
     /// <summary>
-    /// SafetyMonitor device number (default: 0).
+    /// Gets or sets the sm device number for command line options. Stores a numeric value used by calculations, thresholds, or telemetry display.
     /// </summary>
     public int SmDeviceNumber { get; set; } = 0;
 
     /// <summary>
-    /// SafetyMonitor device name for discovery.
+    /// Gets or sets the sm name for command line options. Stores textual configuration or display metadata used by application flows.
     /// </summary>
     public string? SmName { get; set; }
     /// <summary>
-    /// SafetyMonitor device port.
+    /// Gets or sets the sm port for command line options. Stores a numeric value used by calculations, thresholds, or telemetry display.
     /// </summary>
     public int? SmPort { get; set; }
     // Output options.
@@ -107,7 +107,7 @@ public class CommandLineOptions {
     public bool SmUsesDiscovery => !string.IsNullOrWhiteSpace(SmName);
 
     /// <summary>
-    /// Path to database storage root directory.
+    /// Gets or sets the storage path for command line options. Specifies a filesystem location used to load or persist application data.
     /// </summary>
     public string? StoragePath { get; set; }
 
@@ -118,8 +118,13 @@ public class CommandLineOptions {
     #region Public Methods
 
     /// <summary>
-    /// Validate that ObservingConditions device configuration is valid.
+    /// Determines whether has valid oc configuration for command line options.
     /// </summary>
+    /// <param name="error">Input value for error.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     public bool HasValidOcConfiguration(out string? error) {
         // Must have either name OR (address AND port)
         bool hasName = !string.IsNullOrWhiteSpace(OcName);
@@ -140,8 +145,13 @@ public class CommandLineOptions {
     }
 
     /// <summary>
-    /// Validate that SafetyMonitor device configuration is valid.
+    /// Determines whether has valid sm configuration for command line options.
     /// </summary>
+    /// <param name="error">Input value for error.</param>
+    /// <returns><see langword="true"/> when the condition is satisfied; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Use the boolean result to branch success and fallback logic.
+    /// </remarks>
     public bool HasValidSmConfiguration(out string? error) {
         // Must have either name OR (address AND port)
         bool hasName = !string.IsNullOrWhiteSpace(SmName);

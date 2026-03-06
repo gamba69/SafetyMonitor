@@ -4,9 +4,7 @@ using SafetyMonitor.Services;
 namespace SafetyMonitor.Forms;
 
 /// <summary>
-/// Custom color picker dialog with a color wheel, brightness slider,
-/// hex/RGB inputs, and preview. Supports light and dark themes.
-/// Uses TableLayoutPanel for correct scaling at any DPI.
+/// Represents themed color picker and encapsulates its related behavior and state.
 /// </summary>
 public class ThemedColorPicker : ThemedCaptionForm {
     #region Private Fields
@@ -52,6 +50,13 @@ public class ThemedColorPicker : ThemedCaptionForm {
 
     #region Private Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ThemedColorPicker"/> class.
+    /// </summary>
+    /// <param name="initialColor">Input value for initial color.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     private ThemedColorPicker(Color initialColor) {
         SelectedColor = initialColor;
         ColorToHSV(initialColor, out _hue, out _saturation, out _brightness);
@@ -76,6 +81,9 @@ public class ThemedColorPicker : ThemedCaptionForm {
     #region Public Properties
 
     // --- Result ---
+    /// <summary>
+    /// Gets or sets the selected color for themed color picker. Controls visual presentation used by themed rendering and UI styling.
+    /// </summary>
     public Color SelectedColor { get; private set; }
 
     #endregion Public Properties
@@ -83,8 +91,11 @@ public class ThemedColorPicker : ThemedCaptionForm {
     #region Public Methods
 
     /// <summary>
-    /// Shows the themed color picker and returns DialogResult.
+    /// Shows the picker for themed color picker.
     /// </summary>
+    /// <param name="initialColor">Input value for initial color.</param>
+    /// <param name="resultColor">Input value for result color.</param>
+    /// <returns>The result of the operation.</returns>
     public static DialogResult ShowPicker(Color initialColor, out Color resultColor) {
         using var picker = new ThemedColorPicker(initialColor);
         var result = picker.ShowDialog();
@@ -96,6 +107,10 @@ public class ThemedColorPicker : ThemedCaptionForm {
 
     #region Protected Methods
 
+    /// <summary>
+    /// Executes dispose as part of themed color picker processing.
+    /// </summary>
+    /// <param name="disposing">Input value for disposing.</param>
     protected override void Dispose(bool disposing) {
         if (disposing) {
             _wheelBitmap?.Dispose();
@@ -108,6 +123,13 @@ public class ThemedColorPicker : ThemedCaptionForm {
 
     #region Private Methods
 
+    /// <summary>
+    /// Executes color to hsv as part of themed color picker processing.
+    /// </summary>
+    /// <param name="c">Input value for c.</param>
+    /// <param name="h">Input value for h.</param>
+    /// <param name="s">Input value for s.</param>
+    /// <param name="v">Input value for v.</param>
     private static void ColorToHSV(Color c, out float h, out float s, out float v) {
         float r = c.R / 255f, g = c.G / 255f, b = c.B / 255f;
         var max = MathF.Max(r, MathF.Max(g, b));
@@ -124,6 +146,13 @@ public class ThemedColorPicker : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes hsv to color as part of themed color picker processing.
+    /// </summary>
+    /// <param name="h">Input value for h.</param>
+    /// <param name="s">Input value for s.</param>
+    /// <param name="v">Input value for v.</param>
+    /// <returns>The result of the operation.</returns>
     private static Color HSVToColor(float h, float s, float v) {
         h = ((h % 360) + 360) % 360;
         var c = v * s;
@@ -140,6 +169,11 @@ public class ThemedColorPicker : ThemedCaptionForm {
         );
     }
 
+    /// <summary>
+    /// Executes brightness bar mouse as part of themed color picker processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void BrightnessBar_Mouse(object? sender, MouseEventArgs e) {
         if (e.Button != MouseButtons.Left) {
             return;
@@ -155,6 +189,11 @@ public class ThemedColorPicker : ThemedCaptionForm {
         UpdateControlsFromHSV();
     }
 
+    /// <summary>
+    /// Executes brightness bar paint as part of themed color picker processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void BrightnessBar_Paint(object? sender, PaintEventArgs e) {
         var g = e.Graphics;
         g.DrawImage(_brightnessBitmap, 0, 0);
@@ -170,6 +209,11 @@ public class ThemedColorPicker : ThemedCaptionForm {
         g.DrawLine(innerPen, 0, posY, BarWidth, posY);
     }
 
+    /// <summary>
+    /// Executes brightness slider changed as part of themed color picker processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void BrightnessSlider_Changed(object? sender, EventArgs e) {
         if (_updatingControls) {
             return;
@@ -183,6 +227,10 @@ public class ThemedColorPicker : ThemedCaptionForm {
         UpdateControlsFromHSV();
     }
 
+    /// <summary>
+    /// Creates the button panel for themed color picker.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private FlowLayoutPanel CreateButtonPanel() {
         var panel = new FlowLayoutPanel {
             FlowDirection = FlowDirection.RightToLeft,
@@ -229,6 +277,10 @@ public class ThemedColorPicker : ThemedCaptionForm {
         return panel;
     }
 
+    /// <summary>
+    /// Creates the right panel for themed color picker.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private TableLayoutPanel CreateRightPanel() {
         var panel = new TableLayoutPanel {
             Dock = DockStyle.Fill,
@@ -352,6 +404,9 @@ public class ThemedColorPicker : ThemedCaptionForm {
         return panel;
     }
 
+    /// <summary>
+    /// Executes generate brightness bitmap as part of themed color picker processing.
+    /// </summary>
     private void GenerateBrightnessBitmap() {
         _brightnessBitmap?.Dispose();
         _brightnessBitmap = new Bitmap(BarWidth, _barHeight);
@@ -365,6 +420,9 @@ public class ThemedColorPicker : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes generate wheel bitmap as part of themed color picker processing.
+    /// </summary>
     private void GenerateWheelBitmap() {
         _wheelBitmap?.Dispose();
         _wheelBitmap = new Bitmap(_wheelSize, _wheelSize);
@@ -394,6 +452,11 @@ public class ThemedColorPicker : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes hex box changed as part of themed color picker processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void HexBox_Changed(object? sender, EventArgs e) {
         if (_updatingControls) {
             return;
@@ -411,6 +474,9 @@ public class ThemedColorPicker : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Initializes themed color picker state and required resources.
+    /// </summary>
     private void InitializeComponent() {
         SuspendLayout();
 
@@ -494,6 +560,11 @@ public class ThemedColorPicker : ThemedCaptionForm {
         ResumeLayout(false);
         PerformLayout();
     }
+    /// <summary>
+    /// Executes make label as part of themed color picker processing.
+    /// </summary>
+    /// <param name="text">Input value for text.</param>
+    /// <returns>The result of the operation.</returns>
     private Label MakeLabel(string text) {
         return new Label {
             Text = text,
@@ -504,6 +575,10 @@ public class ThemedColorPicker : ThemedCaptionForm {
         };
     }
 
+    /// <summary>
+    /// Executes make nud as part of themed color picker processing.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private NumericUpDown MakeNud() {
         return new NumericUpDown {
             Dock = DockStyle.Fill,
@@ -518,6 +593,11 @@ public class ThemedColorPicker : ThemedCaptionForm {
         };
     }
 
+    /// <summary>
+    /// Executes nud changed as part of themed color picker processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void Nud_Changed(object? sender, EventArgs e) {
         if (_updatingControls) {
             return;
@@ -532,6 +612,9 @@ public class ThemedColorPicker : ThemedCaptionForm {
         UpdateControlsFromHSV();
     }
 
+    /// <summary>
+    /// Updates the controls from hsv for themed color picker.
+    /// </summary>
     private void UpdateControlsFromHSV() {
         _updatingControls = true;
         try {
@@ -547,6 +630,11 @@ public class ThemedColorPicker : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Executes wheel panel mouse as part of themed color picker processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void WheelPanel_Mouse(object? sender, MouseEventArgs e) {
         if (e.Button != MouseButtons.Left) {
             return;
@@ -570,6 +658,11 @@ public class ThemedColorPicker : ThemedCaptionForm {
         UpdateControlsFromHSV();
     }
 
+    /// <summary>
+    /// Executes wheel panel paint as part of themed color picker processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void WheelPanel_Paint(object? sender, PaintEventArgs e) {
         var g = e.Graphics;
         g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;

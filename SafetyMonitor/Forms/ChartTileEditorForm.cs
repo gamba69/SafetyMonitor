@@ -6,10 +6,16 @@ using System.Collections;
 
 namespace SafetyMonitor.Forms;
 
+/// <summary>
+/// Represents chart tile editor form and encapsulates its related behavior and state.
+/// </summary>
 public class ChartTileEditorForm : ThemedCaptionForm {
 
     #region Private Types
 
+    /// <summary>
+    /// Represents metric row colors and encapsulates its related behavior and state.
+    /// </summary>
     private sealed class MetricRowColors {
 
         #region Public Fields
@@ -44,6 +50,14 @@ public class ChartTileEditorForm : ThemedCaptionForm {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ChartTileEditorForm"/> class.
+    /// </summary>
+    /// <param name="config">Input value for config.</param>
+    /// <param name="dashboard">Input value for dashboard.</param>
+    /// <remarks>
+    /// The constructor wires required dependencies and initial state.
+    /// </remarks>
     public ChartTileEditorForm(ChartTileConfig config, Dashboard dashboard) {
         _config = config;
         _dashboard = dashboard;
@@ -59,6 +73,13 @@ public class ChartTileEditorForm : ThemedCaptionForm {
 
     #region Private Methods
 
+    /// <summary>
+    /// Creates the labeled control for metric row colors.
+    /// </summary>
+    /// <param name="labelText">Input value for label text.</param>
+    /// <param name="control">Input value for control.</param>
+    /// <param name="labelFont">Input value for label font.</param>
+    /// <returns>The result of the operation.</returns>
     private static Panel CreateLabeledControl(string labelText, Control control, Font labelFont) {
         var panel = new Panel { AutoSize = true, Dock = DockStyle.Fill, Margin = new Padding(0, 5, 0, 5) };
         var label = new Label { Text = labelText, Font = labelFont, AutoSize = true, Dock = DockStyle.Top, Margin = new Padding(0, 0, 0, 5) };
@@ -68,6 +89,16 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         return panel;
     }
 
+    /// <summary>
+    /// Creates the description section for metric row colors.
+    /// </summary>
+    /// <param name="title">Input value for title.</param>
+    /// <param name="subtitle">Input value for subtitle.</param>
+    /// <param name="details">Input value for details.</param>
+    /// <param name="titleFont">Input value for title font.</param>
+    /// <param name="textFont">Input value for text font.</param>
+    /// <param name="maxWidth">Input value for max width.</param>
+    /// <returns>The result of the operation.</returns>
     private static Panel CreateDescriptionSection(string title, string? subtitle, string[] details, Font titleFont, Font textFont, int maxWidth) {
         var headerPanel = new TableLayoutPanel {
             AutoSize = true,
@@ -202,12 +233,21 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         return headerPanel;
     }
 
+    /// <summary>
+    /// Adds the metric button click for metric row colors.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void AddMetricButton_Click(object? sender, EventArgs e) {
         var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, null!, 2.0f, false, 0.5f, false, "(None)");
         _metricsGrid.Rows[newRow].Tag = GenerateUniqueMetricColors();
         _metricsGrid.InvalidateRow(newRow);
     }
 
+    /// <summary>
+    /// Executes generate unique metric colors as part of metric row colors processing.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     private MetricRowColors GenerateUniqueMetricColors() {
         var usedColors = new HashSet<int>();
         foreach (DataGridViewRow row in _metricsGrid.Rows) {
@@ -244,6 +284,9 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         };
     }
 
+    /// <summary>
+    /// Applies the theme for metric row colors.
+    /// </summary>
     private void ApplyTheme() {
         var skinManager = MaterialSkinManager.Instance;
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
@@ -278,6 +321,11 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         ApplyThemeRecursive(this, isLight);
     }
 
+    /// <summary>
+    /// Applies the theme recursive for metric row colors.
+    /// </summary>
+    /// <param name="parent">Input value for parent.</param>
+    /// <param name="isLight">Input value for is light.</param>
     private void ApplyThemeRecursive(Control parent, bool isLight) {
         foreach (Control control in parent.Controls) {
             InteractiveCursorStyler.Apply(control);
@@ -313,6 +361,9 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         }
     }
 
+    /// <summary>
+    /// Initializes metric row colors state and required resources.
+    /// </summary>
     private void InitializeComponent() {
         Text = "Chart Tile Editor";
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -529,6 +580,9 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         MinimumSize = new Size(780, 620);
         ClientSize = new Size(820, 680);
     }
+    /// <summary>
+    /// Loads the config for metric row colors.
+    /// </summary>
     private void LoadConfig() {
         _titleTextBox.Text = _config.Title;
         _config.LinkGroup = ChartLinkGroupInfo.NormalizeGroup(_config.LinkGroup, _dashboard.UsedLinkGroups);
@@ -554,6 +608,11 @@ public class ChartTileEditorForm : ThemedCaptionForm {
             _metricsGrid.InvalidateRow(rowIndex);
         }
     }
+    /// <summary>
+    /// Executes metrics grid cell click as part of metric row colors processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void MetricsGrid_CellClick(object? sender, DataGridViewCellEventArgs e) {
         if (e.RowIndex < 0) {
             return;
@@ -579,6 +638,11 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         _metricsGrid.InvalidateRow(e.RowIndex);
     }
 
+    /// <summary>
+    /// Executes metrics grid cell formatting as part of metric row colors processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void MetricsGrid_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e) {
         if (e.RowIndex < 0) {
             return;
@@ -596,6 +660,11 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         e.CellStyle.SelectionBackColor = color;
     }
 
+    /// <summary>
+    /// Executes metrics grid data error as part of metric row colors processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void MetricsGrid_DataError(object? sender, DataGridViewDataErrorEventArgs e) {
         if (e.RowIndex < 0 || e.ColumnIndex < 0) {
             return;
@@ -627,6 +696,11 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         e.ThrowException = false;
     }
 
+    /// <summary>
+    /// Executes metrics grid editing control showing as part of metric row colors processing.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void MetricsGrid_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e) {
         if (e.Control is ComboBox comboBox) {
             comboBox.Font = CreateSafeFont(comboBox.Font.FontFamily.Name, comboBox.Font.Size, comboBox.Font.Style);
@@ -636,6 +710,11 @@ public class ChartTileEditorForm : ThemedCaptionForm {
     }
 
 
+    /// <summary>
+    /// Parses the tension for metric row colors.
+    /// </summary>
+    /// <param name="rawValue">Input value for raw value.</param>
+    /// <returns>The result of the operation.</returns>
     private static float ParseTension(string? rawValue) {
         if (!float.TryParse(rawValue, out var tension)) {
             return 0.5f;
@@ -644,6 +723,13 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         return Math.Clamp(tension, 0f, 3f);
     }
 
+    /// <summary>
+    /// Executes color from hsv as part of metric row colors processing.
+    /// </summary>
+    /// <param name="hue">Input value for hue.</param>
+    /// <param name="saturation">Input value for saturation.</param>
+    /// <param name="value">Input value for value.</param>
+    /// <returns>The result of the operation.</returns>
     private static Color ColorFromHsv(double hue, double saturation, double value) {
         hue = ((hue % 360) + 360) % 360;
         saturation = Math.Clamp(saturation, 0d, 1d);
@@ -668,6 +754,11 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         return Color.FromArgb(r, g, b);
     }
 
+    /// <summary>
+    /// Ensures the row colors for metric row colors.
+    /// </summary>
+    /// <param name="row">Input value for row.</param>
+    /// <returns>The result of the operation.</returns>
     private static MetricRowColors EnsureRowColors(DataGridViewRow row) {
         if (row.Tag is MetricRowColors colors) {
             return colors;
@@ -684,6 +775,11 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         return defaultColors;
     }
 
+    /// <summary>
+    /// Gets the combo box fallback value for metric row colors.
+    /// </summary>
+    /// <param name="column">Input value for column.</param>
+    /// <returns>The result of the operation.</returns>
     private static object? GetComboBoxFallbackValue(DataGridViewComboBoxColumn column) {
         if (!string.IsNullOrWhiteSpace(column.ValueMember) && column.DataSource is IEnumerable source) {
             var first = source.Cast<object>().FirstOrDefault();
@@ -698,6 +794,11 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         return column.Items.Count > 0 ? column.Items[0] : null;
     }
 
+    /// <summary>
+    /// Removes the metric button click for metric row colors.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void RemoveMetricButton_Click(object? sender, EventArgs e) {
         if (_metricsGrid.SelectedRows.Count > 0) {
             foreach (DataGridViewRow row in _metricsGrid.SelectedRows) {
@@ -707,6 +808,11 @@ public class ChartTileEditorForm : ThemedCaptionForm {
             }
         }
     }
+    /// <summary>
+    /// Saves the button click for metric row colors.
+    /// </summary>
+    /// <param name="sender">Input value for sender.</param>
+    /// <param name="e">Input value for e.</param>
     private void SaveButton_Click(object? sender, EventArgs e) {
         _config.Title = _titleTextBox.Text;
         if (_dashboard.UsedLinkGroups > 1) {
@@ -755,6 +861,13 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         Close();
     }
 
+    /// <summary>
+    /// Creates the safe font for metric row colors.
+    /// </summary>
+    /// <param name="familyName">Input value for family name.</param>
+    /// <param name="emSize">Input value for em size.</param>
+    /// <param name="style">Input value for style.</param>
+    /// <returns>The result of the operation.</returns>
     private static Font CreateSafeFont(string familyName, float emSize, FontStyle style = FontStyle.Regular) {
         try {
             var font = new Font(familyName, emSize, style);

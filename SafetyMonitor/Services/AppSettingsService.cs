@@ -3,6 +3,9 @@ using System.Text.Json;
 
 namespace SafetyMonitor.Services;
 
+/// <summary>
+/// Represents app settings service and encapsulates its related behavior and state.
+/// </summary>
 public class AppSettingsService {
     #region Private Fields
 
@@ -13,6 +16,9 @@ public class AppSettingsService {
 
     #region Public Constructors
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AppSettingsService"/> class.
+    /// </summary>
     public AppSettingsService() {
         var appDataFolder = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -31,6 +37,10 @@ public class AppSettingsService {
     public string AppDataFolderPath => Path.GetDirectoryName(_settingsPath) ?? string.Empty;
     public string SettingsPath => _settingsPath;
 
+    /// <summary>
+    /// Loads the settings for app settings service.
+    /// </summary>
+    /// <returns>The result of the operation.</returns>
     public AppSettings LoadSettings() {
         try {
             if (File.Exists(_settingsPath)) {
@@ -45,6 +55,10 @@ public class AppSettingsService {
         return AppSettingsDefaultsService.CreateDefaults();
     }
 
+    /// <summary>
+    /// Saves the settings for app settings service.
+    /// </summary>
+    /// <param name="settings">Input value for settings.</param>
     public void SaveSettings(AppSettings settings) {
         try {
             var json = JsonSerializer.Serialize(settings, _jsonOptions);
