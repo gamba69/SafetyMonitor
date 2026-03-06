@@ -225,17 +225,14 @@ public class DashboardEditorForm : ThemedCaptionForm {
         var mainLayout = new TableLayoutPanel {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 7,
+            RowCount = 4,
             AutoSize = false
         };
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 0: Description
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 1: Settings row
         mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 2: Chart link settings
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 3: Grid panel
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 4: Add buttons
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 5: Spacer
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // 6: Save/Cancel buttons
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // 3: Grid panel + actions
 
         var descriptionPanel = new FlowLayoutPanel {
             AutoSize = true,
@@ -245,13 +242,6 @@ public class DashboardEditorForm : ThemedCaptionForm {
             WrapContents = false,
             Margin = new Padding(0, 0, 0, 12)
         };
-        descriptionPanel.Controls.Add(new Label {
-            Text = "Use this editor to configure the dashboard name, grid, and tile set.",
-            Font = titleFont,
-            AutoSize = true,
-            MaximumSize = new Size(1080, 0),
-            Margin = new Padding(0, 0, 0, 2)
-        });
         descriptionPanel.Controls.Add(new Label {
             Text = "Move tiles by dragging them on the grid, and resize them by dragging their right or bottom edge directly in this editor.",
             Font = italicFont,
@@ -346,12 +336,29 @@ public class DashboardEditorForm : ThemedCaptionForm {
         var scaledVerticalMargin = Math.Max(2, (int)Math.Round(3 * uiScale));
         var scaledComboRightMargin = Math.Max(6, (int)Math.Round(12 * uiScale));
 
+        var linkSettingsContainer = new FlowLayoutPanel {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            Margin = new Padding(0, 0, 0, 12)
+        };
+
+        linkSettingsContainer.Controls.Add(new Label {
+            Text = "Groups define chart synchronization sets: charts inside one group share period changes without affecting other groups.",
+            Font = normalFont,
+            AutoSize = true,
+            MaximumSize = new Size(1080, 0),
+            Margin = new Padding(0, 0, 0, 6)
+        });
+
         var linkSettingsPanel = new TableLayoutPanel {
             AutoSize = true,
             AutoSizeMode = AutoSizeMode.GrowAndShrink,
             Dock = DockStyle.None,
             Anchor = AnchorStyles.Top | AnchorStyles.Left,
-            Margin = new Padding(0, 0, 0, 12),
+            Margin = new Padding(0),
             ColumnCount = 8,
             RowCount = 2,
             Padding = new Padding(0)
@@ -411,22 +418,19 @@ public class DashboardEditorForm : ThemedCaptionForm {
             Modified = true;
         };
 
-        // A1/A2
+        // First row: chart links + groups + first two groups.
         linkSettingsPanel.Controls.Add(CreateLinkLabel("Charts link:", isTitle: true), 0, 0);
         linkSettingsPanel.Controls.Add(_initialLinkModeComboBox, 1, 0);
-        // B1/B2
-        linkSettingsPanel.Controls.Add(CreateLinkLabel("Groups:", isTitle: true), 0, 1);
-        linkSettingsPanel.Controls.Add(_groupsNumeric, 1, 1);
+        linkSettingsPanel.Controls.Add(CreateLinkLabel("Groups:", isTitle: true), 2, 0);
+        linkSettingsPanel.Controls.Add(_groupsNumeric, 3, 0);
 
-        // Fixed A/B layout:
-        // A3/A4 Alpha, A5/A6 Charlie, A7/A8 Echo
-        // B3/B4 Bravo, B5/B6 Delta, B7/B8 Foxtrot
+        // Second row (when visible): remaining groups left to right.
         var orderedGroups = new[] {
-            (Group: ChartLinkGroup.Alpha, Column: 2, Row: 0),
-            (Group: ChartLinkGroup.Bravo, Column: 2, Row: 1),
-            (Group: ChartLinkGroup.Charlie, Column: 4, Row: 0),
-            (Group: ChartLinkGroup.Delta, Column: 4, Row: 1),
-            (Group: ChartLinkGroup.Echo, Column: 6, Row: 0),
+            (Group: ChartLinkGroup.Alpha, Column: 4, Row: 0),
+            (Group: ChartLinkGroup.Bravo, Column: 6, Row: 0),
+            (Group: ChartLinkGroup.Charlie, Column: 0, Row: 1),
+            (Group: ChartLinkGroup.Delta, Column: 2, Row: 1),
+            (Group: ChartLinkGroup.Echo, Column: 4, Row: 1),
             (Group: ChartLinkGroup.Foxtrot, Column: 6, Row: 1)
         };
 
@@ -440,7 +444,8 @@ public class DashboardEditorForm : ThemedCaptionForm {
             linkSettingsPanel.Controls.Add(combo, column + 1, row);
         }
 
-        mainLayout.Controls.Add(linkSettingsPanel, 0, 2);
+        linkSettingsContainer.Controls.Add(linkSettingsPanel);
+        mainLayout.Controls.Add(linkSettingsContainer, 0, 2);
 
         // Row 3: Grid Panel
         _gridPanel = new Panel {
@@ -455,14 +460,36 @@ public class DashboardEditorForm : ThemedCaptionForm {
         _gridPanel.DragOver += OnGridDragOver;
         _gridPanel.DragDrop += OnGridDragDrop;
         _gridPanel.Resize += (s, e) => RefreshAllTilePositions();
-        mainLayout.Controls.Add(_gridPanel, 0, 3);
+        var gridAndButtonsPanel = new TableLayoutPanel {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Margin = new Padding(0)
+        };
+        gridAndButtonsPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        gridAndButtonsPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        gridAndButtonsPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        gridAndButtonsPanel.Controls.Add(_gridPanel, 0, 0);
 
-        // Row 4: Add tile buttons
+        // Bottom actions row: add tile + save/cancel.
+        var buttonPanel = new TableLayoutPanel {
+            Dock = DockStyle.Fill,
+            Height = 40,
+            AutoSize = false,
+            ColumnCount = 3,
+            RowCount = 1,
+            Margin = new Padding(0, 10, 0, 0)
+        };
+        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        buttonPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
         var addButtonPanel = new FlowLayoutPanel {
             AutoSize = true,
-            Dock = DockStyle.Fill,
+            Anchor = AnchorStyles.Left,
             WrapContents = false,
-            Margin = new Padding(0, 0, 0, 10)
+            Margin = new Padding(0)
         };
 
         _addValueButton = new Button {
@@ -480,22 +507,18 @@ public class DashboardEditorForm : ThemedCaptionForm {
             Width = 150,
             Height = 35,
             Font = normalFont,
-            Margin = new Padding(0, 0, 0, 0)
+            Margin = new Padding(0)
         };
         _addChartButton.Click += (s, e) => AddTile(TileType.Chart);
         addButtonPanel.Controls.Add(_addChartButton);
+        buttonPanel.Controls.Add(addButtonPanel, 0, 0);
 
-        mainLayout.Controls.Add(addButtonPanel, 0, 4);
-
-        // Row 5: Spacer
-        mainLayout.Controls.Add(new Panel { Height = 10 }, 0, 5);
-
-        // Row 6: Save/Cancel buttons
-        var buttonPanel = new FlowLayoutPanel {
+        var saveCancelPanel = new FlowLayoutPanel {
             AutoSize = true,
-            Dock = DockStyle.Fill,
+            Anchor = AnchorStyles.Right,
             FlowDirection = FlowDirection.RightToLeft,
-            Margin = new Padding(0, 10, 0, 0)
+            WrapContents = false,
+            Margin = new Padding(0)
         };
 
         _cancelButton = new Button {
@@ -506,7 +529,7 @@ public class DashboardEditorForm : ThemedCaptionForm {
             Margin = new Padding(0)
         };
         _cancelButton.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
-        buttonPanel.Controls.Add(_cancelButton);
+        saveCancelPanel.Controls.Add(_cancelButton);
 
         _saveButton = new Button {
             Text = "Save",
@@ -516,9 +539,13 @@ public class DashboardEditorForm : ThemedCaptionForm {
             Margin = new Padding(0, 0, 10, 0)
         };
         _saveButton.Click += SaveButton_Click;
-        buttonPanel.Controls.Add(_saveButton);
+        saveCancelPanel.Controls.Add(_saveButton);
 
-        mainLayout.Controls.Add(buttonPanel, 0, 6);
+        buttonPanel.Controls.Add(saveCancelPanel, 2, 0);
+
+        gridAndButtonsPanel.Controls.Add(buttonPanel, 0, 1);
+
+        mainLayout.Controls.Add(gridAndButtonsPanel, 0, 3);
 
         Controls.Add(mainLayout);
 
