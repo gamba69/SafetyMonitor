@@ -429,6 +429,15 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         _stopsGrid.CellValueChanged += (s, e) => { SortGridByValue(); UpdateDirtyState(); UpdatePreview(); };
         _stopsGrid.CellEndEdit += (s, e) => { SortGridByValue(); UpdateDirtyState(); UpdatePreview(); };
 
+        var sortHelpLabel = new Label {
+            Text = "Rows are sorted by value on the selected ASC/DESC order." + Environment.NewLine +
+                "Schemes are sorted alphabetically, selection combo boxes too.",
+            Font = normalFont,
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            Margin = new Padding(0, 2, 0, 6)
+        };
+
         var gridButtons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 38, FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(0, 3, 0, 3) };
         var addStopBtn = new Button { Text = "Add Stop", Width = 110, Height = 32, Font = normalFont };
         addStopBtn.Click += AddStop_Click;
@@ -494,6 +503,7 @@ public class ValueSchemeEditorForm : ThemedCaptionForm {
         rightPanel.Controls.Add(_stopsGrid);
         rightPanel.Controls.Add(gridButtons);
         rightPanel.Controls.Add(_previewPanel);
+        rightPanel.Controls.Add(sortHelpLabel);
         rightPanel.Controls.Add(sortTogglePanel);
         rightPanel.Controls.Add(namePanel);
         rightPanel.Controls.Add(headerPanel);
