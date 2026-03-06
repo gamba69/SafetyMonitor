@@ -393,6 +393,8 @@ public class DashboardEditorForm : ThemedCaptionForm {
         foreach (var (group, column, row) in orderedGroups) {
             var combo = CreateLinkCombo();
             var label = CreateLinkLabel($"{group.GetDisplayName(includeCircledNumber: true)}:");
+            combo.Tag = group;
+            combo.SelectedIndexChanged += OnGroupPeriodPresetChanged;
             _groupPeriodControls[group] = (label, combo);
             linkSettingsPanel.Controls.Add(label, column, row);
             linkSettingsPanel.Controls.Add(combo, column + 1, row);
@@ -601,6 +603,25 @@ public class DashboardEditorForm : ThemedCaptionForm {
         }
 
         _gridPanel.Invalidate();
+        Modified = true;
+    }
+
+    private void OnGroupPeriodPresetChanged(object? sender, EventArgs e) {
+        if (sender is not ComboBox combo || combo.Tag is not ChartLinkGroup group) {
+            return;
+        }
+
+        var presets = ChartPeriodPresetStore.GetPresetItems().ToList();
+        if (combo.SelectedIndex < 0 || combo.SelectedIndex >= presets.Count) {
+            return;
+        }
+
+        _dashboard.SetLinkGroupPeriodPresetUid(group, presets[combo.SelectedIndex].Uid);
+
+        foreach (var editableTile in _tileControls) {
+            editableTile.UpdateDisplay();
+        }
+
         Modified = true;
     }
 
