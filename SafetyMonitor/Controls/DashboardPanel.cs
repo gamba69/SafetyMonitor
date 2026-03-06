@@ -293,16 +293,29 @@ public class DashboardPanel : TableLayoutPanel {
 
     private void OnChartPeriodChanged(ChartTile source, string periodPresetUid) {
         if (_chartLinkMode == DashboardChartLinkMode.Disabled) {
+            DashboardChanged?.Invoke();
             return;
         }
 
-        foreach (var chartTile in GetLinkedChartTiles(source)) {
+        var linkedChartTiles = GetLinkedChartTiles(source).ToList();
+
+        foreach (var chartTile in linkedChartTiles) {
             if (ReferenceEquals(chartTile, source)) {
                 continue;
             }
 
             chartTile.SetPeriodPreset(periodPresetUid);
         }
+
+        foreach (var group in linkedChartTiles.Select(tile => tile.Config.LinkGroup).Distinct()) {
+            if (string.Equals(_dashboard.GetLinkGroupPeriodPresetUid(group), periodPresetUid, StringComparison.Ordinal)) {
+                continue;
+            }
+
+            _dashboard.SetLinkGroupPeriodPresetUid(group, periodPresetUid);
+        }
+
+        DashboardChanged?.Invoke();
 
     }
 

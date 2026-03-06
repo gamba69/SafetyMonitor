@@ -1564,7 +1564,7 @@ public class MainForm : MaterialForm {
                     if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) { HideVisorImmediate(); return; }
                     if (applyStartupReset && _currentDashboard != null && _currentDashboard.NeedsStartupReset) {
                         panel.ResetLinkStateToDashboardDefaults();
-                        _currentDashboard.NeedsStartupReset = false;
+                        MarkCurrentDashboardStartupResetHandled();
                     }
                     await RefreshDashboardDataAsync(panel);
                     if (!ReferenceEquals(_dashboardPanel, panel) || panel.IsDisposed) { HideVisorImmediate(); return; }
@@ -1585,7 +1585,7 @@ public class MainForm : MaterialForm {
 
         if (applyStartupReset && _currentDashboard != null && _currentDashboard.NeedsStartupReset) {
             panel.ResetLinkStateToDashboardDefaults();
-            _currentDashboard.NeedsStartupReset = false;
+            MarkCurrentDashboardStartupResetHandled();
         }
 
         await RefreshDashboardDataAsync(panel);
@@ -1598,6 +1598,15 @@ public class MainForm : MaterialForm {
 
         // Dashboard is fully built. Schedule visor fade-out.
         ScheduleVisorReveal();
+    }
+
+    private void MarkCurrentDashboardStartupResetHandled() {
+        if (_currentDashboard == null || !_currentDashboard.NeedsStartupReset) {
+            return;
+        }
+
+        _currentDashboard.NeedsStartupReset = false;
+        _dashboardService.SaveDashboard(_currentDashboard);
     }
 
     private void RemoveOldDashboardPanel(DashboardPanel? previousPanel, DashboardPanel newPanel) {

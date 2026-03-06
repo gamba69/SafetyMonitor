@@ -55,7 +55,6 @@ public class ChartTileConfig : TileConfig {
     public ChartLinkGroup LinkGroup { get; set; } = ChartLinkGroup.Alpha;
     [JsonIgnore]
     public ChartPeriod Period { get; set; } = ChartPeriod.Last24Hours;
-    [JsonIgnore]
     public string PeriodPresetUid { get; set; } = "";
     public bool ShowGrid { get; set; } = true;
     public bool ShowInspector { get; set; }
