@@ -24,7 +24,8 @@ public class ValueTile : Panel {
     private ValueScheme? _valueScheme;
     private Color _currentIconColor = Color.Transparent;
     private double? _currentValue;
-    private PictureBox? _iconBox;
+    private Bitmap? _iconImage;
+    private Rectangle _iconBounds = Rectangle.Empty;
     private bool _initialized;
     private Label? _titleLabel;
     private Label? _textLabel;
@@ -58,6 +59,7 @@ public class ValueTile : Panel {
         Padding = new Padding(8);
         BorderStyle = BorderStyle.FixedSingle;
         DoubleBuffered = true;
+        SetStyle(ControlStyles.ResizeRedraw, true);
 
         // Set a valid font to prevent GDI+ errors during auto-scaling
         Font = SystemFonts.DefaultFont;
@@ -134,6 +136,27 @@ public class ValueTile : Panel {
 
     #endregion Protected Methods
 
+    protected override void OnPaint(PaintEventArgs e) {
+        base.OnPaint(e);
+
+        if (_iconImage == null || _iconBounds.IsEmpty || !_config.ShowIcon) {
+            return;
+        }
+
+        e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+        e.Graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+        e.Graphics.DrawImage(_iconImage, _iconBounds);
+    }
+
+    protected override void Dispose(bool disposing) {
+        if (disposing) {
+            _iconImage?.Dispose();
+            _iconImage = null;
+        }
+
+        base.Dispose(disposing);
+    }
+
     #region Private Methods
 
     /// <summary>
@@ -163,7 +186,7 @@ public class ValueTile : Panel {
     /// These colors are always the same regardless of whether data is present.
     /// </summary>
     private void ApplyThemeColors() {
-        if (_titleLabel == null || _textLabel == null || _valueLabel == null || _unitLabel == null || _iconBox == null) {
+        if (_titleLabel == null || _textLabel == null || _valueLabel == null || _unitLabel == null) {
             return;
         }
 
@@ -171,11 +194,7 @@ public class ValueTile : Panel {
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
 
         BackColor = isLight ? Color.White : Color.FromArgb(35, 47, 52);
-        _titleLabel.BackColor = Color.Transparent;
-        _valueLabel.BackColor = Color.Transparent;
-        _textLabel.BackColor = Color.Transparent;
-        _unitLabel.BackColor = Color.Transparent;
-        _iconBox.BackColor = Color.Transparent;
+        ApplyTransparentChildBackgrounds();
 
         var primaryColor = isLight ? Color.Black : Color.White;
         _titleLabel.ForeColor = primaryColor;
@@ -189,8 +208,14 @@ public class ValueTile : Panel {
         }
     }
 
+    private void ApplyTransparentChildBackgrounds() {
+        foreach (Control child in Controls) {
+            child.BackColor = Color.Transparent;
+        }
+    }
+
     private void ApplyColorScheme() {
-        if (_titleLabel == null || _textLabel == null || _valueLabel == null || _unitLabel == null || _iconBox == null) {
+        if (_titleLabel == null || _textLabel == null || _valueLabel == null || _unitLabel == null) {
             return;
         }
 
@@ -233,12 +258,6 @@ public class ValueTile : Panel {
             BackColor = Color.Transparent
         };
 
-        // Icon: Material Design vector icon, top-right
-        _iconBox = new PictureBox {
-            SizeMode = PictureBoxSizeMode.Zoom,
-            BackColor = Color.Transparent,
-            Visible = _config.ShowIcon
-        };
 
         // Value: large, bottom-left
         _valueLabel = new Label {
@@ -266,7 +285,6 @@ public class ValueTile : Panel {
         };
 
         Controls.Add(_titleLabel);
-        Controls.Add(_iconBox);
         Controls.Add(_textLabel);
         Controls.Add(_valueLabel);
         Controls.Add(_unitLabel);
@@ -333,10 +351,11 @@ public class ValueTile : Panel {
 
     private void OnTileResize(object? sender, EventArgs e) {
         UpdateLayout();
+        Invalidate();
     }
 
     private void ResetColors() {
-        if (_titleLabel == null || _textLabel == null || _valueLabel == null || _unitLabel == null || _iconBox == null) {
+        if (_titleLabel == null || _textLabel == null || _valueLabel == null || _unitLabel == null) {
             return;
         }
 
@@ -350,28 +369,25 @@ public class ValueTile : Panel {
     }
 
     private void SetIconColor(Color color) {
-        if (_iconBox == null || color == _currentIconColor) {
+        if (color == _currentIconColor) {
             return;
         }
 
         _currentIconColor = color;
-        var iconSize = Math.Max(16, _iconBox.Width);
+        var iconSize = Math.Max(16, _iconBounds.Width > 0 ? _iconBounds.Width : 16);
         UpdateIcon(iconSize);
+        Invalidate();
     }
 
     private void UpdateIcon(int logicalSize) {
-        if (_iconBox == null) {
-            return;
-        }
-
         // Render at physical pixel size for crisp display at any DPI scaling.
         // DeviceDpi is the actual monitor DPI (96 = 100%, 120 = 125%, 144 = 150%).
         var scaleFactor = DeviceDpi / 96f;
         var renderSize = Math.Max(16, (int)(logicalSize * scaleFactor));
 
         var iconName = MaterialIcons.GetMetricIconName(_config.Metric);
-        var oldImage = _iconBox.Image;
-        _iconBox.Image = MaterialIcons.GetIcon(iconName, _currentIconColor, renderSize, IconRenderPreset.DarkOutlined);
+        var oldImage = _iconImage;
+        _iconImage = MaterialIcons.GetIcon(iconName, _currentIconColor, renderSize, IconRenderPreset.DarkOutlined);
         oldImage?.Dispose();
     }
 
@@ -510,7 +526,7 @@ public class ValueTile : Panel {
             return;
         }
 
-        if (_titleLabel == null || _textLabel == null || _valueLabel == null || _unitLabel == null || _iconBox == null) {
+        if (_titleLabel == null || _textLabel == null || _valueLabel == null || _unitLabel == null) {
             return;
         }
 
@@ -544,8 +560,12 @@ public class ValueTile : Panel {
         var iconLogicalSize = Math.Max(36, Math.Min(153, (int)(minDimension * 0.66f)));
         var iconX = Padding.Left + contentWidth - iconLogicalSize - 2;
         var iconY = Padding.Top + 2;
-        _iconBox.SetBounds(iconX, iconY, iconLogicalSize, iconLogicalSize);
-        UpdateIcon(iconLogicalSize);
+        _iconBounds = _config.ShowIcon
+            ? new Rectangle(iconX, iconY, iconLogicalSize, iconLogicalSize)
+            : Rectangle.Empty;
+        if (_config.ShowIcon) {
+            UpdateIcon(iconLogicalSize);
+        }
 
         // Value + Unit: keep enough room for long unit strings (for example "mpsas", "mm/hr")
         var valueWidth = contentWidth;
@@ -586,7 +606,7 @@ public class ValueTile : Panel {
 
         // Hide unit only when the rendered unit text actually overlaps the icon glyph area.
         var unitTextBounds = GetRenderedTextBounds(_unitLabel);
-        if (_unitLabel.Visible && _iconBox.Visible && !unitTextBounds.IsEmpty && unitTextBounds.IntersectsWith(_iconBox.Bounds)) {
+        if (_unitLabel.Visible && !_iconBounds.IsEmpty && !unitTextBounds.IsEmpty && unitTextBounds.IntersectsWith(_iconBounds)) {
             _unitLabel.Visible = false;
         }
 
@@ -601,8 +621,7 @@ public class ValueTile : Panel {
             _titleLabel.Visible = false;
         }
 
-        // Ensure enlarged icon is always rendered above text labels when regions overlap.
-        _iconBox.BringToFront();
+        Invalidate();
     }
 
     private ContextMenuStrip CreateContextMenu() {
@@ -631,7 +650,8 @@ public class ValueTile : Panel {
         contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add(CreateToggleMenuItem("Show Icon", MaterialIcons.ValueMenuNorthEast, _config.ShowIcon, (_, _) => {
             _config.ShowIcon = !_config.ShowIcon;
-            _iconBox?.Visible = _config.ShowIcon;
+            UpdateLayout();
+            Invalidate();
             ViewSettingsChanged?.Invoke(this);
         }));
         contextMenu.Items.Add(CreateToggleMenuItem("Show Unit", MaterialIcons.ValueMenuSouthEast, _config.ShowUnit, (_, _) => {
