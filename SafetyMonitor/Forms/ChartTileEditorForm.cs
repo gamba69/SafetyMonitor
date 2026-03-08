@@ -239,7 +239,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
     /// <param name="sender">Input value for sender.</param>
     /// <param name="e">Input value for e.</param>
     private void AddMetricButton_Click(object? sender, EventArgs e) {
-        var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, null!, 2.0f, false, 0.5f, false, "(None)");
+        var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, null!, 1.0f, false, 0.5f, false, "(None)");
         _metricsGrid.Rows[newRow].Tag = GenerateUniqueMetricColors();
         _metricsGrid.InvalidateRow(newRow);
     }
@@ -846,7 +846,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
                 Label = row.Cells["Label"].Value?.ToString() ?? "",
                 Color = colors.Light,
                 DarkThemeColor = colors.Dark,
-                LineWidth = float.Parse(row.Cells["LineWidth"].Value?.ToString() ?? "2"),
+                LineWidth = float.Parse(row.Cells["LineWidth"].Value?.ToString() ?? "1"),
                 Smooth = (bool)(row.Cells["Smooth"].Value ?? false),
                 Tension = ParseTension(row.Cells["Tension"].Value?.ToString()),
                 ShowMarkers = (bool)(row.Cells["ShowMarkers"].Value ?? false),
