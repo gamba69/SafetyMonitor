@@ -515,9 +515,11 @@ public class Dashboard {
         var dashboard = new Dashboard {
             Id = Guid.Parse("0d4214f8-fe27-43b8-971f-7d6adefa2a4f"),
             Name = "Meteo",
+            CreatedAt = DateTimeOffset.Parse("2026-03-08T19:49:58.3926485+02:00").DateTime,
+            ModifiedAt = DateTimeOffset.Parse("2026-03-08T20:28:36.991527+02:00").DateTime,
             Rows = 4,
             Columns = 5,
-            IsQuickAccess = false,
+            IsQuickAccess = true,
             InitialChartLinkMode = DashboardChartLinkMode.Grouped,
             UsedLinkGroups = 2,
             LinkGroupPeriodPresetUids = new Dictionary<ChartLinkGroup, string> {
@@ -531,14 +533,14 @@ public class Dashboard {
         };
 
         dashboard.Tiles.AddRange([
-            ValueTile("Safety", MetricType.IsSafe, 0, 0, displayMode: ValueTileDisplayMode.TextOnly, showUnit: false, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, colorSchemeName: "Safety", textColorSchemeName: "Safety", valueSchemeName: "Safety", id: Guid.Parse("f30fcd6d-4bd9-4695-be95-39002674a76d")),
-            ValueTile("Temp", MetricType.Temperature, 1, 0, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, colorSchemeName: "Temperature", textColorSchemeName: "Temperature", valueSchemeName: "Temperature", id: Guid.Parse("121b59cc-a45d-4040-8767-c7ef01f9629b")),
-            ValueTile("Humidity", MetricType.Humidity, 2, 0, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, colorSchemeName: "Humidity", textColorSchemeName: "Humidity", valueSchemeName: "Humidity", id: Guid.Parse("9f9b2ce9-ce57-4f4e-a7ce-94001a2f3532")),
-            ValueTile("Pressure", MetricType.Pressure, 3, 0, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, colorSchemeName: "Pressure", textColorSchemeName: "Pressure", valueSchemeName: "Pressure", id: Guid.Parse("cf3be9db-b7d2-4f89-be0d-fd100e98f3c9")),
+            ValueTile("Safety", MetricType.IsSafe, 0, 0, displayMode: ValueTileDisplayMode.TextOnly, showUnit: false, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, colorSchemeName: "Safety", textColorSchemeName: "Safety", valueSchemeName: "Safety", id: Guid.Parse("f30fcd6d-4bd9-4695-be95-39002674a76d")),
+            ValueTile("Temp", MetricType.Temperature, 1, 0, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, colorSchemeName: "Temperature", textColorSchemeName: "Temperature", valueSchemeName: "Temperature", id: Guid.Parse("121b59cc-a45d-4040-8767-c7ef01f9629b")),
+            ValueTile("Humidity", MetricType.Humidity, 2, 0, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, colorSchemeName: "Humidity", textColorSchemeName: "Humidity", valueSchemeName: "Humidity", id: Guid.Parse("9f9b2ce9-ce57-4f4e-a7ce-94001a2f3532")),
+            ValueTile("Pressure", MetricType.Pressure, 3, 0, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, colorSchemeName: "Pressure", textColorSchemeName: "Pressure", valueSchemeName: "Pressure", id: Guid.Parse("cf3be9db-b7d2-4f89-be0d-fd100e98f3c9")),
             ChartTile("Thermal Profile (24h)", 0, 1, 2, 2, ChartPeriod.Last24Hours,
                 linkGroup: ChartLinkGroup.Alpha,
                 periodPresetUid: "24h",
-                customAggregationInterval: TimeSpan.FromMinutes(1),
+                customAggregationInterval: null,
                 id: Guid.Parse("c9f3f18c-eed2-4eb2-8eb5-8d47e27595cc"),
                 series: [
                     Aggregation(MetricType.Temperature, AggregationFunction.Average, Color.FromArgb(255, 138, 101), "Temp Avg"),
@@ -547,7 +549,7 @@ public class Dashboard {
             ChartTile("Moisture & Pressure (24h)", 0, 3, 2, 2, ChartPeriod.Last24Hours,
                 linkGroup: ChartLinkGroup.Alpha,
                 periodPresetUid: "24h",
-                customAggregationInterval: TimeSpan.FromMinutes(1),
+                customAggregationInterval: null,
                 id: Guid.Parse("67de6ed6-f400-416f-b83f-befd547f267a"),
                 series: [
                     Aggregation(MetricType.Humidity, AggregationFunction.Average, Color.FromArgb(38, 166, 154), "Humidity Avg"),
