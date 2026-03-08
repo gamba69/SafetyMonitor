@@ -529,7 +529,8 @@ public class Dashboard {
             Function = function,
             Color = color,
             DarkThemeColor = CreateDarkThemeSeriesColor(color),
-            Label = label
+            Label = label,
+            Smooth = metric != MetricType.IsSafe
         };
     }
 
