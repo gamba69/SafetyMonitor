@@ -34,11 +34,11 @@ public class MetricAggregation {
     /// <summary>
     /// Gets or sets the smooth for metric aggregation. Represents a state flag that enables or disables related behavior.
     /// </summary>
-    public bool Smooth { get; set; } = false;
+    public bool Smooth { get; set; } = true;
     /// <summary>
     /// Gets or sets the tension for metric aggregation. Stores a numeric value used by calculations, thresholds, or telemetry display.
     /// </summary>
-    public float Tension { get; set; } = 0.5f;
+    public float Tension { get; set; } = 1.5f;
     /// <summary>
     /// Gets or sets the show markers for metric aggregation. Represents a state flag that enables or disables related behavior.
     /// </summary>

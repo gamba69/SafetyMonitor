@@ -239,7 +239,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
     /// <param name="sender">Input value for sender.</param>
     /// <param name="e">Input value for e.</param>
     private void AddMetricButton_Click(object? sender, EventArgs e) {
-        var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, null!, 1.0f, false, 0.5f, false, "(None)");
+        var newRow = _metricsGrid.Rows.Add(MetricType.Temperature, AggregationFunction.Average, "Metric", null!, null!, 1.0f, true, 1.5f, false, "(None)");
         _metricsGrid.Rows[newRow].Tag = GenerateUniqueMetricColors();
         _metricsGrid.InvalidateRow(newRow);
     }
@@ -720,7 +720,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
     /// <returns>The result of the operation.</returns>
     private static float ParseTension(string? rawValue) {
         if (!float.TryParse(rawValue, out var tension)) {
-            return 0.5f;
+            return 1.5f;
         }
 
         return Math.Clamp(tension, 0f, 3f);
@@ -847,7 +847,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
                 Color = colors.Light,
                 DarkThemeColor = colors.Dark,
                 LineWidth = float.Parse(row.Cells["LineWidth"].Value?.ToString() ?? "1"),
-                Smooth = (bool)(row.Cells["Smooth"].Value ?? false),
+                Smooth = (bool)(row.Cells["Smooth"].Value ?? true),
                 Tension = ParseTension(row.Cells["Tension"].Value?.ToString()),
                 ShowMarkers = (bool)(row.Cells["ShowMarkers"].Value ?? false),
                 ValueSchemeName = row.Cells["ValueScheme"].Value?.ToString() is var vs && vs != "(None)" ? vs ?? "" : ""
