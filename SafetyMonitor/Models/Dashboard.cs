@@ -82,7 +82,7 @@ public class Dashboard {
             CreateHistoryDashboard(),
             CreateObservatoryDashboard(),
             CreateMeteoDashboard(),
-            CreateZenithDashboard()
+            CreateAstroDashboard()
         };
 
         for (int i = 0; i < dashboards.Count; i++) {
@@ -570,16 +570,18 @@ public class Dashboard {
     }
 
     /// <summary>
-    /// Creates the zenith dashboard for dashboard.
+    /// Creates the astro dashboard for dashboard.
     /// </summary>
     /// <returns>The result of the operation.</returns>
-    private static Dashboard CreateZenithDashboard() {
+    private static Dashboard CreateAstroDashboard() {
         var dashboard = new Dashboard {
             Id = Guid.Parse("8538274f-59db-4514-b7bf-28e0d104b84f"),
-            Name = "Zenith",
+            Name = "Astro",
             Rows = 4,
             Columns = 5,
-            IsQuickAccess = false,
+            CreatedAt = DateTimeOffset.Parse("2026-03-08T19:49:58.3936651+02:00").DateTime,
+            ModifiedAt = DateTimeOffset.Parse("2026-03-08T20:32:00.5558639+02:00").DateTime,
+            IsQuickAccess = true,
             InitialChartLinkMode = DashboardChartLinkMode.Grouped,
             UsedLinkGroups = 2,
             LinkGroupPeriodPresetUids = new Dictionary<ChartLinkGroup, string> {
@@ -593,14 +595,13 @@ public class Dashboard {
         };
 
         dashboard.Tiles.AddRange([
-            ValueTile("Safety", MetricType.IsSafe, 0, 1, displayMode: ValueTileDisplayMode.TextOnly, showUnit: false, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, colorSchemeName: "Safety", textColorSchemeName: "Safety", valueSchemeName: "Safety", id: Guid.Parse("7217ec3c-1c48-4b0a-80fc-c92f8648fab4")),
-            ValueTile("SQM", MetricType.SkyQuality, 0, 2, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, colorSchemeName: "Sky Quality", textColorSchemeName: "Sky Quality", valueSchemeName: "Sky Quality", id: Guid.Parse("ec0cecb6-43fa-4f9f-a98f-a82572bcc79a")),
-            ValueTile("SkyGlow", MetricType.SkyBrightness, 0, 3, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, colorSchemeName: "Sky Brightness", textColorSchemeName: "Sky Brightness", valueSchemeName: "Sky Brightness", id: Guid.Parse("0e1a8f26-3e2d-43d4-bc22-f71f915c8e88")),
-            ValueTile("SkyTemp", MetricType.SkyTemperature, 0, 4, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, id: Guid.Parse("ae4787f3-df60-44bd-b15b-27e620df2e95")),
-            ValueTile("Cloud", MetricType.CloudCover, 1, 4, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, colorSchemeName: "Cloud Cover", textColorSchemeName: "Cloud Cover", valueSchemeName: "Cloud Cover", id: Guid.Parse("31595ad8-92dd-43fe-9eca-2d2fb1082f8f")),
-            ValueTile("Seeing", MetricType.StarFwhm, 2, 4, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, id: Guid.Parse("df97adfe-97b0-44df-8ab4-f702a0f26a58")),
-            ValueTile("Wind", MetricType.WindSpeed, 3, 4, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, colorSchemeName: "Wind Speed", textColorSchemeName: "Wind Speed", valueSchemeName: "Wind Speed", id: Guid.Parse("6505a429-f72a-4cf8-9ce0-9780f4ca9ec3")),
-            ChartTile("Transparency (6h)", 1, 0, 2, 2, ChartPeriod.Last6Hours,
+            ValueTile("Safety", MetricType.IsSafe, 0, 2, displayMode: ValueTileDisplayMode.TextOnly, showUnit: false, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, colorSchemeName: "Safety", textColorSchemeName: "Safety", valueSchemeName: "Safety", id: Guid.Parse("7217ec3c-1c48-4b0a-80fc-c92f8648fab4")),
+            ValueTile("SQM", MetricType.SkyQuality, 0, 3, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, colorSchemeName: "Sky Quality", textColorSchemeName: "Sky Quality", valueSchemeName: "Sky Quality", id: Guid.Parse("ec0cecb6-43fa-4f9f-a98f-a82572bcc79a")),
+            ValueTile("SkyTemp", MetricType.SkyTemperature, 0, 4, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, id: Guid.Parse("ae4787f3-df60-44bd-b15b-27e620df2e95")),
+            ValueTile("Cloud", MetricType.CloudCover, 1, 4, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, colorSchemeName: "Cloud Cover", textColorSchemeName: "Cloud Cover", valueSchemeName: "Cloud Cover", id: Guid.Parse("31595ad8-92dd-43fe-9eca-2d2fb1082f8f")),
+            ValueTile("Seeing", MetricType.StarFwhm, 2, 4, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, id: Guid.Parse("df97adfe-97b0-44df-8ab4-f702a0f26a58")),
+            ValueTile("Wind", MetricType.WindSpeed, 3, 4, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, colorSchemeName: "Wind Speed", textColorSchemeName: "Wind Speed", valueSchemeName: "Wind Speed", id: Guid.Parse("6505a429-f72a-4cf8-9ce0-9780f4ca9ec3")),
+            ChartTile("Transparency (6h)", 0, 0, 2, 2, ChartPeriod.Last6Hours,
                 linkGroup: ChartLinkGroup.Alpha,
                 periodPresetUid: "6h",
                 customAggregationInterval: null,
@@ -618,7 +619,7 @@ public class Dashboard {
                     Aggregation(MetricType.SkyQuality, AggregationFunction.Average, Color.FromArgb(102, 187, 106), "SQM Avg"),
                     Aggregation(MetricType.StarFwhm, AggregationFunction.Average, Color.FromArgb(255, 167, 38), "FWHM Avg")
                 ]),
-            ChartTile("SkyGlow Pulse (6h)", 3, 0, 1, 2, ChartPeriod.Last6Hours,
+            ChartTile("SkyGlow Pulse (6h)", 2, 0, 2, 2, ChartPeriod.Last6Hours,
                 linkGroup: ChartLinkGroup.Alpha,
                 periodPresetUid: "6h",
                 customAggregationInterval: null,
