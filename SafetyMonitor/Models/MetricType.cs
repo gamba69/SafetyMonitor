@@ -30,6 +30,29 @@ public static class MetricTypeExtensions {
         MetricType.IsSafe => "Safety",
         _ => type.ToString()
     };
+
+    /// <summary>
+    /// Gets the short name for metric type extensions.
+    /// </summary>
+    /// <param name="type">Input value for type.</param>
+    /// <returns>The resulting string value.</returns>
+    public static string GetShortName(this MetricType type) => type switch {
+        MetricType.Temperature => "TEMP",
+        MetricType.Humidity => "RH",
+        MetricType.Pressure => "PRES",
+        MetricType.DewPoint => "DEW",
+        MetricType.CloudCover => "CC",
+        MetricType.SkyTemperature => "SKYT",
+        MetricType.SkyBrightness => "SKYB",
+        MetricType.SkyQuality => "SQM",
+        MetricType.RainRate => "RAIN",
+        MetricType.WindSpeed => "WSPD",
+        MetricType.WindGust => "WGST",
+        MetricType.WindDirection => "WDIR",
+        MetricType.StarFwhm => "FWHM",
+        MetricType.IsSafe => "SAFE",
+        _ => type.ToString().ToUpperInvariant()
+    };
     /// <summary>
     /// Gets the unit for metric type extensions.
     /// </summary>

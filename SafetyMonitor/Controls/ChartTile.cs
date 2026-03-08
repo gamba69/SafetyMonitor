@@ -253,7 +253,7 @@ public class ChartTile : Panel {
         if (useMultipleAxes) {
             for (int i = 0; i < distinctMetrics.Count; i++) {
                 var metric = distinctMetrics[i];
-                var labelText = BuildAxisLabel(metric);
+                var labelText = BuildAxisLabel(metric, _plot?.Height ?? Height);
 
                 // Use the color of the first series for this metric to tint the axis
                 var representativeColor = ScottPlot.Color.FromColor(
@@ -278,7 +278,7 @@ public class ChartTile : Panel {
             }
         } else if (distinctMetrics.Count == 1) {
             var metric = distinctMetrics[0];
-            var labelText = BuildAxisLabel(metric);
+            var labelText = BuildAxisLabel(metric, _plot?.Height ?? Height);
             var representativeColor = ScottPlot.Color.FromColor(
                 _config.MetricAggregations.First(a => a.Metric == metric).GetColorForTheme(isLightTheme));
             axisStyleMap[metric] = (labelText, representativeColor);
@@ -696,11 +696,33 @@ public class ChartTile : Panel {
     /// </summary>
     /// <param name="metric">Input value for metric.</param>
     /// <returns>The resulting string value.</returns>
-    private static string BuildAxisLabel(MetricType metric) {
+    private static string BuildAxisLabel(MetricType metric, int plotHeight) {
+        var displayName = metric.GetDisplayName();
+        var shortName = metric.GetShortName();
         var unit = metric.GetUnit();
-        return string.IsNullOrEmpty(unit)
-            ? metric.GetDisplayName()
-            : $"{metric.GetDisplayName()} ({unit})";
+
+        // 4-step degradation:
+        // 1) long + unit
+        // 2) short + unit
+        // 3) short
+        // 4) no text (color-only axis)
+        if (plotHeight >= 220) {
+            return string.IsNullOrWhiteSpace(unit)
+                ? displayName
+                : $"{displayName} ({unit})";
+        }
+
+        if (plotHeight >= 170) {
+            return string.IsNullOrWhiteSpace(unit)
+                ? shortName
+                : $"{shortName} ({unit})";
+        }
+
+        if (plotHeight >= 130) {
+            return shortName;
+        }
+
+        return string.Empty;
     }
 
     /// <summary>
@@ -1899,6 +1921,10 @@ public class ChartTile : Panel {
         _plot.MouseLeave += Plot_MouseLeave;
         _plot.MouseWheel += Plot_MouseWheel;
         _plot.MouseDoubleClick += Plot_MouseDoubleClick;
+        _plot.Resize += (_, _) => {
+            ReapplyAxisColors();
+            _plot.Refresh();
+        };
         DisableScottPlotInteractionOverlays();
         ApplyPlotContextMenuTheme();
 
@@ -2455,7 +2481,7 @@ public class ChartTile : Panel {
                 continue;
             }
 
-            StyleAxis(axis, BuildAxisLabel(metric), representativeColor);
+            StyleAxis(axis, BuildAxisLabel(metric, _plot.Height), representativeColor);
         }
     }
 

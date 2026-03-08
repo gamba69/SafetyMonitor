@@ -105,6 +105,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         const int visualDetailsColumnCount = 2;
         const int detailsColumnCount = visualDetailsColumnCount * 2;
         var details = new[] {
+            "Short: predefined metric abbreviation used on compact chart axes.",
             "Decimals: number of digits after decimal point (0..10).",
             "Hide zeroes: if enabled, zero values are shown as empty text instead of 0/0.0.",
             "Invert Y: flips chart Y-axis direction for this metric.",
@@ -190,7 +191,8 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
             ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing
         };
 
-        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Metric", HeaderText = "Metric", FillWeight = 34, ReadOnly = true, MinimumWidth = 150 });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Metric", HeaderText = "Metric", FillWeight = 29, ReadOnly = true, MinimumWidth = 140 });
+        _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "MetricShort", HeaderText = "Short", FillWeight = 10, ReadOnly = true, MinimumWidth = 75, ToolTipText = "Predefined short metric name" });
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Decimals", HeaderText = "Decimals", FillWeight = 12, MinimumWidth = 70 });
         _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "HideZeroes", HeaderText = "Hide zeroes", FillWeight = 16, MinimumWidth = 95 });
         _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "InvertY", HeaderText = "Inv Y", FillWeight = 11, MinimumWidth = 70, ToolTipText = "Invert Y-axis" });
@@ -248,7 +250,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
         var map = _settings.ToDictionary(s => s.Metric, s => s);
         foreach (var metric in GetOrderedMetricsForGrid(map)) {
             var s = map.TryGetValue(metric, out var found) ? found : MetricDisplaySettingsStore.GetDefaultSetting(metric);
-            _metricsGrid.Rows.Add(metric.GetDisplayName(), Math.Max(0, s.Decimals), s.HideZeroes, s.InvertY, s.LogY, s.TrayName, NormalizeTrayValueScheme(s.TrayValueSchemeName));
+            _metricsGrid.Rows.Add(metric.GetDisplayName(), metric.GetShortName(), Math.Max(0, s.Decimals), s.HideZeroes, s.InvertY, s.LogY, s.TrayName, NormalizeTrayValueScheme(s.TrayValueSchemeName));
         }
     }
 
@@ -352,6 +354,7 @@ public class MetricSettingsEditorForm : ThemedCaptionForm {
             foreach (var rowState in rowStates) {
                 _metricsGrid.Rows.Add(
                     rowState.Metric.GetDisplayName(),
+                    rowState.Metric.GetShortName(),
                     rowState.Decimals!,
                     rowState.HideZeroes,
                     rowState.InvertY,
