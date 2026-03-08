@@ -216,6 +216,7 @@ public class Dashboard {
             Columns = 4,
             IsQuickAccess = true,
             InitialChartLinkMode = DashboardChartLinkMode.Grouped,
+            UsedLinkGroups = 2,
             LinkGroupPeriodPresetUids = new Dictionary<ChartLinkGroup, string> {
                 [ChartLinkGroup.Alpha] = "24h",
                 [ChartLinkGroup.Bravo] = "6h",
@@ -227,14 +228,15 @@ public class Dashboard {
         };
 
         dashboard.Tiles.AddRange([
-            ValueTile("Safety", MetricType.IsSafe, 0, 0, displayMode: ValueTileDisplayMode.TextOnly, showUnit: false, showIcon: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Safety", textColorSchemeName: "Safety", valueSchemeName: "Safety"),
-            ValueTile("Cloud Cover", MetricType.CloudCover, 0, 1, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Cloud Cover", textColorSchemeName: "Cloud Cover", valueSchemeName: "Cloud Cover"),
-            ValueTile("Rain Rate", MetricType.RainRate, 0, 2, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Rain Rate", textColorSchemeName: "Rain Rate", valueSchemeName: "Rain Rate"),
-            ValueTile("Wind Speed", MetricType.WindSpeed, 0, 3, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Wind Speed", textColorSchemeName: "Wind Speed", valueSchemeName: "Wind Speed"),
+            ValueTile("Safety", MetricType.IsSafe, 0, 0, displayMode: ValueTileDisplayMode.TextOnly, showUnit: false, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Safety", textColorSchemeName: "Safety", valueSchemeName: "Safety", id: Guid.Parse("69f28ed6-f52f-4558-870e-559fcc4d0ba3")),
+            ValueTile("Cloud Cover", MetricType.CloudCover, 0, 1, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Cloud Cover", textColorSchemeName: "Cloud Cover", valueSchemeName: "Cloud Cover", id: Guid.Parse("7cc485af-4c60-4d41-bce4-4795043b8b8b")),
+            ValueTile("Rain Rate", MetricType.RainRate, 0, 2, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Rain Rate", textColorSchemeName: "Rain Rate", valueSchemeName: "Rain Rate", id: Guid.Parse("4aec7f4d-f2ab-4eb6-bab6-fa078fb3009d")),
+            ValueTile("Wind Speed", MetricType.WindSpeed, 0, 3, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Wind Speed", textColorSchemeName: "Wind Speed", valueSchemeName: "Wind Speed", id: Guid.Parse("fe85b486-6e28-40eb-9c79-f8e33a521a06")),
             ChartTile("Temperature / Dew Point (24h)", 1, 0, 3, 2, ChartPeriod.Last24Hours,
                 linkGroup: ChartLinkGroup.Alpha,
                 periodPresetUid: "24h",
                 customAggregationInterval: TimeSpan.FromMinutes(1),
+                id: Guid.Parse("12e8273c-085c-4231-b9b1-2c5ce2a20be8"),
                 series: [
                     Aggregation(MetricType.Temperature, AggregationFunction.Average, Color.FromArgb(255, 112, 67), "Temperature"),
                     Aggregation(MetricType.DewPoint, AggregationFunction.Average, Color.FromArgb(66, 165, 245), "Dew Point")
@@ -243,6 +245,7 @@ public class Dashboard {
                 linkGroup: ChartLinkGroup.Alpha,
                 periodPresetUid: "24h",
                 customAggregationInterval: TimeSpan.FromMinutes(1),
+                id: Guid.Parse("66036e5f-ddd6-4aec-bae3-96a96be6b43e"),
                 series: [
                     Aggregation(MetricType.Humidity, AggregationFunction.Average, Color.FromArgb(38, 166, 154), "Humidity"),
                     Aggregation(MetricType.Pressure, AggregationFunction.Average, Color.FromArgb(171, 71, 188), "Pressure")
@@ -251,6 +254,7 @@ public class Dashboard {
                 linkGroup: ChartLinkGroup.Bravo,
                 periodPresetUid: "6h",
                 customAggregationInterval: TimeSpan.FromSeconds(30),
+                id: Guid.Parse("413cb6b5-ee15-40b7-9362-917fcf39d298"),
                 series: [
                     Aggregation(MetricType.WindSpeed, AggregationFunction.Maximum, Color.FromArgb(255, 202, 40), "Wind Max"),
                     Aggregation(MetricType.RainRate, AggregationFunction.Maximum, Color.FromArgb(239, 83, 80), "Rain Max")
@@ -419,7 +423,7 @@ public class Dashboard {
     /// <param name="valueSchemeName">Input value for value scheme name.</param>
     /// <param name="id">Identifier of id.</param>
     /// <returns>The result of the operation.</returns>
-    private static ValueTileConfig ValueTile(string title, MetricType metric, int row, int column, ValueTileDisplayMode displayMode = ValueTileDisplayMode.TextAndValue, bool showUnit = true, bool showIcon = true, int decimalPlaces = 1, string? iconColorSchemeName = null, string? colorSchemeName = null, string? textColorSchemeName = null, string? valueSchemeName = null, Guid? id = null) {
+    private static ValueTileConfig ValueTile(string title, MetricType metric, int row, int column, ValueTileDisplayMode displayMode = ValueTileDisplayMode.TextAndValue, bool showUnit = true, bool showIcon = true, bool showTopValueGradient = false, int decimalPlaces = 1, string? iconColorSchemeName = null, string? colorSchemeName = null, string? textColorSchemeName = null, string? valueSchemeName = null, Guid? id = null) {
         return new ValueTileConfig {
             Id = id ?? Guid.NewGuid(),
             Title = title,
@@ -429,6 +433,7 @@ public class Dashboard {
             DisplayMode = displayMode,
             ShowUnit = showUnit,
             ShowIcon = showIcon,
+            ShowTopValueGradient = showTopValueGradient,
             DecimalPlaces = decimalPlaces,
             IconColorSchemeName = iconColorSchemeName ?? string.Empty,
             ColorSchemeName = colorSchemeName ?? ColorSchemeService.GetDefaultSchemeName(metric),
@@ -449,7 +454,7 @@ public class Dashboard {
     /// <param name="series">Input value for series.</param>
     /// <returns>The result of the operation.</returns>
     private static ChartTileConfig ChartTile(string title, int row, int column, int rowSpan, int columnSpan, ChartPeriod period, params MetricAggregation[] series) {
-        return ChartTile(title, row, column, rowSpan, columnSpan, period, ChartLinkGroup.Alpha, string.Empty, null, series);
+        return ChartTile(title, row, column, rowSpan, columnSpan, period, ChartLinkGroup.Alpha, string.Empty, null, null, series);
     }
 
     private static ChartTileConfig ChartTile(
@@ -462,8 +467,10 @@ public class Dashboard {
         ChartLinkGroup linkGroup,
         string periodPresetUid,
         TimeSpan? customAggregationInterval,
+        Guid? id,
         MetricAggregation[] series) {
         return new ChartTileConfig {
+            Id = id ?? Guid.NewGuid(),
             Title = title,
             Row = row,
             Column = column,
