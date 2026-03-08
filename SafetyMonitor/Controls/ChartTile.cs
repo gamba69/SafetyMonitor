@@ -2293,7 +2293,17 @@ public class ChartTile : Panel {
     /// </summary>
     /// <param name="interval">Input value for interval.</param>
     private void UpdateAggregationInfoLabel(TimeSpan? interval) {
-        if (_aggregationInfoTextBox == null) {
+        var aggregationInfoTextBox = _aggregationInfoTextBox;
+        if (aggregationInfoTextBox == null || aggregationInfoTextBox.IsDisposed || aggregationInfoTextBox.Disposing) {
+            return;
+        }
+
+        if (aggregationInfoTextBox.InvokeRequired) {
+            aggregationInfoTextBox.BeginInvoke(() => UpdateAggregationInfoLabel(interval));
+            return;
+        }
+
+        if (!aggregationInfoTextBox.IsHandleCreated) {
             return;
         }
 
@@ -2301,24 +2311,24 @@ public class ChartTile : Panel {
         var color = isLight ? LightThemePrimaryColor : Color.White;
         var valueText = ChartAggregationHelper.FormatAggregationLabel(interval);
 
-        _aggregationInfoTextBox.Clear();
-        _aggregationInfoTextBox.SelectionStart = 0;
-        _aggregationInfoTextBox.SelectionLength = 0;
-        _aggregationInfoTextBox.SelectionAlignment = System.Windows.Forms.HorizontalAlignment.Right;
-        _aggregationInfoTextBox.SelectionColor = color;
-        _aggregationInfoTextBox.SelectionFont = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Bold);
-        _aggregationInfoTextBox.AppendText("A:");
-        _aggregationInfoTextBox.SelectionColor = color;
-        _aggregationInfoTextBox.SelectionFont = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular);
-        _aggregationInfoTextBox.AppendText($" {valueText}");
-        _aggregationInfoTextBox.SelectionColor = color;
-        _aggregationInfoTextBox.SelectionFont = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Bold);
-        _aggregationInfoTextBox.AppendText("  P:");
-        _aggregationInfoTextBox.SelectionColor = color;
-        _aggregationInfoTextBox.SelectionFont = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular);
-        _aggregationInfoTextBox.AppendText($" {_lastHorizontalPointCount}");
-        _aggregationInfoTextBox.SelectionStart = 0;
-        _aggregationInfoTextBox.SelectionLength = 0;
+        aggregationInfoTextBox.Clear();
+        aggregationInfoTextBox.SelectionStart = 0;
+        aggregationInfoTextBox.SelectionLength = 0;
+        aggregationInfoTextBox.SelectionAlignment = System.Windows.Forms.HorizontalAlignment.Right;
+        aggregationInfoTextBox.SelectionColor = color;
+        aggregationInfoTextBox.SelectionFont = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Bold);
+        aggregationInfoTextBox.AppendText("A:");
+        aggregationInfoTextBox.SelectionColor = color;
+        aggregationInfoTextBox.SelectionFont = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular);
+        aggregationInfoTextBox.AppendText($" {valueText}");
+        aggregationInfoTextBox.SelectionColor = color;
+        aggregationInfoTextBox.SelectionFont = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Bold);
+        aggregationInfoTextBox.AppendText("  P:");
+        aggregationInfoTextBox.SelectionColor = color;
+        aggregationInfoTextBox.SelectionFont = CreateSafeFont("Segoe UI", 7.5f, System.Drawing.FontStyle.Regular);
+        aggregationInfoTextBox.AppendText($" {_lastHorizontalPointCount}");
+        aggregationInfoTextBox.SelectionStart = 0;
+        aggregationInfoTextBox.SelectionLength = 0;
     }
 
     /// <summary>

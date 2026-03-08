@@ -322,7 +322,7 @@ public class Dashboard {
             Rows = 4,
             Columns = 4,
             IsQuickAccess = true,
-            InitialChartLinkMode = DashboardChartLinkMode.Full,
+            InitialChartLinkMode = DashboardChartLinkMode.Grouped,
             UsedLinkGroups = 2,
             LinkGroupPeriodPresetUids = new Dictionary<ChartLinkGroup, string> {
                 [ChartLinkGroup.Alpha] = "6h",
@@ -430,8 +430,8 @@ public class Dashboard {
                 Aggregation(MetricType.WindSpeed, AggregationFunction.Average, Color.FromArgb(255, 202, 40), "Wind Avg"),
                 Aggregation(MetricType.WindGust, AggregationFunction.Maximum, Color.FromArgb(255, 112, 67), "Gust Max")]),
             ChartTile("Safety Reliability (7d)", 4, 0, 1, 4, ChartPeriod.Last30Days,
-                linkGroup: ChartLinkGroup.Alpha,
-                periodPresetUid: "30d",
+                linkGroup: ChartLinkGroup.Bravo,
+                periodPresetUid: "7d",
                 customAggregationInterval: null,
                 id: Guid.Parse("7965e641-ad08-4065-aaed-ddd6d465872c"),
                 series: [
