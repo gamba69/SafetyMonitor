@@ -377,28 +377,66 @@ public class Dashboard {
             Id = Guid.Parse("e0c3109e-3537-4372-8c78-2efc9f8504b1"),
             Name = "History",
             Rows = 5,
-            Columns = 4
+            Columns = 4,
+            CreatedAt = DateTimeOffset.Parse("2026-03-08T16:11:39.7907822+02:00").DateTime,
+            ModifiedAt = DateTimeOffset.Parse("2026-03-08T16:14:32.5188132+02:00").DateTime,
+            IsQuickAccess = true,
+            InitialChartLinkMode = DashboardChartLinkMode.Grouped,
+            UsedLinkGroups = 2,
+            LinkGroupPeriodPresetUids = new Dictionary<ChartLinkGroup, string> {
+                [ChartLinkGroup.Alpha] = "30d",
+                [ChartLinkGroup.Bravo] = "7d",
+                [ChartLinkGroup.Charlie] = "15m",
+                [ChartLinkGroup.Delta] = "15m",
+                [ChartLinkGroup.Echo] = "15m",
+                [ChartLinkGroup.Foxtrot] = "15m"
+            }
         };
 
         dashboard.Tiles.AddRange([
             ChartTile("Temperature Min / Avg / Max (30d)", 0, 0, 2, 2, ChartPeriod.Last30Days,
+                linkGroup: ChartLinkGroup.Alpha,
+                periodPresetUid: "30d",
+                customAggregationInterval: null,
+                id: Guid.Parse("4f9f2888-e9c3-4d22-8e57-4a8b0131d06c"),
+                series: [
                 Aggregation(MetricType.Temperature, AggregationFunction.Minimum, Color.FromArgb(66, 165, 245), "Temp Min"),
                 Aggregation(MetricType.Temperature, AggregationFunction.Average, Color.FromArgb(255, 167, 38), "Temp Avg"),
-                Aggregation(MetricType.Temperature, AggregationFunction.Maximum, Color.FromArgb(239, 83, 80), "Temp Max")),
+                Aggregation(MetricType.Temperature, AggregationFunction.Maximum, Color.FromArgb(239, 83, 80), "Temp Max")]),
             ChartTile("Humidity Min / Avg / Max (30d)", 0, 2, 2, 2, ChartPeriod.Last30Days,
+                linkGroup: ChartLinkGroup.Alpha,
+                periodPresetUid: "30d",
+                customAggregationInterval: null,
+                id: Guid.Parse("3eeb6a06-d681-4fc9-ba6a-02d773168336"),
+                series: [
                 Aggregation(MetricType.Humidity, AggregationFunction.Minimum, Color.FromArgb(38, 198, 218), "Hum Min"),
                 Aggregation(MetricType.Humidity, AggregationFunction.Average, Color.FromArgb(102, 187, 106), "Hum Avg"),
-                Aggregation(MetricType.Humidity, AggregationFunction.Maximum, Color.FromArgb(156, 204, 101), "Hum Max")),
+                Aggregation(MetricType.Humidity, AggregationFunction.Maximum, Color.FromArgb(156, 204, 101), "Hum Max")]),
             ChartTile("Pressure Min / Avg / Max (30d)", 2, 0, 2, 2, ChartPeriod.Last30Days,
+                linkGroup: ChartLinkGroup.Alpha,
+                periodPresetUid: "30d",
+                customAggregationInterval: null,
+                id: Guid.Parse("76d4e3fa-77c4-4c96-9360-9f2483a27417"),
+                series: [
                 Aggregation(MetricType.Pressure, AggregationFunction.Minimum, Color.FromArgb(126, 87, 194), "Pressure Min"),
                 Aggregation(MetricType.Pressure, AggregationFunction.Average, Color.FromArgb(171, 71, 188), "Pressure Avg"),
-                Aggregation(MetricType.Pressure, AggregationFunction.Maximum, Color.FromArgb(236, 64, 122), "Pressure Max")),
+                Aggregation(MetricType.Pressure, AggregationFunction.Maximum, Color.FromArgb(236, 64, 122), "Pressure Max")]),
             ChartTile("Wind Speed Avg / Gust Max (30d)", 2, 2, 2, 2, ChartPeriod.Last30Days,
+                linkGroup: ChartLinkGroup.Alpha,
+                periodPresetUid: "30d",
+                customAggregationInterval: null,
+                id: Guid.Parse("d5050b2e-0be9-4326-bcc6-a63fef23d4fd"),
+                series: [
                 Aggregation(MetricType.WindSpeed, AggregationFunction.Average, Color.FromArgb(255, 202, 40), "Wind Avg"),
-                Aggregation(MetricType.WindGust, AggregationFunction.Maximum, Color.FromArgb(255, 112, 67), "Gust Max")),
-            ChartTile("Safety Reliability (7d)", 4, 0, 1, 4, ChartPeriod.Last7Days,
+                Aggregation(MetricType.WindGust, AggregationFunction.Maximum, Color.FromArgb(255, 112, 67), "Gust Max")]),
+            ChartTile("Safety Reliability (7d)", 4, 0, 1, 4, ChartPeriod.Last30Days,
+                linkGroup: ChartLinkGroup.Alpha,
+                periodPresetUid: "30d",
+                customAggregationInterval: null,
+                id: Guid.Parse("7965e641-ad08-4065-aaed-ddd6d465872c"),
+                series: [
                 Aggregation(MetricType.IsSafe, AggregationFunction.Average, Color.FromArgb(102, 187, 106), "Safety Avg"),
-                Aggregation(MetricType.IsSafe, AggregationFunction.Minimum, Color.FromArgb(239, 83, 80), "Safety Min"))
+                Aggregation(MetricType.IsSafe, AggregationFunction.Minimum, Color.FromArgb(239, 83, 80), "Safety Min")])
         ]);
 
         return dashboard;
