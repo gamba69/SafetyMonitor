@@ -450,25 +450,56 @@ public class Dashboard {
         var dashboard = new Dashboard {
             Id = Guid.Parse("3958ac73-15ca-4bf3-8a6a-467fe3b3bb4f"),
             Name = "Observatory",
+            CreatedAt = DateTimeOffset.Parse("2026-03-08T16:35:56.5899676+02:00").DateTime,
+            ModifiedAt = DateTimeOffset.Parse("2026-03-08T16:38:06.2665768+02:00").DateTime,
             Rows = 4,
-            Columns = 5
+            Columns = 5,
+            IsQuickAccess = true,
+            InitialChartLinkMode = DashboardChartLinkMode.Full,
+            UsedLinkGroups = 1,
+            LinkGroupPeriodPresetUids = new Dictionary<ChartLinkGroup, string> {
+                [ChartLinkGroup.Alpha] = "24h",
+                [ChartLinkGroup.Bravo] = "15m",
+                [ChartLinkGroup.Charlie] = "15m",
+                [ChartLinkGroup.Delta] = "15m",
+                [ChartLinkGroup.Echo] = "15m",
+                [ChartLinkGroup.Foxtrot] = "15m"
+            }
         };
 
         dashboard.Tiles.AddRange([
-            ValueTile("Rain Rate", MetricType.RainRate, 0, 0),
-            ValueTile("Wind Gust", MetricType.WindGust, 0, 1),
-            ValueTile("Cloud Cover", MetricType.CloudCover, 0, 2),
-            ValueTile("Safety", MetricType.IsSafe, 0, 3),
-            ValueTile("Sky Temp", MetricType.SkyTemperature, 0, 4),
+            ValueTile("Rain Rate", MetricType.RainRate, 0, 0, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Rain Rate", textColorSchemeName: "Rain Rate", valueSchemeName: "Rain Rate", id: Guid.Parse("cb448e4f-c590-417f-8986-e138c3678efe")),
+            ValueTile("Wind Gust", MetricType.WindGust, 0, 1, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Wind Gust", textColorSchemeName: "Wind Gust", valueSchemeName: "Wind Gust", id: Guid.Parse("30edb5af-0a39-4a04-9071-b1221114d9c9")),
+            ValueTile("Cloud Cover", MetricType.CloudCover, 0, 2, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Cloud Cover", textColorSchemeName: "Cloud Cover", valueSchemeName: "Cloud Cover", id: Guid.Parse("80f51d1a-09c9-4967-b57b-0f75c0c73981")),
+            ValueTile("Safety", MetricType.IsSafe, 0, 3, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Safety", textColorSchemeName: "Safety", valueSchemeName: "Safety", id: Guid.Parse("c735013d-4f94-4640-8e09-85d39c1eaf00")),
+            ValueTile("Sky Temp", MetricType.SkyTemperature, 0, 4, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "", textColorSchemeName: "", valueSchemeName: "", id: Guid.Parse("2673f545-1efd-4ffb-b983-45778f8094f9")),
             ChartTile("Rain & Clouds (24h)", 1, 0, 3, 2, ChartPeriod.Last24Hours,
-                Aggregation(MetricType.RainRate, AggregationFunction.Maximum, Color.FromArgb(66, 165, 245), "Rain Max"),
-                Aggregation(MetricType.CloudCover, AggregationFunction.Average, Color.FromArgb(120, 144, 156), "Cloud Avg")),
+                linkGroup: ChartLinkGroup.Alpha,
+                periodPresetUid: "24h",
+                customAggregationInterval: null,
+                id: Guid.Parse("7ce7cba7-1951-48d3-9d1b-46ac3f34aa01"),
+                series: [
+                    Aggregation(MetricType.RainRate, AggregationFunction.Maximum, Color.FromArgb(66, 165, 245), "Rain Max"),
+                    Aggregation(MetricType.CloudCover, AggregationFunction.Average, Color.FromArgb(120, 144, 156), "Cloud Avg")
+                ]),
             ChartTile("Wind Stability (24h)", 1, 2, 3, 2, ChartPeriod.Last24Hours,
-                Aggregation(MetricType.WindSpeed, AggregationFunction.Average, Color.FromArgb(255, 202, 40), "Wind Avg"),
-                Aggregation(MetricType.WindGust, AggregationFunction.Maximum, Color.FromArgb(255, 112, 67), "Gust Max")),
+                linkGroup: ChartLinkGroup.Alpha,
+                periodPresetUid: "24h",
+                customAggregationInterval: null,
+                id: Guid.Parse("845f4b2f-b8cc-46c7-82c0-411ad5a66dec"),
+                series: [
+                    Aggregation(MetricType.WindSpeed, AggregationFunction.Average, Color.FromArgb(255, 202, 40), "Wind Avg"),
+                    Aggregation(MetricType.WindGust, AggregationFunction.Maximum, Color.FromArgb(255, 112, 67), "Gust Max")
+                ]),
             ChartTile("Thermal Delta: Ambient vs Sky (24h)", 1, 4, 3, 1, ChartPeriod.Last24Hours,
-                Aggregation(MetricType.Temperature, AggregationFunction.Average, Color.FromArgb(255, 138, 101), "Ambient"),
-                Aggregation(MetricType.SkyTemperature, AggregationFunction.Average, Color.FromArgb(41, 182, 246), "Sky"))
+                linkGroup: ChartLinkGroup.Alpha,
+                periodPresetUid: "24h",
+                customAggregationInterval: null,
+                id: Guid.Parse("412c3e7b-8659-4c09-963d-d39263717535"),
+                series: [
+                    Aggregation(MetricType.Temperature, AggregationFunction.Average, Color.FromArgb(255, 138, 101), "Ambient"),
+                    Aggregation(MetricType.SkyTemperature, AggregationFunction.Average, Color.FromArgb(41, 182, 246), "Sky")
+                ])
         ]);
 
         return dashboard;
