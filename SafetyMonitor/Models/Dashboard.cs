@@ -212,6 +212,8 @@ public class Dashboard {
         var dashboard = new Dashboard {
             Id = Guid.Parse("9ce8eb4f-08be-4cd8-a3f2-79f88e13779e"),
             Name = "Overview",
+            CreatedAt = DateTimeOffset.Parse("2026-03-08T14:17:37.1499741+02:00").DateTime,
+            ModifiedAt = DateTimeOffset.Parse("2026-03-08T15:24:04.6065641+02:00").DateTime,
             Rows = 4,
             Columns = 4,
             IsQuickAccess = true,
