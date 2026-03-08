@@ -278,7 +278,7 @@ public class Dashboard {
             Columns = 5,
             IsQuickAccess = true,
             InitialChartLinkMode = DashboardChartLinkMode.Full,
-            UsedLinkGroups = 6,
+            UsedLinkGroups = 1,
             LinkGroupPeriodPresetUids = new Dictionary<ChartLinkGroup, string> {
                 [ChartLinkGroup.Alpha] = "15m",
                 [ChartLinkGroup.Bravo] = "15m",
@@ -316,25 +316,53 @@ public class Dashboard {
     private static Dashboard CreateNightDashboard() {
         var dashboard = new Dashboard {
             Id = Guid.Parse("d03e4506-d5d5-4be6-98d9-2b4ce6d5f4e5"),
-            Name = "Night Watch",
+            Name = "Night",
+            CreatedAt = DateTimeOffset.Parse("2026-03-08T15:44:47.9411842+02:00").DateTime,
+            ModifiedAt = DateTimeOffset.Parse("2026-03-08T15:47:48.4608613+02:00").DateTime,
             Rows = 4,
-            Columns = 4
+            Columns = 4,
+            IsQuickAccess = true,
+            InitialChartLinkMode = DashboardChartLinkMode.Full,
+            UsedLinkGroups = 2,
+            LinkGroupPeriodPresetUids = new Dictionary<ChartLinkGroup, string> {
+                [ChartLinkGroup.Alpha] = "6h",
+                [ChartLinkGroup.Bravo] = "24h",
+                [ChartLinkGroup.Charlie] = "15m",
+                [ChartLinkGroup.Delta] = "15m",
+                [ChartLinkGroup.Echo] = "15m",
+                [ChartLinkGroup.Foxtrot] = "15m"
+            }
         };
 
         dashboard.Tiles.AddRange([
-            ValueTile("Safety", MetricType.IsSafe, 0, 0),
-            ValueTile("Cloud Cover", MetricType.CloudCover, 0, 1),
-            ValueTile("Sky Quality", MetricType.SkyQuality, 0, 2),
-            ValueTile("Sky Brightness", MetricType.SkyBrightness, 0, 3),
+            ValueTile("Safety", MetricType.IsSafe, 0, 0, displayMode: ValueTileDisplayMode.TextOnly, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Safety", textColorSchemeName: "Safety", valueSchemeName: "Safety", id: Guid.Parse("938476cd-c1d7-4e56-b69f-722df2129c56")),
+            ValueTile("Cloud Cover", MetricType.CloudCover, 0, 1, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Cloud Cover", textColorSchemeName: "Cloud Cover", valueSchemeName: "Cloud Cover", id: Guid.Parse("b6248670-6247-4db1-aba6-80e9e0e23970")),
+            ValueTile("Sky Quality", MetricType.SkyQuality, 0, 2, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Sky Quality", textColorSchemeName: "Sky Quality", valueSchemeName: "Sky Quality", id: Guid.Parse("a7f7bcb2-117b-4648-86b9-17eb63a1e941")),
+            ValueTile("Sky Brightness", MetricType.SkyBrightness, 0, 3, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Sky Brightness", textColorSchemeName: "Sky Brightness", valueSchemeName: "Sky Brightness", id: Guid.Parse("67cd85d8-5b60-4629-b73e-5e4a621d63d0")),
             ChartTile("Sky Transparency (6h)", 1, 0, 2, 2, ChartPeriod.Last6Hours,
+                linkGroup: ChartLinkGroup.Alpha,
+                periodPresetUid: "6h",
+                customAggregationInterval: null,
+                id: Guid.Parse("4bd4f8f4-a8e5-4c57-90bb-bc858e9bb012"),
+                series: [
                 Aggregation(MetricType.SkyTemperature, AggregationFunction.Average, Color.FromArgb(41, 182, 246), "Sky Temp"),
-                Aggregation(MetricType.CloudCover, AggregationFunction.Maximum, Color.FromArgb(120, 144, 156), "Cloud Max")),
+                Aggregation(MetricType.CloudCover, AggregationFunction.Maximum, Color.FromArgb(120, 144, 156), "Cloud Max")]),
             ChartTile("Seeing & Darkness (6h)", 1, 2, 2, 2, ChartPeriod.Last6Hours,
+                linkGroup: ChartLinkGroup.Alpha,
+                periodPresetUid: "6h",
+                customAggregationInterval: null,
+                id: Guid.Parse("4107c63e-0dcf-4747-9901-07b4c50a4ecb"),
+                series: [
                 Aggregation(MetricType.StarFwhm, AggregationFunction.Average, Color.FromArgb(255, 167, 38), "FWHM Avg"),
-                Aggregation(MetricType.SkyQuality, AggregationFunction.Average, Color.FromArgb(102, 187, 106), "SQM Avg")),
+                Aggregation(MetricType.SkyQuality, AggregationFunction.Average, Color.FromArgb(102, 187, 106), "SQM Avg")]),
             ChartTile("Safety Trend (24h)", 3, 0, 1, 4, ChartPeriod.Last24Hours,
+                linkGroup: ChartLinkGroup.Bravo,
+                periodPresetUid: "24h",
+                customAggregationInterval: null,
+                id: Guid.Parse("fd55cf2d-a854-4842-a015-d70f1c5b54bc"),
+                series: [
                 Aggregation(MetricType.IsSafe, AggregationFunction.Average, Color.FromArgb(129, 199, 132), "Safety Avg"),
-                Aggregation(MetricType.IsSafe, AggregationFunction.Minimum, Color.FromArgb(239, 83, 80), "Safety Min"))
+                Aggregation(MetricType.IsSafe, AggregationFunction.Minimum, Color.FromArgb(239, 83, 80), "Safety Min")])
         ]);
 
         return dashboard;
