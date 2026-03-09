@@ -1053,7 +1053,10 @@ public class MainForm : MaterialForm {
                     _quickButtonFavoriteMenuItem.Image = MaterialIcons.GetIcon("star", itemIconColor, MenuIconSize, !targetDashboard.IsQuickAccess ? IconRenderPreset.DarkFilled : IconRenderPreset.DarkOutlined);
                 }
             }
-            var groupedModeAvailable = (targetDashboard?.UsedLinkGroups ?? _currentDashboard?.UsedLinkGroups ?? ChartLinkGroupInfo.MaxUsedGroups) > 1;
+            var activeDashboard = targetDashboard ?? _currentDashboard;
+            var linkModeAvailable = ShouldShowQuickAccessLinkControls(activeDashboard);
+            linkModeMenuItem.Visible = linkModeAvailable;
+            var groupedModeAvailable = IsGroupedLinkModeAvailable(activeDashboard);
             _groupedLinkModeMenuItem?.Visible = groupedModeAvailable;
 
             foreach (var item in linkModeMenuItem.DropDownItems.OfType<ToolStripMenuItem>()) {
@@ -1098,7 +1101,8 @@ public class MainForm : MaterialForm {
     /// </summary>
     private readonly record struct QuickAccessLinkControlsLayoutState(bool ShowSection, bool ShowGroupedToggle);
 
-    private static bool IsGroupedLinkModeAvailable(Dashboard? dashboard) => (dashboard?.UsedLinkGroups ?? ChartLinkGroupInfo.MaxUsedGroups) > 1;
+    private static bool IsGroupedLinkModeAvailable(Dashboard? dashboard)
+        => dashboard?.Tiles.OfType<ChartTileConfig>().Take(2).Count() >= 2;
 
     /// <summary>
     /// Determines whether should show quick access link controls for main form.
