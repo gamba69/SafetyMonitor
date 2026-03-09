@@ -79,10 +79,10 @@ public class Dashboard {
             CreateOverviewDashboard(),
             CreateNowDashboard(),
             CreateNightDashboard(),
-            CreateHistoryDashboard(),
             CreateObservatoryDashboard(),
+            CreateAstroDashboard(),
             CreateMeteoDashboard(),
-            CreateAstroDashboard()
+            CreateHistoryDashboard()
         };
 
         for (int i = 0; i < dashboards.Count; i++) {
