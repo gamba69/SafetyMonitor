@@ -1639,6 +1639,9 @@ public class MainForm : MaterialForm {
             _dashboardContainer.ResumeLayout(true);
         }
 
+        // Use the same dashboard context menu on empty dashboard area as in quick access panel.
+        _dashboardPanel.ContextMenuStrip = _editDashboardContextMenu;
+
         var shouldResetDashboardState = dashboard.NeedsStartupReset;
 
         if (!_dashboardLinkModes.ContainsKey(dashboard.Id)) {
