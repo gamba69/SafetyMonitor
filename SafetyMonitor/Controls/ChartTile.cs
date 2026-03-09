@@ -1243,7 +1243,7 @@ public class ChartTile : Panel {
             Filter = "PNG Image|*.png",
             DefaultExt = "png",
             AddExtension = true,
-            FileName = $"{_config.Title}.png"
+            FileName = ExportFileNameSanitizer.SanitizeStem(_config.Title, "chart") + ".png"
         };
 
         if (dialog.ShowDialog() != DialogResult.OK) {
@@ -1272,7 +1272,7 @@ public class ChartTile : Panel {
             Filter = "Excel Workbook|*.xlsx",
             DefaultExt = "xlsx",
             AddExtension = true,
-            FileName = $"{_config.Title}_table.xlsx"
+            FileName = ExportFileNameSanitizer.SanitizeStem(_config.Title + "_table", "chart_table") + ".xlsx"
         };
 
         if (dialog.ShowDialog() != DialogResult.OK) {
