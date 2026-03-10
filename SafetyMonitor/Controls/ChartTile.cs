@@ -1272,7 +1272,7 @@ public class ChartTile : Panel {
             Filter = "Excel Workbook|*.xlsx",
             DefaultExt = "xlsx",
             AddExtension = true,
-            FileName = ExportFileNameSanitizer.SanitizeStem(_config.Title + "_table", "chart_table") + ".xlsx"
+            FileName = ExportFileNameSanitizer.SanitizeStem(_config.Title, "table") + ".xlsx"
         };
 
         if (dialog.ShowDialog() != DialogResult.OK) {
