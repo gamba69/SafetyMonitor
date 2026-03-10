@@ -36,7 +36,12 @@ public class MainForm : MaterialForm {
     private DashboardPanel? _dashboardPanel;
     private readonly Dictionary<Guid, DashboardPanel> _dashboardPanelCache = [];
     private List<Dashboard> _dashboards = [];
-    private Label _dataPathLabel = null!;
+    private Label _statusDashboardLabel = null!;
+    private PictureBox _statusDashboardIcon = null!;
+    private Label _statusStorageLabel = null!;
+    private PictureBox _statusStorageIcon = null!;
+    private Label _statusSampleLabel = null!;
+    private PictureBox _statusSampleIcon = null!;
     private DataService _dataService;
     private RadioButton _linkedChartsButton = null!;
     private RadioButton _groupLinkedChartsButton = null!;
@@ -65,10 +70,21 @@ public class MainForm : MaterialForm {
     private System.Windows.Forms.Timer? _refreshTimer;
     private CancellationTokenSource? _refreshCts;
     private bool _isRefreshing;
-    private Label _statusLabel = null!;
     private Panel _statusBarPanel = null!;
-    private Panel _statusSeparator = null!;
-    private string _dataPathStatusText = "Storage: not configured";
+    private FlowLayoutPanel _statusInfoPanel = null!;
+    private FlowLayoutPanel _statusMetricsPanel = null!;
+    private readonly Dictionary<MetricType, PictureBox> _statusMetricIcons = [];
+    private readonly Dictionary<MetricType, Label> _statusMetricLabels = [];
+    private readonly List<Panel> _statusVerticalSeparators = [];
+    private static readonly MetricType[] StatusBarMetrics = [
+        MetricType.Temperature,
+        MetricType.Humidity,
+        MetricType.CloudCover,
+        MetricType.SkyQuality,
+        MetricType.RainRate,
+        MetricType.WindSpeed,
+        MetricType.IsSafe
+    ];
 
     // Refresh indicator fields.
     private PictureBox _refreshIndicatorIcon = null!;
@@ -1548,38 +1564,49 @@ public class MainForm : MaterialForm {
         _dashboardContainer = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         UpdateDashboardContainerTheme();
 
-        _statusBarPanel = new Panel { Dock = DockStyle.Bottom, Height = 24, Padding = new Padding(6, 0, 6, 0) };
+        _statusBarPanel = new Panel { Dock = DockStyle.Bottom, Height = 30, Padding = new Padding(0, 2, 0, 2) };
 
-        _dataPathLabel = new Label {
-            Text = _dataPathStatusText,
+        _statusInfoPanel = new FlowLayoutPanel {
+            Dock = DockStyle.Left,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            WrapContents = false,
+            FlowDirection = FlowDirection.LeftToRight,
+            Margin = Padding.Empty,
+            Padding = new Padding(0, 2, 0, 0)
+        };
+
+        _statusMetricsPanel = new FlowLayoutPanel {
             Dock = DockStyle.Right,
-            AutoSize = false,
-            AutoEllipsis = true,
-            Width = 380,
-            TextAlign = ContentAlignment.MiddleRight,
-            Margin = Padding.Empty
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            WrapContents = false,
+            FlowDirection = FlowDirection.LeftToRight,
+            Margin = Padding.Empty,
+            Padding = new Padding(0, 2, 0, 0)
         };
 
-        _statusSeparator = new Panel {
-            Dock = DockStyle.Right,
-            Width = 1,
-            Margin = new Padding(6, 4, 6, 4)
-        };
+        AddStatusInfoItem(_statusInfoPanel, out _statusDashboardIcon, out _statusDashboardLabel, "—");
+        AddStatusVerticalSeparator(_statusInfoPanel);
+        AddStatusInfoItem(_statusInfoPanel, out _statusStorageIcon, out _statusStorageLabel, "not configured");
+        AddStatusVerticalSeparator(_statusInfoPanel);
+        AddStatusInfoItem(_statusInfoPanel, out _statusSampleIcon, out _statusSampleLabel, "—");
 
-        _statusLabel = new Label {
-            Text = "Ready",
-            Dock = DockStyle.Fill,
-            AutoEllipsis = true,
-            TextAlign = ContentAlignment.MiddleLeft,
-            Margin = Padding.Empty
-        };
+        AddStatusMetricItem(MetricType.Temperature);
+        AddStatusMetricItem(MetricType.Humidity);
+        AddStatusMetricItem(MetricType.CloudCover);
+        AddStatusVerticalSeparator(_statusMetricsPanel);
+        AddStatusMetricItem(MetricType.SkyQuality);
+        AddStatusVerticalSeparator(_statusMetricsPanel);
+        AddStatusMetricItem(MetricType.RainRate);
+        AddStatusMetricItem(MetricType.WindSpeed);
+        AddStatusMetricItem(MetricType.IsSafe);
 
-        _statusBarPanel.Controls.Add(_statusLabel);
-        _statusBarPanel.Controls.Add(_statusSeparator);
-        _statusBarPanel.Controls.Add(_dataPathLabel);
+        _statusBarPanel.Controls.Add(_statusInfoPanel);
+        _statusBarPanel.Controls.Add(_statusMetricsPanel);
         _statusBarPanel.Resize += (_, _) => UpdateStatusBarLayout();
         UpdateStatusStripTheme();
-        UpdateStatusBarLayout();
+        UpdateStatusBar();
 
         Controls.Add(_dashboardContainer);
         Controls.Add(_quickAccessPanel);
@@ -1672,7 +1699,7 @@ public class MainForm : MaterialForm {
         _linkedChartsButton.Checked = _dashboardLinkModes[dashboard.Id] == DashboardChartLinkMode.Full;
         _groupLinkedChartsButton.Checked = _dashboardLinkModes[dashboard.Id] == DashboardChartLinkMode.Grouped;
         _unlinkedChartsButton.Checked = _dashboardLinkModes[dashboard.Id] == DashboardChartLinkMode.Disabled;
-        _statusLabel.Text = $"Dashboard: {dashboard.Name}";
+        UpdateStatusBar();
 
         if (_mainMenu.Items.Count > 1) { var dashboardMenu = (ToolStripMenuItem)_mainMenu.Items[1]; UpdateDashboardMenu(dashboardMenu); }
 
@@ -2253,6 +2280,7 @@ public class MainForm : MaterialForm {
         }
 
         UpdateRefreshIndicatorTimestamp();
+        UpdateStatusBar();
         RefreshQuickAccessLayout();
         RestartRefreshTimerInterval();
     }
@@ -2362,7 +2390,7 @@ public class MainForm : MaterialForm {
     private void OnDataServiceConnectionFailed(string details) {
         if (InvokeRequired) { BeginInvoke(() => OnDataServiceConnectionFailed(details)); return; }
         _refreshTimer?.Stop();
-        _statusLabel.Text = "SQL connection failed";
+        _statusSampleLabel.Text = "connection failed";
         var message = "Unable to connect to SQL Server. Application terminated." + Environment.NewLine + details;
         ThemedMessageBox.Show(this, message, "Connection error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         _isExitConfirmed = true;
@@ -2706,19 +2734,49 @@ public class MainForm : MaterialForm {
     /// Updates the status strip theme for metric aggregation snapshot.
     /// </summary>
     private void UpdateStatusStripTheme() {
-        if (_statusBarPanel == null || _statusLabel == null || _dataPathLabel == null || _statusSeparator == null) { return; }
+        if (_statusBarPanel == null || _statusInfoPanel == null || _statusMetricsPanel == null) { return; }
 
         var isLight = _skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var backColor = isLight ? Color.FromArgb(240, 240, 240) : Color.FromArgb(25, 36, 40);
         var foreColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
-        var separatorColor = isLight ? Color.FromArgb(196, 206, 211) : Color.FromArgb(70, 85, 92);
+        var iconColor = foreColor;
+        var separatorColor = isLight ? Color.FromArgb(182, 194, 201) : Color.FromArgb(68, 84, 92);
 
         _statusBarPanel.BackColor = backColor;
-        _statusLabel.BackColor = backColor;
-        _dataPathLabel.BackColor = backColor;
-        _statusLabel.ForeColor = foreColor;
-        _dataPathLabel.ForeColor = foreColor;
-        _statusSeparator.BackColor = separatorColor;
+        _statusInfoPanel.BackColor = backColor;
+        _statusMetricsPanel.BackColor = backColor;
+
+        foreach (var control in _statusInfoPanel.Controls.OfType<Control>()) {
+            control.BackColor = backColor;
+            if (control is Label label) {
+                label.ForeColor = foreColor;
+            }
+        }
+
+        foreach (var control in _statusMetricsPanel.Controls.OfType<Control>()) {
+            control.BackColor = backColor;
+            if (control is Label label) {
+                label.ForeColor = foreColor;
+            }
+        }
+
+        _statusDashboardIcon.Image?.Dispose();
+        _statusDashboardIcon.Image = MaterialIcons.GetIcon(MaterialIcons.DashboardTab, iconColor, 22, IconRenderPreset.DarkOutlined);
+        _statusStorageIcon.Image?.Dispose();
+        _statusStorageIcon.Image = MaterialIcons.GetIcon(MaterialIcons.CommonDatabase, iconColor, 22, IconRenderPreset.DarkOutlined);
+        _statusSampleIcon.Image?.Dispose();
+        _statusSampleIcon.Image = MaterialIcons.GetIcon(MaterialIcons.Refresh, iconColor, 22, IconRenderPreset.DarkOutlined);
+
+        foreach (var (metric, iconHost) in _statusMetricIcons) {
+            iconHost.Image?.Dispose();
+            var iconName = MaterialIcons.GetMetricIconName(metric);
+            iconHost.Image = MaterialIcons.GetIcon(iconName, iconColor, 22, IconRenderPreset.DarkOutlined);
+        }
+
+        foreach (var separator in _statusVerticalSeparators) {
+            separator.BackColor = separatorColor;
+        }
+
         _statusBarPanel.Invalidate(true);
     }
 
@@ -3478,15 +3536,20 @@ public class MainForm : MaterialForm {
     /// Updates the status bar for metric aggregation snapshot.
     /// </summary>
     private void UpdateStatusBar() {
+        _statusDashboardLabel.Text = _currentDashboard?.Name ?? "—";
+
         if (_dataService.IsConnected) {
-            _dataPathStatusText = $"Storage: {_appSettings.StoragePath}";
-            _statusLabel.Text = "Connected to storage";
+            _statusStorageLabel.Text = string.IsNullOrWhiteSpace(_appSettings.StoragePath)
+                ? "connected"
+                : _appSettings.StoragePath;
         } else {
-            _dataPathStatusText = "Storage: not configured";
-            _statusLabel.Text = "Storage not configured (File → Settings)";
+            _statusStorageLabel.Text = "not configured";
         }
 
-        _dataPathLabel.Text = _dataPathStatusText;
+        var latestData = _dataService.GetLatestData();
+        _statusSampleLabel.Text = latestData?.Timestamp.ToLocalTime().ToString("HH:mm:ss") ?? "—";
+
+        UpdateStatusMetricValues(latestData);
         UpdateStatusBarLayout();
     }
 
@@ -3494,10 +3557,104 @@ public class MainForm : MaterialForm {
     /// Updates the status bar layout for metric aggregation snapshot.
     /// </summary>
     private void UpdateStatusBarLayout() {
-        if (_statusBarPanel == null || _statusBarPanel.IsDisposed || _dataPathLabel == null || _dataPathLabel.IsDisposed) { return; }
+        if (_statusBarPanel == null || _statusBarPanel.IsDisposed || _statusInfoPanel == null || _statusMetricsPanel == null) { return; }
 
-        var targetWidth = Math.Clamp((int)Math.Round(_statusBarPanel.ClientSize.Width * 0.42), 220, 720);
-        _dataPathLabel.Width = targetWidth;
+        _statusInfoPanel.PerformLayout();
+        _statusMetricsPanel.PerformLayout();
+        AlignStatusPanelEdges(_statusInfoPanel);
+        AlignStatusPanelEdges(_statusMetricsPanel);
+    }
+
+    private static void AlignStatusPanelEdges(FlowLayoutPanel panel) {
+        if (panel.Controls.Count == 0) {
+            return;
+        }
+
+        var first = panel.Controls[0];
+        first.Margin = new Padding(0, first.Margin.Top, first.Margin.Right, first.Margin.Bottom);
+
+        var last = panel.Controls[panel.Controls.Count - 1];
+        last.Margin = new Padding(last.Margin.Left, last.Margin.Top, 0, last.Margin.Bottom);
+    }
+
+    private void AddStatusInfoItem(FlowLayoutPanel host, out PictureBox icon, out Label label, string text) {
+        icon = new PictureBox {
+            Size = new Size(22, 22),
+            Margin = new Padding(0, 0, 4, 0),
+            SizeMode = PictureBoxSizeMode.CenterImage
+        };
+
+        label = new Label {
+            Text = text,
+            AutoSize = true,
+            Height = 24,
+            AutoEllipsis = false,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Margin = new Padding(0, 3, 12, 0)
+        };
+
+        host.Controls.Add(icon);
+        host.Controls.Add(label);
+    }
+
+    private void AddStatusVerticalSeparator(FlowLayoutPanel host) {
+        var separator = new Panel {
+            Width = 1,
+            Height = 16,
+            Margin = new Padding(2, 4, 8, 0)
+        };
+
+        _statusVerticalSeparators.Add(separator);
+        host.Controls.Add(separator);
+    }
+
+    private void AddStatusMetricItem(MetricType metric) {
+        var icon = new PictureBox {
+            Size = new Size(22, 22),
+            Margin = new Padding(0, 0, 3, 0),
+            SizeMode = PictureBoxSizeMode.CenterImage
+        };
+
+        var label = new Label {
+            Text = GetStatusMetricText(metric, null),
+            AutoSize = true,
+            Height = 24,
+            AutoEllipsis = false,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Margin = new Padding(0, 3, 12, 0)
+        };
+
+        _statusMetricIcons[metric] = icon;
+        _statusMetricLabels[metric] = label;
+        _statusMetricsPanel.Controls.Add(icon);
+        _statusMetricsPanel.Controls.Add(label);
+    }
+
+    private void UpdateStatusMetricValues(DataStorage.Models.ObservingData? data) {
+        foreach (var metric in StatusBarMetrics) {
+            if (_statusMetricLabels.TryGetValue(metric, out var label)) {
+                label.Text = GetStatusMetricText(metric, data);
+            }
+        }
+    }
+
+    private static string GetStatusMetricText(MetricType metric, DataStorage.Models.ObservingData? data) {
+        if (metric == MetricType.IsSafe) {
+            if (data?.IsSafe == true) { return "SAFE"; }
+            if (data?.IsSafe == false) { return "UNSAFE"; }
+            return "—";
+        }
+
+        var value = data == null ? null : metric.GetValue(data);
+        if (!value.HasValue) {
+            return "—";
+        }
+
+        var formatted = MetricDisplaySettingsStore.FormatMetricValue(metric, value.Value);
+        var unit = metric.GetUnit();
+        return string.IsNullOrWhiteSpace(unit)
+            ? formatted
+            : $"{formatted} {unit}";
     }
 
     #endregion Private Methods
