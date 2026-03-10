@@ -262,15 +262,15 @@ public class ChartTile : Panel {
 
                 if (i == 0) {
                     // First metric — use the built-in left Y axis
-                    StyleAxis(_plot.Plot.Axes.Left, labelText, representativeColor);
+                    StyleAxis(_plot!.Plot.Axes.Left, labelText, representativeColor);
                     axisMap[metric] = _plot.Plot.Axes.Left;
                 } else if (i == 1) {
                     // Second metric — use the built-in right Y axis
-                    StyleAxis(_plot.Plot.Axes.Right, labelText, representativeColor);
+                    StyleAxis(_plot!.Plot.Axes.Right, labelText, representativeColor);
                     axisMap[metric] = _plot.Plot.Axes.Right;
                 } else {
                     // 3rd+ metrics — create additional right-side Y axes
-                    var extraAxis = _plot.Plot.Axes.AddRightAxis();
+                    var extraAxis = _plot!.Plot.Axes.AddRightAxis();
                     StyleAxis(extraAxis, labelText, representativeColor);
                     axisMap[metric] = extraAxis;
                     _extraAxes.Add(extraAxis);
@@ -282,7 +282,7 @@ public class ChartTile : Panel {
             var representativeColor = ScottPlot.Color.FromColor(
                 _config.MetricAggregations.First(a => a.Metric == metric).GetColorForTheme(isLightTheme));
             axisStyleMap[metric] = (labelText, representativeColor);
-            StyleAxis(_plot.Plot.Axes.Left, labelText, representativeColor);
+            StyleAxis(_plot!.Plot.Axes.Left, labelText, representativeColor);
             axisMap[metric] = _plot.Plot.Axes.Left;
         }
 
