@@ -2513,6 +2513,8 @@ public class MainForm : MaterialForm {
             return;
         }
 
+        var previousTargetPointCount = _appSettings.ChartStaticAggregationTargetPointCount;
+
         _appSettings.StoragePath = settingsForm.StoragePath;
         _appSettings.RefreshInterval = settingsForm.RefreshInterval;
         _appSettings.ValueTileLookbackMinutes = settingsForm.ValueTileLookbackMinutes;
@@ -2525,6 +2527,15 @@ public class MainForm : MaterialForm {
         _appSettings.StartMinimized = settingsForm.StartMinimized;
         _appSettings.MaterialColorScheme = settingsForm.MaterialColorScheme;
         _appSettings.ValidateDatabaseStructureOnStartup = settingsForm.ValidateDatabaseStructureOnStartup;
+
+
+        if (previousTargetPointCount != _appSettings.ChartStaticAggregationTargetPointCount) {
+            _appSettings.ChartPeriodPresets = ChartPeriodPresetStore.RecalculateAggregationIntervals(
+                _appSettings.ChartPeriodPresets,
+                _appSettings.ChartStaticAggregationTargetPointCount,
+                _appSettings.ChartRawDataPointIntervalSeconds);
+            ChartPeriodPresetStore.SetPresets(_appSettings.ChartPeriodPresets);
+        }
 
         try {
             var openDatabaseSettings = EnsureStorageConfigurationAtStartup();

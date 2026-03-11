@@ -99,6 +99,34 @@ public static class ChartPeriodPresetStore {
     }
 
     /// <summary>
+    /// Recalculates aggregation intervals for the provided preset definitions.
+    /// </summary>
+    /// <param name="presets">Collection of presets items used by the operation.</param>
+    /// <param name="targetPointCount">Input value for target point count.</param>
+    /// <param name="rawDataPointIntervalSeconds">Input value for raw data point interval seconds.</param>
+    /// <returns>The recalculated preset list.</returns>
+    public static List<ChartPeriodPresetDefinition> RecalculateAggregationIntervals(
+        IEnumerable<ChartPeriodPresetDefinition>? presets,
+        int targetPointCount,
+        int rawDataPointIntervalSeconds) {
+        var normalized = NormalizePresets(presets);
+        var safeTargetPointCount = Math.Max(2, targetPointCount);
+        var safeRawDataPointIntervalSeconds = Math.Max(1, rawDataPointIntervalSeconds);
+
+        return [.. normalized.Select(preset => {
+            var duration = preset.ToTimeSpan();
+            return new ChartPeriodPresetDefinition {
+                Uid = preset.Uid,
+                Name = preset.Name,
+                ShortName = preset.ShortName,
+                Value = preset.Value,
+                Unit = preset.Unit,
+                AggregationInterval = CalculateDefaultAggregationInterval(duration, safeTargetPointCount, safeRawDataPointIntervalSeconds)
+            };
+        })];
+    }
+
+    /// <summary>
     /// Sets the presets for chart period preset store.
     /// </summary>
     /// <param name="presets">Collection of presets items used by the operation.</param>
