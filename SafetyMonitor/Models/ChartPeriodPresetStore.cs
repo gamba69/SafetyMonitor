@@ -140,7 +140,7 @@ public static class ChartPeriodPresetStore {
     /// </summary>
     /// <returns>The result of the operation.</returns>
     public static IReadOnlyList<ChartPeriodPreset> GetPresetItems() {
-        return _presets
+        return [.. _presets
             .Select(def => {
                 var duration = def.ToTimeSpan();
                 var period = MapDurationToPeriod(duration);
@@ -150,8 +150,7 @@ public static class ChartPeriodPresetStore {
                         ? TimeSpan.Zero
                         : GetRecommendedAggregationInterval(duration);
                 return new ChartPeriodPreset(def.Uid, def.Name, def.ShortName, duration, period, aggregationInterval);
-            })
-            .ToList();
+            })];
     }
 
     /// <summary>
@@ -283,7 +282,7 @@ public static class ChartPeriodPresetStore {
                     continue;
                 }
 
-                var unit = Enum.IsDefined(typeof(ChartPeriodUnit), preset.Unit)
+                var unit = Enum.IsDefined(preset.Unit)
                     ? preset.Unit
                     : ChartPeriodUnit.Hours;
 

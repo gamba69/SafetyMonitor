@@ -27,8 +27,10 @@ public class ChartTile : Panel {
     private readonly Dictionary<MetricType, string> _metricAxisLabels = [];
     private readonly Dictionary<MetricType, Color> _metricFallbackColors = [];
     private readonly HashSet<MetricType> _metricsWithData = [];
+#pragma warning disable IDE0028
     private readonly Dictionary<string, SafetyMonitor.Models.ColorScheme> _colorSchemesByName = new(StringComparer.Ordinal);
     private readonly Dictionary<string, ValueScheme> _valueSchemesByName = new(StringComparer.Ordinal);
+#pragma warning restore IDE0028
     private bool _initialized;
     private readonly ThemedMenuRenderer _contextMenuRenderer = new();
     private const int MenuIconSize = 22;
@@ -507,7 +509,7 @@ public class ChartTile : Panel {
 
         if (times.Length == 1) {
             var color = ScottPlot.Color.FromColor(colorScheme.GetColor(rawValues[0]));
-            var singlePoint = _plot!.Plot.Add.Scatter(new[] { times[0] }, new[] { plotValues[0] });
+            var singlePoint = _plot!.Plot.Add.Scatter([times[0]], new[] { plotValues[0] });
             singlePoint.LegendText = aggregation.Label;
             singlePoint.Color = color;
             singlePoint.LineWidth = 0;
@@ -546,9 +548,7 @@ public class ChartTile : Panel {
             var segment = _plot!.Plot.Add.Scatter(runTimes, runPlotValues);
             segment.LegendText = !hasLegendLabel ? aggregation.Label : string.Empty;
             hasLegendLabel = true;
-            if (legendPlottable == null) {
-                legendPlottable = segment;
-            }
+            legendPlottable ??= segment;
             segment.Color = ScottPlot.Color.FromColor(segmentColors[runStart]);
             segment.LineWidth = aggregation.LineWidth;
             segment.MarkerSize = 0;
@@ -567,7 +567,7 @@ public class ChartTile : Panel {
 
         var markerSize = Math.Max(aggregation.LineWidth * 2f, 5f);
         for (int i = 0; i < times.Length; i++) {
-            var marker = _plot!.Plot.Add.Scatter(new[] { times[i] }, new[] { plotValues[i] });
+            var marker = _plot!.Plot.Add.Scatter([times[i]], new[] { plotValues[i] });
             marker.LegendText = string.Empty;
             marker.Color = ScottPlot.Color.FromColor(colorScheme.GetColor(rawValues[i]));
             marker.LineWidth = 0;
@@ -1862,7 +1862,7 @@ public class ChartTile : Panel {
                 ExitStaticMode();
             }
             UpdateModeSwitchAppearance();
-        UpdateAggregationInfoLabel(ResolveAggregationInterval());
+            UpdateAggregationInfoLabel(ResolveAggregationInterval());
         };
 
         _staticModeButton = new RadioButton {
@@ -1898,7 +1898,7 @@ public class ChartTile : Panel {
                 }
             }
             UpdateModeSwitchAppearance();
-        UpdateAggregationInfoLabel(ResolveAggregationInterval());
+            UpdateAggregationInfoLabel(ResolveAggregationInterval());
         };
 
         _pauseModeButton = new CheckBox {
