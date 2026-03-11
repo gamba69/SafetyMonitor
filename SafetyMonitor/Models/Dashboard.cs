@@ -727,6 +727,7 @@ public class Dashboard {
             Color = color,
             DarkThemeColor = CreateDarkThemeSeriesColor(color),
             Label = label,
+            ColorSchemeName = ColorSchemeService.GetDefaultSchemeName(metric),
             Smooth = metric != MetricType.IsSafe
         };
     }

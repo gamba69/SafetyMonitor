@@ -2077,6 +2077,7 @@ public class MainForm : MaterialForm {
                 aggregation.Smooth,
                 aggregation.Tension,
                 aggregation.ShowMarkers,
+                NormalizeSnapshotText(aggregation.ColorSchemeName),
                 NormalizeSnapshotText(aggregation.ValueSchemeName)))]);
     }
 
@@ -2160,6 +2161,7 @@ public class MainForm : MaterialForm {
         bool Smooth,
         float Tension,
         bool ShowMarkers,
+        string ColorSchemeName,
         string ValueSchemeName);
 
     /// <summary>

@@ -44,10 +44,13 @@ public class MetricAggregation {
     /// </summary>
     public bool ShowMarkers { get; set; } = false;
     /// <summary>
+    /// Gets or sets the color scheme name for metric aggregation. Controls visual presentation used by themed rendering and UI styling.
+    /// </summary>
+    public string ColorSchemeName { get; set; } = "";
+    /// <summary>
     /// Gets or sets the value scheme name for metric aggregation. Controls visual presentation used by themed rendering and UI styling.
     /// </summary>
     public string ValueSchemeName { get; set; } = "";
-
     #endregion Public Properties
 
     #region Public Methods

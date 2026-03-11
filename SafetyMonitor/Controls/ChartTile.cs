@@ -20,8 +20,15 @@ public class ChartTile : Panel {
     private readonly ChartTileConfig _config;
     private readonly DataService _dataService;
     private readonly ValueSchemeService _valueSchemeService = new();
+    private readonly ColorSchemeService _colorSchemeService = new();
     private readonly ChartTableExportService _chartTableExportService = new();
     private readonly List<ScottPlot.IYAxis> _extraAxes = [];
+    private readonly Dictionary<MetricType, ScottPlot.IYAxis> _metricAxes = [];
+    private readonly Dictionary<MetricType, string> _metricAxisLabels = [];
+    private readonly Dictionary<MetricType, Color> _metricFallbackColors = [];
+    private readonly HashSet<MetricType> _metricsWithData = [];
+    private readonly Dictionary<string, SafetyMonitor.Models.ColorScheme> _colorSchemesByName = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ValueScheme> _valueSchemesByName = new(StringComparer.Ordinal);
     private bool _initialized;
     private readonly ThemedMenuRenderer _contextMenuRenderer = new();
     private const int MenuIconSize = 22;
@@ -92,7 +99,11 @@ public class ChartTile : Panel {
         /// <summary>
         /// Gets or sets the series color for series hover snapshot. Controls visual presentation used by themed rendering and UI styling.
         /// </summary>
-        public Color SeriesColor { get; init; } = Color.White;
+        public Color SeriesColor { get; set; } = Color.White;
+        /// <summary>
+        /// Gets or sets the base color for series hover snapshot. Controls visual presentation used by themed rendering and UI styling.
+        /// </summary>
+        public Color BaseColor { get; init; } = Color.White;
         /// <summary>
         /// Gets or sets the xs for series hover snapshot. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
@@ -101,6 +112,14 @@ public class ChartTile : Panel {
         /// Gets or sets the ys for series hover snapshot. Stores a numeric value used by calculations, thresholds, or telemetry display.
         /// </summary>
         public double[] Ys { get; init; } = [];
+        /// <summary>
+        /// Gets or sets the color scheme name for series hover snapshot. Controls visual presentation used by themed rendering and UI styling.
+        /// </summary>
+        public string ColorSchemeName { get; init; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the legend plottable for series hover snapshot. Holds part of the component state used by higher-level application logic.
+        /// </summary>
+        public object? LegendPlottable { get; init; }
         /// <summary>
         /// Gets or sets the value scheme name for series hover snapshot. Controls visual presentation used by themed rendering and UI styling.
         /// </summary>
@@ -289,6 +308,20 @@ public class ChartTile : Panel {
         var hasVisibleSeries = false;
         var metricsWithData = new HashSet<MetricType>();
         var horizontalPoints = new HashSet<double>();
+        var colorSchemes = _colorSchemeService.LoadSchemes()
+            .GroupBy(scheme => scheme.Name, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+        _colorSchemesByName.Clear();
+        foreach (var (name, scheme) in colorSchemes) {
+            _colorSchemesByName[name] = scheme;
+        }
+        var valueSchemes = _valueSchemeService.LoadSchemes()
+            .GroupBy(scheme => scheme.Name, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+        _valueSchemesByName.Clear();
+        foreach (var (name, scheme) in valueSchemes) {
+            _valueSchemesByName[name] = scheme;
+        }
 
         // Cache DB results per AggregationFunction to avoid duplicate queries.
         // The DB returns all columns in each row, so the same result set can be
@@ -332,36 +365,74 @@ public class ChartTile : Panel {
             foreach (var time in validTimes) {
                 horizontalPoints.Add(time);
             }
-            var scatter = _plot.Plot.Add.Scatter(validTimes, validPlotValues);
             hasVisibleSeries = true;
             metricsWithData.Add(agg.Metric);
-            scatter.LegendText = agg.Label;
-            scatter.Color = ScottPlot.Color.FromColor(agg.GetColorForTheme(isLightTheme));
-            scatter.LineWidth = agg.LineWidth;
-            scatter.MarkerLineWidth = agg.LineWidth;
-            scatter.MarkerSize = agg.ShowMarkers
-                ? Math.Max(agg.LineWidth * 2f, 5f)
-                : 0;
-            scatter.MarkerShape = MarkerShape.VerticalBar;
-            scatter.Smooth = agg.Smooth;
-            ApplySmoothTension(scatter, agg);
+            var yAxis = useMultipleAxes && axisMap.TryGetValue(agg.Metric, out var mappedAxis)
+                ? mappedAxis
+                : null;
+            SafetyMonitor.Models.ColorScheme? colorScheme = null;
+            var hasScheme = !string.IsNullOrWhiteSpace(agg.ColorSchemeName)
+                && colorSchemes.TryGetValue(agg.ColorSchemeName, out colorScheme);
+            object? legendPlottable = null;
+            if (hasScheme && colorScheme != null) {
+                legendPlottable = AddSchemeOnlySeries(validTimes, validPlotValues, validRawValues, agg, colorScheme, yAxis);
+            } else {
+                var scatter = _plot.Plot.Add.Scatter(validTimes, validPlotValues);
+                legendPlottable = scatter;
+                scatter.LegendText = agg.Label;
+                scatter.Color = ScottPlot.Color.FromColor(agg.GetColorForTheme(isLightTheme));
+                scatter.LineWidth = agg.LineWidth;
+                scatter.MarkerLineWidth = agg.LineWidth;
+                scatter.MarkerSize = agg.ShowMarkers
+                    ? Math.Max(agg.LineWidth * 2f, 5f)
+                    : 0;
+                scatter.MarkerShape = MarkerShape.VerticalBar;
+                scatter.Smooth = agg.Smooth;
+                ApplySmoothTension(scatter, agg);
 
-            // Assign this series to its dedicated Y axis when multiple axes are active
-            if (useMultipleAxes && axisMap.TryGetValue(agg.Metric, out var yAxis)) {
-                scatter.Axes.YAxis = yAxis;
+                // Assign this series to its dedicated Y axis when multiple axes are active
+                if (yAxis != null) {
+                    scatter.Axes.YAxis = yAxis;
+                }
             }
 
+            var baseColor = agg.GetColorForTheme(isLightTheme);
+            var initialSeriesColor = hasScheme && colorScheme != null
+                ? colorScheme.GetColor(validRawValues[^1])
+                : baseColor;
             _hoverSeries.Add(new SeriesHoverSnapshot {
                 Label = string.IsNullOrWhiteSpace(agg.Label)
                     ? agg.Metric.GetDisplayName()
                     : agg.Label,
                 Unit = agg.Metric.GetUnit() ?? string.Empty,
                 Metric = agg.Metric,
-                SeriesColor = agg.GetColorForTheme(isLightTheme),
+                SeriesColor = initialSeriesColor,
+                BaseColor = baseColor,
                 Xs = validTimes,
                 Ys = validRawValues,
+                ColorSchemeName = agg.ColorSchemeName ?? string.Empty,
+                LegendPlottable = legendPlottable,
                 ValueSchemeName = agg.ValueSchemeName ?? string.Empty
             });
+        }
+
+        _metricAxes.Clear();
+        foreach (var (metric, axis) in axisMap) {
+            _metricAxes[metric] = axis;
+        }
+        _metricAxisLabels.Clear();
+        foreach (var (metric, style) in axisStyleMap) {
+            _metricAxisLabels[metric] = style.LabelText;
+        }
+        _metricFallbackColors.Clear();
+        foreach (var agg in _config.MetricAggregations) {
+            if (!_metricFallbackColors.ContainsKey(agg.Metric)) {
+                _metricFallbackColors[agg.Metric] = agg.GetColorForTheme(isLightTheme);
+            }
+        }
+        _metricsWithData.Clear();
+        foreach (var metric in metricsWithData) {
+            _metricsWithData.Add(metric);
         }
 
         _lastHorizontalPointCount = horizontalPoints.Count;
@@ -386,6 +457,7 @@ public class ChartTile : Panel {
 
         ApplyThemeColors();
         ApplyYAxisVisibility(axisMap, axisStyleMap, metricsWithData);
+        UpdateVisualColorsForContext(_inspectorActive ? _lastHoverAnchorX : null);
         if (_config.ShowLegend && _config.MetricAggregations.Count > 1) {
             _plot.Plot.ShowLegend();
         } else {
@@ -413,6 +485,101 @@ public class ChartTile : Panel {
             ShowInspectorAt(_lastHoverAnchorX.Value);
         }
         _plot.Refresh();
+    }
+
+    /// <summary>
+    /// Adds the scheme-only series for chart tile where segment and marker colors are resolved from metric values.
+    /// </summary>
+    /// <param name="times">Input value for times.</param>
+    /// <param name="plotValues">Input value for plot values.</param>
+    /// <param name="rawValues">Input value for raw values.</param>
+    /// <param name="aggregation">Input value for aggregation.</param>
+    /// <param name="colorScheme">Input value for color scheme.</param>
+    /// <param name="yAxis">Input value for y axis.</param>
+    private object? AddSchemeOnlySeries(
+        double[] times,
+        double[] plotValues,
+        double[] rawValues,
+        MetricAggregation aggregation,
+        SafetyMonitor.Models.ColorScheme colorScheme,
+        ScottPlot.IYAxis? yAxis) {
+        var hasLegendLabel = false;
+
+        if (times.Length == 1) {
+            var color = ScottPlot.Color.FromColor(colorScheme.GetColor(rawValues[0]));
+            var singlePoint = _plot!.Plot.Add.Scatter(new[] { times[0] }, new[] { plotValues[0] });
+            singlePoint.LegendText = aggregation.Label;
+            singlePoint.Color = color;
+            singlePoint.LineWidth = 0;
+            singlePoint.MarkerLineWidth = aggregation.LineWidth;
+            singlePoint.MarkerSize = aggregation.ShowMarkers
+                ? Math.Max(aggregation.LineWidth * 2f, 5f)
+                : 0;
+            singlePoint.MarkerShape = MarkerShape.VerticalBar;
+            if (yAxis != null) {
+                singlePoint.Axes.YAxis = yAxis;
+            }
+            return singlePoint;
+        }
+
+        var segmentColors = new Color[times.Length - 1];
+        for (int i = 0; i < segmentColors.Length; i++) {
+            var referenceValue = (rawValues[i] + rawValues[i + 1]) / 2.0;
+            segmentColors[i] = colorScheme.GetColor(referenceValue);
+        }
+
+        var runStart = 0;
+        object? legendPlottable = null;
+        for (int i = 1; i <= segmentColors.Length; i++) {
+            var runEnded = i == segmentColors.Length || segmentColors[i] != segmentColors[runStart];
+            if (!runEnded) {
+                continue;
+            }
+
+            var runLength = i - runStart;
+            var pointCount = runLength + 1;
+            var runTimes = new double[pointCount];
+            var runPlotValues = new double[pointCount];
+            Array.Copy(times, runStart, runTimes, 0, pointCount);
+            Array.Copy(plotValues, runStart, runPlotValues, 0, pointCount);
+
+            var segment = _plot!.Plot.Add.Scatter(runTimes, runPlotValues);
+            segment.LegendText = !hasLegendLabel ? aggregation.Label : string.Empty;
+            hasLegendLabel = true;
+            if (legendPlottable == null) {
+                legendPlottable = segment;
+            }
+            segment.Color = ScottPlot.Color.FromColor(segmentColors[runStart]);
+            segment.LineWidth = aggregation.LineWidth;
+            segment.MarkerSize = 0;
+            segment.Smooth = aggregation.Smooth;
+            ApplySmoothTension(segment, aggregation);
+            if (yAxis != null) {
+                segment.Axes.YAxis = yAxis;
+            }
+
+            runStart = i;
+        }
+
+        if (!aggregation.ShowMarkers) {
+            return legendPlottable;
+        }
+
+        var markerSize = Math.Max(aggregation.LineWidth * 2f, 5f);
+        for (int i = 0; i < times.Length; i++) {
+            var marker = _plot!.Plot.Add.Scatter(new[] { times[i] }, new[] { plotValues[i] });
+            marker.LegendText = string.Empty;
+            marker.Color = ScottPlot.Color.FromColor(colorScheme.GetColor(rawValues[i]));
+            marker.LineWidth = 0;
+            marker.MarkerLineWidth = aggregation.LineWidth;
+            marker.MarkerSize = markerSize;
+            marker.MarkerShape = MarkerShape.VerticalBar;
+            if (yAxis != null) {
+                marker.Axes.YAxis = yAxis;
+            }
+        }
+
+        return legendPlottable;
     }
 
     /// <summary>
@@ -601,6 +768,10 @@ public class ChartTile : Panel {
 
         var anchor = FindNearestAnchorX(x);
         if (!anchor.HasValue) {
+            return;
+        }
+
+        if (_lastHoverAnchorX.HasValue && Math.Abs(_lastHoverAnchorX.Value - anchor.Value) < 1e-9) {
             return;
         }
 
@@ -2467,32 +2638,7 @@ public class ChartTile : Panel {
             return;
         }
 
-        var distinctMetrics = _config.MetricAggregations
-            .Select(a => a.Metric)
-            .Distinct()
-            .ToList();
-        var isLightTheme = MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT;
-
-        for (int i = 0; i < distinctMetrics.Count; i++) {
-            var metric = distinctMetrics[i];
-            var representativeColor = ScottPlot.Color.FromColor(
-                _config.MetricAggregations.First(a => a.Metric == metric).GetColorForTheme(isLightTheme));
-
-            ScottPlot.IYAxis? axis = null;
-            if (i == 0) {
-                axis = _plot.Plot.Axes.Left;
-            } else if (i == 1) {
-                axis = _plot.Plot.Axes.Right;
-            } else if (i - 2 < _extraAxes.Count) {
-                axis = _extraAxes[i - 2];
-            }
-
-            if (axis == null) {
-                continue;
-            }
-
-            StyleAxis(axis, BuildAxisLabel(metric, _plot.Height), representativeColor);
-        }
+        UpdateVisualColorsForContext(_inspectorActive ? _lastHoverAnchorX : null);
     }
 
     /// <summary>
@@ -2778,6 +2924,10 @@ public class ChartTile : Panel {
             return;
         }
 
+        if (_lastHoverAnchorX.HasValue && Math.Abs(_lastHoverAnchorX.Value - anchor.Value) < 1e-9) {
+            return;
+        }
+
         UpdateHoverVerticalLine(anchor.Value);
         UpdateHoverInfo(anchor.Value);
         _plot.Refresh();
@@ -2921,17 +3071,21 @@ public class ChartTile : Panel {
             visibleSeries.Add((series, value));
         }
 
+        UpdateVisualColorsForContext(anchorX, visibleSeries);
+
         AppendHoverInfoChunk(timestamp, isBold: false, baseTextColor, addSeparator: visibleSeries.Count > 0);
 
         for (var i = 0; i < visibleSeries.Count; i++) {
             var (series, value) = visibleSeries[i];
 
-            AppendHoverInfoChunk(series.Label, isBold: true, series.SeriesColor, addSeparator: false);
+            var seriesColor = ResolveSeriesVisualColor(series, value);
+            AppendHoverInfoChunk(series.Label, isBold: true, seriesColor, addSeparator: false);
             string formattedValue;
             var appendUnit = true;
             if (!string.IsNullOrEmpty(series.ValueSchemeName)) {
-                var valueSchemes = _valueSchemeService.LoadSchemes();
-                var valueScheme = valueSchemes.FirstOrDefault(s => s.Name == series.ValueSchemeName);
+                var valueScheme = _valueSchemesByName.TryGetValue(series.ValueSchemeName, out var cachedScheme)
+                    ? cachedScheme
+                    : null;
                 var transformedText = valueScheme?.GetText(value);
                 formattedValue = transformedText ?? MetricDisplaySettingsStore.FormatMetricValue(series.Metric, value);
                 appendUnit = false;
@@ -2943,7 +3097,7 @@ public class ChartTile : Panel {
                 ? $" {series.Unit}"
                 : string.Empty;
 
-            AppendHoverInfoChunk($": {formattedValue}{unit}", isBold: false, series.SeriesColor,
+            AppendHoverInfoChunk($": {formattedValue}{unit}", isBold: false, seriesColor,
                 addSeparator: i < visibleSeries.Count - 1);
         }
 
@@ -2993,6 +3147,89 @@ public class ChartTile : Panel {
 
         _hoverInfoTextBox?.Clear();
         _lastHoverAnchorX = null;
+        UpdateVisualColorsForContext(null);
+    }
+
+    /// <summary>
+    /// Resolves the series visual color for series hover snapshot.
+    /// </summary>
+    /// <param name="series">Input value for series.</param>
+    /// <param name="value">Input value for value.</param>
+    /// <returns>The result of the operation.</returns>
+    private Color ResolveSeriesVisualColor(SeriesHoverSnapshot series, double value) {
+        if (!string.IsNullOrWhiteSpace(series.ColorSchemeName)
+            && _colorSchemesByName.TryGetValue(series.ColorSchemeName, out var colorScheme)) {
+            return colorScheme.GetColor(value);
+        }
+
+        return series.BaseColor;
+    }
+
+    /// <summary>
+    /// Updates visual colors for context for series hover snapshot.
+    /// </summary>
+    /// <param name="anchorX">Input value for anchor x.</param>
+    /// <param name="visibleSeries">Input value for visible series.</param>
+    private void UpdateVisualColorsForContext(double? anchorX, List<(SeriesHoverSnapshot Series, double Value)>? visibleSeries = null) {
+        if (_plot == null || _hoverSeries.Count == 0) {
+            return;
+        }
+
+        var seriesValues = visibleSeries;
+        if (seriesValues == null) {
+            seriesValues = [];
+            foreach (var series in _hoverSeries) {
+                var index = anchorX.HasValue ? FindNearestIndex(series.Xs, anchorX.Value) : series.Ys.Length - 1;
+                if (index < 0 || index >= series.Ys.Length) {
+                    continue;
+                }
+
+                var value = series.Ys[index];
+                if (double.IsNaN(value)) {
+                    continue;
+                }
+
+                seriesValues.Add((series, value));
+            }
+        }
+
+        var metricColors = new Dictionary<MetricType, ScottPlot.Color>();
+        foreach (var (series, value) in seriesValues) {
+            var color = ResolveSeriesVisualColor(series, value);
+            series.SeriesColor = color;
+            if (series.LegendPlottable is ScottPlot.Plottables.Scatter legendScatter) {
+                legendScatter.Color = ScottPlot.Color.FromColor(color);
+            }
+
+            metricColors[series.Metric] = ScottPlot.Color.FromColor(color);
+        }
+
+        SetAxisNeutralState(_plot.Plot.Axes.Left);
+        SetAxisNeutralState(_plot.Plot.Axes.Right);
+        foreach (var axis in _extraAxes) {
+            SetAxisNeutralState(axis);
+        }
+
+        foreach (var (metric, axis) in _metricAxes) {
+            if (!_metricsWithData.Contains(metric)) {
+                continue;
+            }
+
+            var axisColor = metricColors.TryGetValue(metric, out var resolvedColor)
+                ? resolvedColor
+                : ScottPlot.Color.FromColor(
+                    _metricFallbackColors.TryGetValue(metric, out var fallbackColor)
+                        ? fallbackColor
+                        : (MaterialSkinManager.Instance.Theme == MaterialSkinManager.Themes.LIGHT
+                            ? LightThemePrimaryColor
+                            : Color.White));
+            var labelText = _metricAxisLabels.TryGetValue(metric, out var label)
+                ? label
+                : BuildAxisLabel(metric, _plot.Height);
+
+            StyleAxis(axis, labelText, axisColor);
+            SetAxisVisibility(axis, true);
+        }
     }
 
     /// <summary>

@@ -31,6 +31,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
     #region Private Fields
 
     private readonly ChartTileConfig _config;
+    private readonly ColorSchemeService _colorSchemeService;
     private readonly ValueSchemeService _valueSchemeService;
     private readonly Dashboard _dashboard;
     private FlowLayoutPanel _linkGroupPanel = null!;
@@ -61,6 +62,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
     public ChartTileEditorForm(ChartTileConfig config, Dashboard dashboard) {
         _config = config;
         _dashboard = dashboard;
+        _colorSchemeService = new ColorSchemeService();
         _valueSchemeService = new ValueSchemeService();
 
         InitializeComponent();
@@ -481,11 +483,24 @@ public class ChartTileEditorForm : ThemedCaptionForm {
         _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Smooth", HeaderText = "Smth", ToolTipText = "Smoothing", FillWeight = 8 });
         _metricsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Tension", HeaderText = "Tns", ToolTipText = "Tension", FillWeight = 8 });
         _metricsGrid.Columns.Add(new DataGridViewCheckBoxColumn { Name = "ShowMarkers", HeaderText = "Mark", ToolTipText = "Markers", FillWeight = 12 });
+        var colorSchemeCol = new DataGridViewComboBoxColumn {
+            Name = "ColorScheme",
+            HeaderText = "Clr.Scheme",
+            ToolTipText = "Color Scheme",
+            FillWeight = 18,
+            FlatStyle = FlatStyle.Flat,
+            DisplayStyle = DataGridViewComboBoxDisplayStyle.DropDownButton
+        };
+        colorSchemeCol.Items.Add("(None)");
+        foreach (var scheme in _colorSchemeService.LoadSchemes()) {
+            colorSchemeCol.Items.Add(scheme.Name);
+        }
+        _metricsGrid.Columns.Add(colorSchemeCol);
 
         var valueSchemeCol = new DataGridViewComboBoxColumn {
             Name = "ValueScheme",
-            HeaderText = "Val.Scheme",
-            ToolTipText = "Value Scheme",
+            HeaderText = "Text.Scheme",
+            ToolTipText = "Text value scheme for inspector formatting",
             FillWeight = 18,
             FlatStyle = FlatStyle.Flat,
             DisplayStyle = DataGridViewComboBoxDisplayStyle.DropDownButton
@@ -603,6 +618,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
 
         foreach (var agg in _config.MetricAggregations) {
             var rowIndex = _metricsGrid.Rows.Add(agg.Metric, agg.Function, agg.Label, null!, null!, agg.LineWidth, agg.Smooth, agg.Tension, agg.ShowMarkers,
+                string.IsNullOrEmpty(agg.ColorSchemeName) ? "(None)" : agg.ColorSchemeName,
                 string.IsNullOrEmpty(agg.ValueSchemeName) ? "(None)" : agg.ValueSchemeName);
             _metricsGrid.Rows[rowIndex].Tag = new MetricRowColors {
                 Light = agg.Color,
@@ -850,6 +866,7 @@ public class ChartTileEditorForm : ThemedCaptionForm {
                 Smooth = (bool)(row.Cells["Smooth"].Value ?? true),
                 Tension = ParseTension(row.Cells["Tension"].Value?.ToString()),
                 ShowMarkers = (bool)(row.Cells["ShowMarkers"].Value ?? false),
+                ColorSchemeName = row.Cells["ColorScheme"].Value?.ToString() is var cs && cs != "(None)" ? cs ?? "" : "",
                 ValueSchemeName = row.Cells["ValueScheme"].Value?.ToString() is var vs && vs != "(None)" ? vs ?? "" : ""
             };
             _config.MetricAggregations.Add(agg);
