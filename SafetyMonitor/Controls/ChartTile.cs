@@ -2876,7 +2876,7 @@ public class ChartTile : Panel {
         _modeSegmentPanel.BackColor = borderColor;
         _pauseModeButton.BackColor = segmentBg;
         _pauseModeButton.FlatAppearance.BorderColor = borderColor;
-        var hoverBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(58, 74, 80);
+        var hoverBg = isLight ? Color.FromArgb(196, 206, 211) : Color.FromArgb(58, 74, 80);
         _pauseModeButton.FlatAppearance.CheckedBackColor = segmentBg;
         _pauseModeButton.FlatAppearance.MouseOverBackColor = hoverBg;
         _pauseModeButton.FlatAppearance.MouseDownBackColor = hoverBg;
