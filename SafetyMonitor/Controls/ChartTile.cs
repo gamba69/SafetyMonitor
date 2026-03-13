@@ -2755,7 +2755,7 @@ public class ChartTile : Panel {
         var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
         var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
         var buttonBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
-        var hoverBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(58, 74, 80);
+        var hoverBg = isLight ? Color.FromArgb(196, 206, 211) : Color.FromArgb(58, 74, 80);
         var borderColor = isLight ? Color.FromArgb(196, 206, 211) : Color.FromArgb(70, 85, 92);
 
         foreach (var button in new[] { _autoShiftLeftButton, _autoShiftRightButton, _staticShiftLeftButton, _staticShiftRightButton }) {
