@@ -224,6 +224,8 @@ public static class MaterialIcons {
         [LinkGroupFoxtrot] = "\uF77F",
         ["keyboard_double_arrow_up"] = "\uEACF",
         ["keyboard_double_arrow_down"] = "\uEAD0",
+        ["keyboard_double_arrow_left"] = "\uEAC3",
+        ["keyboard_double_arrow_right"] = "\uEAC9",
         ["output_circle"] = "\uF70E",
         ["input_circle"] = "\uF71A",
         ["dangerous"] = "\uE99A",
@@ -231,6 +233,7 @@ public static class MaterialIcons {
         ["star_outline"] = "\uE83A",
         ["open_in_full"] = "\uF1CE",
         ["pause"] = "\uE034",
+        ["play_arrow"] = "\uE037",
         ["smooth"] = "\uE155",
     };
 

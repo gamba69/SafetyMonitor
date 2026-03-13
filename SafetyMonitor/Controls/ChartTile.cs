@@ -38,6 +38,8 @@ public class ChartTile : Panel {
     private ContextMenuStrip? _plotContextMenu;
     private List<ChartPeriodPreset> _periodPresets = [];
     private ThemedComboBox? _periodSelector;
+    private FlowLayoutPanel? _autoPeriodPanel;
+    private Panel? _autoRangeSpacer;
     private bool _suppressPeriodChange;
     private bool _suppressStaticRangeChange;
     private bool _suppressPauseChange;
@@ -45,6 +47,10 @@ public class ChartTile : Panel {
     private ThemedDateTimePicker? _staticStartPicker;
     private ThemedDateTimePicker? _staticEndPicker;
     private FlowLayoutPanel? _staticRangePanel;
+    private Button? _autoShiftLeftButton;
+    private Button? _autoShiftRightButton;
+    private Button? _staticShiftLeftButton;
+    private Button? _staticShiftRightButton;
     private System.Windows.Forms.Timer? _staticModeTimer;
     private TimeSpan _staticModeTimeout = TimeSpan.FromMinutes(2);
     private double _staticAggregationPresetMatchTolerancePercent = 10;
@@ -76,6 +82,11 @@ public class ChartTile : Panel {
     private bool _staticModePaused;
     private int _lastHorizontalPointCount;
     private const int HeaderControlHeight = 28;
+    private const int StaticRangePanelWidth = 448;
+    private const int AutoRangePanelWidth = 448;
+    private const int AutoRangePanelLeftPadding = 0;
+    private const int AutoRangeSpacerWidth = 240;
+    private const int ModeSwitchContainerWidth = 146;
     private int _availableLinkGroups = ChartLinkGroupInfo.MaxUsedGroups;
     private readonly Dictionary<ChartLinkGroup, string> _linkGroupPeriodShortNames = [];
     private static readonly Color LightThemePrimaryColor = Color.FromArgb(66, 66, 66);
@@ -1105,9 +1116,19 @@ public class ChartTile : Panel {
         _periodSelector?.ApplyTheme();
         _periodSelector?.BorderColorOverride = isLight ? Color.FromArgb(150, 150, 150) : null;
 
+        if (_autoPeriodPanel != null && _autoPeriodPanel.BackColor != tileBg) {
+            _autoPeriodPanel.BackColor = tileBg;
+        }
+
+        if (_autoRangeSpacer != null && _autoRangeSpacer.BackColor != tileBg) {
+            _autoRangeSpacer.BackColor = tileBg;
+        }
+
         if (_staticRangePanel != null && _staticRangePanel.BackColor != tileBg) {
             _staticRangePanel.BackColor = tileBg;
         }
+
+        UpdateRangeShiftButtonsAppearance();
 
         _staticStartPicker?.ApplyTheme();
         _staticEndPicker?.ApplyTheme();
@@ -1808,8 +1829,9 @@ public class ChartTile : Panel {
         };
 
         _periodSelector = new ThemedComboBox {
-            Dock = DockStyle.Right,
-            Width = 120
+            Width = 120,
+            Height = HeaderControlHeight,
+            Margin = new Padding(4, 2, 4, 2)
         };
         LoadPeriodPresets();
         SetSelectedPeriodPreset();
@@ -1818,6 +1840,34 @@ public class ChartTile : Panel {
                 UpdatePeriodFromSelection();
             }
         };
+
+        _autoShiftLeftButton = CreateRangeShiftButton(true);
+        _autoShiftLeftButton.Click += (s, e) => ShiftCurrentRange(-1);
+        _autoShiftLeftButton.MouseUp += (s, e) => _plot?.Focus();
+        _autoShiftRightButton = CreateRangeShiftButton(false);
+        _autoShiftRightButton.Click += (s, e) => ShiftCurrentRange(1);
+        _autoShiftRightButton.MouseUp += (s, e) => _plot?.Focus();
+
+        _autoPeriodPanel = new FlowLayoutPanel {
+            Dock = DockStyle.Right,
+            Width = AutoRangePanelWidth,
+            AutoSize = false,
+            WrapContents = false,
+            Margin = Padding.Empty,
+            Padding = new Padding(AutoRangePanelLeftPadding, 0, 0, 0),
+            BackColor = tileBg
+        };
+        _autoRangeSpacer = new Panel {
+            Width = AutoRangeSpacerWidth,
+            Height = HeaderControlHeight,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty,
+            BackColor = tileBg
+        };
+        _autoPeriodPanel.Controls.Add(_autoRangeSpacer);
+        _autoPeriodPanel.Controls.Add(_periodSelector);
+        _autoPeriodPanel.Controls.Add(_autoShiftLeftButton);
+        _autoPeriodPanel.Controls.Add(_autoShiftRightButton);
         ChartPeriodPresetStore.PresetsChanged += HandlePresetsChanged;
         MetricAxisRuleStore.RulesChanged += HandleAxisRulesChanged;
         MetricDisplaySettingsStore.SettingsChanged += HandleAxisRulesChanged;
@@ -1826,17 +1876,27 @@ public class ChartTile : Panel {
 
         _staticRangePanel = new FlowLayoutPanel {
             Dock = DockStyle.Right,
-            Width = 360,
+            Width = StaticRangePanelWidth,
             AutoSize = false,
             WrapContents = false,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty,
             Visible = false,
             BackColor = tileBg
         };
 
         _staticStartPicker = CreateStaticDatePicker();
         _staticEndPicker = CreateStaticDatePicker();
+        _staticShiftLeftButton = CreateRangeShiftButton(true);
+        _staticShiftLeftButton.Click += (s, e) => ShiftCurrentRange(-1);
+        _staticShiftLeftButton.MouseUp += (s, e) => _plot?.Focus();
+        _staticShiftRightButton = CreateRangeShiftButton(false);
+        _staticShiftRightButton.Click += (s, e) => ShiftCurrentRange(1);
+        _staticShiftRightButton.MouseUp += (s, e) => _plot?.Focus();
         _staticRangePanel.Controls.Add(_staticStartPicker);
         _staticRangePanel.Controls.Add(_staticEndPicker);
+        _staticRangePanel.Controls.Add(_staticShiftLeftButton);
+        _staticRangePanel.Controls.Add(_staticShiftRightButton);
 
         // Auto / Static mode switcher (rightmost in header).
         _autoModeButton = new RadioButton {
@@ -1846,7 +1906,7 @@ public class ChartTile : Panel {
             TextAlign = ContentAlignment.MiddleCenter,
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = {
-                BorderSize = 0,
+                BorderSize = 1,
                 CheckedBackColor = Color.Transparent,
                 MouseDownBackColor = Color.Transparent,
                 MouseOverBackColor = Color.Transparent
@@ -1872,7 +1932,7 @@ public class ChartTile : Panel {
             TextAlign = ContentAlignment.MiddleCenter,
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = {
-                BorderSize = 0,
+                BorderSize = 1,
                 CheckedBackColor = Color.Transparent,
                 MouseDownBackColor = Color.Transparent,
                 MouseOverBackColor = Color.Transparent
@@ -1908,7 +1968,7 @@ public class ChartTile : Panel {
             TextAlign = ContentAlignment.MiddleCenter,
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = {
-                BorderSize = 0,
+                BorderSize = 1,
                 CheckedBackColor = Color.Transparent,
                 MouseDownBackColor = Color.Transparent,
                 MouseOverBackColor = Color.Transparent
@@ -1935,7 +1995,7 @@ public class ChartTile : Panel {
             TextAlign = ContentAlignment.MiddleCenter,
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = {
-                BorderSize = 0,
+                BorderSize = 1,
                 CheckedBackColor = Color.Transparent,
                 MouseDownBackColor = Color.Transparent,
                 MouseOverBackColor = Color.Transparent
@@ -1951,34 +2011,32 @@ public class ChartTile : Panel {
         };
 
         _inspectorSegmentPanel = new Panel {
-            Size = new Size(36, HeaderControlHeight + 2),
-            Location = new Point(0, 0),
-            Padding = new Padding(1)
+            Size = new Size(34, HeaderControlHeight),
+            Location = new Point(0, 2),
+            Padding = Padding.Empty
         };
         _inspectorSegmentPanel.Controls.Add(_inspectorButton);
 
         _inspectorHostPanel = new Panel {
             Dock = DockStyle.Right,
-            Width = 44,
+            Width = 42,
             BackColor = tileBg
         };
         _inspectorHostPanel.Controls.Add(_inspectorSegmentPanel);
 
         _modeSegmentPanel = new Panel {
-            Size = new Size(104, HeaderControlHeight + 2),
-            Padding = new Padding(1)
+            Size = new Size(70, HeaderControlHeight),
+            Padding = Padding.Empty
         };
-        _pauseModeButton.Location = new Point(1, 1);
-        _autoModeButton.Location = new Point(35, 1);
-        _staticModeButton.Location = new Point(69, 1);
-        _modeSegmentPanel.Controls.Add(_pauseModeButton);
+        _autoModeButton.Location = new Point(0, 0);
+        _staticModeButton.Location = new Point(36, 0);
         _modeSegmentPanel.Controls.Add(_autoModeButton);
         _modeSegmentPanel.Controls.Add(_staticModeButton);
 
         _countdownLabel = new Label {
             Text = "",
             AutoSize = false,
-            Size = new Size(36, HeaderControlHeight + 2),
+            Size = new Size(36, HeaderControlHeight),
             TextAlign = ContentAlignment.MiddleCenter,
             Font = CreateSafeFont("Segoe UI", 9f, System.Drawing.FontStyle.Regular),
             ForeColor = fg,
@@ -1987,19 +2045,21 @@ public class ChartTile : Panel {
 
         _modeSwitchContainer = new Panel {
             Dock = DockStyle.Right,
-            Width = 144,
+            Width = ModeSwitchContainerWidth,
             BackColor = tileBg
         };
 
-        // Center vertically: (30 - 30) / 2 = 0
-        _countdownLabel.Location = new Point(2, 0);
-        _modeSegmentPanel.Location = new Point(38, 0);
+        // Left reserved area: pause + countdown. Right fixed area: auto/static.
+        _pauseModeButton.Location = new Point(2, 2);
+        _countdownLabel.Location = new Point(38, 2);
+        _modeSegmentPanel.Location = new Point(74, 2);
+        _modeSwitchContainer.Controls.Add(_pauseModeButton);
         _modeSwitchContainer.Controls.Add(_countdownLabel);
         _modeSwitchContainer.Controls.Add(_modeSegmentPanel);
 
-        _topPanel.Controls.Add(_inspectorHostPanel);
-        _topPanel.Controls.Add(_periodSelector);
+        _topPanel.Controls.Add(_autoPeriodPanel);
         _topPanel.Controls.Add(_staticRangePanel);
+        _topPanel.Controls.Add(_inspectorHostPanel);
         _topPanel.Controls.Add(_modeSwitchContainer);
         UpdateModeSwitchAppearance();
         UpdateAggregationInfoLabel(ResolveAggregationInterval());
@@ -2642,12 +2702,85 @@ public class ChartTile : Panel {
     }
 
     /// <summary>
+    /// Creates the range shift button for series hover snapshot.
+    /// </summary>
+    /// <param name="shiftLeft">Input value for shift left.</param>
+    /// <returns>The result of the operation.</returns>
+    private static Button CreateRangeShiftButton(bool shiftLeft) {
+        return new Button {
+            Width = HeaderControlHeight,
+            Height = HeaderControlHeight,
+            Margin = new Padding(4, 2, 4, 2),
+            Padding = Padding.Empty,
+            FlatStyle = FlatStyle.Flat,
+            FlatAppearance = {
+                BorderSize = 1,
+                MouseDownBackColor = Color.Transparent,
+                MouseOverBackColor = Color.Transparent
+            },
+            Text = string.Empty,
+            UseVisualStyleBackColor = false,
+            Cursor = Cursors.Hand,
+            TabStop = false,
+            CausesValidation = false,
+            Tag = shiftLeft
+        };
+    }
+
+    /// <summary>
+    /// Shifts the current range for series hover snapshot.
+    /// </summary>
+    /// <param name="direction">Input value for direction.</param>
+    private void ShiftCurrentRange(int direction) {
+        if (direction == 0) {
+            return;
+        }
+
+        var (start, end) = GetConfiguredPeriodRange();
+        var range = end - start;
+        if (range <= TimeSpan.Zero) {
+            return;
+        }
+
+        var shift = TimeSpan.FromTicks(range.Ticks * direction);
+        EnterStaticMode(start + shift, end + shift, raiseEvents: true);
+        _plot?.Focus();
+    }
+
+    /// <summary>
+    /// Updates the range shift buttons appearance for series hover snapshot.
+    /// </summary>
+    private void UpdateRangeShiftButtonsAppearance() {
+        var skinManager = MaterialSkinManager.Instance;
+        var isLight = skinManager.Theme == MaterialSkinManager.Themes.LIGHT;
+        var iconColor = isLight ? Color.FromArgb(35, 47, 52) : Color.FromArgb(223, 234, 239);
+        var buttonBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(45, 58, 64);
+        var hoverBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(58, 74, 80);
+        var borderColor = isLight ? Color.FromArgb(196, 206, 211) : Color.FromArgb(70, 85, 92);
+
+        foreach (var button in new[] { _autoShiftLeftButton, _autoShiftRightButton, _staticShiftLeftButton, _staticShiftRightButton }) {
+            if (button == null) {
+                continue;
+            }
+
+            var shiftLeft = button.Tag is bool value && value;
+            button.BackColor = buttonBg;
+            button.Image = MaterialIcons.GetIcon(shiftLeft ? "keyboard_double_arrow_left" : "keyboard_double_arrow_right", iconColor, 16, IconRenderPreset.DarkOutlined);
+            button.ImageAlign = ContentAlignment.MiddleCenter;
+            button.FlatAppearance.BorderColor = borderColor;
+            button.FlatAppearance.MouseOverBackColor = hoverBg;
+            button.FlatAppearance.MouseDownBackColor = hoverBg;
+        }
+    }
+
+    /// <summary>
     /// Creates the static date picker for series hover snapshot.
     /// </summary>
     /// <returns>The result of the operation.</returns>
     private static ThemedDateTimePicker CreateStaticDatePicker() {
         return new ThemedDateTimePicker {
-            Width = 170,
+            Width = 176,
+            Height = HeaderControlHeight,
             Format = DateTimePickerFormat.Custom,
             CustomFormat = "yyyy-MM-dd HH:mm:ss",
             Margin = new Padding(4, 2, 4, 2)
@@ -2719,26 +2852,41 @@ public class ChartTile : Panel {
         _inspectorHostPanel.BackColor = tileBg;
         _inspectorSegmentPanel.BackColor = borderColor;
 
-        if (_isStaticMode) {
-            _modeSwitchContainer.Width = 144;
-            _modeSegmentPanel.Size = new Size(104, HeaderControlHeight + 2);
-            _pauseModeButton.Location = new Point(1, 1);
-            _autoModeButton.Location = new Point(35, 1);
-            _staticModeButton.Location = new Point(69, 1);
-        } else {
-            _modeSwitchContainer.Width = 110;
-            _modeSegmentPanel.Size = new Size(70, HeaderControlHeight + 2);
-            _autoModeButton.Location = new Point(1, 1);
-            _staticModeButton.Location = new Point(35, 1);
+        _modeSwitchContainer.Width = ModeSwitchContainerWidth;
+        _modeSegmentPanel.Size = new Size(70, HeaderControlHeight);
+        _pauseModeButton.Location = new Point(2, 2);
+        _countdownLabel.Location = new Point(38, 2);
+        _modeSegmentPanel.Location = new Point(74, 2);
+        _autoModeButton.Location = new Point(0, 0);
+        _staticModeButton.Location = new Point(36, 0);
+
+        if (_autoPeriodPanel != null) {
+            _autoPeriodPanel.Width = AutoRangePanelWidth;
+            _autoPeriodPanel.Padding = new Padding(AutoRangePanelLeftPadding, 0, 0, 0);
+        }
+
+        if (_autoRangeSpacer != null) {
+            _autoRangeSpacer.Width = AutoRangeSpacerWidth;
+        }
+
+        if (_staticRangePanel != null) {
+            _staticRangePanel.Width = StaticRangePanelWidth;
         }
 
         _modeSegmentPanel.BackColor = borderColor;
-        _pauseModeButton.BackColor = _pauseModeButton.Checked ? activeBg : segmentBg;
+        _pauseModeButton.BackColor = segmentBg;
+        _pauseModeButton.FlatAppearance.BorderColor = borderColor;
+        var hoverBg = isLight ? Color.FromArgb(225, 232, 235) : Color.FromArgb(58, 74, 80);
+        _pauseModeButton.FlatAppearance.CheckedBackColor = segmentBg;
+        _pauseModeButton.FlatAppearance.MouseOverBackColor = hoverBg;
+        _pauseModeButton.FlatAppearance.MouseDownBackColor = hoverBg;
         _autoModeButton.BackColor = _autoModeButton.Checked ? activeBg : segmentBg;
+        _autoModeButton.FlatAppearance.BorderColor = borderColor;
         _staticModeButton.BackColor = _staticModeButton.Checked ? activeBg : segmentBg;
+        _staticModeButton.FlatAppearance.BorderColor = borderColor;
         _pauseModeButton.Visible = _isStaticMode;
 
-        _pauseModeButton.Image = MaterialIcons.GetIcon("pause", iconColor, 22, IconRenderPreset.DarkOutlined);
+        _pauseModeButton.Image = MaterialIcons.GetIcon(_pauseModeButton.Checked ? "play_arrow" : "pause", iconColor, 22, IconRenderPreset.DarkOutlined);
         _pauseModeButton.ImageAlign = ContentAlignment.MiddleCenter;
         _autoModeButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartModeAuto, iconColor, 22, IconRenderPreset.DarkOutlined);
         _autoModeButton.ImageAlign = ContentAlignment.MiddleCenter;
@@ -2746,9 +2894,14 @@ public class ChartTile : Panel {
         _staticModeButton.ImageAlign = ContentAlignment.MiddleCenter;
         if (_inspectorButton != null) {
             _inspectorButton.BackColor = _inspectorButton.Checked ? activeBg : segmentBg;
+            _inspectorButton.FlatAppearance.BorderColor = borderColor;
+            _inspectorButton.FlatAppearance.MouseOverBackColor = hoverBg;
+            _inspectorButton.FlatAppearance.MouseDownBackColor = hoverBg;
             _inspectorButton.Image = MaterialIcons.GetIcon(MaterialIcons.ChartInspector, iconColor, 22, IconRenderPreset.DarkOutlined);
             _inspectorButton.ImageAlign = ContentAlignment.MiddleCenter;
         }
+
+        UpdateRangeShiftButtonsAppearance();
 
         _countdownLabel.ForeColor = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
         _countdownLabel.BackColor = tileBg;
@@ -2787,8 +2940,27 @@ public class ChartTile : Panel {
     /// <param name="enabled">Input value for enabled.</param>
     private void SetStaticMode(bool enabled) {
         _isStaticMode = enabled;
-        _periodSelector?.Visible = !enabled;
-        _staticRangePanel?.Visible = enabled;
+
+        _topPanel?.SuspendLayout();
+        try {
+            if (_autoPeriodPanel != null) {
+                _autoPeriodPanel.Visible = !enabled;
+                _autoPeriodPanel.PerformLayout();
+            }
+
+            if (_staticRangePanel != null) {
+                _staticRangePanel.Visible = enabled;
+                _staticRangePanel.PerformLayout();
+            }
+
+            if (enabled) {
+                _staticRangePanel?.BringToFront();
+            } else {
+                _autoPeriodPanel?.BringToFront();
+            }
+        } finally {
+            _topPanel?.ResumeLayout(performLayout: true);
+        }
 
         // Sync mode switcher radio buttons
         if (_autoModeButton != null && _staticModeButton != null) {
@@ -2809,6 +2981,9 @@ public class ChartTile : Panel {
         if (enabled && !_staticModePaused) {
             UpdateCountdownLabel();
         }
+
+        _topPanel?.PerformLayout();
+        _topPanel?.Invalidate();
     }
 
     /// <summary>
