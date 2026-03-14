@@ -247,10 +247,11 @@ public class ColorSchemeService {
         IsGradient = true,
         Stops =
         [
-            new() { Value = 10, Color = Color.LightGreen, Description = "Clear" },
-            new() { Value = 30, Color = Color.Green, Description = "Few clouds" },
-            new() { Value = 70, Color = Color.Gray, Description = "Cloudy" },
-            new() { Value = 100, Color = Color.DarkGray, Description = "Overcast" }
+            new() { Value = 0, Color = Color.LightGreen, Description = "Clear (0%)" },
+            new() { Value = 25, Color = Color.Green, Description = "Few (up to 25%)" },
+            new() { Value = 50, Color = Color.YellowGreen, Description = "Scatter (up to 50%)" },
+            new() { Value = 99, Color = Color.Gray, Description = "Broken (up to 99%)" },
+            new() { Value = 100, Color = Color.DarkGray, Description = "Overcast (100%)" }
         ]
     };
 

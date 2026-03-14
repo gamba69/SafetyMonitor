@@ -216,14 +216,14 @@ public class ValueSchemeService {
     /// <returns>The result of the operation.</returns>
     private static ValueScheme CreateCloudCoverScheme() => new() {
         Name = "Cloud Cover",
-        Descending = true,
+        Descending = false,
         Stops =
         [
-            new() { Value = 90, Text = "OVERCAST", Description = "Overcast sky (90–100%)" },
-            new() { Value = 60, Text = "CLOUDY", Description = "Mostly cloudy (60–90%)" },
-            new() { Value = 30, Text = "PARTIAL", Description = "Partial cloudiness (30–60%)" },
-            new() { Value = 10, Text = "SPARSE", Description = "Sparse clouds (10–30%)" },
-            new() { Value = 0, Text = "CLEAR", Description = "Clear sky (0–10%)" }
+            new() { Value = 0, Text = "CLEAR", Description = "Clear sky (0%)" },
+            new() { Value = 25, Text = "FEW", Description = "Few clouds (1–25%)" },
+            new() { Value = 50, Text = "SCATTER", Description = "Scattered clouds (26–50%)" },
+            new() { Value = 99, Text = "BROKEN", Description = "Broken clouds (51–99%)" },
+            new() { Value = 100, Text = "OVERCAST", Description = "Overcast sky (100%)" }
         ]
     };
 
