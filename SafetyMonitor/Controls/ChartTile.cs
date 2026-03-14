@@ -86,7 +86,11 @@ public class ChartTile : Panel {
     private const int AutoRangePanelWidth = 448;
     private const int AutoRangePanelLeftPadding = 0;
     private const int AutoRangeSpacerWidth = 240;
-    private const int ModeSwitchContainerWidth = 146;
+    private const int ModeSwitchContainerWidth = 130;
+    private const int HeaderButtonSpacing = 2;
+    private const int HeaderButtonY = 2;
+    private const int HeaderControlButtonSize = HeaderControlHeight;
+    private const int HeaderControlRightPadding = 2;
     private int _availableLinkGroups = ChartLinkGroupInfo.MaxUsedGroups;
     private readonly Dictionary<ChartLinkGroup, string> _linkGroupPeriodShortNames = [];
     private static readonly Color LightThemePrimaryColor = Color.FromArgb(66, 66, 66);
@@ -1831,7 +1835,7 @@ public class ChartTile : Panel {
         _periodSelector = new ThemedComboBox {
             Width = 120,
             Height = HeaderControlHeight,
-            Margin = new Padding(4, 2, 4, 2)
+            Margin = new Padding(HeaderButtonSpacing, HeaderButtonY, HeaderButtonSpacing, HeaderButtonY)
         };
         LoadPeriodPresets();
         SetSelectedPeriodPreset();
@@ -1868,6 +1872,7 @@ public class ChartTile : Panel {
         _autoPeriodPanel.Controls.Add(_periodSelector);
         _autoPeriodPanel.Controls.Add(_autoShiftLeftButton);
         _autoPeriodPanel.Controls.Add(_autoShiftRightButton);
+        LayoutAutoPeriodPanel();
         ChartPeriodPresetStore.PresetsChanged += HandlePresetsChanged;
         MetricAxisRuleStore.RulesChanged += HandleAxisRulesChanged;
         MetricDisplaySettingsStore.SettingsChanged += HandleAxisRulesChanged;
@@ -1897,6 +1902,7 @@ public class ChartTile : Panel {
         _staticRangePanel.Controls.Add(_staticEndPicker);
         _staticRangePanel.Controls.Add(_staticShiftLeftButton);
         _staticRangePanel.Controls.Add(_staticShiftRightButton);
+        LayoutStaticRangePanel();
 
         // Auto / Static mode switcher (rightmost in header).
         _autoModeButton = new RadioButton {
@@ -1912,7 +1918,7 @@ public class ChartTile : Panel {
                 MouseOverBackColor = Color.Transparent
             },
             AutoSize = false,
-            Size = new Size(34, HeaderControlHeight),
+            Size = new Size(HeaderControlButtonSize, HeaderControlButtonSize),
             Checked = true,
             UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
@@ -1938,7 +1944,7 @@ public class ChartTile : Panel {
                 MouseOverBackColor = Color.Transparent
             },
             AutoSize = false,
-            Size = new Size(34, HeaderControlHeight),
+            Size = new Size(HeaderControlButtonSize, HeaderControlButtonSize),
             Checked = false,
             UseVisualStyleBackColor = false,
             Cursor = Cursors.Hand
@@ -1974,7 +1980,7 @@ public class ChartTile : Panel {
                 MouseOverBackColor = Color.Transparent
             },
             AutoSize = false,
-            Size = new Size(34, HeaderControlHeight),
+            Size = new Size(HeaderControlButtonSize, HeaderControlButtonSize),
             Checked = _staticModePaused,
             Visible = false,
             UseVisualStyleBackColor = false,
@@ -2011,25 +2017,25 @@ public class ChartTile : Panel {
         };
 
         _inspectorSegmentPanel = new Panel {
-            Size = new Size(34, HeaderControlHeight),
-            Location = new Point(0, 2),
+            Size = new Size(HeaderControlButtonSize, HeaderControlButtonSize),
+            Location = new Point(HeaderButtonSpacing, HeaderButtonY),
             Padding = Padding.Empty
         };
         _inspectorSegmentPanel.Controls.Add(_inspectorButton);
 
         _inspectorHostPanel = new Panel {
             Dock = DockStyle.Right,
-            Width = 42,
+            Width = HeaderControlButtonSize + HeaderButtonSpacing * 2,
             BackColor = tileBg
         };
         _inspectorHostPanel.Controls.Add(_inspectorSegmentPanel);
 
         _modeSegmentPanel = new Panel {
-            Size = new Size(70, HeaderControlHeight),
+            Size = new Size(HeaderControlButtonSize * 2 + HeaderButtonSpacing, HeaderControlButtonSize),
             Padding = Padding.Empty
         };
         _autoModeButton.Location = new Point(0, 0);
-        _staticModeButton.Location = new Point(36, 0);
+        _staticModeButton.Location = new Point(HeaderControlButtonSize + HeaderButtonSpacing, 0);
         _modeSegmentPanel.Controls.Add(_autoModeButton);
         _modeSegmentPanel.Controls.Add(_staticModeButton);
 
@@ -2050,9 +2056,7 @@ public class ChartTile : Panel {
         };
 
         // Left reserved area: pause + countdown. Right fixed area: auto/static.
-        _pauseModeButton.Location = new Point(2, 2);
-        _countdownLabel.Location = new Point(38, 2);
-        _modeSegmentPanel.Location = new Point(74, 2);
+        LayoutModeControlBlock();
         _modeSwitchContainer.Controls.Add(_pauseModeButton);
         _modeSwitchContainer.Controls.Add(_countdownLabel);
         _modeSwitchContainer.Controls.Add(_modeSegmentPanel);
@@ -2082,6 +2086,10 @@ public class ChartTile : Panel {
             if (_modeSwitchContainer.BackColor != expected) {
                 _modeSwitchContainer.BackColor = expected;
             }
+        };
+        _topPanel.SizeChanged += (s, e) => {
+            LayoutAutoPeriodPanel();
+            LayoutStaticRangePanel();
         };
         _staticStartPicker?.ValueChanged += StaticPicker_ValueChanged;
         _staticEndPicker?.ValueChanged += StaticPicker_ValueChanged;
@@ -2710,7 +2718,7 @@ public class ChartTile : Panel {
         return new Button {
             Width = HeaderControlHeight,
             Height = HeaderControlHeight,
-            Margin = new Padding(4, 2, 4, 2),
+            Margin = new Padding(HeaderButtonSpacing, HeaderButtonY, HeaderButtonSpacing, HeaderButtonY),
             Padding = Padding.Empty,
             FlatStyle = FlatStyle.Flat,
             FlatAppearance = {
@@ -2853,25 +2861,19 @@ public class ChartTile : Panel {
         _inspectorSegmentPanel.BackColor = borderColor;
 
         _modeSwitchContainer.Width = ModeSwitchContainerWidth;
-        _modeSegmentPanel.Size = new Size(70, HeaderControlHeight);
-        _pauseModeButton.Location = new Point(2, 2);
-        _countdownLabel.Location = new Point(38, 2);
-        _modeSegmentPanel.Location = new Point(74, 2);
+        _modeSegmentPanel.Size = new Size(HeaderControlButtonSize * 2 + HeaderButtonSpacing, HeaderControlButtonSize);
         _autoModeButton.Location = new Point(0, 0);
-        _staticModeButton.Location = new Point(36, 0);
+        _staticModeButton.Location = new Point(HeaderControlButtonSize + HeaderButtonSpacing, 0);
+        LayoutModeControlBlock();
 
         if (_autoPeriodPanel != null) {
             _autoPeriodPanel.Width = AutoRangePanelWidth;
             _autoPeriodPanel.Padding = new Padding(AutoRangePanelLeftPadding, 0, 0, 0);
         }
 
-        if (_autoRangeSpacer != null) {
-            _autoRangeSpacer.Width = AutoRangeSpacerWidth;
-        }
+        LayoutAutoPeriodPanel();
 
-        if (_staticRangePanel != null) {
-            _staticRangePanel.Width = StaticRangePanelWidth;
-        }
+        LayoutStaticRangePanel();
 
         _modeSegmentPanel.BackColor = borderColor;
         _pauseModeButton.BackColor = segmentBg;
@@ -2906,6 +2908,56 @@ public class ChartTile : Panel {
         _countdownLabel.ForeColor = isLight ? Color.FromArgb(78, 90, 96) : Color.FromArgb(186, 198, 205);
         _countdownLabel.BackColor = tileBg;
         _countdownLabel.Visible = _isStaticMode && !_staticModePaused;
+    }
+
+    /// <summary>
+    /// Lays out the auto period panel for series hover snapshot.
+    /// </summary>
+    private void LayoutAutoPeriodPanel() {
+        if (_autoPeriodPanel == null || _autoRangeSpacer == null || _periodSelector == null || _autoShiftLeftButton == null || _autoShiftRightButton == null) {
+            return;
+        }
+
+        var usedWidth = _periodSelector.Width + _periodSelector.Margin.Horizontal
+            + _autoShiftLeftButton.Width + _autoShiftLeftButton.Margin.Horizontal
+            + _autoShiftRightButton.Width + _autoShiftRightButton.Margin.Horizontal;
+        var availableForSpacer = _autoPeriodPanel.ClientSize.Width - _autoPeriodPanel.Padding.Horizontal - usedWidth;
+        _autoRangeSpacer.Width = Math.Max(0, availableForSpacer);
+    }
+
+    /// <summary>
+    /// Lays out the static range panel for series hover snapshot.
+    /// </summary>
+    private void LayoutStaticRangePanel() {
+        if (_staticRangePanel == null || _staticStartPicker == null || _staticEndPicker == null || _staticShiftLeftButton == null || _staticShiftRightButton == null) {
+            return;
+        }
+
+        var usedWidth = _staticRangePanel.Padding.Horizontal
+            + _staticStartPicker.Width + _staticStartPicker.Margin.Horizontal
+            + _staticEndPicker.Width + _staticEndPicker.Margin.Horizontal
+            + _staticShiftLeftButton.Width + _staticShiftLeftButton.Margin.Horizontal
+            + _staticShiftRightButton.Width + _staticShiftRightButton.Margin.Horizontal;
+
+        _staticRangePanel.Width = usedWidth;
+    }
+
+    /// <summary>
+    /// Lays out the mode control block for series hover snapshot.
+    /// </summary>
+    private void LayoutModeControlBlock() {
+        if (_modeSwitchContainer == null || _modeSegmentPanel == null || _pauseModeButton == null || _countdownLabel == null) {
+            return;
+        }
+
+        var modeX = _modeSwitchContainer.Width - _modeSegmentPanel.Width - HeaderControlRightPadding;
+        _modeSegmentPanel.Location = new Point(Math.Max(modeX, HeaderButtonY), HeaderButtonY);
+
+        var countdownX = _modeSegmentPanel.Left - _countdownLabel.Width - HeaderButtonSpacing;
+        _countdownLabel.Location = new Point(Math.Max(countdownX, HeaderButtonY), HeaderButtonY);
+
+        var pauseX = _countdownLabel.Left - _pauseModeButton.Width - HeaderButtonSpacing;
+        _pauseModeButton.Location = new Point(Math.Max(pauseX, HeaderButtonY), HeaderButtonY);
     }
 
     /// <summary>
