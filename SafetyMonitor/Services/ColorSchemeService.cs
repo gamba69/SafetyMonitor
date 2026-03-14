@@ -100,7 +100,7 @@ public class ColorSchemeService {
         _schemesPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "SafetyMonitor", "ColorSchemes");
-        Directory.CreateDirectory(_schemesPath);
+        EnsureSchemesDirectoryExists();
 
         _jsonOptions = new JsonSerializerOptions {
             WriteIndented = true,
@@ -138,6 +138,7 @@ public class ColorSchemeService {
     /// </summary>
     /// <param name="name">Input value for name.</param>
     public void DeleteScheme(string name) {
+        EnsureSchemesDirectoryExists();
         var safeName = string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
         var path = Path.Combine(_schemesPath, $"{safeName}.json");
         if (File.Exists(path)) {
@@ -151,6 +152,7 @@ public class ColorSchemeService {
     /// <returns>The result of the operation.</returns>
     public List<ColorScheme> LoadSchemes() {
         var schemes = new List<ColorScheme>();
+        EnsureSchemesDirectoryExists();
 
         foreach (var file in Directory.GetFiles(_schemesPath, "*.json")) {
             try {
@@ -169,6 +171,7 @@ public class ColorSchemeService {
     /// </summary>
     /// <param name="scheme">Input value for scheme.</param>
     public void SaveScheme(ColorScheme scheme) {
+        EnsureSchemesDirectoryExists();
         var safeName = string.Join("_", scheme.Name.Split(Path.GetInvalidFileNameChars()));
         var path = Path.Combine(_schemesPath, $"{safeName}.json");
         var json = JsonSerializer.Serialize(scheme, _jsonOptions);
@@ -183,6 +186,8 @@ public class ColorSchemeService {
     /// Ensures the default schemes exist for color scheme service.
     /// </summary>
     private void EnsureDefaultSchemesExist() {
+        EnsureSchemesDirectoryExists();
+
         foreach (var scheme in GetDefaultSchemes()) {
             var safeName = string.Join("_", scheme.Name.Split(Path.GetInvalidFileNameChars()));
             var path = Path.Combine(_schemesPath, $"{safeName}.json");
@@ -194,6 +199,11 @@ public class ColorSchemeService {
             File.WriteAllText(path, json);
         }
     }
+
+    /// <summary>
+    /// Ensures the schemes directory exists for color scheme service.
+    /// </summary>
+    private void EnsureSchemesDirectoryExists() => Directory.CreateDirectory(_schemesPath);
 
     /// <summary>
     /// Gets the default schemes for color scheme service.
