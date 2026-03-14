@@ -91,6 +91,7 @@ public class ChartTile : Panel {
     private const int HeaderButtonY = 2;
     private const int HeaderControlButtonSize = HeaderControlHeight;
     private const int HeaderControlRightPadding = 2;
+    private const double LegendCornerOccupancyRoundingPercent = 20d;
     private int _availableLinkGroups = ChartLinkGroupInfo.MaxUsedGroups;
     private readonly Dictionary<ChartLinkGroup, string> _linkGroupPeriodShortNames = [];
     private static readonly Color LightThemePrimaryColor = Color.FromArgb(66, 66, 66);
@@ -325,6 +326,7 @@ public class ChartTile : Panel {
         var hasVisibleSeries = false;
         var metricsWithData = new HashSet<MetricType>();
         var horizontalPoints = new HashSet<double>();
+        var visiblePlotPoints = new List<(double X, double Y)>();
         var colorSchemes = _colorSchemeService.LoadSchemes()
             .GroupBy(scheme => scheme.Name, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
@@ -381,6 +383,9 @@ public class ChartTile : Panel {
             var validRawValues = validData.Select(x => x.RawValue).ToArray();
             foreach (var time in validTimes) {
                 horizontalPoints.Add(time);
+            }
+            for (int i = 0; i < validTimes.Length; i++) {
+                visiblePlotPoints.Add((validTimes[i], validPlotValues[i]));
             }
             hasVisibleSeries = true;
             metricsWithData.Add(agg.Metric);
@@ -477,6 +482,7 @@ public class ChartTile : Panel {
         UpdateVisualColorsForContext(_inspectorActive ? _lastHoverAnchorX : null);
         if (_config.ShowLegend && _config.MetricAggregations.Count > 1) {
             _plot.Plot.ShowLegend();
+            ApplyAdaptiveLegendAlignment(visiblePlotPoints);
         } else {
             _plot.Plot.HideLegend();
         }
@@ -502,6 +508,83 @@ public class ChartTile : Panel {
             ShowInspectorAt(_lastHoverAnchorX.Value);
         }
         _plot.Refresh();
+    }
+
+    /// <summary>
+    /// Applies adaptive legend alignment for chart tile to reduce data overlap.
+    /// </summary>
+    /// <param name="visiblePlotPoints">Input value for visible plot points.</param>
+    private void ApplyAdaptiveLegendAlignment(IReadOnlyList<(double X, double Y)> visiblePlotPoints) {
+        if (_plot == null || visiblePlotPoints.Count == 0) {
+            return;
+        }
+
+        var limits = _plot.Plot.Axes.GetLimits();
+        if (!double.IsFinite(limits.Left) || !double.IsFinite(limits.Right)
+            || !double.IsFinite(limits.Bottom) || !double.IsFinite(limits.Top)
+            || limits.Left >= limits.Right || limits.Bottom >= limits.Top) {
+            return;
+        }
+
+        var centerX = (limits.Left + limits.Right) / 2d;
+        var centerY = (limits.Bottom + limits.Top) / 2d;
+
+        var lowerRight = 0;
+        var upperRight = 0;
+        var lowerLeft = 0;
+        var upperLeft = 0;
+
+        foreach (var (x, y) in visiblePlotPoints) {
+            if (!double.IsFinite(x) || !double.IsFinite(y)) {
+                continue;
+            }
+
+            if (x < limits.Left || x > limits.Right || y < limits.Bottom || y > limits.Top) {
+                continue;
+            }
+
+            if (x >= centerX) {
+                if (y <= centerY) {
+                    lowerRight++;
+                } else {
+                    upperRight++;
+                }
+            } else if (y <= centerY) {
+                lowerLeft++;
+            } else {
+                upperLeft++;
+            }
+        }
+
+        var priority = new (string Corner, int Count)[] {
+            ("LowerRight", lowerRight),
+            ("UpperRight", upperRight),
+            ("LowerLeft", lowerLeft),
+            ("UpperLeft", upperLeft)
+        };
+
+        var totalVisiblePoints = lowerRight + upperRight + lowerLeft + upperLeft;
+        var roundingStep = Math.Max(1d, totalVisiblePoints * (LegendCornerOccupancyRoundingPercent / 100d));
+
+        var targetCorner = priority
+            .OrderBy(candidate => Math.Round(candidate.Count / roundingStep, MidpointRounding.AwayFromZero))
+            .ThenBy(candidate => Array.FindIndex(priority, option => option.Corner == candidate.Corner))
+            .Select(candidate => candidate.Corner)
+            .FirstOrDefault();
+
+        if (string.IsNullOrWhiteSpace(targetCorner)) {
+            return;
+        }
+
+        var legend = _plot.Plot.Legend;
+        var alignmentProperty = legend.GetType().GetProperty("Alignment");
+        if (alignmentProperty?.PropertyType.IsEnum != true) {
+            return;
+        }
+
+        if (Enum.TryParse(alignmentProperty.PropertyType, targetCorner, ignoreCase: true, out var parsedAlignment)) {
+            alignmentProperty.SetValue(legend, parsedAlignment);
+        }
     }
 
     /// <summary>
