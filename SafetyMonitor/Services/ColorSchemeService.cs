@@ -304,11 +304,19 @@ public class ColorSchemeService {
         IsGradient = true,
         Stops =
         [
-            new() { Value = 2, Color = Color.Green, Description = "Calm" },
-            new() { Value = 5, Color = Color.YellowGreen, Description = "Light" },
-            new() { Value = 10, Color = Color.Yellow, Description = "Moderate" },
-            new() { Value = 15, Color = Color.Orange, Description = "Strong" },
-            new() { Value = 20, Color = Color.Red, Description = "Very strong" }
+            new() { Value = 0.0, Color = Color.FromArgb(46, 125, 50), Description = "Calm" },
+            new() { Value = 0.2, Color = Color.FromArgb(56, 142, 60), Description = "Wispy" },
+            new() { Value = 1.6, Color = Color.FromArgb(76, 175, 80), Description = "Light" },
+            new() { Value = 3.4, Color = Color.FromArgb(139, 195, 74), Description = "Gentle" },
+            new() { Value = 5.5, Color = Color.FromArgb(205, 220, 57), Description = "Moderate" },
+            new() { Value = 8.0, Color = Color.FromArgb(255, 235, 59), Description = "Fresh" },
+            new() { Value = 10.8, Color = Color.FromArgb(255, 193, 7), Description = "Strong" },
+            new() { Value = 13.9, Color = Color.FromArgb(255, 152, 0), Description = "High" },
+            new() { Value = 17.2, Color = Color.FromArgb(251, 140, 0), Description = "Gale" },
+            new() { Value = 20.8, Color = Color.FromArgb(244, 81, 30), Description = "Severe" },
+            new() { Value = 24.5, Color = Color.FromArgb(229, 57, 53), Description = "Storm" },
+            new() { Value = 28.5, Color = Color.FromArgb(198, 40, 40), Description = "Violent" },
+            new() { Value = 32.7, Color = Color.FromArgb(74, 20, 140), Description = "Hurricane" }
         ]
     };
 
@@ -394,11 +402,19 @@ public class ColorSchemeService {
         IsGradient = true,
         Stops =
         [
-            new() { Value = 2, Color = Color.LightGreen, Description = "Light" },
-            new() { Value = 5, Color = Color.YellowGreen, Description = "Breeze" },
-            new() { Value = 8, Color = Color.Gold, Description = "Gusty" },
-            new() { Value = 12, Color = Color.Orange, Description = "Strong gust" },
-            new() { Value = 20, Color = Color.Red, Description = "Severe gust" }
+            new() { Value = 0.0, Color = Color.FromArgb(46, 125, 50), Description = "Calm" },
+            new() { Value = 0.2, Color = Color.FromArgb(56, 142, 60), Description = "Wispy" },
+            new() { Value = 1.6, Color = Color.FromArgb(76, 175, 80), Description = "Light" },
+            new() { Value = 3.4, Color = Color.FromArgb(139, 195, 74), Description = "Gentle" },
+            new() { Value = 5.5, Color = Color.FromArgb(205, 220, 57), Description = "Moderate" },
+            new() { Value = 8.0, Color = Color.FromArgb(255, 235, 59), Description = "Fresh" },
+            new() { Value = 10.8, Color = Color.FromArgb(255, 193, 7), Description = "Strong" },
+            new() { Value = 13.9, Color = Color.FromArgb(255, 152, 0), Description = "High" },
+            new() { Value = 17.2, Color = Color.FromArgb(251, 140, 0), Description = "Gale" },
+            new() { Value = 20.8, Color = Color.FromArgb(244, 81, 30), Description = "Severe" },
+            new() { Value = 24.5, Color = Color.FromArgb(229, 57, 53), Description = "Storm" },
+            new() { Value = 28.5, Color = Color.FromArgb(198, 40, 40), Description = "Violent" },
+            new() { Value = 32.7, Color = Color.FromArgb(74, 20, 140), Description = "Hurricane" }
         ]
     };
 

@@ -291,14 +291,19 @@ public class ValueSchemeService {
         Descending = true,
         Stops =
         [
-            new() { Value = 32.7, Text = "HURRICANE", Description = "Hurricane (> 32.7 m/s)" },
-            new() { Value = 28.4, Text = "STORM", Description = "Storm (28.4–32.7 m/s)" },
-            new() { Value = 13.8, Text = "STRONG", Description = "Strong (13.8–28.4 m/s)" },
-            new() { Value = 8.0, Text = "FRESH", Description = "Fresh (8.0–13.8 m/s)" },
-            new() { Value = 5.5, Text = "MODERATE", Description = "Moderate (5.5–7.9 m/s)" },
-            new() { Value = 3.4, Text = "GENTLE", Description = "Gentle (3.4–5.4 m/s)" },
-            new() { Value = 0.3, Text = "LIGHT", Description = "Light (0.3–3.3 m/s)" },
-            new() { Value = 0, Text = "CALM", Description = "Calm (0–0.2 m/s)" }
+            new() { Value = 32.7, Text = "HURRICANE", Description = "Hurricane (>= 32.7 m/s)" },
+            new() { Value = 28.5, Text = "VIOLENT", Description = "Violent (>= 28.5 m/s)" },
+            new() { Value = 24.5, Text = "STORM", Description = "Storm (>= 24.5 m/s)" },
+            new() { Value = 20.8, Text = "SEVERE", Description = "Severe (>= 20.8 m/s)" },
+            new() { Value = 17.2, Text = "GALE", Description = "Gale (>= 17.2 m/s)" },
+            new() { Value = 13.9, Text = "HIGH", Description = "High (>= 13.9 m/s)" },
+            new() { Value = 10.8, Text = "STRONG", Description = "Strong (>= 10.8 m/s)" },
+            new() { Value = 8.0, Text = "FRESH", Description = "Fresh (>= 8.0 m/s)" },
+            new() { Value = 5.5, Text = "MODERATE", Description = "Moderate (>= 5.5 m/s)" },
+            new() { Value = 3.4, Text = "GENTLE", Description = "Gentle (>= 3.4 m/s)" },
+            new() { Value = 1.6, Text = "LIGHT", Description = "Light (>= 1.6 m/s)" },
+            new() { Value = 0.2, Text = "WISPY", Description = "Wispy (>= 0.2 m/s)" },
+            new() { Value = 0.0, Text = "CALM", Description = "Calm (>= 0.0 m/s)" }
         ]
     };
 
@@ -312,14 +317,22 @@ public class ValueSchemeService {
         Descending = true,
         Stops =
         [
-            new() { Value = 20, Text = "BLAST", Description = "Blast (> 20 m/s)" },
-            new() { Value = 12, Text = "SQUALL", Description = "Squall (12–20 m/s)" },
-            new() { Value = 8, Text = "GUST", Description = "Gust (8–12 m/s)" },
-            new() { Value = 5, Text = "BREEZE", Description = "Breeze (5–8 m/s)" },
-            new() { Value = 2, Text = "PUFF", Description = "Puff (2–5 m/s)" },
-            new() { Value = 0, Text = "BREATH", Description = "Breath (from 0 m/s)" }
+            new() { Value = 32.7, Text = "HURRICANE", Description = "Hurricane (>= 32.7 m/s)" },
+            new() { Value = 28.5, Text = "VIOLENT", Description = "Violent (>= 28.5 m/s)" },
+            new() { Value = 24.5, Text = "STORM", Description = "Storm (>= 24.5 m/s)" },
+            new() { Value = 20.8, Text = "SEVERE", Description = "Severe (>= 20.8 m/s)" },
+            new() { Value = 17.2, Text = "GALE", Description = "Gale (>= 17.2 m/s)" },
+            new() { Value = 13.9, Text = "HIGH", Description = "High (>= 13.9 m/s)" },
+            new() { Value = 10.8, Text = "STRONG", Description = "Strong (>= 10.8 m/s)" },
+            new() { Value = 8.0, Text = "FRESH", Description = "Fresh (>= 8.0 m/s)" },
+            new() { Value = 5.5, Text = "MODERATE", Description = "Moderate (>= 5.5 m/s)" },
+            new() { Value = 3.4, Text = "GENTLE", Description = "Gentle (>= 3.4 m/s)" },
+            new() { Value = 1.6, Text = "LIGHT", Description = "Light (>= 1.6 m/s)" },
+            new() { Value = 0.2, Text = "WISPY", Description = "Wispy (>= 0.2 m/s)" },
+            new() { Value = 0.0, Text = "CALM", Description = "Calm (>= 0.0 m/s)" }
         ]
     };
+
     /// <summary>
     /// Creates the wind direction scheme for value scheme service.
     /// </summary>
