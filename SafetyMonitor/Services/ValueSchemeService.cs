@@ -252,14 +252,18 @@ public class ValueSchemeService {
     /// <returns>The result of the operation.</returns>
     private static ValueScheme CreateSkyQualityScheme() => new() {
         Name = "Sky Quality",
-        Descending = true,
+        Descending = false,
         Stops =
         [
-            new() { Value = 21.5, Text = "EXCELLENT", Description = "Excellent dark sky (>= 21.5 mpsas)" },
-            new() { Value = 20.5, Text = "GOOD", Description = "Good sky quality (20.5–21.5 mpsas)" },
-            new() { Value = 19.5, Text = "FAIR", Description = "Average sky quality (19.5–20.5 mpsas)" },
-            new() { Value = 18.5, Text = "POOR", Description = "Poor sky quality (18.5–19.5 mpsas)" },
-            new() { Value = 0, Text = "BAD", Description = "Poor / bright sky (< 18.5 mpsas)" }
+            new() { Value = 17.5, Text = "INNERCITY", Description = "Inner-city sky quality (<= 17.5 mpsas)" },
+            new() { Value = 18.0, Text = "URBAN", Description = "Urban sky quality (17.5–18.0 mpsas)" },
+            new() { Value = 18.5, Text = "SEMIURBAN", Description = "Semiurban sky quality (18.0–18.5 mpsas)" },
+            new() { Value = 19.5, Text = "SEMISUBURB", Description = "Semisuburb sky quality (18.5–19.5 mpsas)" },
+            new() { Value = 20.4, Text = "SUBURBAN", Description = "Suburb sky quality (19.5–20.4 mpsas)" },
+            new() { Value = 21.3, Text = "SEMIRURAL", Description = "Semirural sky quality (20.4–21.3 mpsas)" },
+            new() { Value = 21.5, Text = "RURAL", Description = "Rural sky quality (21.3–21.5 mpsas)" },
+            new() { Value = 21.7, Text = "DARK", Description = "Dark sky quality (21.5–21.7 mpsas)" },
+            new() { Value = 22.0, Text = "PRISTINE", Description = "Pristine sky quality (>= 22.0 mpsas)" }
         ]
     };
 

@@ -366,11 +366,15 @@ public class ColorSchemeService {
         IsGradient = true,
         Stops =
         [
-            new() { Value = 18.5, Color = Color.OrangeRed, Description = "Poor" },
-            new() { Value = 19.5, Color = Color.Gold, Description = "Fair" },
-            new() { Value = 20.5, Color = Color.LightGreen, Description = "Good" },
-            new() { Value = 21.5, Color = Color.DeepSkyBlue, Description = "Excellent" },
-            new() { Value = 22.5, Color = Color.MediumPurple, Description = "Outstanding" }
+            new() { Value = 17.5, Color = Color.FromArgb(198, 40, 40), Description = "INNERCITY" },
+            new() { Value = 18.0, Color = Color.FromArgb(229, 57, 53), Description = "URBAN" },
+            new() { Value = 18.5, Color = Color.FromArgb(251, 140, 0), Description = "SEMIURBAN" },
+            new() { Value = 19.5, Color = Color.FromArgb(255, 193, 7), Description = "SEMISUBURB" },
+            new() { Value = 20.4, Color = Color.FromArgb(205, 220, 57), Description = "SUBURB" },
+            new() { Value = 21.3, Color = Color.FromArgb(139, 195, 74), Description = "SEMIRURAL" },
+            new() { Value = 21.5, Color = Color.FromArgb(76, 175, 80), Description = "RURAL" },
+            new() { Value = 21.7, Color = Color.FromArgb(56, 142, 60), Description = "DARK" },
+            new() { Value = 22.0, Color = Color.FromArgb(15, 23, 42), Description = "PRISTINE" }
         ]
     };
 
