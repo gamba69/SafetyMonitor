@@ -1,10 +1,30 @@
 namespace SafetyMonitor.Models;
 
-public enum MetricType { Temperature, Humidity, Pressure, DewPoint, CloudCover, SkyTemperature, SkyBrightness, SkyQuality, RainRate, WindSpeed, WindGust, WindDirection, StarFwhm, IsSafe }
+public enum MetricType { Temperature, Humidity, Pressure, DewPoint, CloudCover, SkyTemperature, SkyBrightness, SkyQuality, Nelm, RainRate, WindSpeed, WindGust, WindDirection, StarFwhm, IsSafe }
 /// <summary>
 /// Represents metric type extensions and encapsulates its related behavior and state.
 /// </summary>
 public static class MetricTypeExtensions {
+
+    #region Private Fields
+
+    private static readonly IReadOnlyDictionary<MetricType, DerivedMetricDefinition> DerivedMetrics =
+        new Dictionary<MetricType, DerivedMetricDefinition> {
+            {
+                MetricType.Nelm,
+                new DerivedMetricDefinition([MetricType.SkyQuality], static values => {
+                    if (!values.TryGetValue(MetricType.SkyQuality, out var sqm) || !sqm.HasValue || double.IsNaN(sqm.Value)) {
+                        return null;
+                    }
+
+                    // NELM ≈ 7.93 − 5 × log10(10^((21.58 − SQM)/2.5) + 1)
+                    var nelm = 7.93 - (5 * Math.Log10(Math.Pow(10, (21.58 - sqm.Value) / 2.5) + 1));
+                    return double.IsFinite(nelm) ? nelm : null;
+                })
+            }
+        };
+
+    #endregion Private Fields
 
     #region Public Methods
 
@@ -21,7 +41,8 @@ public static class MetricTypeExtensions {
         MetricType.CloudCover => "Cloud Cover",
         MetricType.SkyTemperature => "Sky Temperature",
         MetricType.SkyBrightness => "Sky Brightness",
-        MetricType.SkyQuality => "Sky Quality",
+        MetricType.SkyQuality => "Sky Quality (SQM)",
+        MetricType.Nelm => "Naked Eye (NELM)",
         MetricType.RainRate => "Rain Rate",
         MetricType.WindSpeed => "Wind Speed",
         MetricType.WindGust => "Wind Gust",
@@ -45,6 +66,7 @@ public static class MetricTypeExtensions {
         MetricType.SkyTemperature => "SKYT",
         MetricType.SkyBrightness => "SKYB",
         MetricType.SkyQuality => "SQM",
+        MetricType.Nelm => "NELM",
         MetricType.RainRate => "RAIN",
         MetricType.WindSpeed => "WSPD",
         MetricType.WindGust => "WGST",
@@ -67,6 +89,7 @@ public static class MetricTypeExtensions {
         MetricType.SkyTemperature => "°C",
         MetricType.SkyBrightness => "lux",
         MetricType.SkyQuality => "mpsas",
+        MetricType.Nelm => "mag",
         MetricType.RainRate => "mm/hr",
         MetricType.WindSpeed => "m/s",
         MetricType.WindGust => "m/s",
@@ -81,7 +104,24 @@ public static class MetricTypeExtensions {
     /// <param name="type">Input value for type.</param>
     /// <param name="data">Input value for data.</param>
     /// <returns>The result of the operation.</returns>
-    public static double? GetValue(this MetricType type, DataStorage.Models.ObservingData data) => type switch {
+    public static double? GetValue(this MetricType type, DataStorage.Models.ObservingData data) {
+        if (DerivedMetrics.TryGetValue(type, out var definition)) {
+            var values = new Dictionary<MetricType, double?>(definition.Dependencies.Length);
+            foreach (var dependency in definition.Dependencies) {
+                values[dependency] = GetRawValue(dependency, data);
+            }
+
+            return definition.Formula(values);
+        }
+
+        return GetRawValue(type, data);
+    }
+
+    #endregion Public Methods
+
+    #region Private Methods
+
+    private static double? GetRawValue(MetricType type, DataStorage.Models.ObservingData data) => type switch {
         MetricType.Temperature => data.Temperature,
         MetricType.Humidity => data.Humidity,
         MetricType.Pressure => data.Pressure,
@@ -99,5 +139,13 @@ public static class MetricTypeExtensions {
         _ => null
     };
 
-    #endregion Public Methods
+    #endregion Private Methods
+
+    #region Private Types
+
+    private sealed record DerivedMetricDefinition(
+        MetricType[] Dependencies,
+        Func<IReadOnlyDictionary<MetricType, double?>, double?> Formula);
+
+    #endregion Private Types
 }

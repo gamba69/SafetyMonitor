@@ -47,7 +47,8 @@ public class ValueSchemeService {
         MetricType.Pressure => "Pressure",
         MetricType.CloudCover => "Cloud Cover",
         MetricType.SkyBrightness => "Sky Brightness",
-        MetricType.SkyQuality => "Sky Quality",
+        MetricType.SkyQuality => "Sky Quality (SQM)",
+        MetricType.Nelm => "Naked Eye (NELM)",
         MetricType.RainRate => "Rain Rate",
         MetricType.WindSpeed => "Wind Speed",
         MetricType.WindGust => "Wind Gust",
@@ -131,6 +132,7 @@ public class ValueSchemeService {
         yield return CreateCloudCoverScheme();
         yield return CreateSkyBrightnessScheme();
         yield return CreateSkyQualityScheme();
+        yield return CreateNelmScheme();
         yield return CreateRainRateScheme();
         yield return CreateWindSpeedScheme();
         yield return CreateWindGustScheme();
@@ -251,7 +253,7 @@ public class ValueSchemeService {
     /// <param name=")">Input value for .</param>
     /// <returns>The result of the operation.</returns>
     private static ValueScheme CreateSkyQualityScheme() => new() {
-        Name = "Sky Quality",
+        Name = "Sky Quality (SQM)",
         Descending = false,
         Stops =
         [
@@ -264,6 +266,29 @@ public class ValueSchemeService {
             new() { Value = 21.5, Text = "RURAL", Description = "Rural sky quality (21.3–21.5 mpsas)" },
             new() { Value = 21.7, Text = "DARK", Description = "Dark sky quality (21.5–21.7 mpsas)" },
             new() { Value = 22.0, Text = "PRISTINE", Description = "Pristine sky quality (>= 22.0 mpsas)" }
+        ]
+    };
+
+
+    /// <summary>
+    /// Creates the nelm scheme for value scheme service.
+    /// </summary>
+    /// <param name=")">Input value for .</param>
+    /// <returns>The result of the operation.</returns>
+    private static ValueScheme CreateNelmScheme() => new() {
+        Name = "Naked Eye (NELM)",
+        Descending = false,
+        Stops =
+        [
+            new() { Value = -0.2801, Text = "INNERCITY", Description = "Inner-city sky quality (<= -0.2801 NELM)" },
+            new() { Value = 0.6911, Text = "URBAN", Description = "Urban sky quality (-0.2801–0.6911 NELM)" },
+            new() { Value = 1.6463, Text = "SEMIURBAN", Description = "Semiurban sky quality (0.6911–1.6463 NELM)" },
+            new() { Value = 3.4717, Text = "SEMISUBURB", Description = "Semisuburb sky quality (1.6463–3.4717 NELM)" },
+            new() { Value = 4.9389, Text = "SUBURBAN", Description = "Suburban sky quality (3.4717–4.9389 NELM)" },
+            new() { Value = 6.1268, Text = "SEMIRURAL", Description = "Semirural sky quality (4.9389–6.1268 NELM)" },
+            new() { Value = 6.3434, Text = "RURAL", Description = "Rural sky quality (6.1268–6.3434 NELM)" },
+            new() { Value = 6.5415, Text = "DARK", Description = "Dark sky quality (6.3434–6.5415 NELM)" },
+            new() { Value = 6.8045, Text = "PRISTINE", Description = "Pristine sky quality (>= 6.8045 NELM)" }
         ]
     };
 

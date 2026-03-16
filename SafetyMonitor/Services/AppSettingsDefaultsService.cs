@@ -35,6 +35,7 @@ public static class AppSettingsDefaultsService {
                 new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 45, MaxSpan = null, Metric = MetricType.SkyTemperature, MinBoundary = -50, MinSpan = 3 },
                 new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 100000, MaxSpan = null, Metric = MetricType.SkyBrightness, MinBoundary = -1, MinSpan = null },
                 new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 25, MaxSpan = null, Metric = MetricType.SkyQuality, MinBoundary = 5, MinSpan = 2 },
+                new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 8, MaxSpan = null, Metric = MetricType.Nelm, MinBoundary = -1, MinSpan = 1 },
                 new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 25, MaxSpan = null, Metric = MetricType.RainRate, MinBoundary = -5, MinSpan = 2 },
                 new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 25, MaxSpan = null, Metric = MetricType.WindSpeed, MinBoundary = -5, MinSpan = 2 },
                 new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 25, MaxSpan = null, Metric = MetricType.WindGust, MinBoundary = -5, MinSpan = 2 },

@@ -126,7 +126,8 @@ public class ColorSchemeService {
         MetricType.Pressure => "Pressure",
         MetricType.CloudCover => "Cloud Cover",
         MetricType.SkyBrightness => "Sky Brightness",
-        MetricType.SkyQuality => "Sky Quality",
+        MetricType.SkyQuality => "Sky Quality (SQM)",
+        MetricType.Nelm => "Naked Eye (NELM)",
         MetricType.RainRate => "Rain Rate",
         MetricType.WindSpeed => "Wind Speed",
         MetricType.WindGust => "Wind Gust",
@@ -219,6 +220,7 @@ public class ColorSchemeService {
         yield return CreateCloudCoverScheme();
         yield return CreateSkyBrightnessScheme();
         yield return CreateSkyQualityScheme();
+        yield return CreateNelmScheme();
         yield return CreateRainRateScheme();
     }
 
@@ -362,7 +364,7 @@ public class ColorSchemeService {
     /// <param name=")">Input value for .</param>
     /// <returns>The result of the operation.</returns>
     private static ColorScheme CreateSkyQualityScheme() => new() {
-        Name = "Sky Quality",
+        Name = "Sky Quality (SQM)",
         IsGradient = true,
         Stops =
         [
@@ -375,6 +377,29 @@ public class ColorSchemeService {
             new() { Value = 21.5, Color = Color.FromArgb(76, 175, 80), Description = "RURAL" },
             new() { Value = 21.7, Color = Color.FromArgb(56, 142, 60), Description = "DARK" },
             new() { Value = 22.0, Color = Color.FromArgb(15, 23, 42), Description = "PRISTINE" }
+        ]
+    };
+
+
+    /// <summary>
+    /// Creates the nelm scheme for color scheme service.
+    /// </summary>
+    /// <param name=")">Input value for .</param>
+    /// <returns>The result of the operation.</returns>
+    private static ColorScheme CreateNelmScheme() => new() {
+        Name = "Naked Eye (NELM)",
+        IsGradient = true,
+        Stops =
+        [
+            new() { Value = -0.2801, Color = Color.FromArgb(198, 40, 40), Description = "INNERCITY" },
+            new() { Value = 0.6911, Color = Color.FromArgb(229, 57, 53), Description = "URBAN" },
+            new() { Value = 1.6463, Color = Color.FromArgb(251, 140, 0), Description = "SEMIURBAN" },
+            new() { Value = 3.4717, Color = Color.FromArgb(255, 193, 7), Description = "SEMISUBURB" },
+            new() { Value = 4.9389, Color = Color.FromArgb(205, 220, 57), Description = "SUBURBAN" },
+            new() { Value = 6.1268, Color = Color.FromArgb(139, 195, 74), Description = "SEMIRURAL" },
+            new() { Value = 6.3434, Color = Color.FromArgb(76, 175, 80), Description = "RURAL" },
+            new() { Value = 6.5415, Color = Color.FromArgb(56, 142, 60), Description = "DARK" },
+            new() { Value = 6.8045, Color = Color.FromArgb(15, 23, 42), Description = "PRISTINE" }
         ]
     };
 
