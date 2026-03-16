@@ -259,7 +259,7 @@ public class ValueSchemeService {
             new() { Value = 18.0, Text = "URBAN", Description = "Urban sky quality (17.5–18.0 mpsas)" },
             new() { Value = 18.5, Text = "SEMIURBAN", Description = "Semiurban sky quality (18.0–18.5 mpsas)" },
             new() { Value = 19.5, Text = "SEMISUBURB", Description = "Semisuburb sky quality (18.5–19.5 mpsas)" },
-            new() { Value = 20.4, Text = "SUBURBAN", Description = "Suburb sky quality (19.5–20.4 mpsas)" },
+            new() { Value = 20.4, Text = "SUBURBAN", Description = "Suburban sky quality (19.5–20.4 mpsas)" },
             new() { Value = 21.3, Text = "SEMIRURAL", Description = "Semirural sky quality (20.4–21.3 mpsas)" },
             new() { Value = 21.5, Text = "RURAL", Description = "Rural sky quality (21.3–21.5 mpsas)" },
             new() { Value = 21.7, Text = "DARK", Description = "Dark sky quality (21.5–21.7 mpsas)" },
