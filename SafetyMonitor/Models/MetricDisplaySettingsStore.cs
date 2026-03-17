@@ -112,7 +112,7 @@ public static class MetricDisplaySettingsStore {
                 setting.Decimals = 0;
                 setting.TrayName = "C";
                 break;
-            case MetricType.SkyQuality:
+            case MetricType.SkyQualitySQM:
                 setting.Decimals = 1;
                 setting.InvertY = true;
                 setting.TrayName = "S";

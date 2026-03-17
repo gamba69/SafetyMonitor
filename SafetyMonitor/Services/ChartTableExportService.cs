@@ -134,7 +134,7 @@ public class ChartTableExportService {
                 [MetricType.CloudCover.GetDisplayName()] = RoundMetricValue(MetricType.CloudCover, row.CloudCover),
                 [MetricType.SkyTemperature.GetDisplayName()] = RoundMetricValue(MetricType.SkyTemperature, row.SkyTemperature),
                 [MetricType.SkyBrightness.GetDisplayName()] = RoundMetricValue(MetricType.SkyBrightness, row.SkyBrightness),
-                [MetricType.SkyQuality.GetDisplayName()] = RoundMetricValue(MetricType.SkyQuality, row.SkyQuality),
+                [MetricType.SkyQualitySQM.GetDisplayName()] = RoundMetricValue(MetricType.SkyQualitySQM, row.SkyQuality),
                 [MetricType.RainRate.GetDisplayName()] = RoundMetricValue(MetricType.RainRate, row.RainRate),
                 [MetricType.WindSpeed.GetDisplayName()] = RoundMetricValue(MetricType.WindSpeed, row.WindSpeed),
                 [MetricType.WindGust.GetDisplayName()] = RoundMetricValue(MetricType.WindGust, row.WindGust),

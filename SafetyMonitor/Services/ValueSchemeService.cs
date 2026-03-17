@@ -47,8 +47,8 @@ public class ValueSchemeService {
         MetricType.Pressure => "Pressure",
         MetricType.CloudCover => "Cloud Cover",
         MetricType.SkyBrightness => "Sky Brightness",
-        MetricType.SkyQuality => "Sky Quality (SQM)",
-        MetricType.Nelm => "Naked Eye (NELM)",
+        MetricType.SkyQualitySQM => "Sky Quality (SQM)",
+        MetricType.SkyQualityNELM => "Sky Quality (NELM)",
         MetricType.RainRate => "Rain Rate",
         MetricType.WindSpeed => "Wind Speed",
         MetricType.WindGust => "Wind Gust",
@@ -276,7 +276,7 @@ public class ValueSchemeService {
     /// <param name=")">Input value for .</param>
     /// <returns>The result of the operation.</returns>
     private static ValueScheme CreateNelmScheme() => new() {
-        Name = "Naked Eye (NELM)",
+        Name = "Sky Quality (NELM)",
         Descending = false,
         Stops =
         [

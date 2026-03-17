@@ -1669,7 +1669,7 @@ public class ChartTile : Panel {
             case MetricType.SkyBrightness:
                 target.SkyBrightness = value;
                 break;
-            case MetricType.SkyQuality:
+            case MetricType.SkyQualitySQM:
                 target.SkyQuality = value;
                 break;
             case MetricType.RainRate:

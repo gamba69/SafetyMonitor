@@ -1,6 +1,6 @@
 namespace SafetyMonitor.Models;
 
-public enum MetricType { Temperature, Humidity, Pressure, DewPoint, CloudCover, SkyTemperature, SkyBrightness, SkyQuality, Nelm, RainRate, WindSpeed, WindGust, WindDirection, StarFwhm, IsSafe }
+public enum MetricType { Temperature, Humidity, Pressure, DewPoint, CloudCover, SkyTemperature, SkyBrightness, SkyQualitySQM, SkyQualityNELM, RainRate, WindSpeed, WindGust, WindDirection, StarFwhm, IsSafe }
 /// <summary>
 /// Represents metric type extensions and encapsulates its related behavior and state.
 /// </summary>
@@ -11,9 +11,9 @@ public static class MetricTypeExtensions {
     private static readonly IReadOnlyDictionary<MetricType, DerivedMetricDefinition> DerivedMetrics =
         new Dictionary<MetricType, DerivedMetricDefinition> {
             {
-                MetricType.Nelm,
-                new DerivedMetricDefinition([MetricType.SkyQuality], static values => {
-                    if (!values.TryGetValue(MetricType.SkyQuality, out var sqm) || !sqm.HasValue || double.IsNaN(sqm.Value)) {
+                MetricType.SkyQualityNELM,
+                new DerivedMetricDefinition([MetricType.SkyQualitySQM], static values => {
+                    if (!values.TryGetValue(MetricType.SkyQualitySQM, out var sqm) || !sqm.HasValue || double.IsNaN(sqm.Value)) {
                         return null;
                     }
 
@@ -41,8 +41,8 @@ public static class MetricTypeExtensions {
         MetricType.CloudCover => "Cloud Cover",
         MetricType.SkyTemperature => "Sky Temperature",
         MetricType.SkyBrightness => "Sky Brightness",
-        MetricType.SkyQuality => "Sky Quality (SQM)",
-        MetricType.Nelm => "Naked Eye (NELM)",
+        MetricType.SkyQualitySQM => "Sky Quality (SQM)",
+        MetricType.SkyQualityNELM => "Sky Quality (NELM)",
         MetricType.RainRate => "Rain Rate",
         MetricType.WindSpeed => "Wind Speed",
         MetricType.WindGust => "Wind Gust",
@@ -65,8 +65,8 @@ public static class MetricTypeExtensions {
         MetricType.CloudCover => "CC",
         MetricType.SkyTemperature => "SKYT",
         MetricType.SkyBrightness => "SKYB",
-        MetricType.SkyQuality => "SQM",
-        MetricType.Nelm => "NELM",
+        MetricType.SkyQualitySQM => "SQM",
+        MetricType.SkyQualityNELM => "NELM",
         MetricType.RainRate => "RAIN",
         MetricType.WindSpeed => "WSPD",
         MetricType.WindGust => "WGST",
@@ -88,8 +88,8 @@ public static class MetricTypeExtensions {
         MetricType.CloudCover => "%",
         MetricType.SkyTemperature => "°C",
         MetricType.SkyBrightness => "lux",
-        MetricType.SkyQuality => "mpsas",
-        MetricType.Nelm => "mag",
+        MetricType.SkyQualitySQM => "mpsas",
+        MetricType.SkyQualityNELM => "mag",
         MetricType.RainRate => "mm/hr",
         MetricType.WindSpeed => "m/s",
         MetricType.WindGust => "m/s",
@@ -129,7 +129,7 @@ public static class MetricTypeExtensions {
         MetricType.CloudCover => data.CloudCover,
         MetricType.SkyTemperature => data.SkyTemperature,
         MetricType.SkyBrightness => data.SkyBrightness,
-        MetricType.SkyQuality => data.SkyQuality,
+        MetricType.SkyQualitySQM => data.SkyQuality,
         MetricType.RainRate => data.RainRate,
         MetricType.WindSpeed => data.WindSpeed,
         MetricType.WindGust => data.WindGust,

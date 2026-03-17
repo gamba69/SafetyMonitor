@@ -300,7 +300,7 @@ public class Dashboard {
             ValueTile("Cloud Cover", MetricType.CloudCover, 1, 0, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Cloud Cover", textColorSchemeName: "Cloud Cover", valueSchemeName: "Cloud Cover", id: Guid.Parse("71123269-a775-4a6d-8a7c-7c45fa095b30")),
             ValueTile("Sky Temp", MetricType.SkyTemperature, 1, 1, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "", textColorSchemeName: "", valueSchemeName: "", id: Guid.Parse("ddb58772-5602-4a6a-9e51-eb136fdb9561")),
             ValueTile("Sky Brightness", MetricType.SkyBrightness, 1, 2, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Sky Brightness", textColorSchemeName: "Sky Brightness", valueSchemeName: "Sky Brightness", id: Guid.Parse("0dc0e13f-9593-4520-b25a-7fbbaf5f9fb3")),
-            ValueTile("Sky Quality", MetricType.SkyQuality, 1, 3, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Sky Quality", textColorSchemeName: "Sky Quality", valueSchemeName: "Sky Quality", id: Guid.Parse("818aeb90-a085-47bb-9fb9-2b7a7cca9ac1")),
+            ValueTile("Sky Quality", MetricType.SkyQualitySQM, 1, 3, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Sky Quality", textColorSchemeName: "Sky Quality", valueSchemeName: "Sky Quality", id: Guid.Parse("818aeb90-a085-47bb-9fb9-2b7a7cca9ac1")),
             ValueTile("Rain Rate", MetricType.RainRate, 1, 4, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Rain Rate", textColorSchemeName: "Rain Rate", valueSchemeName: "Rain Rate", id: Guid.Parse("2eee88ae-3fae-4073-a0aa-ee9ca0c6c05c")),
             ValueTile("Wind Speed", MetricType.WindSpeed, 2, 0, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Wind Speed", textColorSchemeName: "Wind Speed", valueSchemeName: "Wind Speed", id: Guid.Parse("f150fff7-c170-4904-b635-5c45eda83440")),
             ValueTile("Wind Gust", MetricType.WindGust, 2, 1, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Wind Gust", textColorSchemeName: "Wind Gust", valueSchemeName: "Wind Gust", id: Guid.Parse("5b0e0e19-23b3-43c5-8a38-3d443e7d75d7")),
@@ -339,7 +339,7 @@ public class Dashboard {
         dashboard.Tiles.AddRange([
             ValueTile("Safety", MetricType.IsSafe, 0, 0, displayMode: ValueTileDisplayMode.TextOnly, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Safety", textColorSchemeName: "Safety", valueSchemeName: "Safety", id: Guid.Parse("938476cd-c1d7-4e56-b69f-722df2129c56")),
             ValueTile("Cloud Cover", MetricType.CloudCover, 0, 1, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Cloud Cover", textColorSchemeName: "Cloud Cover", valueSchemeName: "Cloud Cover", id: Guid.Parse("b6248670-6247-4db1-aba6-80e9e0e23970")),
-            ValueTile("Sky Quality", MetricType.SkyQuality, 0, 2, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Sky Quality", textColorSchemeName: "Sky Quality", valueSchemeName: "Sky Quality", id: Guid.Parse("a7f7bcb2-117b-4648-86b9-17eb63a1e941")),
+            ValueTile("Sky Quality", MetricType.SkyQualitySQM, 0, 2, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Sky Quality", textColorSchemeName: "Sky Quality", valueSchemeName: "Sky Quality", id: Guid.Parse("a7f7bcb2-117b-4648-86b9-17eb63a1e941")),
             ValueTile("Sky Brightness", MetricType.SkyBrightness, 0, 3, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: true, decimalPlaces: 1, iconColorSchemeName: "", colorSchemeName: "Sky Brightness", textColorSchemeName: "Sky Brightness", valueSchemeName: "Sky Brightness", id: Guid.Parse("67cd85d8-5b60-4629-b73e-5e4a621d63d0")),
             ChartTile("Sky Transparency (6h)", 1, 0, 2, 2, ChartPeriod.Last6Hours,
                 linkGroup: ChartLinkGroup.Alpha,
@@ -356,7 +356,7 @@ public class Dashboard {
                 id: Guid.Parse("4107c63e-0dcf-4747-9901-07b4c50a4ecb"),
                 series: [
                 Aggregation(MetricType.StarFwhm, AggregationFunction.Average, Color.FromArgb(255, 167, 38), "FWHM Avg"),
-                Aggregation(MetricType.SkyQuality, AggregationFunction.Average, Color.FromArgb(102, 187, 106), "SQM Avg")]),
+                Aggregation(MetricType.SkyQualitySQM, AggregationFunction.Average, Color.FromArgb(102, 187, 106), "SQM Avg")]),
             ChartTile("Safety Trend (24h)", 3, 0, 1, 4, ChartPeriod.Last24Hours,
                 linkGroup: ChartLinkGroup.Bravo,
                 periodPresetUid: "24h",
@@ -596,7 +596,7 @@ public class Dashboard {
 
         dashboard.Tiles.AddRange([
             ValueTile("Safety", MetricType.IsSafe, 0, 2, displayMode: ValueTileDisplayMode.TextOnly, showUnit: false, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, colorSchemeName: "Safety", textColorSchemeName: "Safety", valueSchemeName: "Safety", id: Guid.Parse("7217ec3c-1c48-4b0a-80fc-c92f8648fab4")),
-            ValueTile("SQM", MetricType.SkyQuality, 0, 3, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, colorSchemeName: "Sky Quality", textColorSchemeName: "Sky Quality", valueSchemeName: "Sky Quality", id: Guid.Parse("ec0cecb6-43fa-4f9f-a98f-a82572bcc79a")),
+            ValueTile("SQM", MetricType.SkyQualitySQM, 0, 3, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, colorSchemeName: "Sky Quality", textColorSchemeName: "Sky Quality", valueSchemeName: "Sky Quality", id: Guid.Parse("ec0cecb6-43fa-4f9f-a98f-a82572bcc79a")),
             ValueTile("SkyTemp", MetricType.SkyTemperature, 0, 4, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, id: Guid.Parse("ae4787f3-df60-44bd-b15b-27e620df2e95")),
             ValueTile("Cloud", MetricType.CloudCover, 1, 4, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, colorSchemeName: "Cloud Cover", textColorSchemeName: "Cloud Cover", valueSchemeName: "Cloud Cover", id: Guid.Parse("31595ad8-92dd-43fe-9eca-2d2fb1082f8f")),
             ValueTile("Seeing", MetricType.StarFwhm, 2, 4, displayMode: ValueTileDisplayMode.TextAndValue, showUnit: true, showIcon: true, showTopValueGradient: false, decimalPlaces: 1, id: Guid.Parse("df97adfe-97b0-44df-8ab4-f702a0f26a58")),
@@ -616,7 +616,7 @@ public class Dashboard {
                 customAggregationInterval: null,
                 id: Guid.Parse("7da3af37-a9eb-4108-969d-2d5bd7b2105e"),
                 series: [
-                    Aggregation(MetricType.SkyQuality, AggregationFunction.Average, Color.FromArgb(102, 187, 106), "SQM Avg"),
+                    Aggregation(MetricType.SkyQualitySQM, AggregationFunction.Average, Color.FromArgb(102, 187, 106), "SQM Avg"),
                     Aggregation(MetricType.StarFwhm, AggregationFunction.Average, Color.FromArgb(255, 167, 38), "FWHM Avg")
                 ]),
             ChartTile("SkyGlow Pulse (6h)", 2, 0, 2, 2, ChartPeriod.Last6Hours,

@@ -80,7 +80,7 @@ public class MainForm : MaterialForm {
         MetricType.Temperature,
         MetricType.Humidity,
         MetricType.CloudCover,
-        MetricType.SkyQuality,
+        MetricType.SkyQualitySQM,
         MetricType.RainRate,
         MetricType.WindSpeed,
         MetricType.IsSafe
@@ -1596,7 +1596,7 @@ public class MainForm : MaterialForm {
         AddStatusMetricItem(MetricType.Humidity);
         AddStatusMetricItem(MetricType.CloudCover);
         AddStatusVerticalSeparator(_statusMetricsPanel);
-        AddStatusMetricItem(MetricType.SkyQuality);
+        AddStatusMetricItem(MetricType.SkyQualitySQM);
         AddStatusVerticalSeparator(_statusMetricsPanel);
         AddStatusMetricItem(MetricType.RainRate);
         AddStatusMetricItem(MetricType.WindSpeed);
