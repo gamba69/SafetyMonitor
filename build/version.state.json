@@ -1,7 +1,7 @@
 {
-  "currentPatch": 112,
-  "buildCounter": 590,
-  "lastSourceHash": "EFC74E5D328C5759F5DBDB2F4A448E27AF739E9689D39159EE6BE3E6136C6A7C",
-  "lastBaseVersion": "2.2.0",
-  "lastBuildDateUtc": "2026-03-17T07:35:17.713548Z"
+  "currentPatch": 1,
+  "buildCounter": 592,
+  "lastSourceHash": "B7C358F466B8C7036AD03EAFF2123E1B54ADFC30B95130855F230C0E047785D0",
+  "lastBaseVersion": "2.3.0",
+  "lastBuildDateUtc": "2026-03-17T07:48:41.2167607Z"
 }

@@ -23,7 +23,7 @@ public class ValueSchemeService {
         _schemesPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "SafetyMonitor", "ValueSchemes");
-        Directory.CreateDirectory(_schemesPath);
+        EnsureSchemesDirectoryExists();
 
         _jsonOptions = new JsonSerializerOptions {
             WriteIndented = true
@@ -62,6 +62,7 @@ public class ValueSchemeService {
     /// </summary>
     /// <param name="name">Input value for name.</param>
     public void DeleteScheme(string name) {
+        EnsureSchemesDirectoryExists();
         var safeName = string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
         var path = Path.Combine(_schemesPath, $"{safeName}.json");
         if (File.Exists(path)) {
@@ -75,6 +76,7 @@ public class ValueSchemeService {
     /// <returns>The result of the operation.</returns>
     public List<ValueScheme> LoadSchemes() {
         var schemes = new List<ValueScheme>();
+        EnsureSchemesDirectoryExists();
 
         foreach (var file in Directory.GetFiles(_schemesPath, "*.json")) {
             try {
@@ -94,6 +96,7 @@ public class ValueSchemeService {
     /// </summary>
     /// <param name="scheme">Input value for scheme.</param>
     public void SaveScheme(ValueScheme scheme) {
+        EnsureSchemesDirectoryExists();
         var safeName = string.Join("_", scheme.Name.Split(Path.GetInvalidFileNameChars()));
         var path = Path.Combine(_schemesPath, $"{safeName}.json");
         var json = JsonSerializer.Serialize(scheme, _jsonOptions);
@@ -108,6 +111,8 @@ public class ValueSchemeService {
     /// Ensures the default schemes exist for value scheme service.
     /// </summary>
     private void EnsureDefaultSchemesExist() {
+        EnsureSchemesDirectoryExists();
+
         foreach (var scheme in GetDefaultSchemes()) {
             var safeName = string.Join("_", scheme.Name.Split(Path.GetInvalidFileNameChars()));
             var path = Path.Combine(_schemesPath, $"{safeName}.json");
@@ -119,6 +124,11 @@ public class ValueSchemeService {
             File.WriteAllText(path, json);
         }
     }
+
+    /// <summary>
+    /// Ensures the schemes directory exists for value scheme service.
+    /// </summary>
+    private void EnsureSchemesDirectoryExists() => Directory.CreateDirectory(_schemesPath);
 
     /// <summary>
     /// Gets the default schemes for value scheme service.
