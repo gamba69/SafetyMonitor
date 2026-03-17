@@ -28,6 +28,7 @@ public static class AppSettingsDefaultsService {
             ChartPeriodPresets = ChartPeriodPresetStore.CreateDefaultPresets(800, 3),
             MetricAxisRules = [
                 new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 45, MaxSpan = null, Metric = MetricType.Temperature, MinBoundary = -30, MinSpan = 3 },
+                new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 45, MaxSpan = null, Metric = MetricType.Apparent, MinBoundary = -30, MinSpan = 3 },
                 new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 110, MaxSpan = null, Metric = MetricType.Humidity, MinBoundary = -10, MinSpan = 2 },
                 new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 1060, MaxSpan = null, Metric = MetricType.Pressure, MinBoundary = 940, MinSpan = 10 },
                 new MetricAxisRuleSetting { Enabled = true, MaxBoundary = 45, MaxSpan = null, Metric = MetricType.DewPoint, MinBoundary = -30, MinSpan = 3 },

@@ -100,6 +100,10 @@ public static class MetricDisplaySettingsStore {
                 setting.Decimals = 1;
                 setting.TrayName = "T";
                 break;
+            case MetricType.Apparent:
+                setting.Decimals = 1;
+                setting.TrayName = "A";
+                break;
             case MetricType.Humidity:
                 setting.Decimals = 0;
                 setting.TrayName = "H";
@@ -115,7 +119,7 @@ public static class MetricDisplaySettingsStore {
             case MetricType.SkyQualitySQM:
                 setting.Decimals = 1;
                 setting.InvertY = true;
-                setting.TrayName = "S";
+                setting.TrayName = "Q";
                 break;
             case MetricType.RainRate:
                 setting.Decimals = 2;

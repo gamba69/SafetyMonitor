@@ -43,6 +43,7 @@ public class ValueSchemeService {
     /// <returns>The resulting string value.</returns>
     public static string GetDefaultSchemeName(MetricType metric) => metric switch {
         MetricType.Temperature => "Temperature",
+        MetricType.Apparent => "Temperature",
         MetricType.Humidity => "Humidity",
         MetricType.Pressure => "Pressure",
         MetricType.CloudCover => "Cloud Cover",

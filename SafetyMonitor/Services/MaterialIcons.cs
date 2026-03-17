@@ -338,6 +338,7 @@ public static class MaterialIcons {
     /// <returns>The resulting string value.</returns>
     public static string GetMetricIconName(MetricType metric) => metric switch {
         MetricType.Temperature => MetricTemperature,
+        MetricType.Apparent => MetricTemperature,
         MetricType.Humidity => MetricHumidity,
         MetricType.Pressure => MetricPressure,
         MetricType.DewPoint => MetricDewPoint,

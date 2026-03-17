@@ -1,6 +1,6 @@
 namespace SafetyMonitor.Models;
 
-public enum MetricType { Temperature, Humidity, Pressure, DewPoint, CloudCover, SkyTemperature, SkyBrightness, SkyQualitySQM, SkyQualityNELM, RainRate, WindSpeed, WindGust, WindDirection, StarFwhm, IsSafe }
+public enum MetricType { Temperature, Apparent, Humidity, Pressure, DewPoint, CloudCover, SkyTemperature, SkyBrightness, SkyQualitySQM, SkyQualityNELM, RainRate, WindSpeed, WindGust, WindDirection, StarFwhm, IsSafe }
 /// <summary>
 /// Represents metric type extensions and encapsulates its related behavior and state.
 /// </summary>
@@ -21,6 +21,31 @@ public static class MetricTypeExtensions {
                     var nelm = 7.93 - (5 * Math.Log10(Math.Pow(10, (21.58 - sqm.Value) / 2.5) + 1));
                     return double.IsFinite(nelm) ? nelm : null;
                 })
+            },
+            {
+                MetricType.Apparent,
+                new DerivedMetricDefinition([MetricType.Temperature, MetricType.Humidity, MetricType.WindSpeed], static values => {
+                    if (!values.TryGetValue(MetricType.Temperature, out var temperature)
+                        || !temperature.HasValue
+                        || double.IsNaN(temperature.Value)
+                        || !values.TryGetValue(MetricType.Humidity, out var humidity)
+                        || !humidity.HasValue
+                        || double.IsNaN(humidity.Value)
+                        || !values.TryGetValue(MetricType.WindSpeed, out var windSpeed)
+                        || !windSpeed.HasValue
+                        || double.IsNaN(windSpeed.Value)) {
+                        return null;
+                    }
+
+                    // E = 6.105 × exp(17.27 × Ta / (237.7 + Ta))
+                    var saturationVaporPressure = 6.105 * Math.Exp((17.27 * temperature.Value) / (237.7 + temperature.Value));
+                    // e = rh / 100 × E
+                    var vaporPressure = (humidity.Value / 100d) * saturationVaporPressure;
+                    // AT = Ta + 0.33 × e − 0.70 × ws − 4.00
+                    var apparentTemperature = temperature.Value + (0.33 * vaporPressure) - (0.70 * windSpeed.Value) - 4.00;
+
+                    return double.IsFinite(apparentTemperature) ? apparentTemperature : null;
+                })
             }
         };
 
@@ -35,6 +60,7 @@ public static class MetricTypeExtensions {
     /// <returns>The resulting string value.</returns>
     public static string GetDisplayName(this MetricType type) => type switch {
         MetricType.Temperature => "Temperature",
+        MetricType.Apparent => "Apparent",
         MetricType.Humidity => "Humidity",
         MetricType.Pressure => "Pressure",
         MetricType.DewPoint => "Dew Point",
@@ -59,6 +85,7 @@ public static class MetricTypeExtensions {
     /// <returns>The resulting string value.</returns>
     public static string GetShortName(this MetricType type) => type switch {
         MetricType.Temperature => "TEMP",
+        MetricType.Apparent => "APPT",
         MetricType.Humidity => "RH",
         MetricType.Pressure => "PRES",
         MetricType.DewPoint => "DEW",
@@ -82,6 +109,7 @@ public static class MetricTypeExtensions {
     /// <returns>The resulting string value.</returns>
     public static string GetUnit(this MetricType type) => type switch {
         MetricType.Temperature => "°C",
+        MetricType.Apparent => "°C",
         MetricType.Humidity => "%",
         MetricType.Pressure => "hPa",
         MetricType.DewPoint => "°C",

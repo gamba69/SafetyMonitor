@@ -128,6 +128,7 @@ public class ChartTableExportService {
             rows.Add(new Dictionary<string, object?> {
                 ["Time"] = timestamp,
                 [MetricType.Temperature.GetDisplayName()] = RoundMetricValue(MetricType.Temperature, row.Temperature),
+                [MetricType.Apparent.GetDisplayName()] = RoundMetricValue(MetricType.Apparent, MetricType.Apparent.GetValue(row)),
                 [MetricType.Humidity.GetDisplayName()] = RoundMetricValue(MetricType.Humidity, row.Humidity),
                 [MetricType.Pressure.GetDisplayName()] = RoundMetricValue(MetricType.Pressure, row.Pressure),
                 [MetricType.DewPoint.GetDisplayName()] = RoundMetricValue(MetricType.DewPoint, row.DewPoint),

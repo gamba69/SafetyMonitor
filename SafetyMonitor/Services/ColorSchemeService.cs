@@ -122,6 +122,7 @@ public class ColorSchemeService {
     public static string GetDefaultSchemeName(MetricType metric) => metric switch {
         MetricType.IsSafe => "Safety",
         MetricType.Temperature => "Temperature",
+        MetricType.Apparent => "Temperature",
         MetricType.Humidity => "Humidity",
         MetricType.Pressure => "Pressure",
         MetricType.CloudCover => "Cloud Cover",
