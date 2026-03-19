@@ -8,8 +8,8 @@ public static class MetricTypeExtensions {
 
     #region Private Fields
 
-    private static readonly IReadOnlyDictionary<MetricType, DerivedMetricDefinition> DerivedMetrics =
-        new Dictionary<MetricType, DerivedMetricDefinition> {
+    private static readonly Dictionary<MetricType, DerivedMetricDefinition> DerivedMetrics =
+        new() {
             {
                 MetricType.SkyQualityNELM,
                 new DerivedMetricDefinition([MetricType.SkyQualitySQM], static values => {
