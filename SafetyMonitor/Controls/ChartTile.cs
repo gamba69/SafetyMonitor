@@ -91,6 +91,7 @@ public class ChartTile : Panel {
     private const int HeaderButtonY = 2;
     private const int HeaderControlButtonSize = HeaderControlHeight;
     private const int HeaderControlRightPadding = 2;
+    private const int PngExportScaleFactor = 2;
     private const double LegendCornerOccupancyRoundingPercent = 20d;
     private int _availableLinkGroups = ChartLinkGroupInfo.MaxUsedGroups;
     private readonly Dictionary<ChartLinkGroup, string> _linkGroupPeriodShortNames = [];
@@ -1529,8 +1530,7 @@ public class ChartTile : Panel {
             return;
         }
 
-        using var bmp = CapturePlotBitmap();
-        bmp?.Save(dialog.FileName, System.Drawing.Imaging.ImageFormat.Png);
+        SavePlotPng(dialog.FileName, PngExportScaleFactor);
     }
 
     /// <summary>
@@ -1753,6 +1753,22 @@ public class ChartTile : Panel {
         previewForm.FormClosed += (_, _) => pictureBox.Image?.Dispose();
         previewForm.Controls.Add(pictureBox);
         previewForm.Show(this);
+    }
+
+    /// <summary>
+    /// Saves the plot as png for series hover snapshot.
+    /// </summary>
+    /// <param name="filePath">Input value for file path.</param>
+    /// <param name="scaleFactor">Input value for scale factor.</param>
+    private void SavePlotPng(string filePath, int scaleFactor = 1) {
+        if (_plot == null || _plot.Width <= 0 || _plot.Height <= 0) {
+            return;
+        }
+
+        var safeScaleFactor = Math.Max(1, scaleFactor);
+        var exportWidth = _plot.Width * safeScaleFactor;
+        var exportHeight = _plot.Height * safeScaleFactor;
+        _plot.Plot.SavePng(filePath, exportWidth, exportHeight);
     }
 
     /// <summary>
