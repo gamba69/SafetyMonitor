@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
   <Project Path="DataAggregator/DataAggregator.csproj" />
   <Project Path="DataCollector/DataCollector.csproj" />
   <Project Path="DataGenerator/DataGenerator.csproj" />
